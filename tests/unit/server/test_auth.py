@@ -3,7 +3,6 @@ PATCH-1-09: Hash admin password dengan hashlib.pbkdf2_hmac
 Verifikasi bahwa password hashing dan verifikasi berfungsi dengan benar.
 """
 
-import pytest
 from core.security import hash_password, verify_password
 
 

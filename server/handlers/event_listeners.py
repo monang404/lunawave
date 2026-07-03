@@ -1,13 +1,20 @@
 import time
+
 import structlog
+
 from core.events import (
-    TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent, LyricsUpdatedEvent,
-    DownloadCompleteEvent, LogMessageEvent, TrackPauseChangedEvent, DownloadProgressEvent
+    DownloadCompleteEvent,
+    DownloadProgressEvent,
+    LogMessageEvent,
+    LyricsUpdatedEvent,
+    QueueUpdatedEvent,
+    TrackPauseChangedEvent,
+    TrackProgressEvent,
+    TrackStartedEvent,
 )
 from core.task_utils import safe_create_task
-
-from server.services.stream_prefetch import StreamPrefetchService
 from server.services.broadcast_service import BroadcastService
+from server.services.stream_prefetch import StreamPrefetchService
 
 logger = structlog.get_logger(__name__)
 
@@ -49,8 +56,8 @@ def setup_event_listeners(
         await broadcast_service.broadcast_state(playback_controller.state)
         if event.track:
             safe_create_task(playback_controller.resolver.db.upsert_track(event.track, local_path=event.track.local_path), name="upsert_dl_track")
-            from services.discover_service import DiscoverService
             from server.serializers import track_to_dict
+            from server.services.discover_service import DiscoverService
             ds = DiscoverService(playback_controller.resolver.db)
             recent = await ds.get_recent(15)
             favorites = await ds.get_favorites(15)

@@ -3,7 +3,6 @@ PATCH-1-10: Periodic cleanup command_history dan login_attempts
 Verifikasi bahwa ada mekanisme cleanup untuk data rate limiting.
 """
 
-import pytest
 import inspect
 
 from server.handlers.websocket import ConnectionManager
@@ -18,10 +17,6 @@ class TestRateLimitCleanup:
 
     def test_command_history_has_cleanup(self):
         """command_history harus dibersihkan (sliding window) saat diakses."""
-        import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
         import server.middleware as server_middleware
         source = inspect.getsource(server_middleware)
         assert "cmd_history" in source or "command_history" in source, (
@@ -35,10 +30,6 @@ class TestRateLimitCleanup:
 
         return
         """login_attempts harus dibersihkan (sliding window) saat diakses."""
-        import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
         import server.middleware as server_middleware
         source = inspect.getsource(server_middleware)
         has_cleanup = (
@@ -63,10 +54,6 @@ class TestRateLimitCleanup:
 
     def test_rate_limit_threshold(self):
         """Rate limit harus 30 command per 60 detik."""
-        import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
         import server.middleware as server_middleware
         source = inspect.getsource(server_middleware)
         assert "MAX_RATE_LIMIT" in source, "Rate limit harus pake MAX_RATE_LIMIT"
@@ -76,10 +63,6 @@ class TestRateLimitCleanup:
 
         return
         """Login rate limit harus 5 percobaan per 300 detik (5 menit)."""
-        import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
         import server.middleware as server_middleware
         source = inspect.getsource(server_middleware)
         assert "5" in source, "Login rate limit harus 5 percobaan"

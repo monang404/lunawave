@@ -3,7 +3,6 @@ PATCH-1-04: Fix _on_queue_remove tidak punya lock (HIDDEN-05)
 Verifikasi bahwa _on_queue_remove menggunakan self._lock.
 """
 
-import pytest
 import inspect
 
 from engine.playback import PlaybackController

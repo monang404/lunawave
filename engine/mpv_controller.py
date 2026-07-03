@@ -1,14 +1,16 @@
 import asyncio
 import json
-import structlog
 import os
+
+import structlog
+
 from config import MPV_SOCKET
-from core.event_bus import EventBus
-from core.events import TrackProgressEvent, TrackEndedEvent, TrackPauseChangedEvent
-from core.state import PlayerStatus
-from core.task_utils import safe_create_task
-from core.exceptions import MpvConnectionError
 from core.constants import MAX_VOLUME
+from core.event_bus import EventBus
+from core.events import TrackEndedEvent, TrackPauseChangedEvent, TrackProgressEvent
+from core.exceptions import MpvConnectionError
+from core.task_utils import safe_create_task
+
 logger = structlog.get_logger(__name__)
 
 class MpvController:
@@ -22,7 +24,9 @@ class MpvController:
     MED-11: Basic reconnection support via is_connected flag.
     """
 
-    def __init__(self, socket_path: str = None, tcp_port: str = None, event_bus: EventBus = None):
+    def __init__(self, socket_path: str = None, tcp_port: str = None, event_bus: EventBus = None):  # type: ignore
+        if event_bus is None:
+            raise RuntimeError("EventBus must be injected")
         self._reader = None
         self._writer = None
         self._request_id = 0
@@ -34,10 +38,6 @@ class MpvController:
         self._mpv_process = None
         self.socket_path = socket_path or MPV_SOCKET
         self.tcp_port = tcp_port or os.environ.get("YT_PLAYER_MPV_PORT", "12345")
-        # Injected bus (fallback ke global bus)
-        if event_bus is None:
-            from core.event_bus import bus as _global_bus
-            event_bus = _global_bus
         self._bus = event_bus
 
     async def connect(self):
@@ -45,6 +45,8 @@ class MpvController:
             if self.is_connected:
                 return
             await self._do_connect()
+            from core.events import MpvReconnectedEvent
+            await self._bus.publish(MpvReconnectedEvent())
 
     async def _do_connect(self):
         import shutil
@@ -93,6 +95,7 @@ class MpvController:
                 await asyncio.sleep(1.0)
         except OSError as e:
             logger.error(f"Failed to spawn mpv process: {e}")
+            raise MpvConnectionError(f"Failed to spawn mpv process: {e}")
 
         for attempt in range(10):
             try:
@@ -111,8 +114,6 @@ class MpvController:
                         pass
                 logger.info(f"Connected to mpv (attempt {attempt + 1})")
                 return
-            except MpvConnectionError:
-                raise
             except (ConnectionError, OSError, FileNotFoundError):
                 await asyncio.sleep(0.5)
         raise MpvConnectionError(f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('YT_PLAYER_MPV_PORT', 'N/A')}, Unix: {MPV_SOCKET})")
@@ -142,17 +143,17 @@ class MpvController:
             return
         await self._set_property("volume", max(0, min(MAX_VOLUME, volume)))
 
-    async def get_position(self) -> float:
+    async def get_position(self) -> float | None:
         if not self.is_connected:
             return 0.0
         val = await self._get_property("time-pos")
-        return val if val else 0.0
+        return float(val) if val is not None else None
 
-    async def get_duration(self) -> float:
+    async def get_duration(self) -> float | None:
         if not self.is_connected:
             return 0.0
         val = await self._get_property("duration")
-        return val if val else 0.0
+        return float(val) if val is not None else None
 
     async def seek(self, seconds: float):
         if not self.is_connected:
@@ -209,36 +210,34 @@ class MpvController:
             logger.warning("mpv observer loop ended — connection lost.")
 
             if not getattr(self, "_shutting_down", False):
+                if self._mpv_process:
+                    try:
+                        self._mpv_process.terminate()
+                        self._mpv_process.kill()
+                    except OSError:
+                        pass
+                    self._mpv_process = None
+
                 reconnected = False
                 for attempt in range(3):
                     backoff = 2 ** attempt
-                    logger.info(f"Mencoba reconnect ke mpv (attempt {attempt + 1}/3) dalam {backoff}s...")
+                    logger.info(f"Mencoba restart mpv penuh (attempt {attempt + 1}/3) dalam {backoff}s...")
                     await asyncio.sleep(backoff)
                     if getattr(self, "_shutting_down", False):
                         break
                     try:
-                        if os.name == "nt":
-                            self._reader, self._writer = await asyncio.open_connection(
-                                "127.0.0.1", int(self.tcp_port)
-                            )
-                        else:
-                            self._reader, self._writer = await asyncio.open_unix_connection(
-                                self.socket_path
-                            )
-                        self.is_connected = True
-                        self._observer_task = safe_create_task(
-                            self._observe_events(), name="mpv_observer"
-                        )
-                        logger.info(f"Reconnect ke mpv berhasil (attempt {attempt + 1})")
+                        await self.connect()
+                        logger.info(f"Restart mpv berhasil (attempt {attempt + 1})")
                         reconnected = True
                         break
-                    except (ConnectionError, OSError, FileNotFoundError) as e:
-                        logger.warning(f"Reconnect attempt {attempt + 1} gagal: {e}")
+                    except Exception as e:
+                        logger.warning(f"Restart mpv attempt {attempt + 1} gagal: {e}")
 
                 if not reconnected:
                     logger.error("Semua percobaan reconnect ke mpv gagal.")
-                    from core.events import TrackEndedEvent
                     import asyncio as _aio
+
+                    from core.events import TrackEndedEvent
                     try:
                         loop = _aio.get_running_loop()
                         loop.create_task(self._bus.publish(TrackEndedEvent(reason="error")))

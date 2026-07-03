@@ -1,5 +1,9 @@
+import re
 from typing import Optional
-from core.state import AppState, TrackInfo, AudioOutput
+
+from core.state import AppState, AudioOutput, TrackInfo
+
+VIDEO_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 def track_to_dict(track: Optional[TrackInfo]) -> Optional[dict]:
     if not track:
@@ -40,7 +44,7 @@ def state_to_dict(state: AppState) -> dict:
 
 def dict_to_track(data: dict) -> Optional[TrackInfo]:
     video_id = data.get("video_id")
-    if not video_id:
+    if not video_id or not VIDEO_ID_REGEX.match(str(video_id)):
         return None
     return TrackInfo(
         video_id=video_id,

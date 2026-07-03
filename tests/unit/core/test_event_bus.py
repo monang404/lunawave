@@ -3,14 +3,15 @@ PATCH-1-03: Concurrent dispatch di EventBus dengan asyncio.gather
 Verifikasi bahwa EventBus memanggil handlers secara concurrent (bukan sequential).
 """
 
-import pytest
 import asyncio
 import time
-from unittest.mock import Mock, AsyncMock
+from dataclasses import dataclass
+
+import pytest
 
 from core.event_bus import EventBus
 from core.events import DomainEvent
-from dataclasses import dataclass
+
 
 @dataclass
 class TestEvent(DomainEvent):

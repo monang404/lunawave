@@ -1,5 +1,6 @@
-import urllib.request
 import re
+import urllib.request
+
 
 def get_svg(name, class_name):
     url = f'https://raw.githubusercontent.com/tabler/tabler-icons/master/icons/filled/{name}.svg'

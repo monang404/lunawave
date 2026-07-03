@@ -1,5 +1,3 @@
-import time
-from core.observability import ACTIVE_WEBSOCKETS
 from core.constants import MAX_RATE_LIMIT
 
 

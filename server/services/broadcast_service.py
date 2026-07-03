@@ -1,7 +1,9 @@
 import time
-from server.serializers import state_to_dict
-from server.handlers.websocket import ConnectionManager
+
 from core.state import AppState
+from server.handlers.websocket import ConnectionManager
+from server.serializers import state_to_dict
+
 
 class BroadcastService:
     def __init__(self, manager: ConnectionManager):

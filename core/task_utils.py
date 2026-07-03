@@ -1,6 +1,7 @@
 import asyncio
+from typing import Any, Callable, Coroutine, Optional
+
 import structlog
-from typing import Coroutine, Optional, Callable, Any
 
 logger = structlog.get_logger(__name__)
 

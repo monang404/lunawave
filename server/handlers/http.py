@@ -1,9 +1,11 @@
 # PATCHLOG_APPLIED
 import re
 import time
-import structlog
 from pathlib import Path
+
+import structlog
 from aiohttp import web
+
 from config import CACHE_DIR, STREAM_URL_TTL_SEC
 from core.observability import get_metrics_content
 

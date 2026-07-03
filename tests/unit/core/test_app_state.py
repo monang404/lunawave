@@ -4,8 +4,7 @@ Verifikasi bahwa field `duration` ada di AppState dataclass dan
 tercantum di _state_to_dict().
 """
 
-import pytest
-from core.state import AppState, PlayerStatus, TrackInfo
+from core.state import AppState
 
 
 class TestAppStateDurationField:

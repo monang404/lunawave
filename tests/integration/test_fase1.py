@@ -6,10 +6,9 @@ Jalankan dengan: pytest tests/test_patch_fase1_security.py -v
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-import aiohttp
-from aiohttp import web
-from unittest.mock import patch, MagicMock
 
 # TASK-1.1 & 1.2 — Security: Password hashing
 
@@ -26,7 +25,7 @@ class TestTask11VerifyPassword:
         assert verify_password("admin", "sha1:12345:abc") is False
 
     def test_verify_password_accepts_valid_hash(self):
-        from core.security import verify_password, hash_password
+        from core.security import hash_password, verify_password
         valid_hash = hash_password("my_secret_password")
         assert verify_password("my_secret_password", valid_hash) is True
         assert verify_password("wrong_password", valid_hash) is False
@@ -36,8 +35,9 @@ class TestTask12ConfigEnvHash:
 
     def test_config_hashes_raw_env_password(self):
         with patch.dict(os.environ, {"YTGUI_ADMIN_PASS": "raw_password_123"}, clear=True):
-            import config
             import importlib
+
+            import config
             importlib.reload(config)
 
             assert getattr(config, "ADMIN_PASSWORD") != "raw_password_123"
@@ -46,8 +46,9 @@ class TestTask12ConfigEnvHash:
     def test_config_keeps_hashed_env_password(self):
         valid_hash = "pbkdf2:sha256:600000$mockedsalt$mockedkey"
         with patch.dict(os.environ, {"YTGUI_ADMIN_PASS": valid_hash}, clear=True):
-            import config
             import importlib
+
+            import config
             importlib.reload(config)
 
             assert getattr(config, "ADMIN_PASSWORD") == valid_hash
@@ -82,7 +83,10 @@ class TestTask13MetricsProtection:
     @pytest.mark.asyncio
     async def test_metrics_rejects_external_ip(self, aiohttp_client, mock_room_manager, mock_ytdlp, mock_db):
         from server.app import create_app
-        app = create_app(mock_room_manager, mock_ytdlp, mock_db)
+        app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
+        from unittest.mock import AsyncMock
+        app["command_bus"] = AsyncMock()
+        app["event_bus"] = AsyncMock()
         client = await aiohttp_client(app)
 
         with patch("server.handlers.http.get_metrics_content") as mock_get:
@@ -97,7 +101,10 @@ class TestTask13MetricsProtection:
     @pytest.mark.asyncio
     async def test_metrics_accepts_localhost(self, aiohttp_client, mock_room_manager, mock_ytdlp, mock_db):
         from server.app import create_app
-        app = create_app(mock_room_manager, mock_ytdlp, mock_db)
+        app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
+        from unittest.mock import AsyncMock
+        app["command_bus"] = AsyncMock()
+        app["event_bus"] = AsyncMock()
         client = await aiohttp_client(app)
 
         with patch("server.handlers.http.get_metrics_content") as mock_get_content:
@@ -116,7 +123,10 @@ class TestTask13MetricsProtection:
             mock_get_content.return_value = ("metrics_data", "text/plain; charset=utf-8")
 
             with patch.dict(os.environ, {"YTGUI_METRICS_TOKEN": "secret"}):
-                app = create_app(mock_room_manager, mock_ytdlp, mock_db)
+                app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
+                from unittest.mock import AsyncMock
+                app["command_bus"] = AsyncMock()
+                app["event_bus"] = AsyncMock()
                 client = await aiohttp_client(app)
 
                 resp = await client.get("/metrics", headers={"X-Metrics-Token": "secret"})

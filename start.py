@@ -6,22 +6,22 @@ Jalankan: python start.py
 
 try:
     import tkinter as tk
-    from tkinter import scrolledtext, messagebox
+    from tkinter import messagebox, scrolledtext
 except ImportError:
     import sys
     print("Tkinter is not available. Please run `python main.py` directly or use `start.sh` on headless environments like Termux.", file=sys.stderr)
     sys.exit(1)
-import subprocess
-import threading
-import sys
+import importlib.util
 import os
+import secrets
+import shutil
+import socket
+import subprocess
+import sys
+import threading
 import time
 import webbrowser
 from pathlib import Path
-import socket
-import importlib.util
-import shutil
-import secrets
 
 BASE_DIR   = Path(__file__).parent
 SERVER_PORT = int(os.environ.get("YTGUI_PORT", 8765))
@@ -176,7 +176,7 @@ class ServerProcessManager:
 class ServerManager(tk.Tk):
     def __init__(self):
         super().__init__()
-        
+
         self.pm = ServerProcessManager(BASE_DIR, PYTHON)
         self.dc = DependencyChecker()
 
@@ -663,7 +663,7 @@ class ServerManager(tk.Tk):
             btn_frame, text="🔑 Buka Halaman Login", bg=ACCENT, fg=BG,
             font=("Segoe UI", 10, "bold"), relief="flat", bd=0,
             cursor="hand2", padx=14, pady=6,
-            command=lambda: [webbrowser.open(f"http://localhost:{port}/admin"), popup.destroy()]
+            command=lambda: [webbrowser.open(f"http://localhost:{port}/admin"), popup.destroy()]  # type: ignore
         )
         btn_login.pack(side="left", padx=5)
 

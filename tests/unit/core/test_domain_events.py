@@ -1,7 +1,9 @@
+
 import pytest
-import asyncio
+
 from core.event_bus import EventBus
 from core.events import LogMessageEvent
+
 
 @pytest.mark.asyncio
 async def test_typed_domain_events():

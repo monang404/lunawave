@@ -1,7 +1,8 @@
 import json
-import time
-from ytmusicapi import YTMusic
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from ytmusicapi import YTMusic
+
 
 def fetch_duration(yt, video_id):
     try:

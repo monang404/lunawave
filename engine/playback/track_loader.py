@@ -1,8 +1,8 @@
-import asyncio
 import structlog
-from core.state import TrackInfo
-from core.ports import LyricsProvider, SponsorBlockProvider
+
 from cache.resolver import CacheResolver
+from core.ports import LyricsProvider, SponsorBlockProvider
+from core.state import TrackInfo
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)

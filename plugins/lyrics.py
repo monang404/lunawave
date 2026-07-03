@@ -1,10 +1,11 @@
-import re
-import structlog
-import aiohttp
-import bisect
 import asyncio
+import bisect
+import re
+
+import aiohttp
+import structlog
 import syncedlyrics
-from contextlib import asynccontextmanager
+
 from config import LYRICS_API_BASE
 from core.event_bus import EventBus
 from core.events import LyricsUpdatedEvent, TrackProgressEvent
@@ -13,45 +14,27 @@ logger = structlog.get_logger(__name__)
 
 from core.state import TrackInfo
 
+
 class LyricsFetcher:
     """
     MED-01 fix: Accepts a shared aiohttp session.
     LOW-07 fix: Strips timestamp prefixes from displayed lyrics.
     """
-    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):
+    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):  # type: ignore
+        if session is None:
+            raise RuntimeError("aiohttp.ClientSession must be injected")
+        if event_bus is None:
+            raise RuntimeError("EventBus must be injected")
         self.state = state
         self.lyrics_data: list[tuple[float, str]] = []
         self._session = session
-        self._owns_session = False
         self._current_generation = 0
-        # Injected bus (fallback ke global bus)
-        if event_bus is None:
-            from core.event_bus import bus as _global_bus
-            event_bus = _global_bus
+        self._cache: dict[str, str] = {}
         self._bus = event_bus
         self._bus.subscribe(TrackProgressEvent, self._on_progress)
 
-    def _get_session(self) -> aiohttp.ClientSession:
-        """Kembalikan session yang ada, atau buat satu fallback session yang persisten."""
-        if self._session is None:
-            self._session = aiohttp.ClientSession()
-            self._owns_session = True
-        return self._session
-
     def cleanup(self):
         self._bus.unsubscribe(TrackProgressEvent, self._on_progress)
-        if self._owns_session and self._session and not self._session.closed:
-            import asyncio as _asyncio
-            try:
-                loop = _asyncio.get_event_loop()
-                if loop.is_running():
-                    loop.create_task(self._session.close())
-                else:
-                    loop.run_until_complete(self._session.close())
-            except Exception:
-                pass
-            self._session = None
-            self._owns_session = False
 
     async def fetch(self, track: TrackInfo):
         """Fetches synchronized lyrics from lrclib.net and parses them."""
@@ -70,15 +53,19 @@ class LyricsFetcher:
         await self._bus.publish(LyricsUpdatedEvent())
 
         try:
-            session = self._get_session()
-            url_get = f"{LYRICS_API_BASE}/get"
-            params_get = {"track_name": title, "artist_name": artist, "duration": duration}
             lrc = None
+            if track.video_id in self._cache:
+                lrc = self._cache[track.video_id]
+                logger.debug(f"Lyrics: Using cached lyrics for {track.video_id}")
+            else:
+                session = self._session
+                url_get = f"{LYRICS_API_BASE}/get"
+                params_get = {"track_name": title, "artist_name": artist, "duration": duration}
 
-            async with session.get(url_get, params=params_get, timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    lrc = data.get("syncedLyrics") or data.get("plainLyrics", "")
+                async with session.get(url_get, params=params_get, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        lrc = data.get("syncedLyrics") or data.get("plainLyrics", "")
 
             clean_title = re.sub(r'[\(\[].*?[\)\]]', '', title)
             for kw in ['official', 'music video', 'lyric', 'lyrics', 'audio', 'video', 'mv', 'hq']:
@@ -115,6 +102,10 @@ class LyricsFetcher:
 
             if self._current_generation == gen:
                 if lrc:
+                    if track.video_id not in self._cache:
+                        self._cache[track.video_id] = lrc
+                        if len(self._cache) > 50:
+                            self._cache.pop(next(iter(self._cache)))
                     self.lyrics_data = self._parse_lrc(lrc)
                     self.state.lyrics_lines = [text for _, text in self.lyrics_data]
                     self.state.lyrics_timestamps = [t for t, _ in self.lyrics_data]

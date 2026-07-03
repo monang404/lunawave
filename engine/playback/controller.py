@@ -6,20 +6,27 @@ Publishes: TRACK_STARTED, LOG_MESSAGE, QUEUE_UPDATED
 """
 
 import asyncio
+
 import structlog
+
+from cache.resolver import CacheResolver
 from core.event_bus import EventBus
 from core.events import (
-    TrackEndedEvent, TrackProgressEvent, TrackStartedEvent,
-    LogMessageEvent, QueueUpdatedEvent, TrackPauseChangedEvent,
-    TrackDurationEvent
+    LogMessageEvent,
+    MpvReconnectedEvent,
+    QueueUpdatedEvent,
+    TrackDurationEvent,
+    TrackEndedEvent,
+    TrackPauseChangedEvent,
+    TrackProgressEvent,
+    TrackStartedEvent,
 )
-from core.state import AppState, PlayerStatus, PlaybackMode, AudioOutput, TrackInfo
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider
-from cache.resolver import CacheResolver
-from engine.queue_manager import QueueMode
-from engine.radio_engine import RadioMode
+from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 from engine.playback.track_loader import TrackLoader
+from engine.queue_manager import QueueMode
+from engine.radio_engine import RadioMode
 
 logger = structlog.get_logger(__name__)
 from core.log_config import STATS as _LOG_STATS
@@ -53,16 +60,38 @@ class PlaybackController:
         self.bus.subscribe(TrackProgressEvent, self._on_track_progress)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
+        self.bus.subscribe(MpvReconnectedEvent, self._on_mpv_reconnected)
+
+    async def _on_mpv_reconnected(self, event: MpvReconnectedEvent):
+        if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED) and self.state.current_track:
+            logger.info("MPV reconnected, restoring playback state...")
+            try:
+                uri = await self.resolver.resolve(self.state.current_track)
+                await self.mpv.play(uri)
+                await self.mpv.seek(self.state.position)
+                if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
+                    await self.mpv.set_volume(0)
+                else:
+                    await self.mpv.set_volume(self.state.volume)
+
+                if self.state.status == PlayerStatus.PLAYING:
+                    await self.mpv.resume()
+                else:
+                    await self.mpv.pause()
+            except Exception as e:
+                logger.error(f"Failed to restore playback after MPV reconnect: {e}")
 
     async def _on_track_duration(self, event: TrackDurationEvent):
-        if event.duration and self.state.duration == 0:
-            self.state.duration = event.duration
-            if self.state.current_track:
-                self.state.current_track.duration = int(event.duration)
-                safe_create_task(self.resolver.db.upsert_track(self.state.current_track), name="upsert_track_duration")
-            await self.bus.publish(QueueUpdatedEvent())
+        if event.duration and event.duration > 0:
+            if abs(self.state.duration - event.duration) >= 1.0:
+                self.state.duration = event.duration
+                if self.state.current_track:
+                    self.state.current_track.duration = int(event.duration)
+                    safe_create_task(self.resolver.db.upsert_track(self.state.current_track), name="upsert_track_duration")
+                await self.bus.publish(QueueUpdatedEvent())
 
     async def play_track(self, track: TrackInfo):
+        should_retry = False
         async with self._play_lock:  # A-05: cegah concurrent play_track race
             if self.state.current_track:
                 self.state.history.append(self.state.current_track)
@@ -108,17 +137,20 @@ class PlaybackController:
                     await self.bus.publish(LogMessageEvent(message="Terlalu banyak kegagalan beruntun. Pemutaran dihentikan."))
                     self._retry_count = 0
                 else:
-                    backoff = 2 ** self._retry_count
-                    await asyncio.sleep(backoff)
-                    if self.state.current_track == track:
-                        await self._advance_to_next()
+                    should_retry = True
+
+        if should_retry:
+            backoff = 2 ** self._retry_count
+            await asyncio.sleep(backoff)
+            if self.state.current_track == track:
+                await self._advance_to_next()
 
     async def _poll_duration(self, track: TrackInfo):
         await asyncio.sleep(2)
         if self.state.current_track != track:
             return
-        dur = await self.mpv.get_duration()
-        if dur > 0:
+        dur = await self.mpv.get_duration()  # type: ignore
+        if dur is not None and dur > 0:
             self.state.duration = dur
             track.duration = int(dur)
             safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
@@ -126,8 +158,8 @@ class PlaybackController:
         else:
             await asyncio.sleep(5)
             if self.state.current_track == track:
-                dur = await self.mpv.get_duration()
-                if dur > 0:
+                dur = await self.mpv.get_duration()  # type: ignore
+                if dur is not None and dur > 0:
                     self.state.duration = dur
                     track.duration = int(dur)
                     safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
@@ -201,7 +233,10 @@ class PlaybackController:
 
     async def _on_stop(self, _data=None):
         self._retry_count = 0  # TASK-0.2: reset retry state agar tidak bocor ke lagu berikutnya
-        await self.mpv.pause()
+        try:
+            await self.mpv.pause()
+        except Exception as e:
+            logger.warning(f"mpv.pause() gagal saat stop: {e}")
         self.state.status = PlayerStatus.IDLE
         _LOG_STATS.is_playing = False
         self.state.current_track = None
@@ -230,10 +265,12 @@ class PlaybackController:
                     await self.mpv.pause()
                     self.state.current_track = None
                     self.state.status = PlayerStatus.IDLE
+                    self._retry_count = 0
                     _LOG_STATS.is_playing = False
 
                 if mode == PlaybackMode.RADIO:
                     self.state.status = PlayerStatus.LOADING
+                    self._retry_count = 0
                     should_activate_radio = True
 
                 await self.bus.publish(LogMessageEvent(message=f"Mode diubah ke {mode.name}"))

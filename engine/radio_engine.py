@@ -11,18 +11,16 @@ Publishes: QUEUE_UPDATED, LOG_MESSAGE
 
 import asyncio
 import random
-import re
-import logging
-import structlog
 from typing import TYPE_CHECKING, Optional
 
-from core.events import QueueUpdatedEvent, LogMessageEvent
+import structlog
 
+from core.events import LogMessageEvent, QueueUpdatedEvent
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController
-from core.state import AppState, PlaybackMode, PlayerStatus
 from core.ports import MediaExtractorPort
+from core.state import AppState, PlayerStatus
 from core.task_utils import safe_create_task
 
 _log = structlog.get_logger(__name__)
@@ -186,10 +184,10 @@ class RadioMode:
                     timeout=30.0
                 )
                 if extra:
-                    self.state.radio_queue.extend(extra)
-                    while len(self.state.radio_queue) > 30:
-                        self.state.radio_queue.pop()
-                    await controller.bus.publish(QueueUpdatedEvent())
+                    tracks_to_add = extra[:max(0, 30 - len(self.state.radio_queue))]
+                    if tracks_to_add:
+                        self.state.radio_queue.extend(tracks_to_add)
+                        await controller.bus.publish(QueueUpdatedEvent())
             except Exception as e:
                 _log.warning(f"Radio backfill gagal: {e}")
 

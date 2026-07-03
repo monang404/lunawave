@@ -14,7 +14,11 @@ Schema:
     artist_seeds   — lagu populer per artis (buat seed yt-dlp)
 """
 
-import sqlite3, json, argparse, os, sys
+import argparse
+import json
+import os
+import sqlite3
+import sys
 from pathlib import Path
 
 parser = argparse.ArgumentParser()

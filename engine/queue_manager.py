@@ -5,9 +5,10 @@ Publishes: QUEUE_UPDATED
 """
 
 
+from typing import TYPE_CHECKING
+
 from core.events import QueueUpdatedEvent
 from core.state import PlayerStatus
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController

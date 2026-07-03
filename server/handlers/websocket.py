@@ -1,23 +1,40 @@
 # PATCHLOG_APPLIED
 import json
 import time
-import structlog
-import re
-from aiohttp import web
+
 import aiohttp
+import structlog
+from aiohttp import web
+
 from config import TRUSTED_PROXY
-from core.observability import ACTIVE_WEBSOCKETS
 from core.command_bus import (
-    command_bus, CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE,
-    CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET,
-    CMD_DOWNLOAD, CMD_SET_MODE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK, CMD_QUEUE_SELECT,
-    CMD_QUEUE_ADD, CMD_QUEUE_REPLACE, CMD_QUEUE_REMOVE, CMD_QUEUE_REORDER, CMD_RADIO_RANDOMIZE, CMD_LYRICS_OFFSET
+    CMD_DOWNLOAD,
+    CMD_LYRICS_OFFSET,
+    CMD_NEXT,
+    CMD_PLAY_TRACK,
+    CMD_PREV,
+    CMD_QUEUE_ADD,
+    CMD_QUEUE_REMOVE,
+    CMD_QUEUE_REORDER,
+    CMD_QUEUE_REPLACE,
+    CMD_QUEUE_SELECT,
+    CMD_RADIO_RANDOMIZE,
+    CMD_SEEK,
+    CMD_SET_MODE,
+    CMD_SET_OUTPUT,
+    CMD_SET_SPONSORBLOCK,
+    CMD_STOP,
+    CMD_TOGGLE_PAUSE,
+    CMD_VOLUME_DOWN,
+    CMD_VOLUME_SET,
+    CMD_VOLUME_UP,
 )
-from core.state import PlaybackMode, AudioOutput
-from server.serializers import state_to_dict, dict_to_track, track_to_dict
-from server.middleware import check_rate_limit
+from core.observability import ACTIVE_WEBSOCKETS
+from core.state import AudioOutput, PlaybackMode
 from server.handlers.auth import handle_auth, require_auth
-from services.discover_service import DiscoverService
+from server.middleware import check_rate_limit
+from server.serializers import VIDEO_ID_REGEX, dict_to_track, state_to_dict, track_to_dict
+from server.services.discover_service import DiscoverService
 
 logger = structlog.get_logger(__name__)
 from core.log_config import STATS as _LOG_STATS
@@ -58,18 +75,15 @@ class ConnectionManager:
             try:
                 await ws.send_str(data)
                 return None
-            except Exception as e:
-                return e
+            except Exception:
+                return ws
 
-        results = await asyncio.gather(*(send(ws) for ws in self.active_connections), return_exceptions=True)
-        
-        dead = []
-        for i, res in enumerate(results):
-            if isinstance(res, Exception):
-                dead.append(self.active_connections[i])
-                
-        for ws in dead:
-            self.disconnect(ws)
+        targets = list(self.active_connections)
+        results = await asyncio.gather(*(send(ws) for ws in targets))
+
+        for dead_ws in results:
+            if dead_ws is not None:
+                self.disconnect(dead_ws)
 
 async def ws_handler(request):
     playback_controller = request.app["playback_controller"]
@@ -77,6 +91,7 @@ async def ws_handler(request):
     manager = request.app["manager"]
     db = request.app["db"]
     ytdlp = request.app["ytdlp"]
+    command_bus = request.app["command_bus"]
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -101,7 +116,7 @@ async def ws_handler(request):
                 client_ip = request.remote
                 if TRUSTED_PROXY and "X-Forwarded-For" in request.headers:
                     client_ip = request.headers.get("X-Forwarded-For").split(",")[0].strip()
-                await handle_ws_message(data, ws, client_ip, state, ytdlp, manager, db)
+                await handle_ws_message(data, ws, client_ip, state, ytdlp, manager, db, command_bus)
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
     except Exception as e:
@@ -134,7 +149,7 @@ async def broadcast_discover_data(manager, db):
     payload = await _build_discover_payload(db)
     await manager.broadcast(payload)
 
-_ws_handlers = {}
+_ws_handlers = {}  # type: ignore
 
 def register_ws_handler(action: str):
     def decorator(func):
@@ -143,7 +158,7 @@ def register_ws_handler(action: str):
     return decorator
 
 @register_ws_handler("search")
-async def _handle_search(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_search(data, ws, state, ytdlp, manager, db, command_bus):
     query = data.get("query", "").strip()
     if query:
         results = await ytdlp.search(query, max_results=10)
@@ -153,14 +168,14 @@ async def _handle_search(data, ws, client_ip, state, ytdlp, manager, db):
         }, ensure_ascii=False))
 
 @register_ws_handler("discover")
-async def _handle_discover(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_discover(data, ws, state, ytdlp, manager, db, command_bus):
     payload = await _build_discover_payload(db)
     await ws.send_str(json.dumps(payload, ensure_ascii=False))
 
 @register_ws_handler("toggle_favorite")
-async def _handle_toggle_favorite(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_bus):
     video_id = data.get("video_id")
-    if video_id:
+    if video_id and VIDEO_ID_REGEX.match(str(video_id)):
         is_fav = await db.toggle_favorite(video_id)
         await ws.send_str(json.dumps({
             "type": "favorite_status",
@@ -179,7 +194,7 @@ async def _handle_toggle_favorite(data, ws, client_ip, state, ytdlp, manager, db
         await broadcast_discover_data(manager, db)
 
 @register_ws_handler("enqueue_genre_songs")
-async def _handle_enqueue_genre_songs(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_enqueue_genre_songs(data, ws, state, ytdlp, manager, db, command_bus):
     genre_name = data.get("genre")
     if genre_name:
         await db.increment_genre_click(genre_name)
@@ -190,57 +205,58 @@ async def _handle_enqueue_genre_songs(data, ws, client_ip, state, ytdlp, manager
             await command_bus.execute(CMD_QUEUE_SELECT, 0)
 
 @register_ws_handler("play_track")
-async def _handle_play_track(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_play_track(data, ws, state, ytdlp, manager, db, command_bus):
     track = dict_to_track(data)
     if track:
         await command_bus.execute(CMD_PLAY_TRACK, track)
 
 @register_ws_handler("toggle_pause")
-async def _handle_toggle_pause(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_toggle_pause(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_TOGGLE_PAUSE)
 
 @register_ws_handler("next")
-async def _handle_next(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_next(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_NEXT, data)
 
 @register_ws_handler("prev")
-async def _handle_prev(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_prev(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_PREV)
 
 @register_ws_handler("stop")
-async def _handle_stop(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_stop(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_STOP)
 
 @register_ws_handler("seek")
-async def _handle_seek(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_seek(data, ws, state, ytdlp, manager, db, command_bus):
     position = data.get("position", 0)
     await command_bus.execute(CMD_SEEK, float(position))
 
 @register_ws_handler("volume_up")
-async def _handle_volume_up(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_volume_up(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_VOLUME_UP)
 
 @register_ws_handler("volume_down")
-async def _handle_volume_down(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_volume_down(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(CMD_VOLUME_DOWN)
 
 @register_ws_handler("volume_set")
-async def _handle_volume_set(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_volume_set(data, ws, state, ytdlp, manager, db, command_bus):
     vol = data.get("volume", 80)
     await command_bus.execute(CMD_VOLUME_SET, {"volume": int(vol)})
 
 @register_ws_handler("download")
-async def _handle_download(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_download(data, ws, state, ytdlp, manager, db, command_bus):
     track = dict_to_track(data) if data else None
     await command_bus.execute(CMD_DOWNLOAD, track)
 
 @register_ws_handler("delete_download")
-async def _handle_delete_download(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_delete_download(data, ws, state, ytdlp, manager, db, command_bus):
     track = dict_to_track(data) if data else None
     if track and track.video_id:
         db_track = await db.get_track(track.video_id)
         if db_track and db_track.local_path:
             import os
+
             from core.utils import user_download_path
 
             if os.path.exists(db_track.local_path):
@@ -273,35 +289,35 @@ async def _handle_delete_download(data, ws, client_ip, state, ytdlp, manager, db
             })
 
 @register_ws_handler("set_mode")
-async def _handle_set_mode(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_set_mode(data, ws, state, ytdlp, manager, db, command_bus):
     mode_str = data.get("mode", "queue").upper()
     mode = PlaybackMode.RADIO if mode_str == "RADIO" else PlaybackMode.QUEUE
     await command_bus.execute(CMD_SET_MODE, mode)
 
 @register_ws_handler("queue_select")
-async def _handle_queue_select(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_queue_select(data, ws, state, ytdlp, manager, db, command_bus):
     index = data.get("index", 0)
     await command_bus.execute(CMD_QUEUE_SELECT, int(index))
 
 @register_ws_handler("queue_remove")
-async def _handle_queue_remove(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_queue_remove(data, ws, state, ytdlp, manager, db, command_bus):
     index = data.get("index", 0)
     await command_bus.execute(CMD_QUEUE_REMOVE, int(index))
 
 @register_ws_handler("queue_add")
-async def _handle_queue_add(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_queue_add(data, ws, state, ytdlp, manager, db, command_bus):
     track = dict_to_track(data)
     if track:
         await command_bus.execute(CMD_QUEUE_ADD, track)
 
 @register_ws_handler("queue_reorder")
-async def _handle_queue_reorder(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_queue_reorder(data, ws, state, ytdlp, manager, db, command_bus):
     from_idx = int(data.get("from_index", 0))
     to_idx = int(data.get("to_index", 0))
     await command_bus.execute(CMD_QUEUE_REORDER, {"from_index": from_idx, "to_index": to_idx})
 
 @register_ws_handler("enqueue_artist_songs")
-async def _handle_enqueue_artist_songs(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_enqueue_artist_songs(data, ws, state, ytdlp, manager, db, command_bus):
     artist_name = data.get("artist")
     if artist_name:
         songs = await db.get_artist_songs_strict(artist=artist_name, limit=10)
@@ -312,27 +328,27 @@ async def _handle_enqueue_artist_songs(data, ws, client_ip, state, ytdlp, manage
             await command_bus.execute(CMD_PLAY_TRACK, first_track)
 
 @register_ws_handler("radio_randomize")
-async def _handle_radio_randomize(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_radio_randomize(data, ws, state, ytdlp, manager, db, command_bus):
     seed_artist = data.get("seed_artist")
     await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
 
 @register_ws_handler("set_output")
-async def _handle_set_output(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_set_output(data, ws, state, ytdlp, manager, db, command_bus):
     output_str = data.get("output", "device")
     output_val = AudioOutput.BROWSER if output_str == "browser" else AudioOutput.DEVICE
     await command_bus.execute(CMD_SET_OUTPUT, output_val)
 
 @register_ws_handler("set_sponsorblock")
-async def _handle_set_sponsorblock(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_set_sponsorblock(data, ws, state, ytdlp, manager, db, command_bus):
     enabled = data.get("enabled", True)
     await command_bus.execute(CMD_SET_SPONSORBLOCK, bool(enabled))
 
 @register_ws_handler("lyrics_offset")
-async def _handle_lyrics_offset(data, ws, client_ip, state, ytdlp, manager, db):
+async def _handle_lyrics_offset(data, ws, state, ytdlp, manager, db, command_bus):
     offset = data.get("offset", 0.0)
     await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})
 
-async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db):
+async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db, command_bus):
     msg_type = msg.get("type")
     action = msg.get("action", "")
     data = msg.get("data", {})
@@ -361,7 +377,7 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
     try:
         if action in _ws_handlers:
-            await _ws_handlers[action](data, ws, client_ip, state, ytdlp, manager, db)
+            await _ws_handlers[action](data, ws, state, ytdlp, manager, db, command_bus)
         else:
             logger.warning(f"Unknown WS action: {action}")
     except Exception as e:
