@@ -5,24 +5,28 @@ Publishes: LOG_MESSAGE, DOWNLOAD_COMPLETE
 """
 
 import asyncio
+
 import structlog
+
+from core.command_bus import CMD_DOWNLOAD
 from core.event_bus import EventBus
-from core.events import LogMessageEvent, DownloadCompleteEvent
-from core.command_bus import command_bus, CMD_DOWNLOAD
-from core.state import AppState, TrackInfo
+from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.ports import MediaExtractorPort
+from core.state import AppState, TrackInfo
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
 
 class DownloadManager:
-    def __init__(self, bus: EventBus, state: AppState, ytdlp: MediaExtractorPort):
+    def __init__(self, bus: EventBus, command_bus, state: AppState, ytdlp: MediaExtractorPort):
         self.bus = bus
+        self.command_bus = command_bus
         self.state = state
         self.ytdlp = ytdlp
         self._download_lock = asyncio.Lock()
+        self._downloading_ids: set[str] = set()
 
-        command_bus.register(CMD_DOWNLOAD, self._on_download)
+        self.command_bus.register(CMD_DOWNLOAD, self._on_download)
 
     async def _on_download(self, track: TrackInfo | None = None):
         target = track or self.state.current_track
@@ -34,10 +38,11 @@ class DownloadManager:
             await self.bus.publish(LogMessageEvent(message="Lagu sudah tersimpan lokal"))
             return
 
-        if self._download_lock.locked():
+        if target.video_id in self._downloading_ids:
             await self.bus.publish(LogMessageEvent(message="Download sedang berjalan, tunggu selesai."))
             return
 
+        self._downloading_ids.add(target.video_id)
         safe_create_task(self._do_download(target), name=f"download_{target.video_id}")
 
     async def _do_download(self, track: TrackInfo):
@@ -61,8 +66,9 @@ class DownloadManager:
                 self.state.download_progress = None
 
                 import shutil
+
                 from core.utils import user_download_path
-                
+
                 user_path = user_download_path(track.artist, track.title)
                 user_path.parent.mkdir(exist_ok=True)
                 if not user_path.exists():
@@ -75,6 +81,8 @@ class DownloadManager:
                 self.state.download_progress = None
                 logger.error(f"Download error: {e}", exc_info=True)
                 await self.bus.publish(LogMessageEvent(message=f"Download gagal: {str(e)}"))
+            finally:
+                self._downloading_ids.discard(track.video_id)
 
     def _update_progress(self, percent: float):
         self.state.download_progress = percent

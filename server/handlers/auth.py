@@ -1,9 +1,11 @@
 import json
-import time
 import secrets
-from config import ADMIN_USERNAME, ADMIN_PASSWORD
-from core.security import verify_password
+
+from config import ADMIN_PASSWORD, ADMIN_USERNAME
 from core.constants import MAX_LOGIN_ATTEMPTS
+from core.security import verify_password
+
+
 def _prune_stale_ips(manager, now: float) -> None:
     """Hapus entry IP yang sudah melewati window dari kedua dict rate-limit.
     Dipanggil tiap handle_auth agar dict tidak tumbuh tanpa batas (memory leak).
@@ -36,13 +38,10 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
                 }))
                 return
 
-        attempts = manager.login_attempts.get(client_ip, [])
-        attempts = [t for t in attempts if now - t < 300]
-        if not attempts:
-            manager.login_attempts.pop(client_ip, None)
-        else:
-            manager.login_attempts[client_ip] = attempts
+        attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < 300]
+
         if len(attempts) >= MAX_LOGIN_ATTEMPTS:
+            manager.login_attempts[client_ip] = attempts
             await ws.send_str(json.dumps({
                 "type": "auth_status",
                 "data": {"success": False, "message": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}
@@ -56,8 +55,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
             if db:
                 await db.create_session(new_token, int(now) + 86400)
             manager.authenticated_connections.add(ws)
-            if client_ip in manager.login_attempts:
-                del manager.login_attempts[client_ip]
+            manager.login_attempts.pop(client_ip, None)
             await ws.send_str(json.dumps({
                 "type": "auth_status",
                 "data": {"success": True, "token": new_token}

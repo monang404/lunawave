@@ -1,9 +1,11 @@
-import pytest
-import asyncio
+from dataclasses import dataclass
 from unittest.mock import Mock
+
+import pytest
+
 from core.event_bus import EventBus
 from core.events import DomainEvent
-from dataclasses import dataclass
+
 
 @dataclass
 class TestEvent(DomainEvent):

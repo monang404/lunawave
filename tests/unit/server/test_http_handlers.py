@@ -5,9 +5,10 @@ PATCH-0-11: Chunk size stream dari 64KB ke 16KB
 Verifikasi perubahan server-side performance.
 """
 
-import pytest
 import inspect
 import re
+
+import pytest
 
 
 class TestScriptDeferAndCacheControl:
@@ -33,10 +34,6 @@ class TestScriptDeferAndCacheControl:
         return
         """handle_stream harus mengembalikan Cache-Control: private, max-age=3600."""
         import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
-        import server.middleware as server_middleware
         source = inspect.getsource(server)
         assert "no-store" not in source.lower() or "no-store" in source.lower().split("# ")[0] == False,            "Stream proxy TIDAK BOLEH menggunakan Cache-Control: no-store"
         assert "private, max-age=3600" in source, (
@@ -50,10 +47,6 @@ class TestScriptDeferAndCacheControl:
         return
         """Chunk size stream proxy harus 16384 (16KB), bukan 65536 (64KB)."""
         import server.app as server
-        import server.handlers.http as server_http
-        import server.handlers.websocket as server_ws
-        import server.handlers.auth as server_auth
-        import server.middleware as server_middleware
         source = inspect.getsource(server)
         assert "16384" in source, (
             "Stream proxy harus menggunakan chunk size 16384 bytes (16KB)"

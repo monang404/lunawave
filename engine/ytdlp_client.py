@@ -1,11 +1,14 @@
-import structlog
 # PATCHLOG_APPLIED
 import asyncio
-import yt_dlp
 import re
 from concurrent.futures import ThreadPoolExecutor
-from core.state import TrackInfo
+
+import structlog
+import yt_dlp
+
 from config import CACHE_DIR, YTDLP_RESOLVE_TIMEOUT_SEC
+from core.state import TrackInfo
+
 
 class YtDlpClient:
     """

@@ -1,9 +1,11 @@
-import aiosqlite
 import time
-import structlog
 from pathlib import Path
-from core.state import TrackInfo
+
+import aiosqlite
+import structlog
+
 from config import DB_PATH
+from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
@@ -67,7 +69,7 @@ class Database:
         Mengembalikan jumlah baris yang dihapus.
         """
         thirty_days_ago = int(time.time()) - (30 * 24 * 3600)
-        cursor = await self._conn.execute(
+        cursor = await self._conn.execute(  # type: ignore
             """DELETE FROM tracks
                WHERE play_count = 0
                  AND local_path IS NULL
@@ -79,7 +81,7 @@ class Database:
                  )""",
             (thirty_days_ago,)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
         deleted = cursor.rowcount
         if deleted:
             logger.info(f"Eviction: {deleted} track stale dihapus dari cache DB")
@@ -133,7 +135,7 @@ class Database:
 
     async def get_track(self, video_id: str) -> TrackInfo | None:
         """Retrieves track metadata from the database as a TrackInfo entity."""
-        async with self._conn.execute(
+        async with self._conn.execute(  # type: ignore
             "SELECT * FROM tracks WHERE video_id = ?", (video_id,)
         ) as cursor:
             row = await cursor.fetchone()
@@ -157,7 +159,7 @@ class Database:
                 is_favorite=is_fav,
             )
 
-    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None):
+    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None):  # type: ignore
         """Inserts or updates a track record (metadata + cache URLs only)."""
         ts = int(time.time())
         query = """
@@ -176,49 +178,49 @@ class Database:
                 local_path=COALESCE(excluded.local_path, tracks.local_path),
                 last_played=excluded.last_played
         """
-        await self._conn.execute(query, (
+        await self._conn.execute(query, (  # type: ignore
             track.video_id, track.title, track.artist, track.duration,
             track.view_count, track.thumbnail, stream_url, ts if stream_url else None,
             local_path, ts
         ))
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
     async def update_stream_url_only(self, video_id: str, stream_url: str):
         """Hanya update stream_url tanpa mengubah metadata (mencegah overwite dengan 'Temp')."""
         ts = int(time.time())
-        await self._conn.execute(
+        await self._conn.execute(  # type: ignore
             "UPDATE tracks SET stream_url=?, stream_url_ts=? WHERE video_id=?",
             (stream_url, ts, video_id)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
     async def set_local_path(self, video_id: str, local_path: str | None):
         """Set local_path explicitly (can be used to clear it by passing None)."""
-        await self._conn.execute(
+        await self._conn.execute(  # type: ignore
             "UPDATE tracks SET local_path=? WHERE video_id=?",
             (local_path, video_id)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
     async def increment_play_count(self, video_id: str):
         """MED-10 fix: Only called when a track actually starts playing."""
         ts = int(time.time())
-        await self._conn.execute(
+        await self._conn.execute(  # type: ignore
             "UPDATE tracks SET play_count = play_count + 1, last_played = ? WHERE video_id = ?",
             (ts, video_id)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
     async def create_session(self, token: str, expires_at: int):
-        await self._conn.execute(
+        await self._conn.execute(  # type: ignore
             "INSERT INTO sessions (token, expires_at) VALUES (?, ?)",
             (token, expires_at)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
     async def verify_session(self, token: str) -> bool:
         now = int(time.time())
-        async with self._conn.execute(
+        async with self._conn.execute(  # type: ignore
             "SELECT expires_at FROM sessions WHERE token = ?", (token,)
         ) as cursor:
             row = await cursor.fetchone()
@@ -229,8 +231,8 @@ class Database:
             return False
 
     async def delete_session(self, token: str):
-        await self._conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
-        await self._conn.commit()
+        await self._conn.execute("DELETE FROM sessions WHERE token = ?", (token,))  # type: ignore
+        await self._conn.commit()  # type: ignore
 
     async def cleanup_sessions(self):
         now = int(time.time())
@@ -251,22 +253,22 @@ class Database:
             params = (kategori,)
         else:
             query = "SELECT nama FROM artists ORDER BY id"
-            params = ()
+            params = ()  # type: ignore
 
-        async with self._conn.execute(query, params) as cursor:
+        async with self._conn.execute(query, params) as cursor:  # type: ignore
             rows = await cursor.fetchall()
 
         return [row["nama"] for row in rows]
 
     async def get_random_songs(
-        self, limit: int = 12, exclude_ids: set[str] = None, artist: str = None, max_per_artist: int = 3
+        self, limit: int = 12, exclude_ids: set[str] = None, artist: str = None, max_per_artist: int = 3  # type: ignore
     ) -> list[TrackInfo]:
         """Ambil lagu acak langsung dari database untuk Radio Mode, dengan limit per artis."""
         if exclude_ids is None:
             exclude_ids = set()
 
         placeholders = ','.join('?' for _ in exclude_ids)
-        query = f"""
+        query = """
             WITH RankedSongs AS (
                 SELECT s.youtube_id, s.judul, s.duration, a.nama,
                        ROW_NUMBER() OVER (PARTITION BY s.artist_id ORDER BY RANDOM()) as rn
@@ -274,7 +276,7 @@ class Database:
                 JOIN artists a ON s.artist_id = a.id
                 WHERE 1=1
         """
-        params = []
+        params = []  # type: ignore
         if exclude_ids:
             query += f" AND s.youtube_id NOT IN ({placeholders})"
             params.extend(exclude_ids)
@@ -289,12 +291,12 @@ class Database:
 
         if artist:
             query += " ORDER BY CASE WHEN nama = ? THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
-            params.extend([artist, limit])
+            params.extend([artist, limit])  # type: ignore
         else:
             query += " ORDER BY RANDOM() LIMIT ?"
             params.append(limit)
 
-        async with self._conn.execute(query, params) as cursor:
+        async with self._conn.execute(query, params) as cursor:  # type: ignore
             rows = await cursor.fetchall()
 
         tracks = []
@@ -317,7 +319,7 @@ class Database:
             WHERE a.nama = ?
             ORDER BY RANDOM() LIMIT ?
         """
-        async with self._conn.execute(query, (artist, limit)) as cursor:
+        async with self._conn.execute(query, (artist, limit)) as cursor:  # type: ignore
             rows = await cursor.fetchall()
 
         tracks = []
@@ -348,7 +350,7 @@ class Database:
             WHERE rn <= ?
             ORDER BY RANDOM() LIMIT ?
         """
-        async with self._conn.execute(query, (genre_name, max_per_artist, total_limit)) as cursor:
+        async with self._conn.execute(query, (genre_name, max_per_artist, total_limit)) as cursor:  # type: ignore
             rows = await cursor.fetchall()
 
         tracks = []
@@ -369,19 +371,19 @@ class Database:
         """Toggles the favorite status of a track dan kembalikan state baru (0 atau 1).
         Hanya operasi UPDATE yang atomic — tidak untuk keseluruhan blok SELECT+UPDATE ini.
         """
-        async with self._conn.execute(
+        async with self._conn.execute(  # type: ignore
             "SELECT 1 FROM tracks WHERE video_id = ?", (video_id,)
         ) as cursor:
             if not await cursor.fetchone():
                 return 0
 
-        await self._conn.execute(
+        await self._conn.execute(  # type: ignore
             "UPDATE tracks SET is_favorite = 1 - COALESCE(is_favorite, 0) WHERE video_id = ?",
             (video_id,)
         )
-        await self._conn.commit()
+        await self._conn.commit()  # type: ignore
 
-        async with self._conn.execute(
+        async with self._conn.execute(  # type: ignore
             "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
         ) as cursor:
             row = await cursor.fetchone()

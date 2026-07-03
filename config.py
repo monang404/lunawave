@@ -55,6 +55,7 @@ else:
             ADMIN_PASSWORD = f.read().strip()
     else:
         import secrets
+
         from core.security import hash_password
 
         raw_password = secrets.token_urlsafe(12)
@@ -68,7 +69,7 @@ else:
         except OSError:
             pass
 
-        print(f"\n==========================================")
+        print("\n==========================================")
         print(f"PASSWORD ADMIN GENERATED: {raw_password}")
-        print(f"Harap simpan password ini! Tidak akan ditampilkan lagi.")
-        print(f"==========================================\n")
+        print("Harap simpan password ini! Tidak akan ditampilkan lagi.")
+        print("==========================================\n")

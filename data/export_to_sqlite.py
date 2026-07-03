@@ -1,6 +1,7 @@
 import json
-import sqlite3
 import os
+import sqlite3
+
 
 def create_tables(cursor):
     cursor.execute('DROP TABLE IF EXISTS songs')

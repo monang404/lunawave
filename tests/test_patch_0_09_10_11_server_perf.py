@@ -5,9 +5,10 @@ PATCH-0-11: Chunk size stream dari 64KB ke 16KB
 Verifikasi perubahan server-side performance.
 """
 
-import pytest
 import inspect
 import re
+
+import pytest
 
 
 class TestScriptDeferAndCacheControl:

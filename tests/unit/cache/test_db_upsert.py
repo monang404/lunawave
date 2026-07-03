@@ -4,11 +4,10 @@ Verifikasi bahwa db.update_stream_url_only() ada dan tidak
 menimpa metadata track (title, artist, duration).
 """
 
+import asyncio
+
 import pytest
 import pytest_asyncio
-import asyncio
-import time
-from pathlib import Path
 
 from cache.db import Database
 from core.state import TrackInfo

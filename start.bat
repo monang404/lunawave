@@ -102,10 +102,26 @@ echo.
 echo  [*] Starting Server...
 ping 127.0.0.1 -n 2 > nul
 
+:restart_loop
 python main.py
+set EXIT_CODE=%ERRORLEVEL%
 echo.
-if %ERRORLEVEL% neq 0 (
-    echo  [X] Server terminated with error code: %ERRORLEVEL%
-    echo      Please check the application logs for details.
+
+if %EXIT_CODE% equ 0 (
+    echo  [+] Server stopped gracefully.
+    goto end
 )
+:: Catch SIGINT / KeyboardInterrupt commonly exits with 130 or -1073741510 on windows sometimes, 
+:: but we'll try catching specific codes or if user stops it.
+if %EXIT_CODE% equ 130 (
+    echo  [+] Server stopped by user (Ctrl+C).
+    goto end
+)
+
+echo  [X] Server crashed with error code: %EXIT_CODE%.
+echo  [!] Restarting in 5 seconds... Press Ctrl+C to cancel.
+ping 127.0.0.1 -n 6 > nul
+goto restart_loop
+
+:end
 pause

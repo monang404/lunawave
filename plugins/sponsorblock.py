@@ -1,13 +1,14 @@
 import json
+from typing import Optional
+
 import aiohttp
 import structlog
-from typing import Optional
+
 from config import SPONSORBLOCK_CATS
 from core.event_bus import EventBus
-from core.events import TrackProgressEvent, LogMessageEvent
-from core.state import AppState
+from core.events import LogMessageEvent, TrackProgressEvent
 from core.ports import AudioPlayerPort
-from core.task_utils import safe_create_task
+from core.state import AppState
 
 logger = structlog.get_logger(__name__)
 SPONSORBLOCK_API = "https://sponsor.ajay.app/api/skipSegments"
@@ -17,15 +18,15 @@ class SponsorBlockHandler:
     HIGH-02 fix: Uses json.dumps for category serialization.
     MED-01 fix: Accepts a shared aiohttp session.
     """
-    def __init__(self, mpv: AudioPlayerPort, state: AppState, session: Optional[aiohttp.ClientSession] = None, event_bus: EventBus = None):
+    def __init__(self, mpv: AudioPlayerPort, state: AppState, session: Optional[aiohttp.ClientSession] = None, event_bus: EventBus = None):  # type: ignore
+        if session is None:
+            raise RuntimeError("aiohttp.ClientSession must be injected")
+        if event_bus is None:
+            raise RuntimeError("EventBus must be injected")
         self.mpv = mpv
         self.state = state
         self.segments: list[tuple[float, float]] = []
         self._session = session
-        # Injected bus (fallback ke global bus)
-        if event_bus is None:
-            from core.event_bus import bus as _global_bus
-            event_bus = _global_bus
         self._bus = event_bus
         self._bus.subscribe(TrackProgressEvent, self._on_progress)
 
@@ -41,24 +42,18 @@ class SponsorBlockHandler:
         }
 
         try:
-            session = self._session or aiohttp.ClientSession()
-            close_after = self._session is None
-            try:
-                async with session.get(
-                    SPONSORBLOCK_API, params=params,
-                    timeout=aiohttp.ClientTimeout(total=3)
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        self.segments = [
-                            (seg["segment"][0], seg["segment"][1]) for seg in data
-                        ]
-                        logger.info(f"SponsorBlock: {len(self.segments)} segments for {video_id}")
-                    elif resp.status == 404:
-                        pass
-            finally:
-                if close_after:
-                    await session.close()
+            async with self._session.get(
+                SPONSORBLOCK_API, params=params,
+                timeout=aiohttp.ClientTimeout(total=3)
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    self.segments = [
+                        (seg["segment"][0], seg["segment"][1]) for seg in data
+                    ]
+                    logger.info(f"SponsorBlock: {len(self.segments)} segments for {video_id}")
+                elif resp.status == 404:
+                    pass
         except Exception as e:
             logger.debug(f"SponsorBlock fetch failed: {e}")
 

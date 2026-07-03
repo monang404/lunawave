@@ -1,6 +1,7 @@
+import base64
 import hashlib
 import secrets
-import base64
+
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)

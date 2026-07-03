@@ -8,17 +8,18 @@ Publishes: CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
 """
 
 import asyncio
-import structlog
 import os
 import shutil
 import threading
 import time
 
-from core.event_bus import EventBus
-from core.events import TrackStartedEvent, TrackPauseChangedEvent
-from core.command_bus import command_bus, CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
-from core.state import TrackInfo
+import structlog
+
 from config import BASE_DIR
+from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE
+from core.event_bus import EventBus
+from core.events import TrackPauseChangedEvent, TrackStartedEvent
+from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
@@ -34,8 +35,9 @@ _TOKEN_TO_EVENT = {
 
 
 class TermuxNowPlaying:
-    def __init__(self, bus: EventBus, state):
+    def __init__(self, bus: EventBus, command_bus, state):
         self.bus = bus
+        self.command_bus = command_bus
         self.state = state
         self._track: TrackInfo | None = None
         self._paused = False
@@ -44,7 +46,7 @@ class TermuxNowPlaying:
         self._stop = threading.Event()
         self._reader_thread = None
         self._fifo_path = _FIFO_PATH
-        self._action_paths = {}
+        self._action_paths = {}  # type: ignore
 
         self.bus.subscribe(TrackStartedEvent, self._on_track_started)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
@@ -95,7 +97,7 @@ class TermuxNowPlaying:
     async def _handle_token(self, token: str):
         event = _TOKEN_TO_EVENT.get(token)
         if event:
-            await command_bus.execute(event)
+            await self.command_bus.execute(event)
 
     async def _on_track_started(self, event: TrackStartedEvent):
         self._track = event.track

@@ -1,3 +1,5 @@
+from server.handlers.websocket import ConnectionManager
+
 """
 PATCH-3-05: Integration Tests (tanpa MPV nyata)
 
@@ -7,13 +9,15 @@ Menggunakan aiohttp test client dan WebSocket mock untuk menguji alur:
 - Command routing (search)
 - Endpoint /health dan /metrics
 """
-import pytest
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
-from server.app import create_app
-from engine.playback.controller import PlaybackController
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from core.ports import DatabasePort, MediaExtractorPort
-from core.state import TrackInfo, AppState, PlayerStatus
+from core.state import AppState, TrackInfo
+from engine.playback.controller import PlaybackController
+from server.app import create_app
 
 
 @pytest.fixture
@@ -49,7 +53,10 @@ def mock_playback_controller(mock_db, mock_ytdlp):
 @pytest.mark.asyncio
 async def test_e2e_health_endpoint(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-05: Verifikasi endpoint /health."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     resp = await client.get("/health")
@@ -62,7 +69,10 @@ async def test_e2e_health_endpoint(aiohttp_client, mock_playback_controller, moc
 @pytest.mark.asyncio
 async def test_e2e_metrics_endpoint(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-04: Verifikasi endpoint /metrics tersedia (Prometheus format)."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     resp = await client.get("/metrics")
@@ -74,7 +84,10 @@ async def test_e2e_metrics_endpoint(aiohttp_client, mock_playback_controller, mo
 @pytest.mark.asyncio
 async def test_e2e_websocket_connect_initial_state(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-05: Verifikasi WS konek dan menerima initial state."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     ws = await client.ws_connect("/ws")
@@ -91,7 +104,10 @@ async def test_e2e_websocket_connect_initial_state(aiohttp_client, mock_playback
 @pytest.mark.asyncio
 async def test_e2e_websocket_auth_with_token(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-05: Verifikasi WS autentikasi token berhasil."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     ws = await client.ws_connect("/ws")
@@ -115,7 +131,10 @@ async def test_e2e_websocket_auth_with_token(aiohttp_client, mock_playback_contr
 @pytest.mark.asyncio
 async def test_e2e_websocket_search(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-05: Verifikasi WS search command mengembalikan hasil."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     ws = await client.ws_connect("/ws")
@@ -143,7 +162,10 @@ async def test_e2e_websocket_search(aiohttp_client, mock_playback_controller, mo
 @pytest.mark.asyncio
 async def test_e2e_websocket_unauthenticated_command_rejected(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
     """PATCH-3-05: Verifikasi command ditolak bila belum autentikasi."""
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
     client = await aiohttp_client(app)
 
     ws = await client.ws_connect("/ws")

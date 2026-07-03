@@ -3,7 +3,6 @@ PATCH-1-06: Timeout + circuit breaker di _gather_batch() radio
 Verifikasi bahwa radio mode memiliki timeout di _gather_batch dan retry logic.
 """
 
-import pytest
 import inspect
 
 from engine.radio_engine import RadioMode

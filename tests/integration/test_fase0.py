@@ -8,9 +8,9 @@ Jalankan dengan: pytest tests/test_patch_fase0_quick_wins.py -v
 import asyncio
 import inspect
 import time
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 
 # TASK-0.1 — _TITLE_NOISE_WORDS harus frozenset
 
@@ -53,8 +53,8 @@ class TestTask02RetryCountReset:
 
     def _make_controller(self):
         """Buat PlaybackController minimal dengan semua dependency di-mock."""
-        from engine.playback import PlaybackController
         from core.state import AppState
+        from engine.playback import PlaybackController
 
         mock_bus = AsyncMock()
         mock_bus.subscribe = MagicMock()
@@ -94,8 +94,9 @@ class TestTask02RetryCountReset:
     @pytest.mark.asyncio
     async def test_retry_count_reset_before_mpv_pause(self):
         """Reset harus terjadi di awal method (baris pertama)."""
-        from engine.playback import PlaybackController
         import inspect
+
+        from engine.playback import PlaybackController
         source = inspect.getsource(PlaybackController._on_stop)
         lines = [l.strip() for l in source.splitlines() if l.strip()]
         body_lines = [l for l in lines if not l.startswith("async def") and not l.startswith("\"\"\"")]
@@ -106,7 +107,7 @@ class TestTask02RetryCountReset:
     @pytest.mark.asyncio
     async def test_on_stop_clears_state(self):
         """_on_stop tetap membersihkan state lainnya dengan benar."""
-        from core.state import PlayerStatus, TrackInfo
+        from core.state import PlayerStatus
         ctrl = self._make_controller()
         ctrl.state.current_track = MagicMock()
         ctrl._retry_count = 3
@@ -124,8 +125,8 @@ class TestTask03RadioBgTasksCancel:
     """TASK-0.3: Semua _bg_tasks harus di-cancel saat on_deactivated dipanggil."""
 
     def _make_radio_mode(self):
-        from engine.radio_engine import RadioMode
         from core.state import AppState
+        from engine.radio_engine import RadioMode
         state = AppState()
         ytdlp = MagicMock()
         radio = RadioMode(ytdlp, state)
@@ -161,7 +162,6 @@ class TestTask03RadioBgTasksCancel:
     @pytest.mark.asyncio
     async def test_radio_queue_cleared_on_deactivated(self):
         """radio_queue tetap dibersihkan seperti sebelumnya."""
-        from core.state import TrackInfo
         radio, state = self._make_radio_mode()
 
         state.radio_queue.append(MagicMock())
@@ -206,8 +206,8 @@ class TestTask04DownloadSignature:
     @pytest.mark.asyncio
     async def test_callable_with_none_track(self):
         """_on_download bisa dipanggil dengan None tanpa TypeError."""
-        from engine.download_manager import DownloadManager
         from core.state import AppState
+        from engine.download_manager import DownloadManager
 
         mock_bus = AsyncMock()
         mock_bus.publish = AsyncMock()
@@ -216,9 +216,12 @@ class TestTask04DownloadSignature:
 
         mgr = DownloadManager.__new__(DownloadManager)
         mgr.bus = mock_bus
+        mgr.command_bus = __import__("unittest.mock").mock.AsyncMock()
         mgr.state = state
         mgr.ytdlp = MagicMock()
         mgr._download_lock = asyncio.Lock()
+        mgr._downloading_ids = set()
+        mgr.command_bus.register("download", mgr._on_download)
 
         await mgr._on_download(None)
         mock_bus.publish.assert_called_once()
@@ -226,8 +229,8 @@ class TestTask04DownloadSignature:
     @pytest.mark.asyncio
     async def test_callable_via_command_bus_convention(self):
         """Simulasi pemanggilan sesuai CommandBus: handler(data)."""
-        from engine.download_manager import DownloadManager
         from core.state import AppState, TrackInfo
+        from engine.download_manager import DownloadManager
 
         mock_bus = AsyncMock()
         mock_bus.publish = AsyncMock()
@@ -235,9 +238,12 @@ class TestTask04DownloadSignature:
 
         mgr = DownloadManager.__new__(DownloadManager)
         mgr.bus = mock_bus
+        mgr.command_bus = __import__("unittest.mock").mock.AsyncMock()
         mgr.state = state
         mgr.ytdlp = MagicMock()
         mgr._download_lock = asyncio.Lock()
+        mgr._downloading_ids = set()
+        mgr.command_bus.register("download", mgr._on_download)
 
         track = TrackInfo(
             video_id="abc123", title="Test Song", artist="Test", duration=180

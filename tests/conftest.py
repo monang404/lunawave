@@ -2,12 +2,12 @@
 Shared fixtures for all unit tests.
 """
 
-import pytest
-import asyncio
-import sys
-import os
 import json
+import os
+import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -18,7 +18,7 @@ from core.log_config import setup_logging
 setup_logging()
 
 from core.event_bus import EventBus
-from core.state import AppState, TrackInfo, PlayerStatus, PlaybackMode
+from core.state import AppState, TrackInfo
 
 
 @pytest.fixture

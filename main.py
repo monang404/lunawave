@@ -1,23 +1,21 @@
 # PATCHLOG_APPLIED
 import asyncio
-import logging
-import structlog
 import stat
 import sys
-import aiohttp
-from logging.handlers import RotatingFileHandler
-from core.log_config import setup_logging
-from core.state import AppState, PlayerStatus, AudioOutput
-from core.event_bus import bus
-from engine.ytdlp_client import YtDlpClient
-from engine.mpv_controller import MpvController
-from cache.db import Database
-from engine.download_manager import DownloadManager
-from engine.command_router import CommandRouter
-from plugins.notifications import TermuxNowPlaying
-from core.task_utils import safe_create_task
 
+import aiohttp
+import structlog
+
+from cache.db import Database
 from config import BASE_DIR, WEB_HOST, WEB_PORT
+from core.log_config import setup_logging
+from core.state import AppState, PlayerStatus
+from core.task_utils import safe_create_task
+from engine.command_router import CommandRouter
+from engine.download_manager import DownloadManager
+from engine.mpv_controller import MpvController
+from engine.ytdlp_client import YtDlpClient
+from plugins.notifications import TermuxNowPlaying
 
 setup_logging()
 
@@ -27,10 +25,16 @@ try:
 except OSError:
     pass
 
-from plugins.sponsorblock import SponsorBlockHandler
 from plugins.lyrics import LyricsFetcher
+from plugins.sponsorblock import SponsorBlockHandler
+
 
 async def main():
+    from core.command_bus import CommandBus
+    from core.event_bus import EventBus
+    event_bus = EventBus()
+    command_bus = CommandBus()
+
     state = AppState()
 
     sys.stderr.write("\033[90m  [1/5]\033[0m Membuka database perpustakaan...\n")
@@ -41,12 +45,12 @@ async def main():
     ytdlp = YtDlpClient()
 
     sys.stderr.write("\033[90m  [3/5]\033[0m Menghubungkan ke audio player (MPV)...\n")
-    mpv = MpvController()
+    mpv = MpvController(event_bus=event_bus)
     try:
         await mpv.connect()
         mpv.is_available = True
     except Exception as e:
-        structlog.get_logger(__name__).error(f"mpv not available: {e}")
+        structlog.get_logger(__name__).critical(f"mpv not available: {e}")
         state.error_msg = (
             "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
             "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
@@ -56,34 +60,34 @@ async def main():
 
     http_session = aiohttp.ClientSession()
 
+    from cache.resolver import CacheResolver
+    from engine.playback.controller import PlaybackController
     from engine.queue_manager import QueueMode
     from engine.radio_engine import RadioMode
     from engine.volume_service import VolumeService
-    from engine.playback.controller import PlaybackController
-    from cache.resolver import CacheResolver
 
     resolver = CacheResolver(db, ytdlp)
 
     sponsorblock = SponsorBlockHandler(
-        mpv, state=state, session=http_session, event_bus=bus
+        mpv, state=state, session=http_session, event_bus=event_bus
     )
     lyrics_fetcher = LyricsFetcher(
-        state, session=http_session, event_bus=bus
+        state, session=http_session, event_bus=event_bus
     )
 
     queue_mode = QueueMode()
     radio_mode = RadioMode(ytdlp, state, db=db)
 
-    volume_service = VolumeService(bus, mpv, state)
+    volume_service = VolumeService(event_bus, mpv, state)
     playback_controller = PlaybackController(
-        bus, state, mpv, resolver,
+        event_bus, state, mpv, resolver,
         sponsorblock, lyrics_fetcher, queue_mode, radio_mode
     )
 
-    download_manager = DownloadManager(bus, state, ytdlp)
-    command_router = CommandRouter(playback_controller, volume_service)
+    download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)
+    command_router = CommandRouter(command_bus, playback_controller, volume_service)
 
-    nowplaying = TermuxNowPlaying(bus, state)
+    nowplaying = TermuxNowPlaying(event_bus, command_bus, state)
     await nowplaying.start()
 
     async def check_connectivity():
@@ -116,36 +120,21 @@ async def main():
 
     tasks.append(safe_create_task(db_cleanup(), name="db_cleanup"))
 
-    async def mpv_reconnect_checker():
-        while True:
-            await asyncio.sleep(5)
-            if getattr(mpv, "is_available", True) and not getattr(mpv, "is_connected", False) and state.status != PlayerStatus.ERROR:
-                structlog.get_logger(__name__).warning(f"MPV terputus! Mencoba reconnect...")
-                try:
-                    await mpv.close()
-                except Exception:
-                    pass
-                try:
-                    await mpv.connect()
-                    if state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED) and state.current_track:
-                        uri = await resolver.resolve(state.current_track)
-                        await mpv.play(uri)
-                        await mpv.seek(state.position)
-                        if getattr(state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
-                            await mpv.set_volume(0)
-                        else:
-                            await mpv.set_volume(state.volume)
-                        if state.status == PlayerStatus.PLAYING:
-                            await mpv.resume()
-                except Exception as e:
-                    structlog.get_logger(__name__).error(f"MPV reconnect failed: {e}")
 
-    tasks.append(safe_create_task(mpv_reconnect_checker(), name="mpv_reconnect_checker"))
 
     try:
         from server.app import create_app, run_server
+        from server.handlers.event_listeners import setup_event_listeners
+        from server.handlers.websocket import ConnectionManager
+        from server.services.broadcast_service import BroadcastService
+        from server.services.stream_prefetch import StreamPrefetchService
 
-        app = create_app(playback_controller, ytdlp, db)
+        manager = ConnectionManager()
+        prefetch_service = StreamPrefetchService(db, ytdlp)
+        broadcast_service = BroadcastService(manager)
+        setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
+
+        app = create_app(playback_controller, ytdlp, db, manager, command_bus=command_bus, event_bus=event_bus)
 
         host = WEB_HOST
         port = WEB_PORT
@@ -184,9 +173,9 @@ async def main():
         import traceback
         for t in tasks:
             if t.done() and not t.cancelled():
-                e = t.exception()
+                e = t.exception()  # type: ignore
                 if e:
-                    structlog.get_logger(__name__).error(f"Task {t.get_coro().__name__} crashed: {e}")
+                    structlog.get_logger(__name__).critical(f"Task {t.get_coro().__name__} crashed: {e}")
                     print(f"\n[FATAL ERROR] App crashed due to task failure: {e}")
                     traceback.print_exception(type(e), e, e.__traceback__)
 

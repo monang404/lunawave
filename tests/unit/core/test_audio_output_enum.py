@@ -1,5 +1,5 @@
-import pytest
 from core.state import AudioOutput
+
 
 def test_audio_output_enum():
     assert issubclass(AudioOutput, str)

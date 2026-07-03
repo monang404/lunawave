@@ -4,13 +4,12 @@ Replaces the default structlog renderer with a compact, ANSI-coloured format.
 Suppresses aiohttp access log spam and static-file noise.
 Writes full logs to logs/app.log for debugging.
 """
-import sys
-import os
 import logging
 import logging.handlers
-import time
+import os
+import sys
 import threading
-from pathlib import Path
+import time
 
 # psutil is optional: it fails to install on many Termux/Android setups
 # (no prebuilt wheel, needs a C compiler). The status bar simply shows
@@ -227,7 +226,8 @@ def _module_tag(name: str) -> str:
 # ── Semantic rewrite rules ───────────────────────────────────
 import re as _re
 
-def _rewrite_event(name: str, level: str, event: str, extra: dict) -> tuple[str, str]:
+
+def _rewrite_event(name: str, level: str, event: str, extra: dict) -> tuple[str, str | None]:
     """
     Returns (symbol+colour_prefix, rewritten_message).
     Applies semantic rules for ws/stream/player/cache/retry/timeout/error.
@@ -414,8 +414,9 @@ class _FileFormatter(logging.Formatter):
 
 # ── Public setup ─────────────────────────────────────────────
 def setup_logging():
-    from config import BASE_DIR
     import structlog
+
+    from config import BASE_DIR
 
     # Ensure logs/ dir
     log_dir = BASE_DIR / "logs"

@@ -4,7 +4,6 @@ Verifikasi bahwa LyricsFetcher memiliki generation counter untuk
 menghindari race condition saat skip lagu cepat.
 """
 
-import pytest
 from core.state import AppState
 from plugins.lyrics import LyricsFetcher
 
@@ -19,7 +18,7 @@ class TestLyricsGenerationCounter:
     def test_has_current_generation_field(self):
         """LyricsFetcher harus punya _current_generation di __init__."""
         state = AppState()
-        fetcher = LyricsFetcher(state)
+        fetcher = LyricsFetcher(state, session=__import__("unittest.mock").mock.AsyncMock(), event_bus=__import__("unittest.mock").mock.AsyncMock())
         assert hasattr(fetcher, "_current_generation"), (
             "LyricsFetcher harus punya _current_generation di __init__"
         )

@@ -5,10 +5,12 @@ hanya ada SATU handler untuk setiap command.
 """
 
 import asyncio
-import structlog
 import time
-from typing import Callable, Any, Dict
-from core.observability import COMMAND_COUNT, COMMAND_LATENCY, tracer
+from typing import Any, Callable, Dict
+
+import structlog
+
+from core.observability import COMMAND_COUNT, COMMAND_LATENCY
 
 logger = structlog.get_logger(__name__)
 
@@ -33,24 +35,19 @@ class CommandBus:
         start_time = time.perf_counter()
         status = "success"
 
-        with tracer.start_as_current_span(f"CommandBus.execute:{command}") as span:
-            span.set_attribute("command", command)
-            try:
-                if asyncio.iscoroutinefunction(handler):
-                    return await handler(data)
-                else:
-                    return handler(data)
-            except Exception as e:
-                status = "error"
-                span.record_exception(e)
-                logger.error(f"Command execution error for '{command}': {e}", exc_info=True)
-                raise
-            finally:
-                duration = time.perf_counter() - start_time
-                COMMAND_LATENCY.labels(command_name=command).observe(duration)
-                COMMAND_COUNT.labels(command_name=command, status=status).inc()
-
-command_bus = CommandBus()
+        try:
+            if asyncio.iscoroutinefunction(handler):
+                return await handler(data)
+            else:
+                return handler(data)
+        except Exception as e:
+            status = "error"
+            logger.error(f"Command execution error for '{command}': {e}", exc_info=True)
+            raise
+        finally:
+            duration = time.perf_counter() - start_time
+            COMMAND_LATENCY.labels(command_name=command).observe(duration)
+            COMMAND_COUNT.labels(command_name=command, status=status).inc()
 
 CMD_PLAY_TRACK   = "cmd.play.track"
 CMD_TOGGLE_PAUSE = "cmd.toggle.pause"

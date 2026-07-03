@@ -135,9 +135,19 @@ echo ""
 echo -e "${GREEN}[*] Starting Server...${RESET}"
 sleep 1
 
-python main.py
-
-if [ $? -ne 0 ]; then
-    echo -e "\n${RED}[X] Server terminated with an error.${RESET}"
-    echo -e "    Please check the application logs for details."
-fi
+while true; do
+    python main.py
+    EXIT_CODE=$?
+    
+    if [ $EXIT_CODE -eq 0 ]; then
+        echo -e "\n${GREEN}[*] Server stopped gracefully.${RESET}"
+        break
+    elif [ $EXIT_CODE -eq 130 ]; then
+        echo -e "\n${YELLOW}[*] Server stopped by user (Ctrl+C).${RESET}"
+        break
+    else
+        echo -e "\n${RED}[X] Server terminated with error code $EXIT_CODE.${RESET}"
+        echo -e "    ${YELLOW}[!] Restarting in 5 seconds... Press Ctrl+C to cancel.${RESET}"
+        sleep 5
+    fi
+done

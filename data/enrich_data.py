@@ -1,9 +1,11 @@
 import json
-import time
+import os
 import random
 import re
-import os
+import time
+
 from ytmusicapi import YTMusic
+
 
 def clean_title(title, artist_name):
     t = re.sub(r'[\(\[].*?[\)\]]', '', title).lower()
@@ -116,7 +118,7 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"Selesai! Data berhasil disimpan.")
+    print("Selesai! Data berhasil disimpan.")
 
 if __name__ == "__main__":
     main()

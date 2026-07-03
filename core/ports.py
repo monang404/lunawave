@@ -1,5 +1,7 @@
-from typing import Protocol, List, Optional, Dict, Any, Callable
+from typing import Callable, List, Optional, Protocol
+
 from core.state import TrackInfo
+
 
 class AudioPlayerPort(Protocol):
     is_connected: bool

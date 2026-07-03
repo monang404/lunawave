@@ -3,13 +3,12 @@ PATCH-1-11: Session token persistence di SQLite
 Verifikasi bahwa session token disimpan di SQLite (tabel sessions).
 """
 
-import pytest
-import pytest_asyncio
-import asyncio
 import time
 
+import pytest
+import pytest_asyncio
+
 from cache.db import Database
-from core.state import TrackInfo
 
 
 @pytest_asyncio.fixture
