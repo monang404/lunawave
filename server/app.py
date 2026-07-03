@@ -32,7 +32,7 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     app.router.add_get("/api/stream/{video_id}", serve_stream)
     app.router.add_get("/health", health_check)
     app.router.add_get("/metrics", serve_metrics)
-    app.router.add_static("/static", STATIC_DIR, name="static")
+    app.router.add_static("/static", STATIC_DIR, name="static", append_version=True)
 
     return app
 

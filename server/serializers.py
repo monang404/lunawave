@@ -46,11 +46,14 @@ def dict_to_track(data: dict) -> Optional[TrackInfo]:
     video_id = data.get("video_id")
     if not video_id or not VIDEO_ID_REGEX.match(str(video_id)):
         return None
+    duration = int(data.get("duration", 0))
+    if duration < 0:
+        duration = 0
     return TrackInfo(
         video_id=video_id,
-        title=data.get("title", "Unknown"),
-        artist=data.get("artist", "Unknown"),
-        duration=int(data.get("duration", 0)),
+        title=str(data.get("title", "Unknown"))[:255],
+        artist=str(data.get("artist", "Unknown"))[:255],
+        duration=duration,
         thumbnail=data.get("thumbnail"),
         local_path=data.get("local_path"),
         stream_url=data.get("stream_url"),

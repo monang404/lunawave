@@ -178,6 +178,8 @@ class RadioMode:
         if self._fetch_lock.locked():
             return
         async with self._fetch_lock:
+            if len(self.state.radio_queue) >= 15:
+                return
             try:
                 extra = await asyncio.wait_for(
                     self._gather_batch(max_artists=ARTISTS_PER_BATCH - ARTISTS_QUICK),

@@ -30,6 +30,7 @@ class Database:
         self._conn = await aiosqlite.connect(self.db_path)
         self._conn.row_factory = aiosqlite.Row
         await self._conn.execute("PRAGMA journal_mode=WAL")
+        await self._conn.execute("PRAGMA foreign_keys=ON")
 
         with open(self._schema_path, "r", encoding="utf-8") as f:
             schema_sql = f.read()
@@ -38,54 +39,73 @@ class Database:
         try:
             await self._conn.execute("ALTER TABLE tracks ADD COLUMN is_favorite INTEGER DEFAULT 0")
             await self._conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Migration error is_favorite: {e}")
 
         try:
             await self._conn.execute("ALTER TABLE artists ADD COLUMN click_count INTEGER DEFAULT 0")
             await self._conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Migration error click_count (artists): {e}")
 
         try:
             await self._conn.execute("ALTER TABLE genres ADD COLUMN click_count INTEGER DEFAULT 0")
             await self._conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Migration error click_count (genres): {e}")
 
         try:
             await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")
             await self._conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Migration error index: {e}")
+
+        try:
+            await self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama)")
+            await self._conn.commit()
+        except Exception as e:
+            logger.debug(f"Migration error index unique nama: {e}")
 
         logger.info(f"Database initialized at {self.db_path}")
 
     async def evict_stale_tracks(self) -> int:
-        """Hapus track yang benar-benar tidak aktif:
-        - Tidak pernah diputar (play_count = 0)
-        - Tidak pernah di-cache stream dalam 30 hari terakhir
-        - Bukan favorit dan bukan file lokal
-        Mengembalikan jumlah baris yang dihapus.
-        """
         thirty_days_ago = int(time.time()) - (30 * 24 * 3600)
+        
         cursor = await self._conn.execute(  # type: ignore
-            """DELETE FROM tracks
+            """SELECT video_id FROM tracks
                WHERE play_count = 0
                  AND local_path IS NULL
                  AND (is_favorite = 0 OR is_favorite IS NULL)
                  AND (
-                     -- stream_url stale atau tidak pernah ada
                      stream_url_ts IS NULL
                      OR stream_url_ts < ?
                  )""",
             (thirty_days_ago,)
         )
+        rows = await cursor.fetchall()
+        if not rows:
+            return 0
+            
+        video_ids = [r["video_id"] for r in rows]
+        
+        import os
+        from config import CACHE_DIR
+        for vid in video_ids:
+            p = CACHE_DIR / f"{vid}.mp3"
+            if p.exists():
+                try:
+                    p.unlink()
+                except Exception as e:
+                    logger.error(f"Gagal hapus file cache {p}: {e}")
+                    
+        placeholders = ','.join(['?'] * len(video_ids))
+        await self._conn.execute(  # type: ignore
+            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", video_ids
+        )
         await self._conn.commit()  # type: ignore
-        deleted = cursor.rowcount
-        if deleted:
-            logger.info(f"Eviction: {deleted} track stale dihapus dari cache DB")
-        return deleted
+        
+        logger.info(f"Eviction: {len(video_ids)} track stale dihapus dari cache DB")
+        return len(video_ids)
 
     async def close(self):
         """Close the persistent connection gracefully."""
@@ -368,15 +388,6 @@ class Database:
 
 
     async def toggle_favorite(self, video_id: str) -> int:
-        """Toggles the favorite status of a track dan kembalikan state baru (0 atau 1).
-        Hanya operasi UPDATE yang atomic — tidak untuk keseluruhan blok SELECT+UPDATE ini.
-        """
-        async with self._conn.execute(  # type: ignore
-            "SELECT 1 FROM tracks WHERE video_id = ?", (video_id,)
-        ) as cursor:
-            if not await cursor.fetchone():
-                return 0
-
         await self._conn.execute(  # type: ignore
             "UPDATE tracks SET is_favorite = 1 - COALESCE(is_favorite, 0) WHERE video_id = ?",
             (video_id,)
@@ -387,4 +398,4 @@ class Database:
             "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
         ) as cursor:
             row = await cursor.fetchone()
-            return int(row["is_favorite"] or 0) if row else 0
+            return row["is_favorite"] if row else 0
