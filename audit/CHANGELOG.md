@@ -1,492 +1,790 @@
-# Sprint 1 Changelog — Terstruktur Per Task
+# Sprint 3 - Data & API Reliability Changelog
 
-**Status**: Sprint 1 COMPLETED (66/66 tasks done)  
-**Date**: 2026-07-03  
-**Total implementations**: 66 tasks
+**Status**: COMPLETED (47 tasks done)
+**Date**: 2026-07-03
 
----
+### S03-001 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-## Phase 1: Core Bug Fixes & Stability (S01-001 to S01-032)
+### S03-002 — `GET /health`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-001 — MPV Controller Race Condition Fix
-- **Priority**: P2 | **Finding**: BACKEND-37 | **Type**: Bug Fix
-- **Issue**: Dua mekanisme reconnect paralel (observer + main.py checker) bisa race
-- **Solution**: Menghapus polling `mpv_reconnect_checker` dan menggunakan sistem event `MpvReconnectedEvent`
-- **Files Modified**: 
-  - `core/events.py` — Tambah MpvReconnectedEvent
-  - `engine/mpv_controller.py` — Hapus polling, emit event
-  - `engine/playback/controller.py` — Subscribe ke event
-  - `main.py` — Buang polling checker
+### S03-003 — Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-002 — Dead WebSocket Cleanup Fix
-- **Priority**: P2 | **Finding**: BACKEND-38 | **Type**: Bug Fix
-- **Issue**: IndexError saat list dimodifikasi konkuren dalam cleanup loop
-- **Solution**: Return websocket yang error daripada mengandalkan index position
-- **Files Modified**: 
-  - `server/handlers/websocket.py` — Fix concurrent cleanup
+### S03-004 — Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-003 — Radio Queue Trimming Logic
-- **Priority**: P2 | **Finding**: BACKEND-42 | **Type**: Bug Fix
-- **Issue**: `pop()` berulang menghapus lagu terbaru yang baru saja di-fetch
-- **Solution**: Gunakan list slicing sebelum `extend()`
-- **Files Modified**: 
-  - `engine/radio_engine.py` — Fix queue trimming
+### S03-005 — `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-004 — Volume Synchronization
-- **Priority**: P2 | **Finding**: BACKEND-43 | **Type**: Bug Fix
-- **Issue**: Stale snapshot volume membuat tingkat meloncat tiba-tiba
-- **Solution**: Baca `self.state.volume` terlebih dahulu sebelum modifikasi
-- **Files Modified**: 
-  - `engine/volume_service.py` — Fix volume sync
+### S03-006 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-005 — Dead Code Removal
-- **Priority**: P2 | **Finding**: BACKEND-44 | **Type**: Cleanup
-- **Issue**: Exception classes yang tidak digunakan
-- **Solution**: Hapus `TrackResolutionError` dan `DownloadError`
-- **Files Modified**: 
-  - `core/exceptions.py` — Hapus unused exceptions
+### S03-007 — WS `search` (`ytdlp.search(query, max_results=10)`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-006 — Dependency Injection Refactor (CommandBus & EventBus)
-- **Priority**: P2 | **Finding**: BACKEND-48 | **Type**: Refactor
-- **Issue**: Singletons tidak fully injectable
-- **Solution**: Refactor untuk DI penuh pada CommandBus dan EventBus
-- **Files Modified**: 
-  - `core/bus.py` — Buat bus injectable
-  - `main.py` — Inject buses
+### S03-008 — `GET /api/stream/{video_id}` (cache-hit lokal)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-007 — Retry Count Reset
-- **Priority**: P2 | **Finding**: BACKEND-49 | **Type**: Bug Fix
-- **Issue**: `_retry_count` tidak ter-reset saat pergantian mode queue ↔ radio
-- **Solution**: Reset counter pada mode switch
-- **Files Modified**: 
-  - `engine/playback/controller.py` — Reset retry count
+### S03-009 — `GET /` (`serve_index`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-008 — DiscoverService State Cache
-- **Priority**: P2 | **Finding**: BACKEND-50 | **Type**: Bug Fix
-- **Issue**: State ter-cache antar eksekusi event
-- **Solution**: Buat inisialisasi inline setiap event
-- **Files Modified**: 
-  - `server/handlers/event_listeners.py` — Inline initialization
+### S03-010 — Static assets (`/static`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-009 — LyricsFetcher In-Memory Cache
-- **Priority**: P2 | **Finding**: BACKEND-51 | **Type**: Optimization
-- **Issue**: Redundant API requests untuk lagu yang sama
-- **Solution**: Implementasi in-memory cache di LyricsFetcher
-- **Files Modified**: 
-  - `plugins/lyrics.py` — Add caching
+### S03-011 — `stream_url` cache di DB (`STREAM_URL_TTL_SEC = 21600`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-010 — DiscoverService Relocation
-- **Priority**: P2 | **Finding**: BACKEND-54 | **Type**: Refactor
-- **Issue**: Lokasi file tidak konsisten dengan arsitektur
-- **Solution**: Pindah `services/discover_service.py` → `server/services/discover_service.py`
-- **Files Modified**: 
-  - `server/handlers/websocket.py` — Update import
-  - `server/handlers/event_listeners.py` — Update import
-  - `server/services/discover_service.py` — Relocated file
+### S03-012 — `GET /api/stream/{video_id}`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-011 — Strict EventBus Injection
-- **Priority**: P2 | **Finding**: BACKEND-56 | **Type**: Bug Fix
-- **Issue**: Plugin/MPV Controller bisa lupa inject EventBus
-- **Solution**: Hapus fallback comment, tambah `raise RuntimeError` jika tidak diinjeksi
-- **Files Modified**: 
-  - `plugins/sponsorblock.py` — Strict validation
-  - `plugins/lyrics.py` — Strict validation
-  - `engine/mpv_controller.py` — Strict validation
-  - `main.py` — Fix injection
+### S03-013 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-012 — Per-Key Lock (Double Fetch Prevention)
-- **Priority**: P2 | **Finding**: BACKEND-57 | **Type**: Bug Fix
-- **Issue**: Double fetch paralel pada video ID yang sama
-- **Solution**: Tambah per-key `asyncio.Event()` lock
-- **Files Modified**: 
-  - `cache/resolver.py` — Add per-key lock
-  - `server/services/stream_prefetch.py` — Add per-key lock
+### S03-014 — `dict_to_track` (`server/serializers.py`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-013 — Service Composition Separation
-- **Priority**: P2 | **Finding**: BACKEND-59 | **Type**: Refactor
-- **Issue**: Komposisi service di factory app.py mencampur responsibility
-- **Solution**: Pindah komposisi ke main.py
-- **Files Modified**: 
-  - `server/app.py` — Simplify factory
-  - `main.py` — Add service composition
+### S03-015 — Exception generik di `handle_ws_message`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-014 — Playback Deadlock Fix
-- **Priority**: P0 | **Finding**: BUG-01 | **Type**: Critical Bug
-- **Issue**: Deadlock pada `play_track` saat retry gagal
-- **Solution**: Pindah retry logic di luar `async with self._play_lock:` block
-- **Files Modified**: 
-  - `engine/playback/controller.py` — Fix deadlock
+### S03-016 — Semua endpoint HTTP & protokol WS
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-015 — Download Queue Race Condition (TOCTOU)
-- **Priority**: P1 | **Finding**: BUG-02 | **Type**: Critical Bug
-- **Issue**: Race condition dalam antrean download
-- **Solution**: Tambah flag `_downloading_ids` untuk track
-- **Files Modified**: 
-  - `engine/download_manager.py` — Add tracking flag
+### S03-017 — `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-016 — MPV Pause Error Handling
-- **Priority**: P1 | **Finding**: BUG-03 | **Type**: Bug Fix
-- **Issue**: `await self.mpv.pause()` error mencegah cleanup state
-- **Solution**: Bungkus dengan try-except agar cleanup tetap jalan
-- **Files Modified**: 
-  - `engine/playback/controller.py` — Add error handling
+### S03-018 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-017 — Unreachable Exception Removal
-- **Priority**: P2 | **Finding**: BUG-04 | **Type**: Code Quality
-- **Issue**: `except MpvConnectionError` tidak dapat dijangkau
-- **Solution**: Hapus unreachable clause
-- **Files Modified**: 
-  - `engine/mpv_controller.py` — Clean unreachable code
+### S03-019 — WS commands (`play_track`, `download`, dll.)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-018 — MPV Spawn Error Early Exit
-- **Priority**: P2 | **Finding**: BUG-05 | **Type**: Bug Fix
-- **Issue**: Terus retry koneksi pada socket mustahil terhubung
-- **Solution**: Early exit (raise) saat spawn gagal
-- **Files Modified**: 
-  - `engine/mpv_controller.py` — Early exit on spawn failure
+### S03-020 — Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-019 — Video ID Format Validation
-- **Priority**: P2 | **Finding**: BUG-06 | **Type**: Security
-- **Issue**: Tidak ada validasi format video_id (vulnerable to injection)
-- **Solution**: Tambah regex validation `^[A-Za-z0-9_-]{11}$`
-- **Files Modified**: 
-  - `server/serializers.py` — Add validation
-  - `server/handlers/websocket.py` — Add validation
+### S03-021 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-020 — Duration Ambiguity Resolution
-- **Priority**: P3 | **Finding**: BUG-07 | **Type**: Bug Fix
-- **Issue**: Ambiguitas antara durasi belum didapat (0.0) vs benar-benar 0.0 detik
-- **Solution**: Return `float | None` instead of always 0.0
-- **Files Modified**: 
-  - `engine/mpv_controller.py` — Return None when unavailable
+### S03-022 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-021 — Track Duration Auto-Correction
-- **Priority**: P3 | **Finding**: BUG-08 | **Type**: Bug Fix
-- **Issue**: Durasi salah tidak bisa dikoreksi ulang
-- **Solution**: Auto-correct jika selisih >= 1 detik, handle None
-- **Files Modified**: 
-  - `engine/playback/controller.py` — Add auto-correction logic
+### S03-023 — `cache/db.py:toggle_favorite()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-022 — Login Attempts Deduplication
-- **Priority**: P3 | **Finding**: BUG-09 | **Type**: Bug Fix
-- **Issue**: Duplikasi logic filter `login_attempts` rawan human-error
-- **Solution**: Satukan dalam satu sumber kebenaran di dalam lock
-- **Files Modified**: 
-  - `server/handlers/auth.py` — Simplify attempts filtering
+### S03-024 — `cache/db.py:__init__()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-023 — WebSocket Handler Cleanup
-- **Priority**: P3 | **Finding**: BUG-10 | **Type**: Code Quality
-- **Issue**: Unused parameter `client_ip` di decorator
-- **Solution**: Hapus parameter yang tidak digunakan
-- **Files Modified**: 
-  - `server/handlers/websocket.py` — Remove unused parameter
+### S03-025 — `engine/radio_engine.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-024 — yt-dlp Version Loosening
-- **Priority**: P3 | **Finding**: DEPENDENCY-09 | **Type**: Dependency
-- **Issue**: Exact pin mencegah upgrade saat YouTube blocks
-- **Solution**: Ubah `==2026.3.17` → `>=2026.3.17`
-- **Files Modified**: 
-  - `requirements.txt` — Loose version pin
+### S03-026 — `services/discover_service.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-025 — CDN Icon Version Fix
-- **Priority**: P3 | **Finding**: DEPENDENCY-11 | **Type**: Security
-- **Issue**: @latest CDN version risiko breaking changes
-- **Solution**: Pin ke `@3.2.0` untuk tabler icons
-- **Files Modified**: 
-  - `web/static/index.html` — Pin icon version
+### S03-027 — `cache/db.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-026 — Dead Observability Import Removal
-- **Priority**: P3 | **Finding**: DEPENDENCY-12 | **Type**: Cleanup
-- **Issue**: Unused telemetry imports
-- **Solution**: Hapus `BatchSpanProcessor` dan `ConsoleSpanExporter`
-- **Files Modified**: 
-  - `core/observability.py` — Remove dead imports
+### S03-028 — `cache/db.py:evict_stale_tracks()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-027 — Dependency Injection for HTTP Sessions
-- **Priority**: P3 | **Finding**: DEPENDENCY-13 | **Type**: Bug Fix
-- **Issue**: Fallback session creation mencegah DI dan risiko leak
-- **Solution**: Hapus fallback, enforce DI
-- **Files Modified**: 
-  - `plugins/sponsorblock.py` — Enforce DI
-  - `plugins/lyrics.py` — Enforce DI
+### S03-029 — Tidak ada
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-028 — Self-Host Inter Font
-- **Priority**: P2 | **Finding**: DEPENDENCY-14 | **Type**: Privacy/Optimization
-- **Issue**: Google Fonts CDN dependency, privacy concern
-- **Solution**: Download & self-host Inter font files
-- **Files Modified**: 
-  - `web/static/inter.css` — Created
-  - `web/static/index.html` — Remove preload/preconnect
-  - `web/static/fonts/inter_*.woff2` — Added font files
+### S03-030 — `engine/radio_engine.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-029 — SyncedLyrics Version Loosening
-- **Priority**: P3 | **Finding**: DEPENDENCY-15 | **Type**: Dependency
-- **Issue**: Strict pin `==1.0.1`
-- **Solution**: Ubah ke `>=1.0.1`
-- **Files Modified**: 
-  - `requirements.txt` — Loose version
+### S03-031 — database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-030 — Remove OpenTelemetry Overhead
-- **Priority**: P2 | **Finding**: DEPENDENCY-16 | **Type**: Cleanup
-- **Issue**: OpenTelemetry library overhead tidak berguna
-- **Solution**: Hapus packages dan logika tracer
-- **Files Modified**: 
-  - `requirements.txt` — Remove opentelemetry packages
-  - `core/observability.py` — Remove tracer logic
-  - `core/command_bus.py` — Remove tracing code
+### S03-032 — database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-031 — Structlog Version Loosening
-- **Priority**: P3 | **Finding**: DEPENDENCY-17 | **Type**: Dependency
-- **Issue**: Strict pin `==24.4.0` mencegah update minor
-- **Solution**: Ubah ke `>=24.4.0`
-- **Files Modified**: 
-  - `requirements.txt` — Loose version
+### S03-033 — database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-032 — aiosqlite Version Loosening
-- **Priority**: P3 | **Finding**: DEPENDENCY-18 | **Type**: Dependency
-- **Issue**: Strict pin `==0.22.1`
-- **Solution**: Ubah ke `>=0.20.0` untuk fleksibilitas minor
-- **Files Modified**: 
-  - `requirements.txt` — Loose version
+### S03-034 — `cache/db.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-035 — `server/handlers/event_listeners.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-036 — Fix issue in database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-037 — `cache/db.py` (get_random_songs, get_genre_songs, dll)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-038 — `cache/schema.sql`, `cache/db.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-039 — `cache/schema.sql`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-040 — `cache/schema.sql`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-041 — `cache/db.py`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-042 — `scratch/check_db.py`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-043 — deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-044 — Backup
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-045 — Rollback
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-046 — Monitoring
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-047 — Repo hygiene
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
 ---
 
-## Phase 2: Deployment Tools Setup (S01-033 to S01-048)
+# Sprint 2 - Security Hardening Changelog
 
-### S01-033 — Ruff Linting Configuration
-- **Priority**: P2 | **Finding**: DEPLOYMENT-01 | **Type**: Tool Setup
-- **Files Modified**: 
-  - `pyproject.toml` — Add ruff config
+**Status**: COMPLETED (15 tasks done)
+**Date**: 2026-07-03
 
-### S01-034 — Mypy Type Checking
-- **Priority**: P2 | **Finding**: DEPLOYMENT-02 | **Type**: Tool Setup
-- **Files Modified**: 
-  - `pyproject.toml` — Add mypy config
+### S02-001 — `GET /api/stream/{video_id}`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-035 — Bandit Security Audit
-- **Priority**: P2 | **Finding**: DEPLOYMENT-03 | **Type**: Tool Setup
-- **Files Modified**: 
-  - `pyproject.toml` — Add bandit config
+### S02-002 — WS command gagal (`handle_ws_message` catch-all)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-036 — Windows CI/CD (start.bat check)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-06 | **Type**: CI/CD
-- **Files Modified**: 
-  - `.github/workflows/ci.yml` — Add Windows runner check
+### S02-003 — Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-037 — pip-audit Integration
-- **Priority**: P2 | **Finding**: DEPLOYMENT-07 | **Type**: Tool Setup
-- **Files Modified**: 
-  - `requirements-dev.txt` — Add pip-audit
-  - `.github/workflows/ci.yml` — Add audit step
+### S02-004 — `GET /metrics`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-038 — PyProject.toml Metadata
-- **Priority**: P2 | **Finding**: DEPLOYMENT-15 | **Type**: Build System
-- **Files Modified**: 
-  - `pyproject.toml` — Created with project metadata
+### S02-005 — Login admin (`handle_auth`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-039 — PyProject.toml Tools Config
-- **Priority**: P2 | **Finding**: DEPLOYMENT-16 | **Type**: Build System
-- **Files Modified**: 
-  - `pyproject.toml` — Add tool configurations
+### S02-006 — Semua action WS setelah login
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-040 — Makefile for Dev Tasks
-- **Priority**: P2 | **Finding**: DEPLOYMENT-17 | **Type**: Development
-- **Files Modified**: 
-  - `Makefile` — Created with dev shortcuts
+### S02-007 — `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-041 — Setup Automation Scripts
-- **Priority**: P2 | **Finding**: DEPLOYMENT-19 | **Type**: Automation
-- **Files Modified**: 
-  - `setup.sh` — Created for Unix setup
-  - `setup.ps1` — Created for Windows setup
+### S02-008 — `GET /health`, `GET /metrics`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-042 — Version Variable
-- **Priority**: P2 | **Finding**: DEPLOYMENT-21 | **Type**: Metadata
-- **Files Modified**: 
-  - `core/__init__.py` — Add `__version__` export
+### S02-009 — dependency_audit.md
+- **Priority**: P0 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-043 — Rollback Script (Unix)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-22 | **Type**: Automation
-- **Files Modified**: 
-  - `scripts/rollback.sh` — Created for git revert + sync
+### S02-010 — Secrets
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-044 — Rollback Script (Windows)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-24 | **Type**: Automation
-- **Files Modified**: 
-  - `scripts/rollback.ps1` — Created for Windows rollback
+### S02-011 — Secrets
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-045 — Log Level DEBUG Validation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-26 | **Type**: Validation
-- **Status**: No-op (already consistent)
+### S02-012 — `server/middleware.py`, `handlers/auth.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-046 — Log Level INFO Validation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-27 | **Type**: Validation
-- **Status**: No-op (already consistent)
+### S02-013 — `server/handlers/http.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-047 — Log Level WARNING Validation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-28 | **Type**: Validation
-- **Status**: No-op (already consistent)
+### S02-014 — `config.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-048 — Log Level ERROR Validation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-29 | **Type**: Validation
-- **Status**: No-op (already consistent)
+### S02-015 — frontend_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
 ---
 
-## Phase 3: Critical Logging Fix (S01-049)
+﻿# Sprint 3 - Data & API Reliability Changelog
 
-### S01-049 — Critical Log Level for Fatal Errors
-- **Priority**: P2 | **Finding**: DEPLOYMENT-30 | **Type**: Bug Fix
-- **Issue**: Fatal errors (MPV not found, task error) logged as error level
-- **Solution**: Change to critical level untuk fatal conditions
-- **Files Modified**: 
-  - `main.py` — Change log level to critical
+**Status**: COMPLETED (47 tasks done)
+**Date**: 2026-07-03
 
----
+### S03-001 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-## Phase 4: Monitoring & Auto-Restart (S01-050 to S01-053)
+### S03-002 â€” `GET /health`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-050 — Auto-Restart Loop for start.sh
-- **Priority**: P2 | **Finding**: DEPLOYMENT-34 | **Type**: Resilience
-- **Solution**: Wrap startup dengan loop untuk auto-restart on crash
-- **Files Modified**: 
-  - `start.sh` — Add auto-restart loop
+### S03-003 â€” Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-051 — Auto-Restart Loop for start.bat
-- **Priority**: P2 | **Finding**: DEPLOYMENT-34 | **Type**: Resilience
-- **Solution**: Wrap startup dengan loop untuk graceful shutdown handling
-- **Files Modified**: 
-  - `start.bat` — Add auto-restart loop
+### S03-004 â€” Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-052 — Health Check Script (Unix)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-31 | **Type**: Monitoring
-- **Solution**: Buat monitor script untuk detect downtime
-- **Files Modified**: 
-  - `scripts/monitor_health.sh` — Created
+### S03-005 â€” `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-053 — Health Check Script (Windows)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-32 & 33 | **Type**: Monitoring
-- **Solution**: Port health check ke PowerShell
-- **Files Modified**: 
-  - `scripts/monitor_health.ps1` — Created
+### S03-006 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
----
+### S03-007 â€” WS `search` (`ytdlp.search(query, max_results=10)`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-## Phase 5: Disaster Recovery & Config (S01-054 to S01-065)
+### S03-008 â€” `GET /api/stream/{video_id}` (cache-hit lokal)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-054 — Termux Boot Automation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-51 | **Type**: Automation
-- **Solution**: Auto-startup script untuk Android Termux
-- **Files Modified**: 
-  - `scripts/termux_boot.sh` — Created
+### S03-009 â€” `GET /` (`serve_index`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-055 — Environment Variables Documentation
-- **Priority**: P2 | **Finding**: DEPLOYMENT-58 | **Type**: Documentation
-- **Solution**: Buat .env.example dengan semua supported ENV vars
-- **Files Modified**: 
-  - `.env.example` — Created (15 vars documented)
+### S03-010 â€” Static assets (`/static`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-056 — Monitoring Metrics Exposure
-- **Priority**: P2 | **Finding**: DEPLOYMENT-60 | **Type**: Monitoring
-- **Issue**: Key metrics tidak diekspos (cache hit rate, yt-dlp latency, radio queue size)
-- **Solution**: Ekspos metrics via Prometheus endpoint
-- **Files Modified**: 
-  - `core/observability.py` — Add metrics collection
+### S03-011 â€” `stream_url` cache di DB (`STREAM_URL_TTL_SEC = 21600`)
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-057 — Exception Logging for DiscoverService
-- **Priority**: P2 | **Finding**: DEPLOYMENT-61 | **Type**: Logging
-- **Issue**: DiscoverService exception swallow tanpa logging
-- **Solution**: Add structured logging untuk exception handling
-- **Files Modified**: 
-  - `server/services/discover_service.py` — Add error logging
+### S03-012 â€” `GET /api/stream/{video_id}`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-058 — Structured Request Logging
-- **Priority**: P2 | **Finding**: DEPLOYMENT-62 | **Type**: Logging
-- **Issue**: Request logging tidak structured
-- **Solution**: Implement structured logging middleware
-- **Files Modified**: 
-  - `server/middleware.py` — Add structured logging
+### S03-013 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-059 — Database Query Logging
-- **Priority**: P2 | **Finding**: DEPLOYMENT-68 | **Type**: Logging
-- **Issue**: Slow queries tidak ter-log
-- **Solution**: Add query duration threshold logging
-- **Files Modified**: 
-  - `cache/db.py` — Add query logging
+### S03-014 â€” `dict_to_track` (`server/serializers.py`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-060 — Release Versioning (git tags)
-- **Priority**: P2 | **Finding**: DEPLOYMENT-69 | **Type**: Release Management
-- **Issue**: Tidak ada git tags / versioning
-- **Solution**: Setup git tag workflow untuk releases
-- **Files Modified**: 
-  - `.github/workflows/release.yml` — Create (if needed)
+### S03-015 â€” Exception generik di `handle_ws_message`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-061 — Metrics Retention Policy
-- **Priority**: P2 | **Finding**: DEPLOYMENT-70 | **Type**: Maintenance
-- **Issue**: Metrics tidak ter-cleanup, disk usage grow unbounded
-- **Solution**: Implement retention policy (keep 7 days)
-- **Files Modified**: 
-  - `core/observability.py` — Add cleanup logic
+### S03-016 â€” Semua endpoint HTTP & protokol WS
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-062 — Security Headers
-- **Priority**: P2 | **Finding**: DEPLOYMENT-71 | **Type**: Security
-- **Issue**: Missing security headers di HTTP response
-- **Solution**: Add security headers middleware (CSP, X-Frame-Options, dll)
-- **Files Modified**: 
-  - `server/middleware.py` — Add security headers
+### S03-017 â€” `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-063 — Request Rate Limiting
-- **Priority**: P2 | **Finding**: DEPLOYMENT-72 | **Type**: Security
-- **Issue**: Endpoint tidak ter-rate-limit
-- **Solution**: Implement per-IP rate limiting middleware
-- **Files Modified**: 
-  - `server/middleware.py` — Add rate limiting
+### S03-018 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-064 — Request Correlation ID
-- **Priority**: P2 | **Finding**: DEPLOYMENT-73 | **Type**: Logging
-- **Issue**: Tidak ada request correlation ID untuk tracing
-- **Solution**: Generate unique request ID dan propagate ke logs
-- **Files Modified**: 
-  - `server/middleware.py` — Add correlation ID
+### S03-019 â€” WS commands (`play_track`, `download`, dll.)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-065 — Repository Cleanup (.gitignore)
-- **Priority**: P2 | **Finding**: EXEC-11 | **Type**: Maintenance
-- **Issue**: `scratch/` dan `.backup_patchlog/` ter-commit
-- **Solution**: Tambah ke `.gitignore`
-- **Files Modified**: 
-  - `.gitignore` — Add directories
+### S03-020 â€” Fix issue in api_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-### S01-066 — MPV Controller Auto-Restart on Connection Loss
-- **Priority**: P1 | **Finding**: EXEC-12 | **Type**: Critical Bug Fix
-- **Issue**: Crash pada MpvController reconnect (socket/process crash tidak ter-handle)
-- **Solution**: Full respawn MpvController (process respawn + socket reconnect) on connection loss
-- **Files Modified**: 
-  - `engine/mpv_controller.py` — Auto-restart logic
-  - `core/events.py` — Add MpvReconnectedEvent
+### S03-021 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
----
+### S03-022 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-## Summary Statistics
+### S03-023 â€” `cache/db.py:toggle_favorite()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-| Category | Count |
-|----------|-------|
-| **Core Bug Fixes** | 13 |
-| **Code Quality & Refactoring** | 6 |
-| **Dependency Management** | 7 |
-| **Deployment & Tools** | 16 |
-| **Critical Logging** | 1 |
-| **Monitoring & Resilience** | 4 |
-| **Disaster Recovery** | 12 |
-| **Repository Maintenance** | 1 |
-| **TOTAL** | 66 |
+### S03-024 â€” `cache/db.py:__init__()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
----
+### S03-025 â€” `engine/radio_engine.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-## Verification
+### S03-026 â€” `services/discover_service.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
 
-All 66 tasks:
-- ✅ Implemented in codebase
-- ✅ Status marked DONE
-- ✅ Checklist complete
-- ✅ ROADMAP updated (66/66)
-- ✅ Sprint status: COMPLETED
+### S03-027 â€” `cache/db.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-028 â€” `cache/db.py:evict_stale_tracks()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-029 â€” Tidak ada
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-030 â€” `engine/radio_engine.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-031 â€” database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-032 â€” database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-033 â€” database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-034 â€” `cache/db.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-035 â€” `server/handlers/event_listeners.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-036 â€” Fix issue in database_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-037 â€” `cache/db.py` (get_random_songs, get_genre_songs, dll)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-038 â€” `cache/schema.sql`, `cache/db.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-039 â€” `cache/schema.sql`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-040 â€” `cache/schema.sql`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-041 â€” `cache/db.py`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-042 â€” `scratch/check_db.py`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-043 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-044 â€” Backup
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-045 â€” Rollback
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-046 â€” Monitoring
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S03-047 â€” Repo hygiene
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+---\n\n# Sprint 2 - Frontend & Core Player Changelog
+
+**Status**: COMPLETED (15 tasks done)
+**Date**: 2026-07-03
+
+### S02-001 â€” `GET /api/stream/{video_id}`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-002 â€” WS command gagal (`handle_ws_message` catch-all)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-003 â€” Fix issue in api_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-004 â€” `GET /metrics`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-005 â€” Login admin (`handle_auth`)
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-006 â€” Semua action WS setelah login
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-007 â€” `GET /api/stream/{video_id}`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-008 â€” `GET /health`, `GET /metrics`
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-009 â€” dependency_audit.md
+- **Priority**: P0 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-010 â€” Secrets
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-011 â€” Secrets
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-012 â€” `server/middleware.py`, `handlers/auth.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-013 â€” `server/handlers/http.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-014 â€” `config.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S02-015 â€” frontend_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+---\n\n# Sprint 1 - Core Bug Fixes & Stability Changelog
+
+**Status**: COMPLETED (66 tasks done)
+**Date**: 2026-07-03
+
+### S01-001 â€” `engine/mpv_controller.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-002 â€” `server/handlers/websocket.py:broadcast()`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-003 â€” `engine/radio_engine.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-004 â€” `engine/volume_service.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-005 â€” `core/exceptions.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-006 â€” `core/command_bus.py` + `core/event_bus.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-007 â€” `engine/playback/controller.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-008 â€” `server/handlers/event_listeners.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-009 â€” Seluruh codebase
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-010 â€” `services/discover_service.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-011 â€” Semua plugin
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-012 â€” `cache/resolver.py` + `StreamPrefetchService`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-013 â€” `server/app.py`
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-014 â€” bug_audit.md
+- **Priority**: P0 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-015 â€” bug_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-016 â€” bug_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-017 â€” bug_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-018 â€” bug_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-019 â€” bug_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-020 â€” bug_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-021 â€” bug_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-022 â€” bug_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-023 â€” bug_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-024 â€” dependency_audit.md
+- **Priority**: P0 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-025 â€” dependency_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-026 â€” dependency_audit.md
+- **Priority**: P1 | **Type**: DECISION-NEEDED
+- **Status**: DONE
+
+### S01-027 â€” dependency_audit.md
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-028 â€” dependency_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-029 â€” dependency_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-030 â€” dependency_audit.md
+- **Priority**: P2 | **Type**: DECISION-NEEDED
+- **Status**: DONE
+
+### S01-031 â€” dependency_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-032 â€” dependency_audit.md
+- **Priority**: P3 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-033 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-034 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-035 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-036 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-037 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-038 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-039 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-040 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-041 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-042 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-043 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-044 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-045 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-046 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-047 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-048 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-049 â€” deployment_audit.md
+- **Priority**: P0 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-050 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-051 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-052 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-053 â€” deployment_audit.md
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-054 â€” Disaster Recovery
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-055 â€” Secrets
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-056 â€” Monitoring
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-057 â€” Logging
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-058 â€” Logging
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-059 â€” Monitoring
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-060 â€” Release
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-061 â€” Release
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-062 â€” Docker
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-063 â€” Alerting
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-064 â€” Logging
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-065 â€” root repo
+- **Priority**: P2 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+### S01-066 â€” `engine/mpv_controller.py`
+- **Priority**: P1 | **Type**: IMPLEMENTATION
+- **Status**: DONE
+
+

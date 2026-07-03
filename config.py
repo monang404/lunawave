@@ -69,7 +69,9 @@ else:
         except OSError:
             pass
 
-        print("\n==========================================")
-        print(f"PASSWORD ADMIN GENERATED: {raw_password}")
-        print("Harap simpan password ini! Tidak akan ditampilkan lagi.")
-        print("==========================================\n")
+        import sys
+        if sys.stderr.isatty():
+            sys.stderr.write("\n==========================================\n")
+            sys.stderr.write(f"PASSWORD ADMIN GENERATED: {raw_password}\n")
+            sys.stderr.write("Harap simpan password ini! Tidak akan ditampilkan lagi.\n")
+            sys.stderr.write("==========================================\n\n")

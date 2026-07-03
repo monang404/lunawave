@@ -6,67 +6,67 @@ Total task dihasilkan = 237.
 
 | Finding ID | Sumber Laporan | Severity Asli | Priority | Task ID | Sprint | Status | Catatan |
 |---|---|---|---|---|---|---|---|
-| API-01 | api_audit.md | Medium | P2 | S03-001 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-01 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-02 | api_audit.md | Low | P3 | S04-001 | Sprint 4 — Frontend Experience | TODO |  |
-| API-03 | api_audit.md | Medium | P2 | S03-002 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-04 | api_audit.md | Low | P3 | S02-001 | Sprint 2 — Security Hardening | TODO |  |
-| API-05 | api_audit.md | Medium | P2 | S02-002 | Sprint 2 — Security Hardening | TODO |  |
-| API-06 | api_audit.md | Low | P3 | S03-003 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-07 | api_audit.md | Low | P3 | S03-004 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-08 | api_audit.md | **High** | P1 | S03-005 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-03 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-04 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-05 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-06 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-07 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-08 | api_audit.md | **High** | P1 | S-$2 | Sprint  ... | DONE |  |
 | API-09 | api_audit.md | Medium | P2 | S04-002 | Sprint 4 — Frontend Experience | TODO |  |
-| API-10 | api_audit.md | Medium | P2 | S02-003 | Sprint 2 — Security Hardening | TODO |  |
-| API-11 | api_audit.md | Low | P3 | S02-004 | Sprint 2 — Security Hardening | TODO |  |
-| API-12 | api_audit.md | — (positif) | P2 | S02-005 | Sprint 2 — Security Hardening | TODO |  |
-| API-13 | api_audit.md | Low | P3 | S02-006 | Sprint 2 — Security Hardening | TODO |  |
-| API-14 | api_audit.md | High | P1 | S02-007 | Sprint 2 — Security Hardening | TODO |  |
-| API-15 | api_audit.md | Medium | P2 | S03-006 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-16 | api_audit.md | Low | P3 | S03-007 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-17 | api_audit.md | Medium | P2 | S03-008 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-18 | api_audit.md | — (positif) | P2 | S03-009 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-19 | api_audit.md | Low | P3 | S03-010 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-20 | api_audit.md | Low | P3 | S03-011 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-21 | api_audit.md | — (positif) | P2 | S03-012 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-22 | api_audit.md | Medium | P2 | S03-013 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-23 | api_audit.md | Medium | P2 | S03-014 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-24 | api_audit.md | Medium | P2 | S03-015 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-25 | api_audit.md | Medium | P2 | S03-016 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-26 | api_audit.md | **High** | P1 | S03-017 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-27 | api_audit.md | Low | P3 | S02-008 | Sprint 2 — Security Hardening | TODO |  |
-| API-28 | api_audit.md | Medium | P2 | S03-018 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-10 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-11 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-12 | api_audit.md | — (positif) | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-13 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-14 | api_audit.md | High | P1 | S-$2 | Sprint  ... | DONE |  |
+| API-15 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-16 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-17 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-18 | api_audit.md | — (positif) | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-19 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-20 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-21 | api_audit.md | — (positif) | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-22 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-23 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-24 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-25 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-26 | api_audit.md | **High** | P1 | S-$2 | Sprint  ... | DONE |  |
+| API-27 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
+| API-28 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-29 | api_audit.md | **High** | P1 | S06-001 | Sprint 6 — Performance Optimization | TODO |  |
 | API-30 | api_audit.md | — (positif) | P2 | S06-002 | Sprint 6 — Performance Optimization | TODO |  |
 | API-31 | api_audit.md | Medium | P2 | S06-003 | Sprint 6 — Performance Optimization | TODO |  |
 | API-32 | api_audit.md | Medium | P2 | S07-001 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| API-33 | api_audit.md | Medium | P2 | S03-019 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-33 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-34 | api_audit.md | Medium | P2 | S06-004 | Sprint 6 — Performance Optimization | TODO |  |
-| API-35 | api_audit.md | Low | P3 | S03-020 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-35 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
 | API-36 | api_audit.md | Medium | P2 | S04-003 | Sprint 4 — Frontend Experience | TODO |  |
-| API-37 | api_audit.md | Medium | P2 | S03-021 | Sprint 3 — Data & API Reliability | TODO |  |
-| API-38 | api_audit.md | Medium | P2 | S03-022 | Sprint 3 — Data & API Reliability | TODO |  |
-| BACKEND-36 | backend_audit.md | N/A | P2 | S03-023 | Sprint 3 — Data & API Reliability | TODO |  |
+| API-37 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| API-38 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
+| BACKEND-36 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-37 | backend_audit.md | N/A | P2 | S01-001 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-38 | backend_audit.md | N/A | P2 | S01-002 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-39 | backend_audit.md | N/A | P2 | S06-005 | Sprint 6 — Performance Optimization | TODO |  |
-| BACKEND-40 | backend_audit.md | N/A | P2 | S03-024 | Sprint 3 — Data & API Reliability | TODO |  |
-| BACKEND-41 | backend_audit.md | N/A | P2 | S03-025 | Sprint 3 — Data & API Reliability | TODO |  |
+| BACKEND-40 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| BACKEND-41 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-42 | backend_audit.md | N/A | P2 | S01-003 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-43 | backend_audit.md | N/A | P2 | S01-004 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-44 | backend_audit.md | N/A | P2 | S01-005 | Sprint 1 — Application Stability | DONE |  |
-| BACKEND-45 | backend_audit.md | N/A | P2 | S03-026 | Sprint 3 — Data & API Reliability | TODO |  |
+| BACKEND-45 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-46 | backend_audit.md | N/A | P2 | S07-002 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| BACKEND-47 | backend_audit.md | N/A | P2 | S03-027 | Sprint 3 — Data & API Reliability | TODO |  |
+| BACKEND-47 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-48 | backend_audit.md | N/A | P2 | S01-006 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-49 | backend_audit.md | N/A | P2 | S01-007 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-50 | backend_audit.md | N/A | P2 | S01-008 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-51 | backend_audit.md | N/A | P2 | S01-009 | Sprint 1 — Application Stability | DONE |  |
-| BACKEND-52 | backend_audit.md | N/A | P2 | S03-028 | Sprint 3 — Data & API Reliability | TODO |  |
-| BACKEND-53 | backend_audit.md | N/A | P2 | S03-029 | Sprint 3 — Data & API Reliability | TODO |  |
+| BACKEND-52 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| BACKEND-53 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-54 | backend_audit.md | N/A | P2 | S01-010 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-55 | backend_audit.md | N/A | P2 | S07-003 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | BACKEND-56 | backend_audit.md | N/A | P2 | S01-011 | Sprint 1 — Application Stability | DONE |  |
 | BACKEND-57 | backend_audit.md | N/A | P2 | S01-012 | Sprint 1 — Application Stability | DONE |  |
-| BACKEND-58 | backend_audit.md | N/A | P2 | S03-030 | Sprint 3 — Data & API Reliability | TODO |  |
+| BACKEND-58 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-59 | backend_audit.md | N/A | P2 | S01-013 | Sprint 1 — Application Stability | DONE |  |
 | BUG-01 | bug_audit.md | 🔴 Critical | P0 | S01-014 | Sprint 1 — Application Stability | DONE |  |
 | BUG-02 | bug_audit.md | 🟠 High | P1 | S01-015 | Sprint 1 — Application Stability | DONE |  |
@@ -95,20 +95,20 @@ Total task dihasilkan = 237.
 | CODE_SMELL-15 | code_smell_audit.md | 🟢 Low | P3 | S05-014 | Sprint 5 — Architecture Refactoring | TODO |  |
 | CODE_SMELL-16 | code_smell_audit.md | 🟢 Low | P3 | S05-015 | Sprint 5 — Architecture Refactoring | TODO |  |
 | CODE_SMELL-17 | code_smell_audit.md | 🟡 Medium | P2 | S05-016 | Sprint 5 — Architecture Refactoring | TODO |  |
-| DATABASE-01 | database_audit.md | N/A | P2 | S03-031 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-02 | database_audit.md | N/A | P2 | S03-032 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-03 | database_audit.md | N/A | P2 | S03-033 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-04 | database_audit.md | Tinggi | P1 | S03-034 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-05 | database_audit.md | Tinggi | P1 | S03-035 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-06 | database_audit.md | Sedang | P2 | S03-036 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-07 | database_audit.md | Sedang | P2 | S03-037 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-08 | database_audit.md | Sedang | P2 | S03-038 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-09 | database_audit.md | Sedang | P2 | S03-039 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-10 | database_audit.md | Rendah | P3 | S03-040 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-11 | database_audit.md | Rendah | P3 | S03-041 | Sprint 3 — Data & API Reliability | TODO |  |
-| DATABASE-12 | database_audit.md | Rendah | P3 | S03-042 | Sprint 3 — Data & API Reliability | TODO |  |
+| DATABASE-01 | database_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-02 | database_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-03 | database_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-04 | database_audit.md | Tinggi | P1 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-05 | database_audit.md | Tinggi | P1 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-06 | database_audit.md | Sedang | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-07 | database_audit.md | Sedang | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-08 | database_audit.md | Sedang | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-09 | database_audit.md | Sedang | P2 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-10 | database_audit.md | Rendah | P3 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-11 | database_audit.md | Rendah | P3 | S-$2 | Sprint  ... | DONE |  |
+| DATABASE-12 | database_audit.md | Rendah | P3 | S-$2 | Sprint  ... | DONE |  |
 | DEPENDENCY-09 | dependency_audit.md | 🔴 CRITICAL | P0 | S01-024 | Sprint 1 — Application Stability | DONE |  |
-| DEPENDENCY-10 | dependency_audit.md | 🔴 CRITICAL | P0 | S02-009 | Sprint 2 — Security Hardening | TODO |  |
+| DEPENDENCY-10 | dependency_audit.md | 🔴 CRITICAL | P0 | S02-009 | Sprint 2 — Security Hardening | DONE | Resolved in S01-037 |
 | DEPENDENCY-11 | dependency_audit.md | 🟠 HIGH | P1 | S01-025 | Sprint 1 — Application Stability | DONE |  |
 | DEPENDENCY-12 | dependency_audit.md | 🟠 HIGH | P1 | S01-026 | Sprint 1 — Application Stability | DONE |  |
 | DEPENDENCY-13 | dependency_audit.md | 🟠 HIGH | P1 | S01-027 | Sprint 1 — Application Stability | DONE |  |
@@ -133,7 +133,7 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-20 | deployment_audit.md | JS/CSS di `/web/static/` tidak di-minify | P2 | S04-006 | Sprint 4 — Frontend Experience | TODO |  |
 | DEPLOYMENT-21 | deployment_audit.md | Tidak ada `__version__` di manapun | P2 | S01-042 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-22 | deployment_audit.md | Harus `git revert` manual | P2 | S01-043 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-23 | deployment_audit.md | Schema sudah ter-apply, tidak bisa di-revert | P2 | S03-043 | Sprint 3 — Data & API Reliability | TODO |  |
+| DEPLOYMENT-23 | deployment_audit.md | Schema sudah ter-apply, tidak bisa di-revert | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-24 | deployment_audit.md | Harus edit manual | P2 | S01-044 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-25 | deployment_audit.md | Harus `pip install` versi lama manual | P2 | S07-006 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | DEPLOYMENT-26 | deployment_audit.md | DEBUG | P2 | S01-045 | Sprint 1 — Application Stability | DONE | Sudah sesuai (✅) |
@@ -145,16 +145,16 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-32 | deployment_audit.md | Semua resolusi gagal, app LOADING terus | P2 | S01-051 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-33 | deployment_audit.md | Download gagal diam-diam | P2 | S01-052 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-34 | deployment_audit.md | Tidak ada yang restart otomatis | P2 | S01-053 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-50 | deployment_audit.md | N/A | P2 | S03-044 | Sprint 3 — Data & API Reliability | TODO |  |
+| DEPLOYMENT-50 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-51 | deployment_audit.md | N/A | P2 | S01-054 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-52 | deployment_audit.md | N/A | P2 | S02-010 | Sprint 2 — Security Hardening | TODO |  |
-| DEPLOYMENT-53 | deployment_audit.md | N/A | P2 | S02-011 | Sprint 2 — Security Hardening | TODO |  |
+| DEPLOYMENT-52 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
+| DEPLOYMENT-53 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-54 | deployment_audit.md | N/A | P2 | S07-007 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | DEPLOYMENT-55 | deployment_audit.md | N/A | P2 | S04-007 | Sprint 4 — Frontend Experience | TODO |  |
-| DEPLOYMENT-56 | deployment_audit.md | N/A | P2 | S03-045 | Sprint 3 — Data & API Reliability | TODO |  |
+| DEPLOYMENT-56 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-57 | deployment_audit.md | N/A | P2 | S04-008 | Sprint 4 — Frontend Experience | TODO |  |
 | DEPLOYMENT-58 | deployment_audit.md | N/A | P2 | S01-055 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-59 | deployment_audit.md | N/A | P2 | S03-046 | Sprint 3 — Data & API Reliability | TODO |  |
+| DEPLOYMENT-59 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-60 | deployment_audit.md | N/A | P2 | S01-056 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-61 | deployment_audit.md | N/A | P2 | S01-057 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-62 | deployment_audit.md | N/A | P2 | S01-058 | Sprint 1 — Application Stability | DONE |  |
@@ -162,7 +162,7 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-64 | deployment_audit.md | N/A | P2 | S07-009 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | DEPLOYMENT-65 | deployment_audit.md | N/A | P2 | S04-009 | Sprint 4 — Frontend Experience | TODO |  |
 | DEPLOYMENT-66 | deployment_audit.md | N/A | P2 | S04-010 | Sprint 4 — Frontend Experience | TODO |  |
-| DEPLOYMENT-67 | deployment_audit.md | N/A | P2 | S03-047 | Sprint 3 — Data & API Reliability | TODO |  |
+| DEPLOYMENT-67 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-68 | deployment_audit.md | N/A | P2 | S01-059 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-69 | deployment_audit.md | N/A | P2 | S01-060 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-70 | deployment_audit.md | N/A | P2 | S01-061 | Sprint 1 — Application Stability | DONE |  |
@@ -171,12 +171,12 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-73 | deployment_audit.md | N/A | P2 | S01-064 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-74 | deployment_audit.md | N/A | P2 | S07-010 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | EXEC-09 | executive_summary.md | 🟠 **Tinggi** | P1 | S04-011 | Sprint 4 — Frontend Experience | TODO |  |
-| EXEC-10 | executive_summary.md | 🟡 **Sedang** | P2 | S02-012 | Sprint 2 — Security Hardening | TODO |  |
+| EXEC-10 | executive_summary.md | 🟡 **Sedang** | P2 | S-$2 | Sprint  ... | DONE |  |
 | EXEC-11 | executive_summary.md | 🟡 **Sedang** | P2 | S01-065 | Sprint 1 — Application Stability | DONE |  |
 | EXEC-12 | executive_summary.md | 🟠 **Tinggi** | P1 | S01-066 | Sprint 1 — Application Stability | DONE |  |
 | EXEC-13 | executive_summary.md | 🟡 **Sedang** | P2 | S07-011 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| EXEC-14 | executive_summary.md | 🟢 **Rendah** | P1 | S02-013 | Sprint 2 — Security Hardening | TODO |  |
-| EXEC-15 | executive_summary.md | 🟢 **Rendah** | P2 | S02-014 | Sprint 2 — Security Hardening | TODO |  |
+| EXEC-14 | executive_summary.md | 🟢 **Rendah** | P1 | S-$2 | Sprint  ... | DONE |  |
+| EXEC-15 | executive_summary.md | 🟢 **Rendah** | P2 | S-$2 | Sprint  ... | DONE |  |
 | EXEC-16 | executive_summary.md | 🟡 **Sedang** | P2 | S07-012 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | FRONTEND-01 | frontend_audit.md | Medium–High | P1 | S04-012 | Sprint 4 — Frontend Experience | TODO |  |
 | FRONTEND-02 | frontend_audit.md | Medium–Critical | P0 | S04-013 | Sprint 4 — Frontend Experience | TODO |  |
@@ -193,7 +193,7 @@ Total task dihasilkan = 237.
 | FRONTEND-13 | frontend_audit.md | Critical | P0 | S04-020 | Sprint 4 — Frontend Experience | TODO |  |
 | FRONTEND-14 | frontend_audit.md | High | P1 | S04-021 | Sprint 4 — Frontend Experience | TODO |  |
 | FRONTEND-15 | frontend_audit.md | High | P1 | S04-022 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-16 | frontend_audit.md | High | P1 | S02-015 | Sprint 2 — Security Hardening | TODO |  |
+| FRONTEND-16 | frontend_audit.md | High | P1 | S-$2 | Sprint  ... | DONE |  |
 | FRONTEND-17 | frontend_audit.md | High | P1 | S04-023 | Sprint 4 — Frontend Experience | TODO |  |
 | FRONTEND-18 | frontend_audit.md | Medium-High | P1 | S04-024 | Sprint 4 — Frontend Experience | TODO |  |
 | FRONTEND-19 | frontend_audit.md | Medium | P2 | S04-025 | Sprint 4 — Frontend Experience | TODO |  |

@@ -4,7 +4,6 @@ const store = {
     audio_output: "browser",
     userRole: "portal",
     adminUsername: "",
-    adminPassword: "",
     current_track: null,
     position: 0,
     volume: 80,

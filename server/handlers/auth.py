@@ -39,6 +39,10 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
                 return
 
         attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < 300]
+        
+        if attempts:
+            import asyncio
+            await asyncio.sleep(min(len(attempts), 5))
 
         if len(attempts) >= MAX_LOGIN_ATTEMPTS:
             manager.login_attempts[client_ip] = attempts
@@ -53,7 +57,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         if secrets.compare_digest(username, ADMIN_USERNAME) and verify_password(password, ADMIN_PASSWORD):
             new_token = secrets.token_hex(16)
             if db:
-                await db.create_session(new_token, int(now) + 86400)
+                await db.create_session(new_token, int(now) + 14400)
             manager.authenticated_connections.add(ws)
             manager.login_attempts.pop(client_ip, None)
             await ws.send_str(json.dumps({

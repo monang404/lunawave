@@ -751,6 +751,17 @@ class ServerManager(tk.Tk):
             except OSError:
                 pass
 
+            import sqlite3
+            db_path = BASE_DIR / "data" / "ytgui.db"
+            if db_path.exists():
+                try:
+                    conn = sqlite3.connect(db_path)
+                    conn.execute("DELETE FROM sessions")
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
+
             self._show_new_password_dialog(raw_password)
             self._write_log("Admin password has been reset successfully.", "ok")
         except Exception as e:

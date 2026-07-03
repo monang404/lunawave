@@ -160,8 +160,13 @@ def register_ws_handler(action: str):
 @register_ws_handler("search")
 async def _handle_search(data, ws, state, ytdlp, manager, db, command_bus):
     query = data.get("query", "").strip()
+    try:
+        max_results = min(max(1, int(data.get("max_results", 10))), 50)
+    except (ValueError, TypeError):
+        max_results = 10
+
     if query:
-        results = await ytdlp.search(query, max_results=10)
+        results = await ytdlp.search(query, max_results=max_results)
         await ws.send_str(json.dumps({
             "type": "search_results",
             "data": [track_to_dict(t) for t in results],
@@ -175,8 +180,17 @@ async def _handle_discover(data, ws, state, ytdlp, manager, db, command_bus):
 @register_ws_handler("toggle_favorite")
 async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_bus):
     video_id = data.get("video_id")
+    set_favorite = data.get("set_favorite")
+    
     if video_id and VIDEO_ID_REGEX.match(str(video_id)):
-        is_fav = await db.toggle_favorite(video_id)
+        if set_favorite is not None:
+            target = 1 if set_favorite else 0
+            await db.conn.execute("UPDATE tracks SET is_favorite = ? WHERE video_id = ?", (target, video_id))
+            await db.conn.commit()
+            is_fav = target
+        else:
+            is_fav = await db.toggle_favorite(video_id)
+            
         await ws.send_str(json.dumps({
             "type": "favorite_status",
             "data": {
@@ -228,8 +242,11 @@ async def _handle_stop(data, ws, state, ytdlp, manager, db, command_bus):
 
 @register_ws_handler("seek")
 async def _handle_seek(data, ws, state, ytdlp, manager, db, command_bus):
-    position = data.get("position", 0)
-    await command_bus.execute(CMD_SEEK, float(position))
+    try:
+        position = max(0.0, float(data.get("position", 0)))
+        await command_bus.execute(CMD_SEEK, position)
+    except (ValueError, TypeError):
+        pass
 
 @register_ws_handler("volume_up")
 async def _handle_volume_up(data, ws, state, ytdlp, manager, db, command_bus):
@@ -241,8 +258,11 @@ async def _handle_volume_down(data, ws, state, ytdlp, manager, db, command_bus):
 
 @register_ws_handler("volume_set")
 async def _handle_volume_set(data, ws, state, ytdlp, manager, db, command_bus):
-    vol = data.get("volume", 80)
-    await command_bus.execute(CMD_VOLUME_SET, {"volume": int(vol)})
+    try:
+        vol = max(0, min(150, int(data.get("volume", 80))))
+        await command_bus.execute(CMD_VOLUME_SET, {"volume": vol})
+    except (ValueError, TypeError):
+        pass
 
 @register_ws_handler("download")
 async def _handle_download(data, ws, state, ytdlp, manager, db, command_bus):
@@ -296,13 +316,19 @@ async def _handle_set_mode(data, ws, state, ytdlp, manager, db, command_bus):
 
 @register_ws_handler("queue_select")
 async def _handle_queue_select(data, ws, state, ytdlp, manager, db, command_bus):
-    index = data.get("index", 0)
-    await command_bus.execute(CMD_QUEUE_SELECT, int(index))
+    try:
+        index = max(0, int(data.get("index", 0)))
+        await command_bus.execute(CMD_QUEUE_SELECT, index)
+    except (ValueError, TypeError):
+        pass
 
 @register_ws_handler("queue_remove")
 async def _handle_queue_remove(data, ws, state, ytdlp, manager, db, command_bus):
-    index = data.get("index", 0)
-    await command_bus.execute(CMD_QUEUE_REMOVE, int(index))
+    try:
+        index = max(0, int(data.get("index", 0)))
+        await command_bus.execute(CMD_QUEUE_REMOVE, index)
+    except (ValueError, TypeError):
+        pass
 
 @register_ws_handler("queue_add")
 async def _handle_queue_add(data, ws, state, ytdlp, manager, db, command_bus):
@@ -312,9 +338,12 @@ async def _handle_queue_add(data, ws, state, ytdlp, manager, db, command_bus):
 
 @register_ws_handler("queue_reorder")
 async def _handle_queue_reorder(data, ws, state, ytdlp, manager, db, command_bus):
-    from_idx = int(data.get("from_index", 0))
-    to_idx = int(data.get("to_index", 0))
-    await command_bus.execute(CMD_QUEUE_REORDER, {"from_index": from_idx, "to_index": to_idx})
+    try:
+        from_idx = max(0, int(data.get("from_index", 0)))
+        to_idx = max(0, int(data.get("to_index", 0)))
+        await command_bus.execute(CMD_QUEUE_REORDER, {"from_index": from_idx, "to_index": to_idx})
+    except (ValueError, TypeError):
+        pass
 
 @register_ws_handler("enqueue_artist_songs")
 async def _handle_enqueue_artist_songs(data, ws, state, ytdlp, manager, db, command_bus):
@@ -345,8 +374,11 @@ async def _handle_set_sponsorblock(data, ws, state, ytdlp, manager, db, command_
 
 @register_ws_handler("lyrics_offset")
 async def _handle_lyrics_offset(data, ws, state, ytdlp, manager, db, command_bus):
-    offset = data.get("offset", 0.0)
-    await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})
+    try:
+        offset = float(data.get("offset", 0.0))
+        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": offset})
+    except (ValueError, TypeError):
+        pass
 
 async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db, command_bus):
     msg_type = msg.get("type")
@@ -364,14 +396,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
     if not require_auth(manager, ws):
         await ws.send_str(json.dumps({
             "type": "error",
-            "data": "Akses ditolak. Silakan login sebagai Admin.",
+            "data": {"code": "AUTH_REQUIRED", "message": "Akses ditolak. Silakan login sebagai Admin."},
         }))
         return
 
     if not await check_rate_limit(manager, client_ip, now):
         await ws.send_str(json.dumps({
             "type": "error",
-            "data": "Terlalu banyak permintaan. Mohon tunggu sesaat."
+            "data": {"code": "RATE_LIMITED", "message": "Terlalu banyak permintaan. Mohon tunggu sesaat."}
         }))
         return
 
@@ -385,7 +417,7 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         try:
             await ws.send_str(json.dumps({
                 "type": "error",
-                "data": str(e),
+                "data": {"code": "INTERNAL", "message": "Terjadi kesalahan internal saat memproses perintah."},
             }))
         except Exception:
             pass

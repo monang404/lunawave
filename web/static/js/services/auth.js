@@ -39,8 +39,9 @@ function login(user, pass) {
     dom.loginErrorMsg.textContent = "";
     
     store.adminUsername = user;
-    store.adminPassword = pass;
-    
+    if (dom.adminPassword) {
+        dom.adminPassword.value = "";
+    }
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
         wsSend("auth", { username: user, password: pass });
     } else {
@@ -77,10 +78,8 @@ function logout() {
 
     store.userRole = "portal";
     store.adminUsername = "";
-    store.adminPassword = "";
     safeStorage.remove("ytgui_user_role");
     safeStorage.remove("ytgui_admin_username");
-    safeStorage.remove("ytgui_admin_password");
     safeStorage.remove("ytgui_session_token");
 
     if (typeof closeSettings === "function") {

@@ -6,7 +6,9 @@ Publishes: (tidak ada)
 
 from cache.db import Database
 from core.state import TrackInfo
+import structlog
 
+logger = structlog.get_logger(__name__)
 
 class DiscoverService:
     def __init__(self, db: Database):
@@ -14,12 +16,12 @@ class DiscoverService:
 
     async def get_recent(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu yang terakhir diputar dari DB."""
-        if not getattr(self.db, '_conn', None):
+        if getattr(self.db, 'conn', None) is None:
             return []
 
         tracks = []
         try:
-            async with self.db._conn.execute(  # type: ignore
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT * FROM tracks ORDER BY last_played DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
@@ -35,18 +37,18 @@ class DiscoverService:
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in discover service: {e}")
         return tracks
 
     async def get_favorites(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu dengan play_count tertinggi atau eksplisit difavoritkan dari DB."""
-        if not getattr(self.db, '_conn', None):
+        if getattr(self.db, 'conn', None) is None:
             return []
 
         tracks = []
         try:
-            async with self.db._conn.execute(  # type: ignore
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT * FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
@@ -62,18 +64,18 @@ class DiscoverService:
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in discover service: {e}")
         return tracks
 
     async def get_cached(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu yang sudah ter-cache (local_path is not null)."""
-        if not getattr(self.db, '_conn', None):
+        if getattr(self.db, 'conn', None) is None:
             return []
 
         tracks = []
         try:
-            async with self.db._conn.execute(  # type: ignore
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT * FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
@@ -89,34 +91,34 @@ class DiscoverService:
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in discover service: {e}")
         return tracks
 
     async def get_featured_artists(self, n: int) -> list[dict]:
         """Mengambil n artis acak dari tabel artists beserta click_count."""
-        if not getattr(self.db, '_conn', None):
+        if getattr(self.db, 'conn', None) is None:
             return []
 
         artists = []
         try:
-            async with self.db._conn.execute(  # type: ignore
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT id, nama, kategori, tahun_aktif, COALESCE(click_count, 0) as click_count FROM artists WHERE id IN (SELECT id FROM artists ORDER BY RANDOM() LIMIT ?)", (n,)
             ) as cursor:
                 async for row in cursor:
                     artists.append(dict(row))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in discover service: {e}")
         return artists
 
     async def get_featured_genres(self, n: int) -> list[dict]:
         """Mengambil n genre acak dari tabel genres beserta click_count."""
-        if not getattr(self.db, '_conn', None):
+        if getattr(self.db, 'conn', None) is None:
             return []
 
         genres = []
         try:
-            async with self.db._conn.execute(  # type: ignore
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT id, nama_genre, COALESCE(click_count, 0) as click_count FROM genres WHERE id IN (SELECT id FROM genres ORDER BY RANDOM() LIMIT ?)", (n,)
             ) as cursor:
                 async for row in cursor:

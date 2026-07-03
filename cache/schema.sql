@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS artists (
     id INTEGER PRIMARY KEY,
     nama TEXT NOT NULL,
-    kategori TEXT,
+    kategori TEXT CHECK(kategori IN ('Boy Group', 'Girl Group', 'Solo', 'Band')),
     tahun_aktif TEXT
 );
 
@@ -57,5 +57,5 @@ CREATE TABLE IF NOT EXISTS songs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);
-CREATE INDEX IF NOT EXISTS idx_songs_youtube_id ON songs(youtube_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama);
 CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);

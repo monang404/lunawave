@@ -113,6 +113,16 @@ async def main():
         while True:
             await asyncio.sleep(86400)
             try:
+                import shutil
+                from pathlib import Path
+                from config import DB_PATH
+                try:
+                    if DB_PATH.exists():
+                        shutil.copy2(DB_PATH, Path(str(DB_PATH) + ".bak"))
+                        structlog.get_logger(__name__).info("Database backed up successfully.")
+                except Exception as e:
+                    structlog.get_logger(__name__).error(f"DB backup failed: {e}")
+
                 await db.evict_stale_tracks()
                 await db.cleanup_sessions()
             except Exception as e:

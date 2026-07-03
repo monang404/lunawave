@@ -80,7 +80,6 @@ function handleServerMessage(msg) {
                 if (msg.data.token) {
                     window.safeStorage.set("ytgui_session_token", msg.data.token);
                 }
-                window.safeStorage.remove("ytgui_admin_password");
                 dom.loginErrorMsg.textContent = "";
                 dom.portalLoginForm.classList.add("hidden");
                 applyRoleUI();
@@ -178,7 +177,11 @@ function handleServerMessage(msg) {
             showLogToast(msg.data);
             break;
         case "error":
-            showLogToast("Error: " + msg.data);
+            if (typeof msg.data === 'object' && msg.data.message) {
+                showLogToast("Error: " + msg.data.message);
+            } else {
+                showLogToast("Error: " + msg.data);
+            }
             break;
         case "download_progress":
             store.download_progress = msg.data;

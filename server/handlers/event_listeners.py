@@ -55,7 +55,7 @@ def setup_event_listeners(
     async def _on_download_complete(event: DownloadCompleteEvent):
         await broadcast_service.broadcast_state(playback_controller.state)
         if event.track:
-            safe_create_task(playback_controller.resolver.db.upsert_track(event.track, local_path=event.track.local_path), name="upsert_dl_track")
+            await playback_controller.resolver.db.upsert_track(event.track, local_path=event.track.local_path)
             from server.serializers import track_to_dict
             from server.services.discover_service import DiscoverService
             ds = DiscoverService(playback_controller.resolver.db)
