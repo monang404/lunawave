@@ -6,67 +6,49 @@ hanya ada SATU handler untuk setiap command.
 
 import asyncio
 import time
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Type, TypeVar
 
 import structlog
 
 from core.observability import COMMAND_COUNT, COMMAND_LATENCY
+from core.commands import DomainCommand
 
 logger = structlog.get_logger(__name__)
 
+C = TypeVar("C", bound=DomainCommand)
+
 class CommandBus:
     def __init__(self):
-        self._handlers: Dict[str, Callable] = {}
+        self._handlers: Dict[Type[DomainCommand], Callable] = {}
 
-    def register(self, command: str, handler: Callable):
-        if command in self._handlers:
-            raise RuntimeError(f"Command '{command}' is already registered to {self._handlers[command]}")
-        self._handlers[command] = handler
+    def register(self, command_type: Type[C], handler: Callable[[C], Any]):
+        if command_type in self._handlers:
+            raise RuntimeError(f"Command '{command_type.__name__}' is already registered to {self._handlers[command_type]}")
+        self._handlers[command_type] = handler
 
-    def unregister(self, command: str):
-        if command in self._handlers:
-            del self._handlers[command]
+    def unregister(self, command_type: Type[C]):
+        if command_type in self._handlers:
+            del self._handlers[command_type]
 
-    async def execute(self, command: str, data: Any = None) -> Any:
-        if command not in self._handlers:
-            raise RuntimeError(f"No handler registered for command '{command}'")
+    async def execute(self, command: DomainCommand) -> Any:
+        command_type = type(command)
+        if command_type not in self._handlers:
+            raise RuntimeError(f"No handler registered for command '{command_type.__name__}'")
 
-        handler = self._handlers[command]
+        handler = self._handlers[command_type]
         start_time = time.perf_counter()
         status = "success"
 
         try:
             if asyncio.iscoroutinefunction(handler):
-                return await handler(data)
+                return await handler(command)
             else:
-                return handler(data)
+                return handler(command)
         except Exception as e:
             status = "error"
-            logger.error(f"Command execution error for '{command}': {e}", exc_info=True)
+            logger.error(f"Command execution error for '{command_type.__name__}': {e}", exc_info=True)
             raise
         finally:
             duration = time.perf_counter() - start_time
-            COMMAND_LATENCY.labels(command_name=command).observe(duration)
-            COMMAND_COUNT.labels(command_name=command, status=status).inc()
-
-CMD_PLAY_TRACK   = "cmd.play.track"
-CMD_TOGGLE_PAUSE = "cmd.toggle.pause"
-CMD_NEXT         = "cmd.next"
-CMD_PREV         = "cmd.prev"
-CMD_STOP         = "cmd.stop"
-CMD_SEEK         = "cmd.seek"
-CMD_VOLUME_UP    = "cmd.volume.up"
-CMD_VOLUME_DOWN  = "cmd.volume.down"
-CMD_VOLUME_SET   = "cmd.volume.set"
-CMD_DOWNLOAD     = "cmd.download"
-CMD_SET_MODE     = "cmd.set.mode"
-CMD_SET_OUTPUT   = "cmd.set.output"
-CMD_SET_SPONSORBLOCK = "cmd.set.sponsorblock"
-CMD_QUEUE_SELECT = "cmd.queue.select"
-CMD_QUEUE_ADD    = "cmd.queue.add"
-CMD_QUEUE_REPLACE= "cmd.queue.replace"
-CMD_QUEUE_REMOVE = "cmd.queue.remove"
-CMD_QUEUE_REORDER = "cmd.queue.reorder"
-CMD_RADIO_RANDOMIZE = "cmd.radio.randomize"
-CMD_LYRICS_OFFSET = "cmd.lyrics.offset"
-CMD_QUIT         = "cmd.quit"
+            COMMAND_LATENCY.labels(command_name=command_type.__name__).observe(duration)
+            COMMAND_COUNT.labels(command_name=command_type.__name__, status=status).inc()

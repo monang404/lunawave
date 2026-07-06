@@ -6,15 +6,15 @@
             switch (e.code) {
                 case 'Space':
                     e.preventDefault();
-                    if (typeof cmd === 'function') cmd('play');
+                    cmd('play');
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    if (typeof cmd === 'function') cmd('next');
+                    cmd('next');
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    if (typeof cmd === 'function') cmd('prev');
+                    cmd('prev');
                     break;
             }
         });

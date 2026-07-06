@@ -2,7 +2,19 @@
 
 @media (max-width: 600px) {
   #tab-home .lyrics-wrap {
+    max-height: 40px;
+    overflow: hidden;
+  }
+  #tab-home .lyrics-line.prev,
+  #tab-home .lyrics-line.next {
     display: none !important;
+  }
+  #tab-home .lyrics-line.current {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
   }
   
   .idle-text-slide {

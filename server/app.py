@@ -26,13 +26,13 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     if event_bus:
         app["event_bus"] = event_bus
 
-    app.router.add_get("/", serve_index)
-    app.router.add_get("/admin", serve_index)
-    app.router.add_get("/ws", ws_handler)
-    app.router.add_get("/api/stream/{video_id}", serve_stream)
-    app.router.add_get("/health", health_check)
-    app.router.add_get("/metrics", serve_metrics)
-    app.router.add_static("/static", STATIC_DIR, name="static", append_version=True)
+    from server.routes import ROUTE_INDEX, ROUTE_WS, ROUTE_STREAM, ROUTE_HEALTH, ROUTE_METRICS, ROUTE_STATIC
+    app.router.add_get(ROUTE_INDEX, serve_index)
+    app.router.add_get(ROUTE_WS, ws_handler)
+    app.router.add_get(ROUTE_STREAM, serve_stream)
+    app.router.add_get(ROUTE_HEALTH, health_check)
+    app.router.add_get(ROUTE_METRICS, serve_metrics)
+    app.router.add_static(ROUTE_STATIC, STATIC_DIR, name="static", append_version=True)
 
     return app
 

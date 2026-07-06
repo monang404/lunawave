@@ -2,7 +2,7 @@ import time
 
 from core.state import AppState
 from server.handlers.websocket import ConnectionManager
-from server.serializers import state_to_dict
+
 
 
 class BroadcastService:
@@ -12,7 +12,7 @@ class BroadcastService:
     async def broadcast_state(self, state: AppState):
         await self.manager.broadcast({
             "type": "state",
-            "data": state_to_dict(state),
+            "data": state.to_dict(),
         })
 
     async def broadcast_progress(self, position: float, status_name: str):

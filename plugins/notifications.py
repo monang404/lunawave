@@ -16,7 +16,7 @@ import time
 import structlog
 
 from config import BASE_DIR
-from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE
+from core.commands import NextCommand, PrevCommand, TogglePauseCommand
 from core.event_bus import EventBus
 from core.events import TrackPauseChangedEvent, TrackStartedEvent
 from core.state import TrackInfo
@@ -28,9 +28,9 @@ _SOCK_DIR = BASE_DIR / "cache" / "sockets"
 _FIFO_PATH = _SOCK_DIR / "nowplaying.fifo"
 _SHEBANG = "#!/data/data/com.termux/files/usr/bin/bash"
 _TOKEN_TO_EVENT = {
-    "prev": CMD_PREV,
-    "next": CMD_NEXT,
-    "toggle": CMD_TOGGLE_PAUSE,
+    "prev": PrevCommand,
+    "next": NextCommand,
+    "toggle": TogglePauseCommand,
 }
 
 
@@ -95,9 +95,9 @@ class TermuxNowPlaying:
                 time.sleep(1)
 
     async def _handle_token(self, token: str):
-        event = _TOKEN_TO_EVENT.get(token)
-        if event:
-            await self.command_bus.execute(event)
+        command_cls = _TOKEN_TO_EVENT.get(token)
+        if command_cls:
+            await self.command_bus.execute(command_cls())
 
     async def _on_track_started(self, event: TrackStartedEvent):
         self._track = event.track

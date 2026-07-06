@@ -7,34 +7,14 @@ import structlog
 from aiohttp import web
 
 from config import TRUSTED_PROXY
-from core.command_bus import (
-    CMD_DOWNLOAD,
-    CMD_LYRICS_OFFSET,
-    CMD_NEXT,
-    CMD_PLAY_TRACK,
-    CMD_PREV,
-    CMD_QUEUE_ADD,
-    CMD_QUEUE_REMOVE,
-    CMD_QUEUE_REORDER,
-    CMD_QUEUE_REPLACE,
-    CMD_QUEUE_SELECT,
-    CMD_RADIO_RANDOMIZE,
-    CMD_SEEK,
-    CMD_SET_MODE,
-    CMD_SET_OUTPUT,
-    CMD_SET_SPONSORBLOCK,
-    CMD_STOP,
-    CMD_TOGGLE_PAUSE,
-    CMD_VOLUME_DOWN,
-    CMD_VOLUME_SET,
-    CMD_VOLUME_UP,
-)
 from core.observability import ACTIVE_WEBSOCKETS
-from core.state import AudioOutput, PlaybackMode
 from server.handlers.auth import handle_auth, require_auth
 from server.middleware import check_rate_limit
-from server.serializers import VIDEO_ID_REGEX, dict_to_track, state_to_dict, track_to_dict
-from server.services.discover_service import DiscoverService
+from server.handlers.ws.utils import error_payload
+
+# Import the WS handlers registry
+from server.handlers.ws import _ws_handlers
+from core.ws_actions import WSAction
 
 logger = structlog.get_logger(__name__)
 from core.log_config import STATS as _LOG_STATS
@@ -100,7 +80,7 @@ async def ws_handler(request):
     try:
         await ws.send_str(json.dumps({
             "type": "state",
-            "data": state_to_dict(state),
+            "data": state.to_dict(),
         }, ensure_ascii=False))
     except Exception:
         manager.disconnect(ws)
@@ -126,260 +106,6 @@ async def ws_handler(request):
 
     return ws
 
-
-async def _build_discover_payload(db):
-    ds = DiscoverService(db)
-    recent = await ds.get_recent(15)
-    favorites = await ds.get_favorites(15)
-    cached = await ds.get_cached(15)
-    featured_artists = await ds.get_featured_artists(100)
-    featured_genres = await ds.get_featured_genres(100)
-    return {
-        "type": "discover_data",
-        "data": {
-            "recent": [track_to_dict(t) for t in recent],
-            "favorites": [track_to_dict(t) for t in favorites],
-            "cached_tracks": [track_to_dict(t) for t in cached],
-            "featured_artists": featured_artists,
-            "featured_genres": featured_genres
-        }
-    }
-
-async def broadcast_discover_data(manager, db):
-    payload = await _build_discover_payload(db)
-    await manager.broadcast(payload)
-
-_ws_handlers = {}  # type: ignore
-
-def register_ws_handler(action: str):
-    def decorator(func):
-        _ws_handlers[action] = func
-        return func
-    return decorator
-
-@register_ws_handler("search")
-async def _handle_search(data, ws, state, ytdlp, manager, db, command_bus):
-    query = data.get("query", "").strip()
-    try:
-        max_results = min(max(1, int(data.get("max_results", 10))), 50)
-    except (ValueError, TypeError):
-        max_results = 10
-
-    if query:
-        results = await ytdlp.search(query, max_results=max_results)
-        await ws.send_str(json.dumps({
-            "type": "search_results",
-            "data": [track_to_dict(t) for t in results],
-        }, ensure_ascii=False))
-
-@register_ws_handler("discover")
-async def _handle_discover(data, ws, state, ytdlp, manager, db, command_bus):
-    payload = await _build_discover_payload(db)
-    await ws.send_str(json.dumps(payload, ensure_ascii=False))
-
-@register_ws_handler("toggle_favorite")
-async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_bus):
-    video_id = data.get("video_id")
-    set_favorite = data.get("set_favorite")
-    
-    if video_id and VIDEO_ID_REGEX.match(str(video_id)):
-        if set_favorite is not None:
-            target = 1 if set_favorite else 0
-            await db.conn.execute("UPDATE tracks SET is_favorite = ? WHERE video_id = ?", (target, video_id))
-            await db.conn.commit()
-            is_fav = target
-        else:
-            is_fav = await db.toggle_favorite(video_id)
-            
-        await ws.send_str(json.dumps({
-            "type": "favorite_status",
-            "data": {
-                "video_id": video_id,
-                "is_favorite": bool(is_fav)
-            }
-        }, ensure_ascii=False))
-
-        if state.current_track and state.current_track.video_id == video_id:
-            state.current_track.is_favorite = is_fav
-            await manager.broadcast({
-                "type": "state",
-                "data": state_to_dict(state)
-            })
-        await broadcast_discover_data(manager, db)
-
-@register_ws_handler("enqueue_genre_songs")
-async def _handle_enqueue_genre_songs(data, ws, state, ytdlp, manager, db, command_bus):
-    genre_name = data.get("genre")
-    if genre_name:
-        await db.increment_genre_click(genre_name)
-        songs = await db.get_genre_songs(genre_name, total_limit=12, max_per_artist=3)
-        if songs:
-            await command_bus.execute(CMD_SET_MODE, PlaybackMode.QUEUE)
-            await command_bus.execute(CMD_QUEUE_REPLACE, songs)
-            await command_bus.execute(CMD_QUEUE_SELECT, 0)
-
-@register_ws_handler("play_track")
-async def _handle_play_track(data, ws, state, ytdlp, manager, db, command_bus):
-    track = dict_to_track(data)
-    if track:
-        await command_bus.execute(CMD_PLAY_TRACK, track)
-
-@register_ws_handler("toggle_pause")
-async def _handle_toggle_pause(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_TOGGLE_PAUSE)
-
-@register_ws_handler("next")
-async def _handle_next(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_NEXT, data)
-
-@register_ws_handler("prev")
-async def _handle_prev(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_PREV)
-
-@register_ws_handler("stop")
-async def _handle_stop(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_STOP)
-
-@register_ws_handler("seek")
-async def _handle_seek(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        position = max(0.0, float(data.get("position", 0)))
-        await command_bus.execute(CMD_SEEK, position)
-    except (ValueError, TypeError):
-        pass
-
-@register_ws_handler("volume_up")
-async def _handle_volume_up(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_VOLUME_UP)
-
-@register_ws_handler("volume_down")
-async def _handle_volume_down(data, ws, state, ytdlp, manager, db, command_bus):
-    await command_bus.execute(CMD_VOLUME_DOWN)
-
-@register_ws_handler("volume_set")
-async def _handle_volume_set(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        vol = max(0, min(150, int(data.get("volume", 80))))
-        await command_bus.execute(CMD_VOLUME_SET, {"volume": vol})
-    except (ValueError, TypeError):
-        pass
-
-@register_ws_handler("download")
-async def _handle_download(data, ws, state, ytdlp, manager, db, command_bus):
-    track = dict_to_track(data) if data else None
-    await command_bus.execute(CMD_DOWNLOAD, track)
-
-@register_ws_handler("delete_download")
-async def _handle_delete_download(data, ws, state, ytdlp, manager, db, command_bus):
-    track = dict_to_track(data) if data else None
-    if track and track.video_id:
-        db_track = await db.get_track(track.video_id)
-        if db_track and db_track.local_path:
-            import os
-
-            from core.utils import user_download_path
-
-            if os.path.exists(db_track.local_path):
-                try:
-                    os.remove(db_track.local_path)
-                except Exception as e:
-                    logger.error(f"Gagal menghapus cache {db_track.local_path}: {e}")
-
-            user_path = user_download_path(db_track.artist, db_track.title)
-            if user_path.exists():
-                try:
-                    os.remove(str(user_path))
-                except:
-                    pass
-
-            db_track.local_path = None
-            await db.set_local_path(db_track.video_id, None)
-
-            if state.current_track and state.current_track.video_id == db_track.video_id:
-                state.current_track.local_path = None
-                await manager.broadcast({
-                    "type": "state",
-                    "data": state_to_dict(state)
-                })
-
-            await broadcast_discover_data(manager, db)
-            await manager.broadcast({
-                "type": "log",
-                "data": f"Unduhan dihapus: {db_track.title}"
-            })
-
-@register_ws_handler("set_mode")
-async def _handle_set_mode(data, ws, state, ytdlp, manager, db, command_bus):
-    mode_str = data.get("mode", "queue").upper()
-    mode = PlaybackMode.RADIO if mode_str == "RADIO" else PlaybackMode.QUEUE
-    await command_bus.execute(CMD_SET_MODE, mode)
-
-@register_ws_handler("queue_select")
-async def _handle_queue_select(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        index = max(0, int(data.get("index", 0)))
-        await command_bus.execute(CMD_QUEUE_SELECT, index)
-    except (ValueError, TypeError):
-        pass
-
-@register_ws_handler("queue_remove")
-async def _handle_queue_remove(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        index = max(0, int(data.get("index", 0)))
-        await command_bus.execute(CMD_QUEUE_REMOVE, index)
-    except (ValueError, TypeError):
-        pass
-
-@register_ws_handler("queue_add")
-async def _handle_queue_add(data, ws, state, ytdlp, manager, db, command_bus):
-    track = dict_to_track(data)
-    if track:
-        await command_bus.execute(CMD_QUEUE_ADD, track)
-
-@register_ws_handler("queue_reorder")
-async def _handle_queue_reorder(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        from_idx = max(0, int(data.get("from_index", 0)))
-        to_idx = max(0, int(data.get("to_index", 0)))
-        await command_bus.execute(CMD_QUEUE_REORDER, {"from_index": from_idx, "to_index": to_idx})
-    except (ValueError, TypeError):
-        pass
-
-@register_ws_handler("enqueue_artist_songs")
-async def _handle_enqueue_artist_songs(data, ws, state, ytdlp, manager, db, command_bus):
-    artist_name = data.get("artist")
-    if artist_name:
-        songs = await db.get_artist_songs_strict(artist=artist_name, limit=10)
-        if songs:
-            await db.increment_artist_click(artist_name)
-            first_track, rest_tracks = songs[0], songs[1:]
-            await command_bus.execute(CMD_QUEUE_REPLACE, rest_tracks)
-            await command_bus.execute(CMD_PLAY_TRACK, first_track)
-
-@register_ws_handler("radio_randomize")
-async def _handle_radio_randomize(data, ws, state, ytdlp, manager, db, command_bus):
-    seed_artist = data.get("seed_artist")
-    await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
-
-@register_ws_handler("set_output")
-async def _handle_set_output(data, ws, state, ytdlp, manager, db, command_bus):
-    output_str = data.get("output", "device")
-    output_val = AudioOutput.BROWSER if output_str == "browser" else AudioOutput.DEVICE
-    await command_bus.execute(CMD_SET_OUTPUT, output_val)
-
-@register_ws_handler("set_sponsorblock")
-async def _handle_set_sponsorblock(data, ws, state, ytdlp, manager, db, command_bus):
-    enabled = data.get("enabled", True)
-    await command_bus.execute(CMD_SET_SPONSORBLOCK, bool(enabled))
-
-@register_ws_handler("lyrics_offset")
-async def _handle_lyrics_offset(data, ws, state, ytdlp, manager, db, command_bus):
-    try:
-        offset = float(data.get("offset", 0.0))
-        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": offset})
-    except (ValueError, TypeError):
-        pass
-
 async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db, command_bus):
     msg_type = msg.get("type")
     action = msg.get("action", "")
@@ -389,21 +115,21 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         return
 
     now = time.time()
-    if action == "auth":
+    if action == WSAction.AUTH:
         await handle_auth(ws, data, manager, client_ip, db, now)
         return
 
     if not require_auth(manager, ws):
         await ws.send_str(json.dumps({
             "type": "error",
-            "data": {"code": "AUTH_REQUIRED", "message": "Akses ditolak. Silakan login sebagai Admin."},
+            "data": error_payload("AUTH_REQUIRED", "Akses ditolak. Silakan login sebagai Admin.")["error"],
         }))
         return
 
     if not await check_rate_limit(manager, client_ip, now):
         await ws.send_str(json.dumps({
             "type": "error",
-            "data": {"code": "RATE_LIMITED", "message": "Terlalu banyak permintaan. Mohon tunggu sesaat."}
+            "data": error_payload("RATE_LIMITED", "Terlalu banyak permintaan. Mohon tunggu sesaat.")["error"]
         }))
         return
 
@@ -417,9 +143,7 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         try:
             await ws.send_str(json.dumps({
                 "type": "error",
-                "data": {"code": "INTERNAL", "message": "Terjadi kesalahan internal saat memproses perintah."},
+                "data": error_payload("INTERNAL", "Terjadi kesalahan internal saat memproses perintah.")["error"],
             }))
         except Exception:
             pass
-
-

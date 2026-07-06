@@ -445,19 +445,8 @@
   }
 }
 
-.home-art-frame::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 60%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transform: translateX(-150%) skewX(-25deg);
-  animation: shinySweep 7s infinite cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  z-index: 2;
-}
+/* NOTE: .home-art-frame::after is defined in player-bar.css (gradient overlay).
+   The shiny sweep animation uses a child element approach instead to avoid conflict. */
 
 /* ══ HASHTAG CLOUD ══ */
 .hashtag-cloud-container {

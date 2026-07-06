@@ -19,14 +19,14 @@ function initLyricsEvents() {
         dom.btnLyrics.addEventListener("click", () => {
             if (dom.lyricsSheet) dom.lyricsSheet.classList.add("open");
             if (dom.mainOverlay) dom.mainOverlay.classList.add("open");
-            if (typeof renderLyrics === "function") renderLyrics();
+            renderLyrics();
         });
     }
 
     if (dom.lyricsCloseBtn) {
         dom.lyricsCloseBtn.addEventListener("click", () => {
             if (dom.lyricsSheet) dom.lyricsSheet.classList.remove("open");
-            if (typeof closeMainOverlay === "function") closeMainOverlay();
+            closeMainOverlay();
         });
     }
 
@@ -34,9 +34,9 @@ function initLyricsEvents() {
         dom.lyricOffsetMinus.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
             store.lyrics_offset = (store.lyrics_offset || 0) - 0.5;
-            if (typeof updateOffsetDisplay === "function") updateOffsetDisplay();
-            if (typeof syncLocalLyrics === "function") syncLocalLyrics();
-            wsSend("lyrics_offset", { offset: store.lyrics_offset });
+            updateOffsetDisplay();
+            syncLocalLyrics();
+            wsSend(WS_ACTIONS.LYRICS_OFFSET, { offset: store.lyrics_offset });
         });
     }
 
@@ -44,9 +44,9 @@ function initLyricsEvents() {
         dom.lyricOffsetPlus.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
             store.lyrics_offset = (store.lyrics_offset || 0) + 0.5;
-            if (typeof updateOffsetDisplay === "function") updateOffsetDisplay();
-            if (typeof syncLocalLyrics === "function") syncLocalLyrics();
-            wsSend("lyrics_offset", { offset: store.lyrics_offset });
+            updateOffsetDisplay();
+            syncLocalLyrics();
+            wsSend(WS_ACTIONS.LYRICS_OFFSET, { offset: store.lyrics_offset });
         });
     }
 
@@ -60,9 +60,9 @@ function initLyricsEvents() {
                 e.stopPropagation();
                 if (store.userRole !== "admin") return;
                 store.lyrics_offset = (store.lyrics_offset || 0) - 0.5;
-                if (typeof updateOffsetDisplay === "function") updateOffsetDisplay();
-                if (typeof syncLocalLyrics === "function") syncLocalLyrics();
-                wsSend("lyrics_offset", { offset: store.lyrics_offset });
+                updateOffsetDisplay();
+                syncLocalLyrics();
+                wsSend(WS_ACTIONS.LYRICS_OFFSET, { offset: store.lyrics_offset });
                 showLyricSync();
             });
         }
@@ -71,9 +71,9 @@ function initLyricsEvents() {
                 e.stopPropagation();
                 if (store.userRole !== "admin") return;
                 store.lyrics_offset = (store.lyrics_offset || 0) + 0.5;
-                if (typeof updateOffsetDisplay === "function") updateOffsetDisplay();
-                if (typeof syncLocalLyrics === "function") syncLocalLyrics();
-                wsSend("lyrics_offset", { offset: store.lyrics_offset });
+                updateOffsetDisplay();
+                syncLocalLyrics();
+                wsSend(WS_ACTIONS.LYRICS_OFFSET, { offset: store.lyrics_offset });
                 showLyricSync();
             });
         }

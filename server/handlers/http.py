@@ -9,6 +9,8 @@ from aiohttp import web
 
 from config import CACHE_DIR, STREAM_URL_TTL_SEC
 from core.observability import get_metrics_content
+from server.handlers.ws.utils import error_payload
+from core.value_objects import VideoId
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
@@ -45,16 +47,18 @@ async def health_check(request):
     }, status=status_code)
 
 async def serve_stream(request):
-    video_id = request.match_info.get("video_id")
-    if not video_id or not re.match(r"^[a-zA-Z0-9_-]{11}$", video_id):
-        return web.json_response({"error": "Invalid video_id"}, status=400)
+    video_id_str = request.match_info.get("video_id")
+    try:
+        video_id = VideoId(video_id_str)
+    except ValueError:
+        return web.json_response(error_payload("HTTP_ERROR", "Invalid video_id"), status=400)
 
     client_ip = request.remote
     now = time.monotonic()
     history = _stream_rate_limit[client_ip]
     history = [t for t in history if now - t < 60]
     if len(history) >= STREAM_RATE_LIMIT_MAX:
-        return web.json_response({"error": "Terlalu banyak request. Silakan coba lagi nanti."}, status=429)
+        return web.json_response(error_payload("HTTP_ERROR", "Terlalu banyak request. Silakan coba lagi nanti."), status=429)
     history.append(now)
     _stream_rate_limit[client_ip] = history
 
@@ -62,14 +66,14 @@ async def serve_stream(request):
     origin = request.headers.get("Origin", "")
     host = request.host
     if host not in referer and host not in origin and request.remote not in ("127.0.0.1", "::1"):
-        return web.json_response({"error": "Unauthorized origin"}, status=403)
+        return web.json_response(error_payload("HTTP_ERROR", "Unauthorized origin"), status=403)
 
     cache_file = CACHE_DIR / f"{video_id}.mp3"
     try:
         if not cache_file.resolve().is_relative_to(CACHE_DIR.resolve()):
-            return web.json_response({"error": "Akses ditolak"}, status=403)
+            return web.json_response(error_payload("HTTP_ERROR", "Akses ditolak"), status=403)
     except Exception:
-        return web.json_response({"error": "Path tidak valid"}, status=400)
+        return web.json_response(error_payload("HTTP_ERROR", "Path tidak valid"), status=400)
 
     if cache_file.exists():
         stat = cache_file.stat()
@@ -103,7 +107,7 @@ async def serve_stream(request):
                 await db.update_stream_url_only(video_id, stream_url)
             except Exception as e:
                 logger.error(f"Gagal fetch stream URL untuk redirect: {e}")
-                return web.json_response({"error": "Stream tidak tersedia saat ini"}, status=503)
+                return web.json_response(error_payload("HTTP_ERROR", "Stream tidak tersedia saat ini"), status=503)
         from urllib.parse import urlparse as _urlparse
         _p = _urlparse(stream_url)
         _domain = _p.netloc.lower()
@@ -111,7 +115,7 @@ async def serve_stream(request):
             _domain.endswith(".googlevideo.com") or _domain.endswith(".youtube.com")
         ):
             logger.error(f"URL stream tidak valid untuk redirect: {stream_url}")
-            return web.json_response({"error": "URL stream tidak valid"}, status=403)
+            return web.json_response(error_payload("HTTP_ERROR", "URL stream tidak valid"), status=403)
         return web.HTTPFound(stream_url)
 
     for attempt in range(2):
@@ -121,7 +125,7 @@ async def serve_stream(request):
                 await db.update_stream_url_only(video_id, stream_url)
             except Exception as e:
                 if attempt == 1:
-                    return web.json_response({"error": f"Gagal mencari stream: {e}"}, status=500)
+                    return web.json_response(error_payload("HTTP_ERROR", f"Gagal mencari stream: {e}"), status=500)
                 continue
 
         try:
@@ -134,7 +138,7 @@ async def serve_stream(request):
                 raise ValueError(f"Domain tidak sah: {domain}")
         except Exception as e:
             logger.error(f"SSRF terdeteksi atau URL stream tidak valid: {stream_url} - {e}")
-            return web.json_response({"error": "URL stream tidak valid"}, status=403)
+            return web.json_response(error_payload("HTTP_ERROR", "URL stream tidak valid"), status=403)
 
         try:
             headers = {}
@@ -178,7 +182,7 @@ async def serve_stream(request):
             if attempt == 0:
                 stream_url = None
                 continue
-            return web.json_response({"error": "Proxy stream error"}, status=500)
+            return web.json_response(error_payload("HTTP_ERROR", "Proxy stream error"), status=500)
 
 async def serve_metrics(request):
     import os as _os

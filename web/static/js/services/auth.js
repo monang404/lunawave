@@ -43,7 +43,7 @@ function login(user, pass) {
         dom.adminPassword.value = "";
     }
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-        wsSend("auth", { username: user, password: pass });
+        wsSend(WS_ACTIONS.AUTH, { username: user, password: pass });
     } else {
         dom.loginErrorMsg.textContent = "Koneksi server terputus. Silakan tunggu/refresh.";
         if (dom.adminSubmitBtn) {
@@ -70,7 +70,7 @@ function logout() {
 
     if (store.userRole === "admin") {
         try {
-            wsSend("stop");
+            wsSend(WS_ACTIONS.STOP);
         } catch (e) {
             console.warn("Failed to send stop command:", e);
         }
@@ -82,9 +82,7 @@ function logout() {
     safeStorage.remove("ytgui_admin_username");
     safeStorage.remove("ytgui_session_token");
 
-    if (typeof closeSettings === "function") {
-        closeSettings();
-    }
+    closeSettings();
 
     if (window.location.pathname !== "/admin") {
         setTimeout(() => {

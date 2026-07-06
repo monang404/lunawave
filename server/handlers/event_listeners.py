@@ -23,8 +23,6 @@ def setup_event_listeners(
     prefetch_service: StreamPrefetchService,
     broadcast_service: BroadcastService
 ):
-    last_progress = 0.0
-
     async def _on_track_started(event: TrackStartedEvent):
         state = playback_controller.state
         _next = None
@@ -38,12 +36,7 @@ def setup_event_listeners(
         await broadcast_service.broadcast_state(state)
 
     async def _on_track_progress(event: TrackProgressEvent):
-        nonlocal last_progress
         position = event.position
-        now = time.monotonic()
-        if now - last_progress < 0.33:
-            return
-        last_progress = now
         await broadcast_service.broadcast_progress(position, playback_controller.state.status.name)
 
     async def _on_queue_updated(event: QueueUpdatedEvent):
@@ -56,24 +49,8 @@ def setup_event_listeners(
         await broadcast_service.broadcast_state(playback_controller.state)
         if event.track:
             await playback_controller.resolver.db.upsert_track(event.track, local_path=event.track.local_path)
-            from server.serializers import track_to_dict
-            from server.services.discover_service import DiscoverService
-            ds = DiscoverService(playback_controller.resolver.db)
-            recent = await ds.get_recent(15)
-            favorites = await ds.get_favorites(15)
-            cached = await ds.get_cached(15)
-            featured_artists = await ds.get_featured_artists(100)
-            featured_genres = await ds.get_featured_genres(100)
-            await broadcast_service.manager.broadcast({
-                "type": "discover_data",
-                "data": {
-                    "recent": [track_to_dict(t) for t in recent],
-                    "favorites": [track_to_dict(t) for t in favorites],
-                    "cached_tracks": [track_to_dict(t) for t in cached],
-                    "featured_artists": featured_artists,
-                    "featured_genres": featured_genres
-                }
-            })
+            from server.handlers.ws.discover_handlers import broadcast_discover_data
+            await broadcast_discover_data(broadcast_service.manager, playback_controller.resolver.db)
 
     async def _on_log_message(event: LogMessageEvent):
         msg = event.message

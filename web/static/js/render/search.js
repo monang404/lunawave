@@ -30,7 +30,7 @@ function renderSearchResults(results) {
 
         const title = document.createElement("div");
         title.className = "sr-title";
-        title.textContent = typeof cleanTrackTitle === "function" ? cleanTrackTitle(track.title) : track.title;
+        title.textContent = cleanTrackTitle(track.title);
 
         const meta = document.createElement("div");
         meta.className = "sr-meta";
@@ -52,7 +52,7 @@ function renderSearchResults(results) {
         moreBtn.innerHTML = '<i class="ti ti-dots-vertical"></i>';
         moreBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (typeof showActionModal === "function") showActionModal(track);
+            showActionModal(track);
         });
 
         item.appendChild(thumb);
@@ -78,14 +78,12 @@ function updateSearchPlayingState() {
         item.classList.toggle("playing", !!(isCurrent && isPlaying));
     });
     
-    if (typeof window.loadLazyCovers === "function") {
-        window.loadLazyCovers();
-    }
+    window.loadLazyCovers();
 }
 
 function playSearchTrack(track) {
     if (store.userRole !== "admin" || !track) return;
-    wsSend("play_track", track);
+    wsSend(WS_ACTIONS.PLAY_TRACK, track);
 }
 
 function showActionModal(track) {

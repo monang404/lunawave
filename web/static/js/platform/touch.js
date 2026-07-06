@@ -3,9 +3,7 @@
     let touchStartY = 0;
 
     document.addEventListener('touchstart', e => {
-        if (typeof unlockBrowserAudio === 'function') {
-            unlockBrowserAudio();
-        }
+        unlockBrowserAudio();
         if (e.touches.length === 1) {
             touchStartX = e.touches[0].screenX;
             touchStartY = e.touches[0].screenY;
@@ -25,13 +23,13 @@
             
             if (diffX > 80 && diffX > diffY) {
                 if (store.userRole !== "admin") {
-                    if (typeof showLogToast === "function") showLogToast("Hanya admin yang bisa memutar musik");
+                    showLogToast("Hanya admin yang bisa memutar musik");
                     return;
                 }
                 if (touchEndX < touchStartX) {
-                    if (typeof wsSend === 'function') wsSend('next');
+                    wsSend(WS_ACTIONS.NEXT);
                 } else {
-                    if (typeof wsSend === 'function') wsSend('prev');
+                    wsSend(WS_ACTIONS.PREV);
                 }
             }
         }

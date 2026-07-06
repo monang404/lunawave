@@ -67,7 +67,7 @@ function renderNowPlaying() {
         dom.npTitle.innerHTML = '<span class="spinner" style="display:inline-block; margin-right:8px; vertical-align:-3px; width:20px; height:20px;"></span> ⏳ Memuat...';
         dom.npArtist.textContent = (t && t.title) ? t.title : "";
     } else if (t && t.title) {
-        const cleanedTitle = typeof cleanTrackTitle === "function" ? cleanTrackTitle(t.title) : t.title;
+        const cleanedTitle = cleanTrackTitle(t.title);
         dom.npTitle.textContent = cleanedTitle.toLowerCase().replace(/(?:^|\s|-)\S/g, function(a) { return a.toUpperCase(); });
         dom.npArtist.textContent = t.artist || "";
     } else {

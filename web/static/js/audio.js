@@ -23,7 +23,7 @@ function getOrInitAudio() {
                     store.position = localAudio.currentTime;
                     renderProgress();
                 }
-                if (typeof syncLocalLyrics === "function") syncLocalLyrics();
+                syncLocalLyrics();
             }
         });
     }
@@ -126,9 +126,7 @@ function _showTapToPlayBanner() {
             const audio = getOrInitAudio();
             if (audio && audio.src && !audio.src.startsWith('data:')) {
                 _resumeAndPlay(audio);
-            } else if (typeof syncBrowserAudio === "function") {
-                syncBrowserAudio(true);
-            }
+            } else syncBrowserAudio(true);
         });
         document.body.appendChild(el);
     }
@@ -140,7 +138,7 @@ function _hideTapToPlayBanner() {
     if (el) el.style.display = 'none';
 }
 
-async function _resumeAndPlay(audio) {
+export async function _resumeAndPlay(audio) {
     if (audioCtx && audioCtx.state === 'suspended') {
         try { await audioCtx.resume(); } catch (e) { console.warn("[audio] ctx resume failed:", e); }
     }
@@ -242,7 +240,7 @@ function syncBrowserAudio(forcePlay) {
         _lastLoadedVideoId = track.video_id;
         // PATCH-ANDROID-AUDIO-01: track baru -> reset status block, kasih kesempatan baru
         window.audioBlocked = false;
-        if (typeof _hideTapToPlayBanner === "function") _hideTapToPlayBanner();
+        _hideTapToPlayBanner();
         audio.src = expectedSrc;
         if (!window.isDraggingVol) {
             audio.volume = Math.max(0, Math.min(1, (store.volume || 80) / 100));
@@ -251,7 +249,7 @@ function syncBrowserAudio(forcePlay) {
         audio.onended = () => {
             console.log("[radio] track ended, requesting next...");
             if (store.audio_output === "browser") {
-                wsSend("next", { video_id: track.video_id });
+                wsSend(WS_ACTIONS.NEXT, { video_id: track.video_id });
             }
         };
 

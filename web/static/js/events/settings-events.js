@@ -1,12 +1,12 @@
 function openSettings() {
     if (dom.settingsSheet) dom.settingsSheet.classList.add("open");
     if (dom.mainOverlay) dom.mainOverlay.classList.add("open");
-    if (typeof renderSettingsSheet === "function") renderSettingsSheet();
+    renderSettingsSheet();
 }
 
 function closeSettings() {
     if (dom.settingsSheet) dom.settingsSheet.classList.remove("open");
-    if (typeof closeMainOverlay === "function") closeMainOverlay();
+    closeMainOverlay();
 }
 
 function renderSettingsSheet() {
@@ -67,7 +67,7 @@ function initSettingsEvents() {
             const newVal = dom.sbToggle.dataset.on !== "true";
             dom.sbToggle.dataset.on = newVal ? "true" : "false";
             store.sponsorblock_active = newVal;
-            wsSend("set_sponsorblock", { enabled: newVal });
+            wsSend(WS_ACTIONS.SET_SPONSORBLOCK, { enabled: newVal });
         });
     }
 
@@ -76,7 +76,7 @@ function initSettingsEvents() {
             if (store.userRole !== "admin") return;
             const newOutput = store.audio_output === "browser" ? "device" : "browser";
             if (newOutput === "browser" && typeof unlockBrowserAudio === "function") unlockBrowserAudio();
-            wsSend("set_output", { output: newOutput });
+            wsSend(WS_ACTIONS.SET_OUTPUT, { output: newOutput });
             closeSettings();
         });
     }
@@ -84,7 +84,7 @@ function initSettingsEvents() {
     if (dom.ssStopBtn) {
         dom.ssStopBtn.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
-            wsSend("stop");
+            wsSend(WS_ACTIONS.STOP);
             closeSettings();
         });
     }
@@ -92,8 +92,8 @@ function initSettingsEvents() {
     if (dom.ssHistoryBtn) {
         dom.ssHistoryBtn.addEventListener('click', () => {
             closeSettings();
-            if (typeof switchTab === "function") switchTab('discover');
-            wsSend('discover', {});
+            switchTab('discover');
+            wsSend(WS_ACTIONS.DISCOVER, {});
             setTimeout(() => {
                 if (dom.discRecent) {
                     dom.discRecent.scrollIntoView({ behavior: 'smooth' });
