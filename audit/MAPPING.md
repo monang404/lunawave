@@ -7,14 +7,14 @@ Total task dihasilkan = 237.
 | Finding ID | Sumber Laporan | Severity Asli | Priority | Task ID | Sprint | Status | Catatan |
 |---|---|---|---|---|---|---|---|
 | API-01 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
-| API-02 | api_audit.md | Low | P3 | S04-001 | Sprint 4 — Frontend Experience | TODO |  |
+| API-02 | api_audit.md | Low | P3 | S04-001 | Sprint 4 — Frontend Experience | DONE |  |
 | API-03 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-04 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
 | API-05 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-06 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
 | API-07 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
 | API-08 | api_audit.md | **High** | P1 | S-$2 | Sprint  ... | DONE |  |
-| API-09 | api_audit.md | Medium | P2 | S04-002 | Sprint 4 — Frontend Experience | TODO |  |
+| API-09 | api_audit.md | Medium | P2 | S04-002 | Sprint 4 — Frontend Experience | DONE |  |
 | API-10 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-11 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
 | API-12 | api_audit.md | — (positif) | P2 | S-$2 | Sprint  ... | DONE |  |
@@ -41,7 +41,7 @@ Total task dihasilkan = 237.
 | API-33 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-34 | api_audit.md | Medium | P2 | S06-004 | Sprint 6 — Performance Optimization | TODO |  |
 | API-35 | api_audit.md | Low | P3 | S-$2 | Sprint  ... | DONE |  |
-| API-36 | api_audit.md | Medium | P2 | S04-003 | Sprint 4 — Frontend Experience | TODO |  |
+| API-36 | api_audit.md | Medium | P2 | S04-003 | Sprint 4 — Frontend Experience | DONE |  |
 | API-37 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | API-38 | api_audit.md | Medium | P2 | S-$2 | Sprint  ... | DONE |  |
 | BACKEND-36 | backend_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
@@ -117,7 +117,7 @@ Total task dihasilkan = 237.
 | DEPENDENCY-16 | dependency_audit.md | 🟡 MEDIUM | P2 | S01-030 | Sprint 1 — Application Stability | DONE |  |
 | DEPENDENCY-17 | dependency_audit.md | 🟢 LOW | P3 | S01-031 | Sprint 1 — Application Stability | DONE |  |
 | DEPENDENCY-18 | dependency_audit.md | 🟢 LOW | P3 | S01-032 | Sprint 1 — Application Stability | DONE |  |
-| DEPENDENCY-19 | dependency_audit.md | 🟢 LOW | P3 | S04-004 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPENDENCY-19 | dependency_audit.md | 🟢 LOW | P3 | S04-004 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-01 | deployment_audit.md | Code style tidak di-enforce | P2 | S01-033 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-02 | deployment_audit.md | Type error bisa lolos ke production | P2 | S01-034 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-03 | deployment_audit.md | Dependency vuln tidak terdeteksi | P2 | S01-035 | Sprint 1 — Application Stability | DONE |  |
@@ -128,9 +128,9 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-15 | deployment_audit.md | Tidak ada metadata project, tidak bisa `pip install -e .` | P2 | S01-038 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-16 | deployment_audit.md | Tidak bisa di-package sebagai distributable Python package | P2 | S01-039 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-17 | deployment_audit.md | Tidak ada shorthand untuk dev tasks | P2 | S01-040 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-18 | deployment_audit.md | `requirements.txt` sebagian pin versi, sebagian tidak | P2 | S04-005 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPLOYMENT-18 | deployment_audit.md | `requirements.txt` sebagian pin versi, sebagian tidak | P2 | S04-005 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-19 | deployment_audit.md | Developer harus setup manual | P2 | S01-041 | Sprint 1 — Application Stability | DONE |  |
-| DEPLOYMENT-20 | deployment_audit.md | JS/CSS di `/web/static/` tidak di-minify | P2 | S04-006 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPLOYMENT-20 | deployment_audit.md | JS/CSS di `/web/static/` tidak di-minify | P2 | S04-006 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-21 | deployment_audit.md | Tidak ada `__version__` di manapun | P2 | S01-042 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-22 | deployment_audit.md | Harus `git revert` manual | P2 | S01-043 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-23 | deployment_audit.md | Schema sudah ter-apply, tidak bisa di-revert | P2 | S-$2 | Sprint  ... | DONE |  |
@@ -150,9 +150,9 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-52 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-53 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-54 | deployment_audit.md | N/A | P2 | S07-007 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| DEPLOYMENT-55 | deployment_audit.md | N/A | P2 | S04-007 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPLOYMENT-55 | deployment_audit.md | N/A | P2 | S04-007 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-56 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
-| DEPLOYMENT-57 | deployment_audit.md | N/A | P2 | S04-008 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPLOYMENT-57 | deployment_audit.md | N/A | P2 | S04-008 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-58 | deployment_audit.md | N/A | P2 | S01-055 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-59 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-60 | deployment_audit.md | N/A | P2 | S01-056 | Sprint 1 — Application Stability | DONE |  |
@@ -160,8 +160,8 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-62 | deployment_audit.md | N/A | P2 | S01-058 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-63 | deployment_audit.md | N/A | P2 | S07-008 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | DEPLOYMENT-64 | deployment_audit.md | N/A | P2 | S07-009 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| DEPLOYMENT-65 | deployment_audit.md | N/A | P2 | S04-009 | Sprint 4 — Frontend Experience | TODO |  |
-| DEPLOYMENT-66 | deployment_audit.md | N/A | P2 | S04-010 | Sprint 4 — Frontend Experience | TODO |  |
+| DEPLOYMENT-65 | deployment_audit.md | N/A | P2 | S04-009 | Sprint 4 — Frontend Experience | DONE |  |
+| DEPLOYMENT-66 | deployment_audit.md | N/A | P2 | S04-010 | Sprint 4 — Frontend Experience | DONE |  |
 | DEPLOYMENT-67 | deployment_audit.md | N/A | P2 | S-$2 | Sprint  ... | DONE |  |
 | DEPLOYMENT-68 | deployment_audit.md | N/A | P2 | S01-059 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-69 | deployment_audit.md | N/A | P2 | S01-060 | Sprint 1 — Application Stability | DONE |  |
@@ -170,7 +170,7 @@ Total task dihasilkan = 237.
 | DEPLOYMENT-72 | deployment_audit.md | N/A | P2 | S01-063 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-73 | deployment_audit.md | N/A | P2 | S01-064 | Sprint 1 — Application Stability | DONE |  |
 | DEPLOYMENT-74 | deployment_audit.md | N/A | P2 | S07-010 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| EXEC-09 | executive_summary.md | 🟠 **Tinggi** | P1 | S04-011 | Sprint 4 — Frontend Experience | TODO |  |
+| EXEC-09 | executive_summary.md | 🟠 **Tinggi** | P1 | S04-011 | Sprint 4 — Frontend Experience | DONE |  |
 | EXEC-10 | executive_summary.md | 🟡 **Sedang** | P2 | S-$2 | Sprint  ... | DONE |  |
 | EXEC-11 | executive_summary.md | 🟡 **Sedang** | P2 | S01-065 | Sprint 1 — Application Stability | DONE |  |
 | EXEC-12 | executive_summary.md | 🟠 **Tinggi** | P1 | S01-066 | Sprint 1 — Application Stability | DONE |  |
@@ -178,32 +178,32 @@ Total task dihasilkan = 237.
 | EXEC-14 | executive_summary.md | 🟢 **Rendah** | P1 | S-$2 | Sprint  ... | DONE |  |
 | EXEC-15 | executive_summary.md | 🟢 **Rendah** | P2 | S-$2 | Sprint  ... | DONE |  |
 | EXEC-16 | executive_summary.md | 🟡 **Sedang** | P2 | S07-012 | Sprint 7 — Testing & Production Readiness | TODO |  |
-| FRONTEND-01 | frontend_audit.md | Medium–High | P1 | S04-012 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-02 | frontend_audit.md | Medium–Critical | P0 | S04-013 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-03 | frontend_audit.md | Medium–High | P1 | S04-014 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-014 |
-| FRONTEND-05 | frontend_audit.md | Medium | P1 | S04-014 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-014 |
-| FRONTEND-12 | frontend_audit.md | Medium | P1 | S04-014 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-014 |
-| FRONTEND-04 | frontend_audit.md | Low–Medium | P2 | S04-015 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-015 |
-| FRONTEND-09 | frontend_audit.md | Low–Medium | P2 | S04-015 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-015 |
-| FRONTEND-06 | frontend_audit.md | Low–Medium | P2 | S04-016 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-016 |
-| FRONTEND-11 | frontend_audit.md | Medium–High | P2 | S04-016 | Sprint 4 — Frontend Experience | TODO | Digabung dalam S04-016 |
-| FRONTEND-07 | frontend_audit.md | Medium–High | P1 | S04-017 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-08 | frontend_audit.md | Low–Medium | P2 | S04-018 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-10 | frontend_audit.md | Medium | P2 | S04-019 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-13 | frontend_audit.md | Critical | P0 | S04-020 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-14 | frontend_audit.md | High | P1 | S04-021 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-15 | frontend_audit.md | High | P1 | S04-022 | Sprint 4 — Frontend Experience | TODO |  |
+| FRONTEND-01 | frontend_audit.md | Medium–High | P1 | S04-012 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-02 | frontend_audit.md | Medium–Critical | P0 | S04-013 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-03 | frontend_audit.md | Medium–High | P1 | S04-014 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-014 |
+| FRONTEND-05 | frontend_audit.md | Medium | P1 | S04-014 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-014 |
+| FRONTEND-12 | frontend_audit.md | Medium | P1 | S04-014 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-014 |
+| FRONTEND-04 | frontend_audit.md | Low–Medium | P2 | S04-015 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-015 |
+| FRONTEND-09 | frontend_audit.md | Low–Medium | P2 | S04-015 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-015 |
+| FRONTEND-06 | frontend_audit.md | Low–Medium | P2 | S04-016 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-016 |
+| FRONTEND-11 | frontend_audit.md | Medium–High | P2 | S04-016 | Sprint 4 — Frontend Experience | DONE | Digabung dalam S04-016 |
+| FRONTEND-07 | frontend_audit.md | Medium–High | P1 | S04-017 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-08 | frontend_audit.md | Low–Medium | P2 | S04-018 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-10 | frontend_audit.md | Medium | P2 | S04-019 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-13 | frontend_audit.md | Critical | P0 | S04-020 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-14 | frontend_audit.md | High | P1 | S04-021 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-15 | frontend_audit.md | High | P1 | S04-022 | Sprint 4 — Frontend Experience | DONE |  |
 | FRONTEND-16 | frontend_audit.md | High | P1 | S-$2 | Sprint  ... | DONE |  |
-| FRONTEND-17 | frontend_audit.md | High | P1 | S04-023 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-18 | frontend_audit.md | Medium-High | P1 | S04-024 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-19 | frontend_audit.md | Medium | P2 | S04-025 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-20 | frontend_audit.md | Medium | P2 | S04-026 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-21 | frontend_audit.md | Medium | P2 | S04-027 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-22 | frontend_audit.md | Medium | P2 | S04-028 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-23 | frontend_audit.md | Medium | P2 | S04-029 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-24 | frontend_audit.md | Low-Medium | P2 | S04-030 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-25 | frontend_audit.md | Low | P3 | S04-031 | Sprint 4 — Frontend Experience | TODO |  |
-| FRONTEND-26 | frontend_audit.md | Low | P3 | S04-032 | Sprint 4 — Frontend Experience | TODO |  |
+| FRONTEND-17 | frontend_audit.md | High | P1 | S04-023 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-18 | frontend_audit.md | Medium-High | P1 | S04-024 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-19 | frontend_audit.md | Medium | P2 | S04-025 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-20 | frontend_audit.md | Medium | P2 | S04-026 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-21 | frontend_audit.md | Medium | P2 | S04-027 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-22 | frontend_audit.md | Medium | P2 | S04-028 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-23 | frontend_audit.md | Medium | P2 | S04-029 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-24 | frontend_audit.md | Low-Medium | P2 | S04-030 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-25 | frontend_audit.md | Low | P3 | S04-031 | Sprint 4 — Frontend Experience | DONE |  |
+| FRONTEND-26 | frontend_audit.md | Low | P3 | S04-032 | Sprint 4 — Frontend Experience | DONE |  |
 | MAINTAINABILITY-10 | maintainability_audit.md | Unit test semua module yang import config menjadi unpredictable | P2 | S07-013 | Sprint 7 — Testing & Production Readiness | TODO |  |
 | MAINTAINABILITY-11 | maintainability_audit.md | Setiap tambahan domain baru makin membesar; tidak ada batas alami | P2 | S05-017 | Sprint 5 — Architecture Refactoring | TODO |  |
 | MAINTAINABILITY-12 | maintainability_audit.md | Mock di test harus patch global; integration test tidak bisa isolate | P2 | S05-018 | Sprint 5 — Architecture Refactoring | TODO |  |
@@ -216,31 +216,31 @@ Total task dihasilkan = 237.
 | MAINTAINABILITY-19 | maintainability_audit.md | Dead import | P2 | S05-024 | Sprint 5 — Architecture Refactoring | TODO |  |
 | MAINTAINABILITY-20 | maintainability_audit.md | Duplicate import | P2 | S05-025 | Sprint 5 — Architecture Refactoring | TODO |  |
 | MAINTAINABILITY-21 | maintainability_audit.md | Confusing name convention | P2 | S05-026 | Sprint 5 — Architecture Refactoring | TODO |  |
-| MAINTAINABILITY-22 | maintainability_audit.md | Symptom dari tidak ada module system | P2 | S04-033 | Sprint 4 — Frontend Experience | TODO |  |
+| MAINTAINABILITY-22 | maintainability_audit.md | Symptom dari tidak ada module system | P2 | S04-033 | Sprint 4 — Frontend Experience | DONE |  |
 | MAINTAINABILITY-23 | maintainability_audit.md | Style harus dikelola di dua tempat | P2 | S05-027 | Sprint 5 — Architecture Refactoring | TODO |  |
-| MAINTAINABILITY-24 | maintainability_audit.md | Scale bottleneck; naming collision risk | P2 | S04-034 | Sprint 4 — Frontend Experience | TODO |  |
-| MAINTAINABILITY-25 | maintainability_audit.md | Config harusnya di satu tempat | P2 | S04-035 | Sprint 4 — Frontend Experience | TODO |  |
-| MAINTAINABILITY-26 | maintainability_audit.md | Log noise di browser devtools | P2 | S04-036 | Sprint 4 — Frontend Experience | TODO |  |
+| MAINTAINABILITY-24 | maintainability_audit.md | Scale bottleneck; naming collision risk | P2 | S04-034 | Sprint 4 — Frontend Experience | DONE |  |
+| MAINTAINABILITY-25 | maintainability_audit.md | Config harusnya di satu tempat | P2 | S04-035 | Sprint 4 — Frontend Experience | DONE |  |
+| MAINTAINABILITY-26 | maintainability_audit.md | Log noise di browser devtools | P2 | S04-036 | Sprint 4 — Frontend Experience | DONE |  |
 | PERFORMANCE-01 | performance_audit.md | 🔴 HIGH | P0 | S06-007 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-02 | performance_audit.md | 🔴 HIGH | P0 | S06-008 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-03 | performance_audit.md | 🔴 HIGH | P0 | S06-009 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-04 | performance_audit.md | 🔴 HIGH | P0 | S06-010 | Sprint 6 — Performance Optimization | TODO |  |
-| PERFORMANCE-05 | performance_audit.md | 🟠 MEDIUM | P1 | S04-037 | Sprint 4 — Frontend Experience | TODO |  |
+| PERFORMANCE-05 | performance_audit.md | 🟠 MEDIUM | P1 | S04-037 | Sprint 4 — Frontend Experience | DONE |  |
 | PERFORMANCE-06 | performance_audit.md | 🟠 MEDIUM | P1 | S06-011 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-07 | performance_audit.md | 🟠 MEDIUM | P1 | S06-012 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-08 | performance_audit.md | 🟠 MEDIUM | P1 | S06-013 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-09 | performance_audit.md | 🟡 LOW | P2 | S06-014 | Sprint 6 — Performance Optimization | TODO |  |
-| PERFORMANCE-10 | performance_audit.md | 🟡 LOW | P2 | S04-038 | Sprint 4 — Frontend Experience | TODO |  |
-| PERFORMANCE-11 | performance_audit.md | 🟡 LOW | P2 | S04-039 | Sprint 4 — Frontend Experience | TODO |  |
-| PERFORMANCE-12 | performance_audit.md | 🟡 LOW | P2 | S04-040 | Sprint 4 — Frontend Experience | TODO |  |
-| PERFORMANCE-13 | performance_audit.md | 🟡 LOW | P2 | S04-041 | Sprint 4 — Frontend Experience | TODO |  |
+| PERFORMANCE-10 | performance_audit.md | 🟡 LOW | P2 | S04-038 | Sprint 4 — Frontend Experience | DONE |  |
+| PERFORMANCE-11 | performance_audit.md | 🟡 LOW | P2 | S04-039 | Sprint 4 — Frontend Experience | DONE |  |
+| PERFORMANCE-12 | performance_audit.md | 🟡 LOW | P2 | S04-040 | Sprint 4 — Frontend Experience | DONE |  |
+| PERFORMANCE-13 | performance_audit.md | 🟡 LOW | P2 | S04-041 | Sprint 4 — Frontend Experience | DONE |  |
 | PERFORMANCE-14 | performance_audit.md | 🟡 LOW | P2 | S06-015 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-15 | performance_audit.md | 🟡 LOW | P2 | S06-016 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-16 | performance_audit.md | 🔴 1 | P0 | S06-017 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-17 | performance_audit.md | 🔴 2 | P0 | S06-018 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-18 | performance_audit.md | 🔴 3 | P0 | S06-019 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-19 | performance_audit.md | 🔴 4 | P0 | S06-020 | Sprint 6 — Performance Optimization | TODO |  |
-| PERFORMANCE-20 | performance_audit.md | 🟠 5 | P1 | S04-042 | Sprint 4 — Frontend Experience | TODO |  |
+| PERFORMANCE-20 | performance_audit.md | 🟠 5 | P1 | S04-042 | Sprint 4 — Frontend Experience | DONE |  |
 | PERFORMANCE-21 | performance_audit.md | 🟠 6 | P1 | S06-021 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-22 | performance_audit.md | 🟠 7 | P1 | S06-022 | Sprint 6 — Performance Optimization | TODO |  |
 | PERFORMANCE-23 | performance_audit.md | 🟠 8 | P1 | S06-023 | Sprint 6 — Performance Optimization | TODO |  |

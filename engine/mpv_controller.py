@@ -64,6 +64,7 @@ class MpvController:
             "--demuxer-readahead-secs=60",
             "--audio-buffer=0",
         ]
+        self._last_progress_time = 0.0
 
         if os.name == 'nt':
             cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
@@ -256,7 +257,10 @@ class MpvController:
             name = message.get("name")
             data = message.get("data")
             if name == "time-pos" and isinstance(data, (int, float)):
-                await self._bus.publish(TrackProgressEvent(position=float(data)))
+                now = time.monotonic()
+                if now - self._last_progress_time >= 0.33:
+                    self._last_progress_time = now
+                    await self._bus.publish(TrackProgressEvent(position=float(data)))
             elif name == "pause":
                 await self._bus.publish(TrackPauseChangedEvent(is_paused=bool(data)))
             elif name == "duration" and isinstance(data, (int, float)):

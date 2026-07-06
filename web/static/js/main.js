@@ -55,7 +55,7 @@
             setTimeout(() => dom.searchInput.focus(), 100);
         }
         if (tab === "discover" || tab === "home") {
-            wsSend("discover");
+            wsSend(WS_ACTIONS.DISCOVER);
         }
     };
 

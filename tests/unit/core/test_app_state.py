@@ -38,16 +38,14 @@ class TestAppStateDurationField:
 
     def test_state_to_dict_contains_duration(self):
         """_state_to_dict() harus mengandung key 'duration'."""
-        from server.serializers import state_to_dict as _state_to_dict
         state = AppState()
         state.duration = 300.0
-        result = _state_to_dict(state)
+        result = state.to_dict()
         assert "duration" in result, "_state_to_dict harus mengandung key 'duration'"
 
     def test_state_to_dict_duration_value(self):
         """_state_to_dict() harus mengembalikan nilai duration yang benar."""
-        from server.serializers import state_to_dict as _state_to_dict
         state = AppState()
         state.duration = 212.5
-        result = _state_to_dict(state)
+        result = state.to_dict()
         assert result["duration"] == 212.5

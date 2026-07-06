@@ -57,8 +57,8 @@ class TestSSRFValidation:
 
     def test_video_id_regex_validation(self):
         """video_id harus divalidasi dengan regex 11 karakter alfanumerik."""
-        import server.handlers.http as server_http
-        source = inspect.getsource(server_http)
+        import core.value_objects as value_objects
+        source = inspect.getsource(value_objects.VideoId)
         assert "a-zA-Z0-9_-" in source and "11" in source, (
             "video_id harus divalidasi dengan regex [a-zA-Z0-9_-]{11}"
         )

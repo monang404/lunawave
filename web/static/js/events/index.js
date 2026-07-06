@@ -3,7 +3,7 @@ function initEvents() {
         card.addEventListener("click", () => {
             const mood = card.getAttribute("data-mood");
             if (mood && store.userRole === "admin") {
-                if (typeof switchTab === "function") switchTab("search");
+                switchTab("search");
                 if (dom.searchInput) {
                     dom.searchInput.value = mood + " mix";
                     dom.searchInput.dispatchEvent(new Event("input"));
@@ -20,9 +20,9 @@ function initEvents() {
             } else {
                 localStorage.setItem("ytgui_user_role", "client");
             }
-            if (typeof applyRoleUI === "function") applyRoleUI();
-            if (typeof unlockBrowserAudio === "function") unlockBrowserAudio();
-            if (typeof syncBrowserAudio === "function") syncBrowserAudio();
+            applyRoleUI();
+            unlockBrowserAudio();
+            syncBrowserAudio();
         });
     }
 
@@ -41,9 +41,7 @@ function initEvents() {
         dom.adminSubmitBtn.addEventListener("click", () => {
             const user = dom.adminUsername ? dom.adminUsername.value.trim() : "";
             const pass = dom.adminPassword ? dom.adminPassword.value : "";
-            if (typeof login === 'function') {
-                login(user, pass);
-            }
+            login(user, pass);
         });
     }
 
@@ -55,19 +53,19 @@ function initEvents() {
 
     if (dom.logoutBtn) {
         dom.logoutBtn.addEventListener("click", () => {
-            if (typeof logout === "function") logout();
+            logout();
         });
     }
 
     document.querySelectorAll(".nav-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-            if (typeof switchTab === "function") switchTab(btn.dataset.tab);
+            switchTab(btn.dataset.tab);
         });
     });
 
-    if (typeof initPlayerEvents === "function") initPlayerEvents();
-    if (typeof initQueueEvents === "function") initQueueEvents();
-    if (typeof initQueueDragDrop === "function") initQueueDragDrop();
-    if (typeof initLyricsEvents === "function") initLyricsEvents();
-    if (typeof initSettingsEvents === "function") initSettingsEvents();
+    initPlayerEvents();
+    initQueueEvents();
+    initQueueDragDrop();
+    initLyricsEvents();
+    initSettingsEvents();
 }

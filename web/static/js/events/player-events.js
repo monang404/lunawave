@@ -13,14 +13,14 @@ function initPlayerEvents() {
             const wantsPlay = store.status !== "PLAYING";
             store.status = wantsPlay ? "PLAYING" : "PAUSED";
             window.lastToggleTime = Date.now();
-            if (typeof renderPlayBtn === "function") renderPlayBtn();
-            if (typeof renderNowPlaying === "function") renderNowPlaying();
-            if (typeof renderQueue === "function") renderQueue();
+            renderPlayBtn();
+            renderNowPlaying();
+            renderQueue();
             if (store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
                 unlockBrowserAudio(wantsPlay);
                 syncBrowserAudio(wantsPlay);
             }
-            wsSend("toggle_pause");
+            wsSend(WS_ACTIONS.TOGGLE_PAUSE);
         }
     });
 
@@ -31,24 +31,24 @@ function initPlayerEvents() {
                 data.video_id = store.current_track.video_id;
             }
             store.status = "LOADING";
-            if (typeof renderNowPlaying === "function") renderNowPlaying();
-            if (typeof renderPlayerBar === "function") renderPlayerBar();
-            wsSend("next", data);
+            renderNowPlaying();
+            renderPlayerBar();
+            wsSend(WS_ACTIONS.NEXT, data);
         }
     });
 
     dom.btnPrev.addEventListener("click", () => {
         if (store.userRole === "admin") {
             store.status = "LOADING";
-            if (typeof renderNowPlaying === "function") renderNowPlaying();
-            if (typeof renderPlayerBar === "function") renderPlayerBar();
-            wsSend("prev");
+            renderNowPlaying();
+            renderPlayerBar();
+            wsSend(WS_ACTIONS.PREV);
         }
     });
 
     if (dom.btnStop) {
         dom.btnStop.addEventListener('click', () => {
-            if (store.userRole === 'admin') wsSend('stop');
+            if (store.userRole === 'admin') wsSend(WS_ACTIONS.STOP);
         });
     }
 
@@ -65,7 +65,7 @@ function initPlayerEvents() {
         });
         dom.volSlider.addEventListener("change", () => {
             if (store.userRole === "admin") {
-                wsSend("volume_set", { volume: store.volume });
+                wsSend(WS_ACTIONS.VOLUME_SET, { volume: store.volume });
             }
             window.isDraggingVol = false;
         });
@@ -74,8 +74,8 @@ function initPlayerEvents() {
     if (dom.btnDownload) {
         dom.btnDownload.addEventListener("click", () => {
             if (dom.settingsSheet) dom.settingsSheet.classList.remove("open");
-            if (typeof closeMainOverlay === "function") closeMainOverlay();
-            if (store.userRole === "admin") wsSend("download");
+            closeMainOverlay();
+            if (store.userRole === "admin") wsSend(WS_ACTIONS.DOWNLOAD);
         });
     }
 
@@ -117,10 +117,10 @@ function initPlayerEvents() {
                     if (audio && audio.src) {
                         audio.currentTime = targetPos;
                         store.position = targetPos;
-                        if (typeof renderProgress === "function") renderProgress();
+                        renderProgress();
                     }
                 }
-                wsSend("seek", { position: targetPos });
+                wsSend(WS_ACTIONS.SEEK, { position: targetPos });
             }
         });
     }
@@ -131,9 +131,9 @@ function initPlayerEvents() {
             if (store.status === "LOADING") return;
             const newMode = store.playback_mode === "RADIO" ? "QUEUE" : "RADIO";
             store.playback_mode = newMode;
-            if (typeof renderRadio === "function") renderRadio();
-            if (typeof renderQueue === "function") renderQueue();
-            wsSend("set_mode", { mode: newMode });
+            renderRadio();
+            renderQueue();
+            wsSend(WS_ACTIONS.SET_MODE, { mode: newMode });
         });
     }
 
@@ -144,18 +144,18 @@ function initPlayerEvents() {
             store.current_track = null;
             store.status = "LOADING";
             store.position = 0;
-            if (typeof renderRadio === "function") renderRadio();
-            if (typeof renderQueue === "function") renderQueue();
-            if (typeof renderNowPlaying === "function") renderNowPlaying();
+            renderRadio();
+            renderQueue();
+            renderNowPlaying();
             window.scrollTo({ top: 0, behavior: "smooth" });
-            wsSend("radio_randomize", { seed_artist: null });
+            wsSend(WS_ACTIONS.RADIO_RANDOMIZE, { seed_artist: null });
         });
     }
 
     if (dom.btnFavorite) {
         dom.btnFavorite.addEventListener("click", () => {
             if (store.userRole === "admin" && store.current_track) {
-                wsSend("toggle_favorite", { video_id: store.current_track.video_id });
+                wsSend(WS_ACTIONS.TOGGLE_FAVORITE, { video_id: store.current_track.video_id });
             }
         });
     }
@@ -165,7 +165,7 @@ function initPlayerEvents() {
             if (store.userRole !== "admin") return;
             const newOutput = store.audio_output === "browser" ? "device" : "browser";
             if (newOutput === "browser" && typeof unlockBrowserAudio === "function") unlockBrowserAudio();
-            wsSend("set_output", { output: newOutput });
+            wsSend(WS_ACTIONS.SET_OUTPUT, { output: newOutput });
         });
     }
 
@@ -217,7 +217,7 @@ function initPlayerEvents() {
                     dom.searchMsg.innerHTML = '<span class="spinner"></span> Mencari...';
                     dom.searchMsg.style.display = "block";
                     dom.searchResults.style.display = "none";
-                    wsSend("search", { query: q });
+                    wsSend(WS_ACTIONS.SEARCH, { query: q });
                 }, 500);
             }
         });
@@ -231,7 +231,7 @@ function initPlayerEvents() {
                     dom.searchMsg.innerHTML = '<span class="spinner"></span> Mencari...';
                     dom.searchMsg.style.display = "block";
                     dom.searchResults.style.display = "none";
-                    wsSend("search", { query: q });
+                    wsSend(WS_ACTIONS.SEARCH, { query: q });
                 }
             }
         });
@@ -243,7 +243,7 @@ function initPlayerEvents() {
             if (item && item.dataset.searchTrackStr) {
                 try {
                     const track = JSON.parse(item.dataset.searchTrackStr);
-                    if (typeof playSearchTrack === "function") playSearchTrack(track);
+                    playSearchTrack(track);
                 } catch (err) {
                     console.error("Invalid track data", err);
                 }
@@ -253,21 +253,21 @@ function initPlayerEvents() {
 
     if (dom.actionPlayNow) {
         dom.actionPlayNow.addEventListener("click", () => {
-            if (window.pendingTrack) wsSend("play_track", window.pendingTrack);
-            if (typeof hideActionModal === "function") hideActionModal();
+            if (window.pendingTrack) wsSend(WS_ACTIONS.PLAY_TRACK, window.pendingTrack);
+            hideActionModal();
         });
     }
 
     if (dom.actionEnqueue) {
         dom.actionEnqueue.addEventListener("click", () => {
-            if (window.pendingTrack) wsSend("queue_add", window.pendingTrack);
-            if (typeof hideActionModal === "function") hideActionModal();
+            if (window.pendingTrack) wsSend(WS_ACTIONS.QUEUE_ADD, window.pendingTrack);
+            hideActionModal();
         });
     }
 
     if (dom.actionCancel) {
         dom.actionCancel.addEventListener("click", () => {
-            if (typeof hideActionModal === "function") hideActionModal();
+            hideActionModal();
         });
     }
 
@@ -275,9 +275,9 @@ function initPlayerEvents() {
         dom.actionDelete.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
             if (window.pendingTrack) {
-                wsSend("delete_download", window.pendingTrack);
+                wsSend(WS_ACTIONS.DELETE_DOWNLOAD, window.pendingTrack);
             }
-            if (typeof hideActionModal === "function") hideActionModal();
+            hideActionModal();
         });
     }
 
@@ -290,7 +290,7 @@ function initPlayerEvents() {
                 if (trackStr) {
                     try {
                         const track = JSON.parse(trackStr);
-                        if (typeof showActionModal === "function") showActionModal(track);
+                        showActionModal(track);
                     } catch (err) { console.error(err); }
                 }
             }
@@ -304,7 +304,7 @@ function initPlayerEvents() {
                 try {
                     const track = JSON.parse(trackStr);
                     if (store.userRole === "admin") {
-                        wsSend("play_track", track);
+                        wsSend(WS_ACTIONS.PLAY_TRACK, track);
                     }
                 } catch (err) { console.error(err); }
             }
@@ -345,44 +345,44 @@ function initPlayerEvents() {
             case " ":
                 if (store.userRole !== "admin") return;
                 e.preventDefault();
-                wsSend("toggle_pause");
+                wsSend(WS_ACTIONS.TOGGLE_PAUSE);
                 break;
             case "n":
             case "N":
                 if (store.userRole !== "admin") return;
-                wsSend("next");
+                wsSend(WS_ACTIONS.NEXT);
                 break;
             case "b":
             case "B":
                 if (store.userRole !== "admin") return;
-                wsSend("prev");
+                wsSend(WS_ACTIONS.PREV);
                 break;
             case "s":
             case "S":
                 if (store.userRole !== "admin") return;
-                wsSend("stop");
+                wsSend(WS_ACTIONS.STOP);
                 break;
             case "ArrowUp":
                 if (store.userRole !== "admin") return;
                 e.preventDefault();
-                wsSend("volume_up");
+                wsSend(WS_ACTIONS.VOLUME_UP);
                 break;
             case "ArrowDown":
                 if (store.userRole !== "admin") return;
                 e.preventDefault();
-                wsSend("volume_down");
+                wsSend(WS_ACTIONS.VOLUME_DOWN);
                 break;
             case "m":
             case "M":
                 if (store.userRole !== "admin") return;
-                wsSend("download");
+                wsSend(WS_ACTIONS.DOWNLOAD);
                 break;
             case "r":
             case "R":
                 if (store.userRole !== "admin") return;
                 if (store.status === "LOADING") break;
                 const newMode = store.playback_mode === "RADIO" ? "QUEUE" : "RADIO";
-                wsSend("set_mode", { mode: newMode });
+                wsSend(WS_ACTIONS.SET_MODE, { mode: newMode });
                 break;
             case "l":
             case "L":
@@ -390,23 +390,23 @@ function initPlayerEvents() {
                     const isOpen = dom.lyricsSheet.classList.contains("open");
                     if (isOpen) {
                         dom.lyricsSheet.classList.remove("open");
-                        if (typeof closeMainOverlay === "function") closeMainOverlay();
+                        closeMainOverlay();
                     } else {
                         dom.lyricsSheet.classList.add("open");
                         if (dom.mainOverlay) dom.mainOverlay.classList.add("open");
-                        if (typeof renderLyrics === "function") renderLyrics();
+                        renderLyrics();
                     }
                 }
                 break;
             case "/":
                 e.preventDefault();
-                if (typeof switchTab === "function") switchTab("search");
+                switchTab("search");
                 break;
             case "?":
                 if (dom.helpSheet) {
                     if (dom.helpSheet.classList.contains("open")) { 
                         dom.helpSheet.classList.remove("open"); 
-                        if (typeof closeMainOverlay === "function") closeMainOverlay(); 
+                        closeMainOverlay(); 
                     } else { 
                         dom.helpSheet.classList.add("open"); 
                         if (dom.mainOverlay) dom.mainOverlay.classList.add("open"); 
@@ -414,11 +414,11 @@ function initPlayerEvents() {
                 }
                 break;
             case "Escape":
-                if (typeof hideActionModal === "function") hideActionModal();
+                hideActionModal();
                 if (dom.helpSheet) dom.helpSheet.classList.remove("open");
                 if (dom.settingsSheet) dom.settingsSheet.classList.remove("open");
                 if (dom.lyricsSheet) dom.lyricsSheet.classList.remove("open");
-                if (typeof closeMainOverlay === "function") closeMainOverlay();
+                closeMainOverlay();
                 break;
         }
     });

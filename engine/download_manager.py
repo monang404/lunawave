@@ -8,7 +8,7 @@ import asyncio
 
 import structlog
 
-from core.command_bus import CMD_DOWNLOAD
+from core.commands import DownloadCommand
 from core.event_bus import EventBus
 from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.ports import MediaExtractorPort
@@ -26,7 +26,16 @@ class DownloadManager:
         self._download_lock = asyncio.Lock()
         self._downloading_ids: set[str] = set()
 
-        self.command_bus.register(CMD_DOWNLOAD, self._on_download)
+        self.command_bus.register(DownloadCommand, self._route(self._on_download))
+
+    def _route(self, action):
+        async def handler(command):
+            import asyncio
+            res = action(command.track)
+            if asyncio.iscoroutine(res):
+                return await res
+            return res
+        return handler
 
     async def _on_download(self, track: TrackInfo | None = None):
         target = track or self.state.current_track

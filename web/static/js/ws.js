@@ -28,13 +28,13 @@ function wsConnect() {
         if (store.userRole === "admin") {
             const token = window.safeStorage.get("ytgui_session_token");
             if (token) {
-                wsSend("auth", { token: token });
+                wsSend(WS_ACTIONS.AUTH, { token: token });
             }
             const savedOutput = window.safeStorage.get("ytgui_audio_output") || "browser";
-            wsSend("set_output", { output: savedOutput });
+            wsSend(WS_ACTIONS.SET_OUTPUT, { output: savedOutput });
         } else if (store.userRole === "client") {
             if (store.active_tab === "home" || store.active_tab === "discover") {
-                wsSend("discover");
+                wsSend(WS_ACTIONS.DISCOVER);
             }
         }
         renderHeader();
@@ -86,7 +86,7 @@ function handleServerMessage(msg) {
                 showLogToast("Akses Admin Diterima!");
                 if (store.active_tab === "home" || store.active_tab === "discover") {
                     showLogToast("Meminta data lagu...");
-                    wsSend("discover");
+                    wsSend(WS_ACTIONS.DISCOVER);
                 }
                 renderFullState();
             } else {
@@ -125,7 +125,7 @@ function handleServerMessage(msg) {
                     }
                 } else if (audio.paused && audio.src && !audio.src.startsWith("data:") && audio.readyState >= 2) {
                     // PATCH-ANDROID-AUDIO-01: kalau sebelumnya sudah ketauan diblock browser,
-                    if (!window.audioBlocked && typeof _resumeAndPlay === "function") {
+                    if (!window.audioBlocked) {
                         _resumeAndPlay(audio);
                     }
                 }
@@ -135,16 +135,16 @@ function handleServerMessage(msg) {
 
             renderPlayBtn();
             // PATCH-ANDROID-AUDIO-01: dipanggil tiap tick (bukan cuma saat statusChanged)
-            if (typeof syncPlayerStateAttr === "function") syncPlayerStateAttr();
+            syncPlayerStateAttr();
             if (statusChanged) {
-                if (typeof renderNowPlaying === "function") renderNowPlaying();
-                if (typeof renderQueue === "function") renderQueue();
-                if (typeof renderRadio === "function") renderRadio();
-                if (typeof updateSearchPlayingState === "function") updateSearchPlayingState();
-                if (typeof updateDiscoverPlayingState === "function") updateDiscoverPlayingState();
+                renderNowPlaying();
+                renderQueue();
+                renderRadio();
+                updateSearchPlayingState();
+                updateDiscoverPlayingState();
+                syncBrowserAudio();
             }
-            syncBrowserAudio();
-            if (typeof syncLocalLyrics === "function") syncLocalLyrics();
+            requestAnimationFrame(() => syncLocalLyrics());
             break;
         case "lyrics":
             store.lyrics_lines = msg.data.lyrics_lines || [];
@@ -152,7 +152,7 @@ function handleServerMessage(msg) {
             store.lyrics_index = msg.data.lyrics_index || 0;
             store.lyrics_offset = msg.data.lyrics_offset || 0;
             store.lyrics_loading = msg.data.lyrics_loading || false;
-            if (typeof renderLyrics === "function") renderLyrics();
+            renderLyrics();
             break;
         case "search_results":
             renderSearchResults(msg.data);
@@ -170,7 +170,7 @@ function handleServerMessage(msg) {
         case "favorite_status":
             if (store.current_track && store.current_track.video_id === msg.data.video_id) {
                 store.current_track.is_favorite = msg.data.is_favorite;
-                if (typeof renderNowPlaying === "function") renderNowPlaying();
+                renderNowPlaying();
             }
             break;
         case "log":
@@ -185,8 +185,8 @@ function handleServerMessage(msg) {
             break;
         case "download_progress":
             store.download_progress = msg.data;
-            if (typeof renderPlayerBar === "function") renderPlayerBar();
-            if (typeof renderSettingsSheet === "function") renderSettingsSheet();
+            renderPlayerBar();
+            renderSettingsSheet();
             break;
     }
 }
@@ -205,7 +205,7 @@ function syncLocalLyrics() {
         newIdx = Math.max(0, newIdx);
         if (store.lyrics_index !== newIdx) {
             store.lyrics_index = newIdx;
-            if (typeof renderLyrics === "function") renderLyrics();
+            renderLyrics();
         }
     }
 }
@@ -221,8 +221,8 @@ function renderFullState() {
     renderQueue();
     renderLyrics();
     renderSettingsSheet();
-    if (typeof updateSearchPlayingState === "function") updateSearchPlayingState();
-    if (typeof updateDiscoverPlayingState === "function") updateDiscoverPlayingState();
+    updateSearchPlayingState();
+    updateDiscoverPlayingState();
 }
 
 function renderHeader() {

@@ -52,7 +52,7 @@ function _onDragEnd(e) {
         if (over && over !== _dragEl) {
             const toIndex = parseInt(over.dataset.index);
             if (toIndex !== _dragSrcIndex) {
-                wsSend('queue_reorder', { from_index: _dragSrcIndex, to_index: toIndex });
+                wsSend(WS_ACTIONS.QUEUE_REORDER, { from_index: _dragSrcIndex, to_index: toIndex });
             }
         }
     }
@@ -78,7 +78,7 @@ function initQueueEvents() {
             const rmBtn = e.target.closest(".qi-remove");
             if (rmBtn) {
                 e.stopPropagation();
-                wsSend("queue_remove", { index: parseInt(rmBtn.dataset.index) });
+                wsSend(WS_ACTIONS.QUEUE_REMOVE, { index: parseInt(rmBtn.dataset.index) });
             }
         });
     }

@@ -89,7 +89,7 @@ window.getCoverArt = async function(track) {
     try {
         const cleanTitle = window.cleanTrackTitle(track.title);
         const query = encodeURIComponent(track.artist + " " + cleanTitle);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=1`);
+        const response = await fetch(`${ITUNES_API_URL}?term=${query}&media=music&limit=1`);
         if (!response.ok) throw new Error("iTunes API failed");
         
         const data = await response.json();

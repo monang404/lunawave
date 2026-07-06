@@ -113,6 +113,14 @@ class Database:
             await self._conn.close()
             self._conn = None
 
+    async def backup(self, backup_path):
+        """Creates a safe backup of the database using SQLite's backup API."""
+        if not self._conn:
+            return
+        import aiosqlite
+        async with aiosqlite.connect(backup_path) as dest:
+            await self._conn.backup(dest)
+
     async def increment_artist_click(self, artist_name: str):
         """Increment the click count for a given artist."""
         if not self._conn: return
