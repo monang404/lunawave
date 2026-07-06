@@ -1,5 +1,4 @@
-# PATCHLOG_APPLIED
-import re
+
 import time
 from pathlib import Path
 
@@ -28,7 +27,7 @@ async def health_check(request):
     pc = request.app.get("playback_controller")
     mpv_ok = getattr(getattr(pc, "mpv", None), "is_connected", False)
     mpv_status = "connected" if mpv_ok else "not_started"
-    
+
     db_status = "disconnected"
     try:
         if db.conn:
@@ -123,10 +122,14 @@ async def serve_stream(request):
             try:
                 stream_url = await ytdlp.get_stream_url(video_id)
                 await db.update_stream_url_only(video_id, stream_url)
-            except Exception as e:
+            except asyncio.TimeoutError as e:
                 if attempt == 1:
-                    return web.json_response(error_payload("HTTP_ERROR", f"Gagal mencari stream: {e}"), status=500)
+                    return web.json_response(error_payload("HTTP_ERROR", f"Gagal mencari stream (Timeout): {e}"), status=504)
+                await asyncio.sleep(1) # Backoff before retry
                 continue
+            except Exception as e:
+                # Jangan retry untuk error selain timeout (misal video tidak ditemukan)
+                return web.json_response(error_payload("HTTP_ERROR", f"Gagal mencari stream: {e}"), status=500)
 
         try:
             from urllib.parse import urlparse
@@ -188,7 +191,7 @@ async def serve_metrics(request):
     import os as _os
     client_ip = request.remote
     _localhost_ips = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
-    metrics_token = _os.environ.get("YTGUI_METRICS_TOKEN")
+    metrics_token = _os.environ.get("LUNAWAVE_METRICS_TOKEN")
     is_local = client_ip in _localhost_ips
     import secrets
     has_valid_token = (

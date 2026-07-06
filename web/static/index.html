@@ -6,14 +6,16 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/static/inter.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="YTGUI — YouTube music player for Termux with search, radio, queue, and lyrics">
+    <link rel="icon" href="/static/lunawave_logo.png" type="image/png">
+    <meta name="description" content="LunaWave — YouTube music player with search, radio, queue, and lyrics">
     <meta name="theme-color" content="#090A0D">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Bagas.FM — Midnight Audio Experience</title>
+    <title>LunaWave — Midnight Audio Experience</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.2.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/tokens.css">
     <link rel="stylesheet" href="/static/css/base/reset.css">
     <link rel="stylesheet" href="/static/css/base/typography.css">
@@ -91,7 +93,7 @@
                 <!-- ══ Header: Good Evening / Bagas FM ══ -->
                 <header class="home-header" id="home-header-inner">
                     <div></div>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="u-flex-row">
                     </div>
                 </header>
 
@@ -156,7 +158,7 @@
                 <div class="pbar" id="player-bar">
                     <div class="pb-row1">
                         <div class="pb-title" id="pb-track-info" style="flex:1;"></div>
-                        <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="u-flex-row">
                             <span class="pb-badge queue" id="pb-mode-badge" style="margin:0;">≡ queue</span>
                         </div>
                     </div>
@@ -222,7 +224,7 @@
                             <span class="label-text">Antrean Putar</span>
                             <div id="queue-footer" style="font-size: var(--t-xs); color: var(--text-3); font-weight: var(--w-medium);">Mode: QUEUE</div>
                         </div>
-                        <div id="queue-list" style="display:flex; flex-direction:column;"></div>
+                        <div id="queue-list" class="u-flex-col"></div>
                     </div>
                 </div>
 
@@ -518,7 +520,7 @@
                 </div>
             </div>
             <button id="lyrics-close-btn" class="ss-out-btn"
-                style="width: 100%; padding: 12px; font-size: 14px; margin-top: 10px;">Tutup</button>
+                class="u-btn-block">Tutup</button>
         </div>
 
         <!-- ═══ Action Sheet ═══ -->
@@ -616,31 +618,7 @@
     // Script hapus SW dimatikan agar SW yang baru terdaftar tidak di-kill
     </script>
 
-    <script src="/static/js/config.js" defer></script>
-    <script src="/static/js/store.js" defer></script>
-    <script src="/static/js/dom.js" defer></script>
-    <script src="/static/js/utils.js" defer></script>
-    <script src="/static/js/services/auth.js" defer></script>
-    <script src="/static/js/render/player.js" defer></script>
-    <script src="/static/js/render/now-playing.js" defer></script>
-    <script src="/static/js/render/queue.js?v=3" defer></script>
-    <script src="/static/js/render/discover.js?v=6" defer></script>
-    <script src="/static/js/render/favorites.js" defer></script>
-    <script src="/static/js/render/lyrics.js" defer></script>
-    <script src="/static/js/render/search.js" defer></script>
-    <script src="/static/js/events/player-events.js" defer></script>
-    <script src="/static/js/events/queue-events.js?v=3" defer></script>
-    <script src="/static/js/events/lyrics-events.js" defer></script>
-    <script src="/static/js/events/settings-events.js" defer></script>
-    <script src="/static/js/events/index.js" defer></script>
-    <script src="/static/js/portal.js" defer></script>
-    <script src="/static/js/platform/viewport.js" defer></script>
-    <script src="/static/js/platform/touch.js" defer></script>
-    <script src="/static/js/platform/keyboard.js" defer></script>
-    <script src="/static/js/audio.js" defer></script>
-    <script src="/static/js/actions.js" defer></script>
-    <script src="/static/js/ws.js" defer></script>
-    <script src="/static/js/main.js" defer></script>
+    <script src="/static/js/bundle.js?v=1783323309" defer></script>
 
 </body>
 

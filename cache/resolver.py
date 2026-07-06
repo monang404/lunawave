@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 
@@ -24,8 +25,6 @@ class CacheResolver:
 
     async def resolve(self, track: TrackInfo) -> str:
         """Returns the playback URI (local path atau YouTube URL untuk MPV)."""
-        import asyncio
-
         row = await self.db.get_track(track.video_id)
 
         if row and row.local_path:

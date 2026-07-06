@@ -31,27 +31,27 @@ class TestTask11VerifyPassword:
         assert verify_password("wrong_password", valid_hash) is False
 
 class TestTask12ConfigEnvHash:
-    """TASK-1.2: ENV var YTGUI_ADMIN_PASS harus di-hash di config.py jika belum."""
+    """TASK-1.2: ENV var LUNAWAVE_ADMIN_PASS harus di-hash di config.py jika belum."""
 
     def test_config_hashes_raw_env_password(self):
-        with patch.dict(os.environ, {"YTGUI_ADMIN_PASS": "raw_password_123"}, clear=True):
+        with patch.dict(os.environ, {"LUNAWAVE_ADMIN_PASS": "raw_password_123"}, clear=True):
             import importlib
 
             import config
             importlib.reload(config)
 
-            assert getattr(config, "ADMIN_PASSWORD") != "raw_password_123"
-            assert getattr(config, "ADMIN_PASSWORD").startswith("pbkdf2:sha256:")
+            assert config.get_admin_password() != "raw_password_123"
+            assert config.get_admin_password().startswith("pbkdf2:sha256:")
 
     def test_config_keeps_hashed_env_password(self):
         valid_hash = "pbkdf2:sha256:600000$mockedsalt$mockedkey"
-        with patch.dict(os.environ, {"YTGUI_ADMIN_PASS": valid_hash}, clear=True):
+        with patch.dict(os.environ, {"LUNAWAVE_ADMIN_PASS": valid_hash}, clear=True):
             import importlib
 
             import config
             importlib.reload(config)
 
-            assert getattr(config, "ADMIN_PASSWORD") == valid_hash
+            assert config.get_admin_password() == valid_hash
 
 
 @pytest.fixture
@@ -87,10 +87,10 @@ class TestTask13MetricsProtection:
         from unittest.mock import AsyncMock
         app["command_bus"] = AsyncMock()
         app["event_bus"] = AsyncMock()
-        client = await aiohttp_client(app)
+        await aiohttp_client(app)
 
-        with patch("server.handlers.http.get_metrics_content") as mock_get:
-            with patch("aiohttp.web.BaseRequest.remote", new_callable=pytest.MonkeyPatch) as mock_remote:
+        with patch("server.handlers.http.get_metrics_content"):
+            with patch("aiohttp.web.BaseRequest.remote", new_callable=pytest.MonkeyPatch):
                 # Karena tidak mudah patch readonly property, kita patch dictionary
                 pass
 
@@ -122,7 +122,7 @@ class TestTask13MetricsProtection:
         with patch("server.handlers.http.get_metrics_content") as mock_get_content:
             mock_get_content.return_value = ("metrics_data", "text/plain; charset=utf-8")
 
-            with patch.dict(os.environ, {"YTGUI_METRICS_TOKEN": "secret"}):
+            with patch.dict(os.environ, {"LUNAWAVE_METRICS_TOKEN": "secret"}):
                 app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
                 from unittest.mock import AsyncMock
                 app["command_bus"] = AsyncMock()

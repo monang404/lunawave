@@ -2,7 +2,7 @@ import os
 import structlog
 from server.handlers.ws.registry import register_ws_handler
 from core.ws_actions import WSAction
-from core.commands import DownloadCommand, DeleteDownloadCommand
+from core.commands import DownloadCommand
 from core.state import TrackInfo
 from server.handlers.ws.discover_handlers import broadcast_discover_data
 from core.utils import user_download_path
@@ -43,7 +43,6 @@ async def _handle_delete_download(data, ws, state, ytdlp, manager, db, command_b
                     "data": state.to_dict()
                 })
 
-            await broadcast_discover_data(manager, db)
             await manager.broadcast({
                 "type": "log",
                 "data": f"Unduhan dihapus: {db_track.title}"

@@ -1,4 +1,4 @@
-# PATCHLOG_APPLIED
+import asyncio
 import json
 import time
 
@@ -27,7 +27,6 @@ class ConnectionManager:
         self.session_tokens = {}
         self.login_attempts = {}
         self.command_history = {}
-        import asyncio
         self.rl_lock = asyncio.Lock()
 
     async def connect(self, ws):
@@ -66,7 +65,7 @@ class ConnectionManager:
                 self.disconnect(dead_ws)
 
 async def ws_handler(request):
-    playback_controller = request.app["playback_controller"]
+    request.app["playback_controller"]
     state = request.app["state"]
     manager = request.app["manager"]
     db = request.app["db"]

@@ -62,9 +62,9 @@ class TrackInfo:
             video_id = VideoId(data.get("video_id", ""))
         except ValueError:
             return None
-        
+
         duration = Duration(data.get("duration", 0))
-        
+
         return cls(
             video_id=video_id,
             title=str(data.get("title", "Unknown"))[:255],

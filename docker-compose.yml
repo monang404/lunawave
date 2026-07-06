@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  lunawave:
+    build: .
+    container_name: lunawave
+    ports:
+      - "8765:8765"
+    volumes:
+      # Mount cache and db for persistence
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Note: To hear audio from Docker on a Linux host (if running directly on desktop),
+    # PulseAudio or ALSA socket mounting might be required.
+    # For server/headless mode, no extra audio config is needed as the audio is served via WebAudio.

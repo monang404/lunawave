@@ -24,7 +24,7 @@ import webbrowser
 from pathlib import Path
 
 BASE_DIR   = Path(__file__).parent
-SERVER_PORT = int(os.environ.get("YTGUI_PORT", 8765))
+SERVER_PORT = int(os.environ.get("LunaWave_PORT", 8765))
 PYTHON     = sys.executable
 
 BG         = "#0E0E12"
@@ -196,7 +196,7 @@ class ServerReadyDialog(tk.Toplevel):
 
         tk.Label(
             self,
-            text=f"Server ytgui aktif pada port {port}.\nSilakan login untuk mengelola musik.",
+            text=f"Server LunaWave aktif pada port {port}.\nSilakan login untuk mengelola musik.",
             bg=BG, fg=TEXT_2, font=("Segoe UI", 10),
             justify="center"
         ).pack(pady=(0, 15))
@@ -402,8 +402,8 @@ class ServerManagerController:
 
         self.view.write_log(f"Starting server on port {port}...", "accent")
         env = os.environ.copy()
-        env["YTGUI_HOST"] = "0.0.0.0"
-        env["YTGUI_PORT"] = str(port)
+        env["LunaWave_HOST"] = "0.0.0.0"
+        env["LunaWave_PORT"] = str(port)
         env["PYTHONUTF8"] = "1"
         env["PYTHONIOENCODING"] = "utf-8"
         env["PYTHONUNBUFFERED"] = "1"
@@ -513,7 +513,7 @@ class ServerManagerController:
                 pass
 
             import sqlite3
-            db_path = BASE_DIR / "data" / "ytgui.db"
+            db_path = BASE_DIR / "data" / "LunaWave.db"
             if db_path.exists():
                 try:
                     conn = sqlite3.connect(db_path)
@@ -543,7 +543,7 @@ class ServerManagerWindow(tk.Tk):
         self.controller = ServerManagerController(self)
         self._build_window()
         self._build_ui()
-        
+
         self.controller.run_dependency_check()
         self.controller.refresh_status()
         self.controller.check_first_run()

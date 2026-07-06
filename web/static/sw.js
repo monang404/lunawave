@@ -1,9 +1,10 @@
 
-const CACHE_VERSION = 'bagas-fm-20260701_1723';
+const CACHE_VERSION = 'lunawave-cache-v1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const PRECACHE_ASSETS = [
     '/',
+    '/static/inter.css',
     '/static/css/tokens.css',
     '/static/css/base/reset.css',
     '/static/css/base/typography.css',
@@ -25,30 +26,7 @@ const PRECACHE_ASSETS = [
     '/static/css/platform/desktop.css',
     '/static/css/platform/landscape.css',
     '/static/css/platform/safe-area.css',
-    '/static/js/main.js',
-    '/static/js/store.js',
-    '/static/js/dom.js',
-    '/static/js/config.js',
-    '/static/js/ws.js',
-    '/static/js/audio.js',
-    '/static/js/utils.js',
-    '/static/js/portal.js',
-    '/static/js/events/index.js',
-    '/static/js/events/player-events.js',
-    '/static/js/events/queue-events.js',
-    '/static/js/events/settings-events.js',
-    '/static/js/events/lyrics-events.js',
-    '/static/js/services/auth.js',
-    '/static/js/render/player.js',
-    '/static/js/render/now-playing.js',
-    '/static/js/render/queue.js',
-    '/static/js/render/search.js',
-    '/static/js/render/discover.js',
-    '/static/js/render/favorites.js',
-    '/static/js/render/lyrics.js',
-    '/static/js/platform/keyboard.js',
-    '/static/js/platform/touch.js',
-    '/static/js/platform/viewport.js',
+    '/static/js/bundle.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -102,3 +80,4 @@ self.addEventListener('fetch', (event) => {
         );
     }
 });
+

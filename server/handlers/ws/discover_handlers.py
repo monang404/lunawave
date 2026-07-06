@@ -1,21 +1,26 @@
 import json
 import re
 from core.ws_actions import WSAction
-from core.commands import SearchCommand, DiscoverCommand, ToggleFavoriteCommand
 from server.handlers.ws.registry import register_ws_handler
-from server.handlers.ws.utils import error_payload
-from core.state import TrackInfo
 from server.services.discover_service import DiscoverService
 
 VIDEO_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
+from core.constants import (
+    DISCOVER_RECENT_LIMIT,
+    DISCOVER_FAVORITES_LIMIT,
+    DISCOVER_CACHED_LIMIT,
+    DISCOVER_FEATURED_ARTISTS_LIMIT,
+    DISCOVER_FEATURED_GENRES_LIMIT
+)
+
 async def _build_discover_payload(db):
     ds = DiscoverService(db)
-    recent = await ds.get_recent(15)
-    favorites = await ds.get_favorites(15)
-    cached = await ds.get_cached(15)
-    featured_artists = await ds.get_featured_artists(100)
-    featured_genres = await ds.get_featured_genres(100)
+    recent = await ds.get_recent(DISCOVER_RECENT_LIMIT)
+    favorites = await ds.get_favorites(DISCOVER_FAVORITES_LIMIT)
+    cached = await ds.get_cached(DISCOVER_CACHED_LIMIT)
+    featured_artists = await ds.get_featured_artists(DISCOVER_FEATURED_ARTISTS_LIMIT)
+    featured_genres = await ds.get_featured_genres(DISCOVER_FEATURED_GENRES_LIMIT)
     return {
         "type": "discover_data",
         "data": {
@@ -55,7 +60,7 @@ async def _handle_discover(data, ws, state, ytdlp, manager, db, command_bus):
 async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_bus):
     video_id = data.get("video_id")
     set_favorite = data.get("set_favorite")
-    
+
     if video_id and VIDEO_ID_REGEX.match(str(video_id)):
         if set_favorite is not None:
             target = 1 if set_favorite else 0
@@ -64,7 +69,7 @@ async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_b
             is_fav = target
         else:
             is_fav = await db.toggle_favorite(video_id)
-            
+
         await ws.send_str(json.dumps({
             "type": "favorite_status",
             "data": {
@@ -79,4 +84,3 @@ async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_b
                 "type": "state",
                 "data": state.to_dict()
             })
-        await broadcast_discover_data(manager, db)

@@ -1,4 +1,4 @@
-# PATCHLOG_APPLIED
+
 import asyncio
 from pathlib import Path
 
@@ -14,6 +14,12 @@ logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
 def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort, manager: ConnectionManager, command_bus=None, event_bus=None) -> web.Application:
+    try:
+        from scripts.build_js import build
+        build()
+    except Exception as e:
+        logger.warning(f"Failed to bundle JS: {e}")
+
     app = web.Application()
 
     app["playback_controller"] = playback_controller

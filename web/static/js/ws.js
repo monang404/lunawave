@@ -88,7 +88,7 @@ function handleServerMessage(msg) {
                     showLogToast("Meminta data lagu...");
                     wsSend(WS_ACTIONS.DISCOVER);
                 }
-                renderFullState();
+                requestRenderFullState();
             } else {
                 dom.loginErrorMsg.textContent = msg.data.message || "Login gagal.";
                 if (store.userRole === "admin") {
@@ -98,8 +98,8 @@ function handleServerMessage(msg) {
             break;
         case "state":
             Object.assign(store, msg.data);
-            renderFullState();
-            if (store.userRole !== 'portal') {
+            requestRenderFullState();
+            if (store.userRole !== 'portal' && store.audio_output === 'browser') {
                 syncBrowserAudio();
             }
             break;
@@ -142,9 +142,13 @@ function handleServerMessage(msg) {
                 renderRadio();
                 updateSearchPlayingState();
                 updateDiscoverPlayingState();
-                syncBrowserAudio();
+                if (store.audio_output === 'browser') {
+                    syncBrowserAudio();
+                }
             }
-            requestAnimationFrame(() => syncLocalLyrics());
+            if (store.lyrics_lines && store.lyrics_lines.length > 0) {
+                requestAnimationFrame(() => syncLocalLyrics());
+            }
             break;
         case "lyrics":
             store.lyrics_lines = msg.data.lyrics_lines || [];
@@ -208,6 +212,15 @@ function syncLocalLyrics() {
             renderLyrics();
         }
     }
+}
+
+let renderFullStateTimeout = null;
+function requestRenderFullState() {
+    if (renderFullStateTimeout) cancelAnimationFrame(renderFullStateTimeout);
+    renderFullStateTimeout = requestAnimationFrame(() => {
+        renderFullStateTimeout = null;
+        renderFullState();
+    });
 }
 
 function renderFullState() {

@@ -97,7 +97,8 @@ async def build_app_context() -> AppContext:
         sponsorblock=sponsorblock,
         lyrics_fetcher=lyrics_fetcher,
         queue_mode=queue_mode,
-        radio_mode=radio_mode
+        radio_mode=radio_mode,
+        db=db
     )
     playback_controller = PlaybackController(deps=playback_deps)
 
@@ -113,11 +114,11 @@ async def build_app_context() -> AppContext:
 
     _download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)
     _command_router = CommandRouter(
-        command_bus, 
-        playback_commands, 
-        queue_commands, 
-        settings_commands, 
-        radio_commands, 
+        command_bus,
+        playback_commands,
+        queue_commands,
+        settings_commands,
+        radio_commands,
         volume_service
     )
 
@@ -146,7 +147,7 @@ async def build_app_context() -> AppContext:
     url_admin = f"http://{display_host}:{port}/admin"
     sys.stderr.write(
         f"\n\033[1;32m{'─'*54}\033[0m\n"
-        f"  \033[1m▸ ytgui\033[0m  Web Server\n"
+        f"  \033[1m▸ LunaWave\033[0m  Web Server\n"
         f"  Client : \033[36m{url_client}\033[0m\n"
         f"  Admin  : \033[36m{url_admin}\033[0m\n"
     )

@@ -1,5 +1,5 @@
 import structlog
-from core.state import PlayerStatus, PlaybackMode, TrackInfo
+from core.state import PlayerStatus, PlaybackMode
 from core.events import LogMessageEvent, QueueUpdatedEvent
 from core.log_config import STATS as _LOG_STATS
 

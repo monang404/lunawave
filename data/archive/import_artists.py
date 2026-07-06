@@ -4,7 +4,7 @@ import_artists.py
 Import artists.json ke SQLite database.
 
 Usage:
-    python import_artists.py                        # default: ytgui.db
+    python import_artists.py                        # default: lunawave.db
     python import_artists.py --db path/to/your.db  # custom db path
     python import_artists.py --reset               # drop & recreate tables dulu
 
@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--db",    default="ytgui.db",   help="Path ke SQLite DB")
+parser.add_argument("--db",    default="lunawave.db",   help="Path ke SQLite DB")
 parser.add_argument("--json",  default="artists.json", help="Path ke artists.json")
 parser.add_argument("--reset", action="store_true",  help="Drop tables sebelum import")
 args = parser.parse_args()
