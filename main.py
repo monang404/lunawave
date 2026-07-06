@@ -1,11 +1,9 @@
-# PATCHLOG_APPLIED
+
 __version__ = "1.0.0"
 
 import asyncio
 import stat
-import sys
 
-import structlog
 
 from config import BASE_DIR
 from core.log_config import setup_logging

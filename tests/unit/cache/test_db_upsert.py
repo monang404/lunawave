@@ -31,10 +31,6 @@ class TestUpsertTrackNoTempOverwrite:
     - [x] stream_url dan stream_url_ts terupdate dengan benar
     """
 
-    async def test_update_stream_url_only_exists(self):
-        """Method update_stream_url_only harus ada di Database class."""
-        assert hasattr(Database, "update_stream_url_only"),            "Database harus punya method update_stream_url_only"
-
     async def test_update_stream_url_only_preserves_metadata(self, temp_db):
         """Setelah update_stream_url_only, title/artist/duration TIDAK BOLEH berubah."""
         track = TrackInfo(

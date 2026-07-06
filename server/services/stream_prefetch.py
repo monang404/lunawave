@@ -1,4 +1,4 @@
-# PATCHLOG_APPLIED
+
 import time
 
 import structlog

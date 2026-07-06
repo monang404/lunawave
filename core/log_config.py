@@ -1,5 +1,5 @@
 """
-Professional terminal logger for ytgui.
+Professional terminal logger for LunaWave.
 Replaces the default structlog renderer with a compact, ANSI-coloured format.
 Suppresses aiohttp access log spam and static-file noise.
 Writes full logs to logs/app.log for debugging.
@@ -73,7 +73,6 @@ def _status_bar_worker():
 
         with STATS.lock:
             clients = STATS.clients
-            track = STATS.current_track
             is_playing = STATS.is_playing
             queue = STATS.queue_size
 
@@ -89,7 +88,7 @@ def _status_bar_worker():
             f"\033[2K"                          # clear line
             f"{_GY}────────────────────────────────────────────────────────{_R}\n"
             f"\033[2K"
-            f" {_W}▸ ytgui{_R}  "
+            f" {_W}▸ LunaWave{_R}  "
             f"{_BG}🟢 Ready{_R}  "
             f"👤 {_C}{clients}{_R} client{'s' if clients != 1 else ''}  "
             f"{status_icon} {_G}{status_text}{_R}  "
@@ -353,7 +352,7 @@ def _print_error_card(name: str, event: str, extra: dict):
     reason = event or "unknown"
     retry_info = extra.get("retry", "")
     track_info = extra.get("track", extra.get("video_id", ""))
-    exc = extra.get("exc_info", "")
+    extra.get("exc_info", "")
 
     # Try to extract track/reason from event string
     m = _re.search(r"track[:\s]+(.+?)(?:\||$)", event, _re.IGNORECASE)
@@ -386,7 +385,7 @@ class _CompactRenderer:
         name = event_dict.pop("logger", "") or (logger.name if hasattr(logger, 'name') else "")
 
         # Drop noise
-        debug_mode = os.environ.get("YTGUI_DEBUG", "").lower() in ("1", "true", "yes")
+        debug_mode = os.environ.get("LunaWave_DEBUG", "").lower() in ("1", "true", "yes")
         if not debug_mode and _is_noise(str(event)):
             return ""  # suppress
 

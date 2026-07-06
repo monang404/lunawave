@@ -41,11 +41,11 @@ async def _db_cleanup(db):
 
 def start_background_tasks(ctx: AppContext) -> list:
     connectivity_task = safe_create_task(
-        _connectivity_checker(ctx.state, ctx.http_session), 
+        _connectivity_checker(ctx.state, ctx.http_session),
         name="connectivity_checker"
     )
     db_cleanup_task = safe_create_task(
-        _db_cleanup(ctx.db), 
+        _db_cleanup(ctx.db),
         name="db_cleanup"
     )
     return [connectivity_task, db_cleanup_task]

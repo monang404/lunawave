@@ -84,22 +84,16 @@ class EventBus:
                 handler = ref
             active_handlers.append(handler)
 
-        # Concurrent dispatch with error boundary
-        tasks = []
+        # Sequential dispatch with error boundary to prevent state mutation race conditions
         for handler in active_handlers:
             if asyncio.iscoroutinefunction(handler):
-                async def _wrap_handler(h=handler):
-                    try:
-                        await h(event)
-                    except Exception as e:
-                        logger.error(f"Async Handler {getattr(h, '__name__', h)} error on '{event_type.__name__}': {e}", exc_info=True)
-                tasks.append(safe_create_task(_wrap_handler(), name=f"event_{event_type.__name__}"))
+                try:
+                    await handler(event)
+                except Exception as e:
+                    logger.error(f"Async Handler {getattr(handler, '__name__', handler)} error on '{event_type.__name__}': {e}", exc_info=True)
             else:
                 try:
                     handler(event)
                 except Exception as e:
                     logger.error(f"Handler {getattr(handler, '__name__', handler)} error on '{event_type.__name__}': {e}", exc_info=True)
-
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
 

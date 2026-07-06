@@ -1,4 +1,4 @@
-# PATCHLOG_APPLIED
+
 """
 Purpose: Central controller for playback orchestration.
 Subscribes to: TRACK_ENDED, TRACK_PROGRESS, "track.pause.changed"
@@ -20,7 +20,7 @@ from core.events import (
     TrackProgressEvent,
     TrackStartedEvent,
 )
-from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider
+from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, DatabasePort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 from engine.playback.track_loader import TrackLoader
@@ -28,7 +28,7 @@ from engine.queue_manager import QueueMode
 from engine.radio_engine import RadioMode
 
 logger = structlog.get_logger(__name__)
-from core.log_config import STATS as _LOG_STATS
+from core.log_config import STATS
 
 
 from dataclasses import dataclass
@@ -43,6 +43,7 @@ class PlaybackDependencies:
     lyrics_fetcher: LyricsProvider
     queue_mode: QueueMode
     radio_mode: RadioMode
+    db: DatabasePort
 
 class PlaybackController:
     def __init__(self, deps: PlaybackDependencies):
@@ -52,6 +53,7 @@ class PlaybackController:
         self.resolver = deps.resolver
         self.queue_mode = deps.queue_mode
         self.radio_mode = deps.radio_mode
+        self.db = deps.db
         self.track_loader = TrackLoader(deps.resolver, deps.sponsorblock, deps.lyrics_fetcher)
 
         self._lock = asyncio.Lock()
@@ -89,7 +91,7 @@ class PlaybackController:
                 self.state.duration = event.duration
                 if self.state.current_track:
                     self.state.current_track.duration = int(event.duration)
-                    safe_create_task(self.resolver.db.upsert_track(self.state.current_track), name="upsert_track_duration")
+                    safe_create_task(self.db.upsert_track(self.state.current_track), name="upsert_track_duration")
                 await self.bus.publish(QueueUpdatedEvent())
 
     async def play_track(self, track: TrackInfo):
@@ -120,9 +122,9 @@ class PlaybackController:
 
                 self.state.status = PlayerStatus.PLAYING
                 self._retry_count = 0
-                _LOG_STATS.is_playing = True
-                _LOG_STATS.current_track = track.title[:50] if track and track.title else '—'
-                _LOG_STATS.inc('songs_played')
+                STATS.is_playing = True
+                STATS.current_track = track.title[:50] if track and track.title else '—'
+                STATS.inc('songs_played')
                 await self.bus.publish(TrackStartedEvent(track=track))
 
                 if self.state.duration == 0:
@@ -164,8 +166,9 @@ class PlaybackController:
                 if dur is not None and dur > 0:
                     self.state.duration = dur
                     track.duration = int(dur)
-                    safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
-                    await self.bus.publish(QueueUpdatedEvent())
+                    if track:
+                        safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
+                await self.bus.publish(QueueUpdatedEvent())
 
     async def _on_track_ended(self, event: TrackEndedEvent):
         reason = event.reason

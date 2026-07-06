@@ -1,7 +1,7 @@
 import json
 import secrets
 
-from config import ADMIN_PASSWORD, ADMIN_USERNAME
+from config import ADMIN_USERNAME, get_admin_password
 from core.constants import MAX_LOGIN_ATTEMPTS
 from core.security import verify_password
 
@@ -39,7 +39,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
                 return
 
         attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < 300]
-        
+
         if attempts:
             import asyncio
             await asyncio.sleep(min(len(attempts), 5))
@@ -54,7 +54,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
 
         username = data.get("username", "")
         password = data.get("password", "")
-        if secrets.compare_digest(username, ADMIN_USERNAME) and verify_password(password, ADMIN_PASSWORD):
+        if secrets.compare_digest(username, ADMIN_USERNAME) and verify_password(password, get_admin_password()):
             new_token = secrets.token_hex(16)
             if db:
                 await db.create_session(new_token, int(now) + 14400)

@@ -108,9 +108,4 @@ class TestSessionPersistence:
         assert await temp_db.verify_session("expired_1") is False
         assert await temp_db.verify_session("expired_2") is False
 
-    async def test_database_has_session_methods(self):
-        """Database harus punya method create_session, verify_session, delete_session."""
-        assert hasattr(Database, "create_session"), "Database harus punya create_session"
-        assert hasattr(Database, "verify_session"), "Database harus punya verify_session"
-        assert hasattr(Database, "delete_session"), "Database harus punya delete_session"
-        assert hasattr(Database, "cleanup_sessions"), "Database harus punya cleanup_sessions"
+

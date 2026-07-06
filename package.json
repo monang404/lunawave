@@ -1,5 +1,5 @@
 {
-  "name": "ytgui-project",
+  "name": "lunawave-project",
   "version": "1.0.0",
   "description": "under consturction",
   "main": "index.js",
@@ -15,16 +15,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/monang404/ytgui.git"
+    "url": "git+https://github.com/monang404/lunawave.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/monang404/ytgui/issues"
+    "url": "https://github.com/monang404/lunawave/issues"
   },
-  "homepage": "https://github.com/monang404/ytgui#readme",
+  "homepage": "https://github.com/monang404/lunawave#readme",
   "devDependencies": {
     "esbuild": "^0.28.1"
   }

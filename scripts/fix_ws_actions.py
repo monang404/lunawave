@@ -18,13 +18,13 @@ for root, _, files in os.walk(js_dir):
             path = os.path.join(root, file)
             with open(path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
+
             for action in actions:
                 # Replace wsSend("action", ...) or wsSend('action', ...)
                 pattern = r"wsSend\s*\(\s*['\"]" + action + r"['\"]"
                 replacement = "wsSend(WS_ACTIONS." + action.upper() + ""
                 content = re.sub(pattern, replacement, content)
-            
+
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(content)
 

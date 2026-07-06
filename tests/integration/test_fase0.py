@@ -85,7 +85,9 @@ class TestTask02RetryCountReset:
         ctrl = self._make_controller()
         ctrl._retry_count = 2
 
-        await ctrl._on_stop()
+        from engine.playback.playback_commands import PlaybackCommands
+        cmds = PlaybackCommands(ctrl)
+        await cmds.on_stop()
 
         assert ctrl._retry_count == 0, (
             f"_retry_count harus 0 setelah _on_stop, tapi nilainya {ctrl._retry_count}"
@@ -96,13 +98,12 @@ class TestTask02RetryCountReset:
         """Reset harus terjadi di awal method (baris pertama)."""
         import inspect
 
-        from engine.playback import PlaybackController
-        source = inspect.getsource(PlaybackController._on_stop)
+        from engine.playback.playback_commands import PlaybackCommands
+        source = inspect.getsource(PlaybackCommands.on_stop)
         lines = [l.strip() for l in source.splitlines() if l.strip()]
         body_lines = [l for l in lines if not l.startswith("async def") and not l.startswith("\"\"\"")]
-        assert body_lines[0].startswith("self._retry_count = 0"), (
-            f"Baris pertama _on_stop harus reset _retry_count, tapi: {body_lines[0]}"
-        )
+        assert body_lines[0].startswith("self.playback_controller._retry_count = 0"), \
+            f"Baris pertama on_stop harus reset _retry_count, tapi: {body_lines[0]}"
 
     @pytest.mark.asyncio
     async def test_on_stop_clears_state(self):
@@ -112,7 +113,9 @@ class TestTask02RetryCountReset:
         ctrl.state.current_track = MagicMock()
         ctrl._retry_count = 3
 
-        await ctrl._on_stop()
+        from engine.playback.playback_commands import PlaybackCommands
+        cmds = PlaybackCommands(ctrl)
+        await cmds.on_stop()
 
         assert ctrl._retry_count == 0
         assert ctrl.state.current_track is None

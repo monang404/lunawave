@@ -42,7 +42,7 @@ class CommandRouter:
         self.command_bus.register(PrevCommand, self._route(self.playback_commands.on_prev))
         self.command_bus.register(StopCommand, self._route(self.playback_commands.on_stop))
         self.command_bus.register(SeekCommand, self._route(self.playback_commands.on_seek))
-        
+
         self.command_bus.register(SetModeCommand, self._route(self.settings_commands.on_set_mode))
         self.command_bus.register(SetOutputCommand, self._route(self.settings_commands.on_set_output))
         self.command_bus.register(SetSponsorblockCommand, self._route(self.settings_commands.on_set_sponsorblock))
@@ -65,12 +65,12 @@ class CommandRouter:
             import asyncio
             import inspect
             sig = inspect.signature(action)
-            
+
             if len(sig.parameters) > 0:
                 res = action(command)
             else:
                 res = action()
-            
+
             if asyncio.iscoroutine(res):
                 return await res
             return res

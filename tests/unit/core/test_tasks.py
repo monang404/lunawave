@@ -42,7 +42,7 @@ class TestSafeCreateTask:
 
         task = safe_create_task(dummy_coro(), name="test_task")
         assert isinstance(task, asyncio.Task)
-        result = await task
+        await task
         # but the task should complete without error
 
     async def test_safe_create_task_catches_errors(self, caplog):

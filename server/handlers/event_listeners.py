@@ -1,5 +1,5 @@
-import time
 
+import time
 import structlog
 
 from core.events import (
@@ -35,7 +35,14 @@ def setup_event_listeners(
 
         await broadcast_service.broadcast_state(state)
 
+    _last_progress_time = 0.0
+
     async def _on_track_progress(event: TrackProgressEvent):
+        nonlocal _last_progress_time
+        now = time.monotonic()
+        if now - _last_progress_time < 0.5:
+            return
+        _last_progress_time = now
         position = event.position
         await broadcast_service.broadcast_progress(position, playback_controller.state.status.name)
 

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS artists (
     id INTEGER PRIMARY KEY,
     nama TEXT NOT NULL,
-    kategori TEXT CHECK(kategori IN ('Boy Group', 'Girl Group', 'Solo', 'Band')),
+    kategori TEXT,
     tahun_aktif TEXT
 );
 

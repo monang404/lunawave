@@ -9,6 +9,17 @@ function getHashtagColor(hashtag) {
     return color;
 }
 
+function setLazyCoverData(img, track) {
+    if (img.dataset.vid !== track.video_id) {
+        img.dataset.vid = track.video_id || '';
+        img.dataset.title = track.title || '';
+        img.dataset.artist = track.artist || '';
+        img.dataset.thumb = track.thumbnail || '';
+        img.src = '';
+        img.classList.remove('loaded');
+    }
+}
+
 function renderDiscoverList(container, items, emptyHtml, createTemplate, updateItem) {
     if (!container) return;
     if (!items || items.length === 0) {
@@ -67,15 +78,7 @@ function renderDiscoverTab() {
                 el.dataset.vid = track.video_id || '';
                 el.querySelector('.fav-num').textContent = i + 1;
                 
-                const img = el.querySelector('.lazy-cover');
-                if (img.dataset.vid !== track.video_id) {
-                    img.dataset.vid = track.video_id || '';
-                    img.dataset.title = track.title || '';
-                    img.dataset.artist = track.artist || '';
-                    img.dataset.thumb = track.thumbnail || '';
-                    img.src = '';
-                    img.classList.remove('loaded');
-                }
+                setLazyCoverData(el.querySelector('.lazy-cover'), track);
                 
                 el.querySelector('.fav-title').textContent = title;
                 el.querySelector('.fav-cnt').textContent = (track.artist || '') + playCnt;
