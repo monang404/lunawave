@@ -48,7 +48,11 @@ async def _handle_search(data, ws, state, ytdlp, manager, db, command_bus):
         results = await ytdlp.search(query, max_results=max_results)
         await ws.send_str(json.dumps({
             "type": "search_results",
-            "data": [t.to_dict() for t in results],
+            "data": {
+                "items": [t.to_dict() for t in results],
+                "next_page_token": None,
+                "total_count": len(results)
+            },
         }, ensure_ascii=False))
 
 @register_ws_handler(WSAction.DISCOVER)
@@ -70,17 +74,16 @@ async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_b
         else:
             is_fav = await db.toggle_favorite(video_id)
 
-        await ws.send_str(json.dumps({
+        payload = {
             "type": "favorite_status",
             "data": {
                 "video_id": video_id,
                 "is_favorite": bool(is_fav)
             }
-        }, ensure_ascii=False))
+        }
+        await ws.send_str(json.dumps(payload, ensure_ascii=False))
 
-        if state.current_track and state.current_track.video_id == video_id:
-            state.current_track.is_favorite = is_fav
-            await manager.broadcast({
-                "type": "state",
-                "data": state.to_dict()
-            })
+        async with state.lock:
+            if state.current_track and state.current_track.video_id == video_id:
+                state.current_track.is_favorite = is_fav
+                await manager.broadcast(payload)

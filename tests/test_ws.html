@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JS WebSocket Test</title>
+    <style>
+        body { font-family: monospace; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Encapsulation Test Results</h1>
+    <div id="results"></div>
+
+    <script>
+        // Mock the environment
+        window.showConnectionToast = function() {};
+        window.hideConnectionToast = function() {};
+        window.store = { is_online: false, userRole: 'client', active_tab: 'home' };
+        window.WS_ACTIONS = { DISCOVER: 'discover', AUTH: 'auth', SET_OUTPUT: 'set_output' };
+        
+        let wsInstancesCreated = 0;
+        
+        // Mock WebSocket
+        class MockWebSocket {
+            constructor(url) {
+                this.url = url;
+                this.readyState = 0; // CONNECTING
+                wsInstancesCreated++;
+                
+                setTimeout(() => {
+                    this.readyState = 1; // OPEN
+                    if (this.onopen) this.onopen();
+                }, 10);
+            }
+            send(data) {
+                this.lastSent = data;
+            }
+            close() {
+                this.readyState = 3; // CLOSED
+                if (this.onclose) this.onclose();
+            }
+        }
+        
+        window.WebSocket = MockWebSocket;
+    </script>
+    
+    <!-- Load the refactored script -->
+    <script src="../web/static/js/ws.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function assert(condition, message) {
+            const el = document.createElement('div');
+            if (condition) {
+                el.className = 'pass';
+                el.textContent = 'PASS: ' + message;
+            } else {
+                el.className = 'fail';
+                el.textContent = 'FAIL: ' + message;
+                console.error('FAIL: ' + message);
+            }
+            resultsDiv.appendChild(el);
+        }
+
+        function runTests() {
+            assert(window.ws === undefined, "window.ws should be undefined before connecting");
+            
+            // Connect
+            window.wsConnect();
+            
+            setTimeout(() => {
+                assert(wsInstancesCreated === 1, "One WebSocket instance should be created");
+                assert(window.ws === undefined, "window.ws should STILL be undefined after connecting (encapsulated)");
+                
+                // We cannot access the raw WS object directly. But we can test sending.
+                // We can't easily assert the payload unless we mock ws.send in the instance.
+                // But the primary objective is to prove `ws` is encapsulated and not on window.
+                assert(typeof wsClient !== "undefined", "wsClient module should be defined internally (if not IIFE hidden completely)");
+                if (typeof wsClient !== "undefined") {
+                    assert(typeof wsClient.connect === "function", "wsClient.connect is a function");
+                    assert(wsClient.getReadyState() === 1, "WebSocket should be OPEN inside the closure");
+                }
+                
+                const el = document.createElement('div');
+                el.textContent = 'Tests finished.';
+                resultsDiv.appendChild(el);
+            }, 100);
+        }
+
+        window.onload = runTests;
+    </script>
+</body>
+</html>

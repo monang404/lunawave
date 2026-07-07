@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>LunaWave — Midnight Audio Experience</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css"></noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" integrity="sha384-bwXm/zkV6n5XGP9yIcUpKqATFAKcmKWYBVG6tbgRAHzcLakIlI2qlRbLBmgb/y3D" crossorigin="anonymous" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" integrity="sha384-bwXm/zkV6n5XGP9yIcUpKqATFAKcmKWYBVG6tbgRAHzcLakIlI2qlRbLBmgb/y3D" crossorigin="anonymous"></noscript>
     <link rel="stylesheet" href="/static/css/tokens.css">
     <link rel="stylesheet" href="/static/css/base/reset.css">
     <link rel="stylesheet" href="/static/css/base/typography.css">
@@ -53,9 +53,11 @@
                 <div class="portal-admin-wrapper" style="width: 100%;">
                     <div id="portal-login-form" class="portal-login-form">
                         <div class="login-input-group">
+                            <label for="admin-username" class="visually-hidden">Username</label>
                             <input type="text" id="admin-username" placeholder="Username" autocomplete="off">
                         </div>
                         <div class="login-input-group">
+                            <label for="admin-password" class="visually-hidden">Password</label>
                             <input type="password" id="admin-password" placeholder="Password">
                         </div>
                         <button id="admin-submit-btn">Login Admin</button>
@@ -618,7 +620,7 @@
     // Script hapus SW dimatikan agar SW yang baru terdaftar tidak di-kill
     </script>
 
-    <script src="/static/js/bundle.js?v=1783323309" defer></script>
+    <script src="/static/js/bundle.js?v=1783411234" defer></script>
 
 </body>
 

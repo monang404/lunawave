@@ -1,6 +1,7 @@
 class WSAction:
     # Auth
     AUTH = "auth"
+    LOGOUT = "logout"
     # Playback Actions
     PLAY_TRACK = "play_track"
     TOGGLE_PAUSE = "toggle_pause"

@@ -17,31 +17,43 @@ class PlaybackCommands:
     async def on_play_track(self, cmd):
         async with self.playback_controller._lock:
             if self.state.playback_mode == PlaybackMode.RADIO:
-                await self.radio_mode.on_deactivated()
+                # We need to make sure radio mode is deactivated safely
+                pass
+        
+        if self.state.playback_mode == PlaybackMode.RADIO:
+            await self.radio_mode.on_deactivated()
+            async with self.playback_controller._lock:
                 self.state.playback_mode = PlaybackMode.QUEUE
-                await self.bus.publish(QueueUpdatedEvent())
-            await self.playback_controller.play_track(cmd.track)
+            await self.bus.publish(QueueUpdatedEvent())
+            
+        await self.playback_controller.play_track(cmd.track)
 
     async def on_toggle_pause(self, cmd=None):
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
             await self.mpv.toggle_pause()
 
     async def on_next(self, cmd=None):
+        should_advance = True
         async with self.playback_controller._lock:
             if cmd and getattr(cmd, "video_id", None):
                 if not self.state.current_track or self.state.current_track.video_id != cmd.video_id:
                     logger.info(f"Ignoring skip: requested {cmd.video_id} != current {getattr(self.state.current_track, 'video_id', None)}")
-                    return
+                    should_advance = False
+                    
+        if should_advance:
             await self.playback_controller._advance_to_next()
 
     async def on_prev(self, cmd=None):
+        track = None
         async with self.playback_controller._lock:
             if self.state.history:
                 track = self.state.history.pop()
                 self.state.current_track = None
-                await self.playback_controller.play_track(track)
-            else:
-                await self.bus.publish(LogMessageEvent(message="Tidak ada lagu sebelumnya"))
+                
+        if track:
+            await self.playback_controller.play_track(track)
+        else:
+            await self.bus.publish(LogMessageEvent(message="Tidak ada lagu sebelumnya"))
 
     async def on_stop(self, cmd=None):
         self.playback_controller._retry_count = 0

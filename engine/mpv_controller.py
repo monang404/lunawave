@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 
 import structlog
 
@@ -37,7 +38,7 @@ class MpvController:
         self.is_connected = False
         self._mpv_process = None
         self.socket_path = socket_path or MPV_SOCKET
-        self.tcp_port = tcp_port or os.environ.get("YT_PLAYER_MPV_PORT", "12345")
+        self.tcp_port = tcp_port or os.environ.get("LUNAWAVE_MPV_PORT", "12345")
         self._bus = event_bus
 
     async def connect(self):
@@ -117,7 +118,7 @@ class MpvController:
                 return
             except (ConnectionError, OSError, FileNotFoundError):
                 await asyncio.sleep(0.5)
-        raise MpvConnectionError(f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('YT_PLAYER_MPV_PORT', 'N/A')}, Unix: {MPV_SOCKET})")
+        raise MpvConnectionError(f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('LUNAWAVE_MPV_PORT', 'N/A')}, Unix: {MPV_SOCKET})")
 
     async def play(self, url_or_path: str):
         if not self.is_connected:
@@ -297,4 +298,3 @@ class MpvController:
 
     async def _set_property(self, prop: str, value):
         await self._command(["set_property", prop, value])
-import time

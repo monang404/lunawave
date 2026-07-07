@@ -49,3 +49,24 @@ class TestAppStateDurationField:
         state.duration = 212.5
         result = state.to_dict()
         assert result["duration"] == 212.5
+
+
+class TestTrackInfoFromDict:
+    def test_logs_error_on_invalid_video_id(self):
+        """TrackInfo.from_dict harus me-log error jika video_id invalid dan mengembalikan None."""
+        from core.state import TrackInfo
+        import unittest.mock
+        
+        invalid_data = {"video_id": "terlalu_panjang_sekali_ini_hashnya"}
+        
+        with unittest.mock.patch("structlog.get_logger") as mock_logger:
+            mock_log_instance = unittest.mock.MagicMock()
+            mock_logger.return_value = mock_log_instance
+            
+            result = TrackInfo.from_dict(invalid_data)
+            
+            assert result is None
+            mock_log_instance.error.assert_called_once()
+            args, kwargs = mock_log_instance.error.call_args
+            assert "TrackInfo parsing gagal" in args[0]
+            assert kwargs.get("raw_data") == invalid_data

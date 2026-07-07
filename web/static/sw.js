@@ -5,27 +5,6 @@ const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PRECACHE_ASSETS = [
     '/',
     '/static/inter.css',
-    '/static/css/tokens.css',
-    '/static/css/base/reset.css',
-    '/static/css/base/typography.css',
-    '/static/css/base/animations.css',
-    '/static/css/layout/app-shell.css',
-    '/static/css/layout/nav.css',
-    '/static/css/layout/grid.css',
-    '/static/css/components/player-bar.css',
-    '/static/css/components/player-controls.css',
-    '/static/css/components/queue.css',
-    '/static/css/components/search.css',
-    '/static/css/components/settings-sheet.css',
-    '/static/css/components/lyrics.css',
-    '/static/css/components/cards.css',
-    '/static/css/components/toasts.css',
-    '/static/css/portal.css',
-    '/static/css/platform/mobile.css',
-    '/static/css/platform/tablet.css',
-    '/static/css/platform/desktop.css',
-    '/static/css/platform/landscape.css',
-    '/static/css/platform/safe-area.css',
     '/static/js/bundle.js',
 ];
 
@@ -74,7 +53,7 @@ self.addEventListener('fetch', (event) => {
                 });
             }).catch(() => {
                 if (event.request.headers.get('accept').includes('text/html')) {
-                    return caches.match('/static/index.html');
+                    return caches.match('/');
                 }
             })
         );

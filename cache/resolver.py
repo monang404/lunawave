@@ -22,6 +22,7 @@ class CacheResolver:
         self.db = db
         self.ytdlp = ytdlp
         self._fetching = {}  # type: ignore
+        self._lock = asyncio.Lock()
 
     async def resolve(self, track: TrackInfo) -> str:
         """Returns the playback URI (local path atau YouTube URL untuk MPV)."""
@@ -39,18 +40,29 @@ class CacheResolver:
                 track.stream_url = row.stream_url
                 return track.stream_url
 
-        if track.video_id in self._fetching:
-            await self._fetching[track.video_id].wait()
-            return await self.resolve(track)
+        async with self._lock:
+            if track.video_id in self._fetching:
+                fut = self._fetching[track.video_id]
+                needs_fetch = False
+            else:
+                fut = asyncio.get_running_loop().create_future()
+                self._fetching[track.video_id] = fut
+                needs_fetch = True
 
-        event = asyncio.Event()
-        self._fetching[track.video_id] = event
-
-        try:
-            url = await self.ytdlp.get_stream_url(track.video_id)
-            track.stream_url = url
-            await self.db.upsert_track(track, stream_url=url)
-            return url  # type: ignore
-        finally:
-            event.set()
-            self._fetching.pop(track.video_id, None)
+        if needs_fetch:
+            try:
+                url = await asyncio.wait_for(self.ytdlp.get_stream_url(track.video_id), timeout=30.0)
+                track.stream_url = url
+                await self.db.upsert_track(track, stream_url=url)
+                if not fut.done():
+                    fut.set_result(url)
+                return url  # type: ignore
+            except Exception as e:
+                if not fut.done():
+                    fut.set_exception(e)
+                raise
+            finally:
+                async with self._lock:
+                    self._fetching.pop(track.video_id, None)
+        else:
+            return await asyncio.wait_for(fut, timeout=35.0)

@@ -60,7 +60,10 @@ class TrackInfo:
             return None
         try:
             video_id = VideoId(data.get("video_id", ""))
-        except ValueError:
+        except ValueError as e:
+            import structlog
+            logger = structlog.get_logger(__name__)
+            logger.error(f"TrackInfo parsing gagal: {e}", raw_data=data)
             return None
 
         duration = Duration(data.get("duration", 0))
@@ -77,10 +80,12 @@ class TrackInfo:
             is_favorite=int(data.get("is_favorite", False)),
         )
 
+import asyncio
 from core.constants import DEFAULT_VOLUME
 
 @dataclass
 class AppState:
+    lock:            asyncio.Lock = field(default_factory=asyncio.Lock, repr=False, init=False)
     status:          PlayerStatus  = PlayerStatus.IDLE
     playback_mode:   PlaybackMode  = PlaybackMode.QUEUE
     audio_output:    AudioOutput   = AudioOutput.BROWSER

@@ -20,11 +20,14 @@ CREATE INDEX IF NOT EXISTS idx_local_path ON tracks(local_path) WHERE local_path
 CREATE INDEX IF NOT EXISTS idx_last_played ON tracks(last_played DESC);
 CREATE INDEX IF NOT EXISTS idx_play_count ON tracks(play_count DESC) WHERE play_count > 0;
 CREATE INDEX IF NOT EXISTS idx_stream_url_ts ON tracks(stream_url_ts);
+CREATE INDEX IF NOT EXISTS idx_is_favorite ON tracks(is_favorite) WHERE is_favorite = 1;
 
 CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     expires_at INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- Artists untuk Radio Mode seed
 CREATE TABLE IF NOT EXISTS artists (

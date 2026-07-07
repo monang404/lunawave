@@ -24,7 +24,11 @@ from server.app import create_app
 def mock_db():
     db = MagicMock(spec=DatabasePort)
     db.conn = True
-    db.verify_session = AsyncMock(return_value=True)
+    
+    async def _mock_verify(token):
+        return token == "valid-token"
+        
+    db.verify_session = AsyncMock(side_effect=_mock_verify)
     db.get_track = AsyncMock(return_value=None)
     db.increment_play_count = AsyncMock()
     db.create_session = AsyncMock()
@@ -118,7 +122,7 @@ async def test_e2e_websocket_auth_with_token(aiohttp_client, mock_playback_contr
     await ws.send_json({
         "type": "cmd",
         "action": "auth",
-        "data": {"token": "test-token"}
+        "data": {"token": "valid-token"}
     })
 
     msg = await ws.receive()
@@ -142,7 +146,7 @@ async def test_e2e_websocket_search(aiohttp_client, mock_playback_controller, mo
 
     await ws.receive()
 
-    await ws.send_json({"type": "cmd", "action": "auth", "data": {"token": "test-token"}})
+    await ws.send_json({"type": "cmd", "action": "auth", "data": {"token": "valid-token"}})
     await ws.receive()
 
     await ws.send_json({
@@ -154,8 +158,8 @@ async def test_e2e_websocket_search(aiohttp_client, mock_playback_controller, mo
     msg = await ws.receive()
     data = json.loads(msg.data)
     assert data["type"] == "search_results"
-    assert len(data["data"]) > 0
-    assert data["data"][0]["video_id"] == "test1"
+    assert len(data["data"]["items"]) > 0
+    assert data["data"]["items"][0]["video_id"] == "test1"
 
     await ws.close()
 
@@ -184,5 +188,31 @@ async def test_e2e_websocket_unauthenticated_command_rejected(aiohttp_client, mo
     assert data["type"] == "error"
     error_msg = data["data"]["message"] if isinstance(data["data"], dict) else data["data"]
     assert "ditolak" in error_msg or "login" in error_msg.lower()
+
+    await ws.close()
+
+@pytest.mark.asyncio
+async def test_e2e_websocket_auth_with_invalid_token(aiohttp_client, mock_playback_controller, mock_ytdlp, mock_db):
+    """PATCH-3-05: Verifikasi WS autentikasi token gagal jika invalid."""
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db, ConnectionManager())
+    from unittest.mock import AsyncMock
+    app["command_bus"] = AsyncMock()
+    app["event_bus"] = AsyncMock()
+    client = await aiohttp_client(app)
+
+    ws = await client.ws_connect("/ws")
+
+    await ws.receive()
+
+    await ws.send_json({
+        "type": "cmd",
+        "action": "auth",
+        "data": {"token": "invalid-token"}
+    })
+
+    msg = await ws.receive()
+    data = json.loads(msg.data)
+    assert data["type"] == "auth_status"
+    assert data["data"]["success"] is False
 
     await ws.close()

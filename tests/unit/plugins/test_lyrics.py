@@ -35,3 +35,22 @@ class TestLyricsFetcherSessionScope:
         fetcher = LyricsFetcher(state, session=__import__("unittest.mock").mock.AsyncMock(), event_bus=__import__("unittest.mock").mock.AsyncMock())
         assert hasattr(fetcher, "_current_generation"), "LyricsFetcher harus punya _current_generation"
         assert fetcher._current_generation == 0
+
+    @pytest.mark.asyncio
+    async def test_skips_regex_on_cache_hit(self):
+        """Verifikasi bahwa re.sub tidak dipanggil jika lrc didapatkan dari cache."""
+        from core.state import AppState, TrackInfo
+        state = AppState()
+        mock_sess = __import__("unittest.mock").mock.AsyncMock()
+        fetcher = LyricsFetcher(state, session=mock_sess, event_bus=__import__("unittest.mock").mock.AsyncMock())
+        
+        # Mock cache hit
+        track = TrackInfo(video_id="vid1", title="test (official)", artist="artist", duration=100)
+        fetcher._cache["vid1"] = "[00:10.00] Cached lyrics"
+        
+        import unittest.mock
+        with unittest.mock.patch("re.sub") as mock_sub:
+            await fetcher.fetch(track)
+            # re.sub should not have been called because cache hit provides lrc
+            mock_sub.assert_not_called()
+

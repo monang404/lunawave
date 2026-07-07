@@ -1,3 +1,7 @@
+/** Utilities (no ESM imports - shared global scope) */
+
+const ITUNES_API_URL = "https://itunes.apple.com/search";
+
 function formatTime(seconds) {
     if (!seconds || seconds < 0) return "00:00";
     const minutes = Math.floor(seconds / 60);
@@ -192,6 +196,6 @@ window.extractDominantColor = function(imageElement, callback) {
         if (callback) callback({r: bestR, g: bestG, b: bestB});
     } catch (e) {
         console.warn("Color extraction failed:", e);
-        if (callback) callback("var(--bg-elevated)");
+        if (callback) callback({r: 28, g: 28, b: 34}); // Fallback equivalent to var(--bg-elevated) #1C1C22
     }
 };

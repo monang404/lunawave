@@ -97,7 +97,7 @@ class TrackRepository(TrackRepositoryPort):
             (video_id,)
         ) as cursor:
             row = await cursor.fetchone()
-        
+
         await self._conn.commit()
         return row["is_favorite"] if row else 0
 
@@ -133,7 +133,7 @@ class TrackRepository(TrackRepositoryPort):
 
         placeholders = ','.join(['?'] * len(video_ids))
         await self._conn.execute(
-            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", video_ids
+            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", tuple(video_ids)
         )
         await self._conn.commit()
 

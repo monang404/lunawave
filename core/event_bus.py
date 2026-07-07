@@ -14,7 +14,6 @@ import structlog
 
 from core.events import DomainEvent
 from core.observability import EVENT_COUNT
-from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
 
@@ -33,7 +32,7 @@ class EventBus:
         if inspect.ismethod(handler):
             ref = weakref.WeakMethod(handler)
         else:
-            ref = handler  # type: ignore
+            ref = weakref.ref(handler)
         self._subscribers[event_type].append(ref)
 
     def _resolve(self, ref):

@@ -62,6 +62,17 @@
             assert(window.cleanTrackTitle("Song #hashtag") === "Song", "cleanTrackTitle removes hashtag");
             assert(window.cleanTrackTitle("Song  - ") === "Song", "cleanTrackTitle removes trailing dashes and double spaces");
             assert(window.cleanTrackTitle("Song (Live at Wembley)") === "Song", "cleanTrackTitle removes Live");
+
+            // Test extractDominantColor fallback
+            // We pass a bad image element (or none) which causes an error in canvas extraction, triggering the catch block.
+            let fallbackResult = null;
+            window.extractDominantColor(null, function(res) {
+                fallbackResult = res;
+            });
+            assert(typeof fallbackResult === "object", "extractDominantColor fallback should return an object");
+            assert(fallbackResult !== null && fallbackResult.r === 28 && fallbackResult.g === 28 && fallbackResult.b === 34, "extractDominantColor fallback should be {r:28, g:28, b:34}");
+            // Test ITUNES_API_URL is defined
+            assert(typeof ITUNES_API_URL === "string" && ITUNES_API_URL.length > 0, "ITUNES_API_URL should be defined as a string");
         }
 
         window.onload = runTests;

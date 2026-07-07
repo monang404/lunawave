@@ -1,3 +1,0 @@
-# Sprint 02
-
-Daftar task untuk sprint ini ada di folder TASKS/ dengan awalan S02-...

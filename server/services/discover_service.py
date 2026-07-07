@@ -10,6 +10,8 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
+import sqlite3
+
 class DiscoverService:
     def __init__(self, db: Database):
         self.db = db
@@ -22,7 +24,7 @@ class DiscoverService:
         tracks = []
         try:
             async with self.db.conn.execute(  # type: ignore
-                "SELECT video_id, title, artist, duration, thumbnail, local_path, view_count, play_count, is_favorite FROM tracks ORDER BY last_played DESC LIMIT ?", (n,)
+                "SELECT video_id, title, artist, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks ORDER BY last_played DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
@@ -33,12 +35,12 @@ class DiscoverService:
                         duration=d["duration"],
                         thumbnail=d["thumbnail"],
                         local_path=d["local_path"],
-                        stream_url=d["stream_url"],
+                        stream_url=d.get("stream_url"),
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception as e:
-            logger.error(f"Error in discover service: {e}")
+        except (KeyError, ValueError, sqlite3.Error) as e:
+            logger.error(f"Data error in get_recent: {e}")
         return tracks
 
     async def get_favorites(self, n: int) -> list[TrackInfo]:
@@ -49,7 +51,7 @@ class DiscoverService:
         tracks = []
         try:
             async with self.db.conn.execute(  # type: ignore
-                "SELECT video_id, title, artist, duration, thumbnail, local_path, view_count, play_count, is_favorite FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?", (n,)
+                "SELECT video_id, title, artist, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
@@ -60,12 +62,12 @@ class DiscoverService:
                         duration=d["duration"],
                         thumbnail=d["thumbnail"],
                         local_path=d["local_path"],
-                        stream_url=d["stream_url"],
+                        stream_url=d.get("stream_url"),
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception as e:
-            logger.error(f"Error in discover service: {e}")
+        except (KeyError, ValueError, sqlite3.Error) as e:
+            logger.error(f"Data error in get_favorites: {e}")
         return tracks
 
     async def get_cached(self, n: int) -> list[TrackInfo]:
@@ -76,7 +78,7 @@ class DiscoverService:
         tracks = []
         try:
             async with self.db.conn.execute(  # type: ignore
-                "SELECT video_id, title, artist, duration, thumbnail, local_path, view_count, play_count, is_favorite FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?", (n,)
+                "SELECT video_id, title, artist, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
@@ -87,12 +89,12 @@ class DiscoverService:
                         duration=d["duration"],
                         thumbnail=d["thumbnail"],
                         local_path=d["local_path"],
-                        stream_url=d["stream_url"],
+                        stream_url=d.get("stream_url"),
                         view_count=d["view_count"],
                         is_favorite=d.get("is_favorite", 0)
                     ))
-        except Exception as e:
-            logger.error(f"Error in discover service: {e}")
+        except (KeyError, ValueError, sqlite3.Error) as e:
+            logger.error(f"Data error in get_cached: {e}")
         return tracks
 
     async def get_featured_artists(self, n: int) -> list[dict]:
@@ -107,8 +109,8 @@ class DiscoverService:
             ) as cursor:
                 async for row in cursor:
                     artists.append(dict(row))
-        except Exception as e:
-            logger.error(f"Error in discover service: {e}")
+        except (KeyError, ValueError, sqlite3.Error) as e:
+            logger.error(f"Data error in get_featured_artists: {e}")
         return artists
 
     async def get_featured_genres(self, n: int) -> list[dict]:
@@ -127,6 +129,6 @@ class DiscoverService:
                         "nama_genre": row["nama_genre"],
                         "click_count": row["click_count"]
                     })
-        except Exception as e:
-            print(f"Error in get_featured_genres: {e}")
+        except (KeyError, ValueError, sqlite3.Error) as e:
+            logger.error(f"Data error in get_featured_genres: {e}")
         return genres

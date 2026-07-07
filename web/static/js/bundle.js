@@ -1,4 +1,5 @@
 // --- config.js ---
+const ITUNES_API_URL = "https://itunes.apple.com/search";
 const TABS = ["home", "search", "radio", "discover"];
 
 // --- store.js ---

@@ -1,6 +1,6 @@
 #!/bin/bash
 # monitor_health.sh - Script to check if YTGUI is running and healthy
-PORT=${YTGUI_PORT:-8765}
+PORT=${LUNAWAVE_PORT:-8765}
 HEALTH_URL="http://localhost:$PORT/health"
 RES=$(curl -sf "$HEALTH_URL")
 

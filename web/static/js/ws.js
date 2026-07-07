@@ -1,70 +1,88 @@
-let ws = null;
-let wsReconnectTimer = null;
+const wsClient = (function() {
+    let ws = null;
+    let wsReconnectTimer = null;
 
+    function connect() {
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        const url = `${protocol}//${location.host}/ws`;
 
-function wsConnect() {
-    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${protocol}//${location.host}/ws`;
+        if (typeof showConnectionToast === "function") {
+            showConnectionToast("Menghubungkan...", "connecting");
+        }
 
-    showConnectionToast("Menghubungkan...", "connecting");
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+            ws.onclose = null;
+            ws.onerror = null;
+            ws.close();
+        }
 
-    if (ws && ws.readyState !== WebSocket.CLOSED) {
-        ws.onclose = null;
-        ws.onerror = null;
-        ws.close();
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+            if (typeof store !== "undefined") store.is_online = true;
+            if (typeof hideConnectionToast === "function") hideConnectionToast();
+            if (wsReconnectTimer) {
+                clearTimeout(wsReconnectTimer);
+                wsReconnectTimer = null;
+            }
+            
+            if (typeof store !== "undefined" && store.userRole === "admin") {
+                const token = window.safeStorage ? window.safeStorage.get("ytgui_session_token") : null;
+                if (token && typeof WS_ACTIONS !== "undefined") {
+                    send(WS_ACTIONS.AUTH, { token: token });
+                }
+                const savedOutput = window.safeStorage ? (window.safeStorage.get("ytgui_audio_output") || "browser") : "browser";
+                if (typeof WS_ACTIONS !== "undefined") send(WS_ACTIONS.SET_OUTPUT, { output: savedOutput });
+            } else if (typeof store !== "undefined" && store.userRole === "client") {
+                if (store.active_tab === "home" || store.active_tab === "discover") {
+                    if (typeof WS_ACTIONS !== "undefined") send(WS_ACTIONS.DISCOVER);
+                }
+            }
+            if (typeof renderHeader === "function") renderHeader();
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (typeof handleServerMessage === "function") handleServerMessage(msg);
+            } catch (e) {
+                console.error("WS parse error:", e);
+            }
+        };
+
+        ws.onclose = () => {
+            if (typeof store !== "undefined") store.is_online = false;
+            if (typeof renderHeader === "function") renderHeader();
+            if (typeof showConnectionToast === "function") {
+                showConnectionToast("Koneksi terputus. Reconnecting...", "disconnected");
+            }
+            wsReconnectTimer = setTimeout(connect, 2000);
+        };
+
+        ws.onerror = () => {
+            ws.close();
+        };
     }
 
-    ws = new WebSocket(url);
-    window.ws = ws;
-
-    ws.onopen = () => {
-        store.is_online = true;
-        hideConnectionToast();
-        if (wsReconnectTimer) {
-            clearTimeout(wsReconnectTimer);
-            wsReconnectTimer = null;
+    function send(action, data) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
         }
-        
-        if (store.userRole === "admin") {
-            const token = window.safeStorage.get("ytgui_session_token");
-            if (token) {
-                wsSend(WS_ACTIONS.AUTH, { token: token });
-            }
-            const savedOutput = window.safeStorage.get("ytgui_audio_output") || "browser";
-            wsSend(WS_ACTIONS.SET_OUTPUT, { output: savedOutput });
-        } else if (store.userRole === "client") {
-            if (store.active_tab === "home" || store.active_tab === "discover") {
-                wsSend(WS_ACTIONS.DISCOVER);
-            }
-        }
-        renderHeader();
-    };
+    }
 
-    ws.onmessage = (event) => {
-        try {
-            const msg = JSON.parse(event.data);
-            handleServerMessage(msg);
-        } catch (e) {
-            console.error("WS parse error:", e);
-        }
-    };
+    function getReadyState() {
+        return ws ? ws.readyState : (typeof WebSocket !== 'undefined' ? WebSocket.CLOSED : 3);
+    }
 
-    ws.onclose = () => {
-        store.is_online = false;
-        renderHeader();
-        showConnectionToast("Koneksi terputus. Reconnecting...", "disconnected");
-        wsReconnectTimer = setTimeout(wsConnect, 2000);
-    };
+    return { connect, send, getReadyState };
+})();
 
-    ws.onerror = () => {
-        ws.close();
-    };
+function wsConnect() {
+    wsClient.connect();
 }
 
 function wsSend(action, data) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
-    }
+    wsClient.send(action, data);
 }
 
 function handleServerMessage(msg) {

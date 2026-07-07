@@ -16,12 +16,12 @@ echo.
 :: ----------------------------------------------------------
 ::  CONFIGURATION
 :: ----------------------------------------------------------
-set "YTGUI_HOST=0.0.0.0"
-set "YTGUI_PORT=8765"
+set "LUNAWAVE_HOST=0.0.0.0"
+set "LUNAWAVE_PORT=8765"
 
 :: Admin credentials (uncomment to set explicitly)
-:: set "YTGUI_ADMIN_USER=admin"
-:: set "YTGUI_ADMIN_PASS=your_secret_password"
+:: set "LUNAWAVE_ADMIN_USER=admin"
+:: set "LUNAWAVE_ADMIN_PASS=your_secret_password"
 
 :: ----------------------------------------------------------
 ::  STARTUP SEQUENCE
@@ -64,7 +64,7 @@ if %ERRORLEVEL% neq 0 (
 
 echo  [*] Cleaning Up Previous Sessions...
 taskkill /F /IM mpv.exe > nul 2>&1
-powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort %YTGUI_PORT% -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force" > nul 2>&1
+powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort %LUNAWAVE_PORT% -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force" > nul 2>&1
 
 :: ----------------------------------------------------------
 ::  ADMIN ACCESS INFO
@@ -73,8 +73,8 @@ echo.
 echo  ----------------------------------------------------------------
 echo   Admin Access Information
 echo  ----------------------------------------------------------------
-if defined YTGUI_ADMIN_PASS (
-    echo   [i] Password loaded from environment variable YTGUI_ADMIN_PASS.
+if defined LUNAWAVE_ADMIN_PASS (
+    echo   [i] Password loaded from environment variable LUNAWAVE_ADMIN_PASS.
 ) else (
     if exist "cache\admin_password.txt" (
         echo   [i] Password stored securely in: cache\admin_password.txt
@@ -82,8 +82,8 @@ if defined YTGUI_ADMIN_PASS (
         echo   [i] A new password will be auto-generated on first launch.
     )
 )
-if defined YTGUI_ADMIN_USER (
-    echo   [i] Username: %YTGUI_ADMIN_USER%
+if defined LUNAWAVE_ADMIN_USER (
+    echo   [i] Username: %LUNAWAVE_ADMIN_USER%
 ) else (
     echo   [i] Username: admin
 )
@@ -93,10 +93,10 @@ if defined YTGUI_ADMIN_USER (
 :: ----------------------------------------------------------
 echo.
 echo    ================================================================
-echo       Client Interface : http://localhost:%YTGUI_PORT%/
-echo       Admin Interface  : http://localhost:%YTGUI_PORT%/admin
-echo       System Health    : http://localhost:%YTGUI_PORT%/health
-echo       Metrics          : http://localhost:%YTGUI_PORT%/metrics
+echo       Client Interface : http://localhost:%LUNAWAVE_PORT%/
+echo       Admin Interface  : http://localhost:%LUNAWAVE_PORT%/admin
+echo       System Health    : http://localhost:%LUNAWAVE_PORT%/health
+echo       Metrics          : http://localhost:%LUNAWAVE_PORT%/metrics
 echo    ================================================================
 echo.
 echo  [*] Starting Server...

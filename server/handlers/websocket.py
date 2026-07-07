@@ -8,7 +8,7 @@ from aiohttp import web
 
 from config import TRUSTED_PROXY
 from core.observability import ACTIVE_WEBSOCKETS
-from server.handlers.auth import handle_auth, require_auth
+from server.handlers.auth import handle_auth, require_auth, handle_logout
 from server.middleware import check_rate_limit
 from server.handlers.ws.utils import error_payload
 
@@ -94,10 +94,14 @@ async def ws_handler(request):
                     continue
                 client_ip = request.remote
                 if TRUSTED_PROXY and "X-Forwarded-For" in request.headers:
-                    client_ip = request.headers.get("X-Forwarded-For").split(",")[0].strip()
+                    client_ip = request.headers.get("X-Forwarded-For").split(",")[-1].strip()
                 await handle_ws_message(data, ws, client_ip, state, ytdlp, manager, db, command_bus)
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
+    except asyncio.CancelledError:
+        logger.debug("WebSocket connection cancelled")
+    except ConnectionError as e:
+        logger.info(f"WebSocket client disconnected: {e}")
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
@@ -109,6 +113,9 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
     msg_type = msg.get("type")
     action = msg.get("action", "")
     data = msg.get("data", {})
+    if not isinstance(data, dict):
+        logger.warning(f"Invalid payload format for 'data': expected dict, got {type(data).__name__}")
+        data = {}
 
     if msg_type != "cmd":
         return
@@ -116,6 +123,10 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
     now = time.time()
     if action == WSAction.AUTH:
         await handle_auth(ws, data, manager, client_ip, db, now)
+        return
+
+    if action == WSAction.LOGOUT:
+        await handle_logout(ws, data, manager, db)
         return
 
     if not require_auth(manager, ws):

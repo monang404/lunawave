@@ -1,26 +1,26 @@
 import os
 from pathlib import Path
 
-BASE_DIR = Path(os.environ.get("YT_PLAYER_BASE", Path(__file__).parent))
+BASE_DIR = Path(os.environ.get("LUNAWAVE_BASE", Path(__file__).parent))
 
 CACHE_DIR = BASE_DIR / "cache" / "mp3"
 DB_PATH = BASE_DIR / "data" / "lunawave.db"
 
 if os.name == 'nt':
-    MPV_SOCKET = os.environ.get("YT_PLAYER_SOCKET", r"\\.\pipe\mpv-yt-player")
+    MPV_SOCKET = os.environ.get("LUNAWAVE_SOCKET", r"\\.\pipe\mpv-yt-player")
 else:
     socket_dir = BASE_DIR / "cache" / "sockets"
     socket_dir.mkdir(parents=True, exist_ok=True)
-    _raw_socket = os.environ.get("YT_PLAYER_SOCKET", str(socket_dir / "mpv-yt-player.sock"))
+    _raw_socket = os.environ.get("LUNAWAVE_SOCKET", str(socket_dir / "mpv-yt-player.sock"))
     _socket_path = Path(_raw_socket).resolve()
     _allowed_prefix = BASE_DIR.resolve()
     if not str(_socket_path).startswith(str(_allowed_prefix)):
         import warnings
-        warnings.warn(f"YT_PLAYER_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
+        warnings.warn(f"LUNAWAVE_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
         _socket_path = socket_dir / "mpv-yt-player.sock"
     MPV_SOCKET = str(_socket_path)
 
-DEFAULT_VOLUME = int(os.environ.get("YT_PLAYER_VOLUME", 80))
+DEFAULT_VOLUME = int(os.environ.get("LUNAWAVE_VOLUME", 80))
 GAPLESS_PREBUFFER_SEC = 15
 AUTOPLAY_THRESHOLD = 2
 SPONSORBLOCK_CATS = ["sponsor", "intro", "outro", "selfpromo"]
@@ -44,7 +44,17 @@ def get_admin_password() -> str:
     if _admin_password is not None:
         return _admin_password
 
-    _password_file = BASE_DIR / "cache" / "admin_password.txt"
+    _password_file = BASE_DIR / "data" / "admin_password.txt"
+
+    # Migrate from old cache location if exists
+    _old_password_file = BASE_DIR / "cache" / "admin_password.txt"
+    if _old_password_file.exists() and not _password_file.exists():
+        _password_file.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            import shutil
+            shutil.move(str(_old_password_file), str(_password_file))
+        except OSError:
+            pass
 
     if "LUNAWAVE_ADMIN_PASS" in os.environ:
         _raw_env_pass = os.environ["LUNAWAVE_ADMIN_PASS"]
@@ -74,9 +84,19 @@ def get_admin_password() -> str:
                 pass
 
             import sys
-            if sys.stderr.isatty():
-                sys.stderr.write(f"PASSWORD ADMIN GENERATED: {raw_password}\n")
-                sys.stderr.write("Harap simpan password ini! Tidak akan ditampilkan lagi.\n")
-                sys.stderr.write("==========================================\n\n")
+            raw_credential_file = BASE_DIR / "data" / "admin_initial_password.txt"
+            with open(raw_credential_file, "w", encoding="utf-8") as f:
+                f.write(f"Initial Admin Password: {raw_password}\n")
+                f.write("Harap simpan password ini dan segera hapus file ini demi keamanan!\n")
+            try:
+                raw_credential_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
+            except OSError:
+                pass
+
+            sys.stderr.write("\n==========================================\n")
+            sys.stderr.write("PASSWORD ADMIN GENERATED.\n")
+            sys.stderr.write(f"Password plaintext disimpan sementara di: {raw_credential_file}\n")
+            sys.stderr.write("Segera amankan password tersebut dan hapus file-nya!\n")
+            sys.stderr.write("==========================================\n\n")
 
     return _admin_password

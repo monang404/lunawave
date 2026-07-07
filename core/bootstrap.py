@@ -130,7 +130,7 @@ async def build_app_context() -> AppContext:
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
 
-    app = create_app(playback_controller, ytdlp, db, manager, command_bus=command_bus, event_bus=event_bus)
+    app = create_app(playback_controller, ytdlp, db, manager, command_bus=command_bus, event_bus=event_bus, http_session=http_session)
 
     host = WEB_HOST
     port = WEB_PORT
