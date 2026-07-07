@@ -25,8 +25,6 @@ class AuthRepository(SessionRepositoryPort):
             row = await cursor.fetchone()
             if row and row["expires_at"] > now:
                 return True
-            if row:
-                await self.delete_session(token)
             return False
 
     async def delete_session(self, token: str) -> None:

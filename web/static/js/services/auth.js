@@ -76,6 +76,15 @@ function logout() {
         }
     }
 
+    const token = safeStorage.get("ytgui_session_token");
+    if (token) {
+        try {
+            wsSend(WS_ACTIONS.LOGOUT, { token: token });
+        } catch (e) {
+            console.warn("Failed to send logout command:", e);
+        }
+    }
+
     store.userRole = "portal";
     store.adminUsername = "";
     safeStorage.remove("ytgui_user_role");

@@ -8,9 +8,11 @@ class VideoId(str):
             raise ValueError(f"video_id tidak valid: {value!r}")
         return super().__new__(cls, str(value))
 
+from core.constants import MAX_VOLUME
+
 class Volume(int):
     def __new__(cls, value: int):
-        return super().__new__(cls, max(0, min(100, int(value))))
+        return super().__new__(cls, max(0, min(MAX_VOLUME, int(value))))
 
 class Duration(int):
     def __new__(cls, value: int):

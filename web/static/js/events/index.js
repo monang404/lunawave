@@ -51,6 +51,12 @@ function initEvents() {
         });
     }
 
+    if (dom.adminUsername) {
+        dom.adminUsername.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && dom.adminSubmitBtn) dom.adminSubmitBtn.click();
+        });
+    }
+
     if (dom.logoutBtn) {
         dom.logoutBtn.addEventListener("click", () => {
             logout();

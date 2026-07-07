@@ -8,7 +8,7 @@ logger = structlog.get_logger(__name__)
 def build():
     static_dir = Path(__file__).parent.parent / "web" / "static"
     js_dir = static_dir / "js"
-    
+
     files = [
         "config.js",
         "store.js",
@@ -36,7 +36,7 @@ def build():
         "ws.js",
         "main.js",
     ]
-    
+
     bundle_content = ""
     for file in files:
         file_path = js_dir / file
@@ -45,17 +45,17 @@ def build():
             content = re.sub(r'^\s*//.*$', '', content, flags=re.MULTILINE)
             content = re.sub(r'\n\s*\n', '\n', content)
             bundle_content += f"// --- {file} ---\n{content}\n"
-    
+
     timestamp = int(time.time())
-    
+
     bundle_path = js_dir / "bundle.js"
     bundle_path.write_text(bundle_content, encoding="utf-8")
-    
+
     index_path = static_dir / "index.html"
     index_html = index_path.read_text(encoding="utf-8")
-    
+
     script_pattern = re.compile(r'( {4}<script src="/static/js/(?!bundle\.js).*?\.js.*?" defer></script>\n)+')
-    
+
     if script_pattern.search(index_html):
         bundle_tag = f'    <script src="/static/js/bundle.js?v={timestamp}" defer></script>\n'
         new_index = script_pattern.sub(bundle_tag, index_html)

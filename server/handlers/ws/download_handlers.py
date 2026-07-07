@@ -4,7 +4,6 @@ from server.handlers.ws.registry import register_ws_handler
 from core.ws_actions import WSAction
 from core.commands import DownloadCommand
 from core.state import TrackInfo
-from server.handlers.ws.discover_handlers import broadcast_discover_data
 from core.utils import user_download_path
 
 logger = structlog.get_logger(__name__)

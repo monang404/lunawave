@@ -25,4 +25,4 @@ COPY . .
 EXPOSE 8765
 
 # Command to run the application
-CMD ["python", "run.py"]
+CMD ["python", "main.py"]

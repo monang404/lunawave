@@ -1,5 +1,15 @@
 
-__version__ = "1.0.0"
+def _get_version():
+    try:
+        import tomllib
+        from pathlib import Path
+        pyproject_path = Path(__file__).parent / "pyproject.toml"
+        with open(pyproject_path, "rb") as f:
+            return tomllib.load(f).get("project", {}).get("version", "0.0.0-unknown")
+    except Exception:
+        return "0.0.0-unknown"
+
+__version__ = _get_version()
 
 import asyncio
 import stat
@@ -20,6 +30,9 @@ async def main():
     from core.bootstrap import build_app_context, shutdown_app_context
     from core.background_tasks import start_background_tasks
     from server.app import run_server
+    from core.alerting import setup_alerting
+
+    setup_alerting()
 
     ctx = await build_app_context()
     tasks = start_background_tasks(ctx)

@@ -138,7 +138,7 @@ function _hideTapToPlayBanner() {
     if (el) el.style.display = 'none';
 }
 
-export async function _resumeAndPlay(audio) {
+async function _resumeAndPlay(audio) {
     if (audioCtx && audioCtx.state === 'suspended') {
         try { await audioCtx.resume(); } catch (e) { console.warn("[audio] ctx resume failed:", e); }
     }
@@ -234,7 +234,11 @@ function syncBrowserAudio(forcePlay) {
         return;
     }
 
-    const expectedSrc = window.location.origin + `/api/stream/${track.video_id}`;
+    const token = window.safeStorage ? window.safeStorage.get("ytgui_session_token") : "";
+    let expectedSrc = window.location.origin + `/api/stream/${track.video_id}`;
+    if (token) {
+        expectedSrc += `?token=${token}`;
+    }
 
     if (_lastLoadedVideoId !== track.video_id) {
         _lastLoadedVideoId = track.video_id;

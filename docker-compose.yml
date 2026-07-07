@@ -9,6 +9,7 @@ services:
     volumes:
       # Mount cache and db for persistence
       - ./data:/app/data
+      - ./cache:/app/cache
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1

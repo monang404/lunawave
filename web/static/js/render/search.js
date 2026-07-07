@@ -2,7 +2,8 @@ function buildSrThumbHtml(track) {
     return `<img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt=""><div class="thumb-eq-overlay"><div class="eq-anim-icon"><span></span><span></span><span></span></div></div>`;
 }
 
-function renderSearchResults(results) {
+function renderSearchResults(data) {
+    let results = Array.isArray(data) ? data : (data && data.items ? data.items : []);
     store.search_results = results || [];
     dom.searchResults.innerHTML = "";
     if (!results || results.length === 0) {

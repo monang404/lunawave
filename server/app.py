@@ -13,7 +13,7 @@ from server.handlers.websocket import ConnectionManager, ws_handler
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
-def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort, manager: ConnectionManager, command_bus=None, event_bus=None) -> web.Application:
+def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort, manager: ConnectionManager, command_bus=None, event_bus=None, http_session=None) -> web.Application:
     try:
         from scripts.build_js import build
         build()
@@ -27,6 +27,7 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     app["ytdlp"] = ytdlp
     app["db"] = db
     app["manager"] = manager
+    app["http_session"] = http_session
     if command_bus:
         app["command_bus"] = command_bus
     if event_bus:

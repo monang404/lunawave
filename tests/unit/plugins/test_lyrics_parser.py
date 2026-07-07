@@ -42,3 +42,16 @@ class TestLyricsGenerationCounter:
         assert "gen" in source and "_current_generation" in source, (
             "fetch() harus mengecek apakah generation masih current sebelum menyimpan hasil"
         )
+
+    def test_parse_lrc_drops_metadata(self):
+        """Metadata LRC dan baris tanpa timestamp harus diabaikan, bukan diset ke 0.0"""
+        state = AppState()
+        fetcher = LyricsFetcher(state, session=__import__("unittest.mock").mock.AsyncMock(), event_bus=__import__("unittest.mock").mock.AsyncMock())
+        lrc_text = "[ti:Some Title]\n[00:10.00] Line 1\n[00:20.00] Line 2\nPlain text line"
+        
+        parsed = fetcher._parse_lrc(lrc_text)
+        
+        assert len(parsed) == 2
+        assert parsed[0] == (10.0, "Line 1")
+        assert parsed[1] == (20.0, "Line 2")
+

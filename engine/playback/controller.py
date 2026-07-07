@@ -87,15 +87,17 @@ class PlaybackController:
 
     async def _on_track_duration(self, event: TrackDurationEvent):
         if event.duration and event.duration > 0:
-            if abs(self.state.duration - event.duration) >= 1.0:
-                self.state.duration = event.duration
-                if self.state.current_track:
-                    self.state.current_track.duration = int(event.duration)
-                    safe_create_task(self.db.upsert_track(self.state.current_track), name="upsert_track_duration")
-                await self.bus.publish(QueueUpdatedEvent())
+            async with self._lock:
+                if abs(self.state.duration - event.duration) >= 1.0:
+                    self.state.duration = event.duration
+                    if self.state.current_track:
+                        self.state.current_track.duration = int(event.duration)
+                        safe_create_task(self.db.upsert_track(self.state.current_track), name="upsert_track_duration")
+                    await self.bus.publish(QueueUpdatedEvent())
 
     async def play_track(self, track: TrackInfo):
         should_retry = False
+        current_retry_count = 0
         async with self._play_lock:  # A-05: cegah concurrent play_track race
             if self.state.current_track:
                 self.state.history.append(self.state.current_track)
@@ -142,9 +144,10 @@ class PlaybackController:
                     self._retry_count = 0
                 else:
                     should_retry = True
+                    current_retry_count = self._retry_count
 
         if should_retry:
-            backoff = 2 ** self._retry_count
+            backoff = 2 ** current_retry_count
             await asyncio.sleep(backoff)
             if self.state.current_track == track:
                 await self._advance_to_next()
@@ -155,40 +158,53 @@ class PlaybackController:
             return
         dur = await self.mpv.get_duration()  # type: ignore
         if dur is not None and dur > 0:
-            self.state.duration = dur
-            track.duration = int(dur)
-            safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
+            async with self._lock:
+                self.state.duration = dur
+                track.duration = int(dur)
+                if track:
+                    safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
             await self.bus.publish(QueueUpdatedEvent())
         else:
             await asyncio.sleep(5)
             if self.state.current_track == track:
                 dur = await self.mpv.get_duration()  # type: ignore
                 if dur is not None and dur > 0:
-                    self.state.duration = dur
-                    track.duration = int(dur)
-                    if track:
-                        safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
-                await self.bus.publish(QueueUpdatedEvent())
+                    async with self._lock:
+                        self.state.duration = dur
+                        track.duration = int(dur)
+                        if track:
+                            safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
+                    await self.bus.publish(QueueUpdatedEvent())
 
     async def _on_track_ended(self, event: TrackEndedEvent):
         reason = event.reason
         logger.info(f"[AUTOPLAY] Track ended with reason: {reason}")
 
-        next_data = {}
-        if self.state.current_track:
-            next_data["video_id"] = self.state.current_track.video_id
 
-        if reason == "eof":
-            await asyncio.sleep(0.35)
-            await self._advance_to_next()
+        if reason in ("eof", ""):
+            if getattr(self, "_eof_advancing", False):
+                logger.debug("Mencegah pemanggilan ganda _advance_to_next akibat eof paralel")
+                return
+            self._eof_advancing = True
+            try:
+                await asyncio.sleep(0.35)
+                await self._advance_to_next()
+            finally:
+                self._eof_advancing = False
         elif reason == "stop":
             pass
         elif reason == "error":
-            self.state.status = PlayerStatus.ERROR
+            async with self._lock:
+                self.state.status = PlayerStatus.ERROR
             await self.bus.publish(LogMessageEvent(message="Terjadi kesalahan pemutaran"))
             await asyncio.sleep(2)
-            if self.state.status == PlayerStatus.IDLE:
-                return
+            async with self._lock:
+                if self.state.status != PlayerStatus.ERROR:
+                    return
+            await self._advance_to_next()
+        else:
+            logger.warning(f"Unhandled TrackEndedEvent reason: {reason!r}, advancing to next track")
+            await asyncio.sleep(0.35)
             await self._advance_to_next()
 
     async def _advance_to_next(self):
@@ -198,14 +214,16 @@ class PlaybackController:
             await self.radio_mode.next(self)
 
     async def _on_track_progress(self, event: TrackProgressEvent):
-        self.state.position = event.position
+        async with self._lock:
+            self.state.position = event.position
         if self.state.playback_mode == PlaybackMode.RADIO:
             self.radio_mode.check_prefetch(self, self.state.position, self.state.duration)
 
     async def _on_pause_changed(self, event: TrackPauseChangedEvent):
-        if event.is_paused:
-            if self.state.status == PlayerStatus.PLAYING:
-                self.state.status = PlayerStatus.PAUSED
-        else:
-            if self.state.status == PlayerStatus.PAUSED:
-                self.state.status = PlayerStatus.PLAYING
+        async with self._lock:
+            if event.is_paused:
+                if self.state.status == PlayerStatus.PLAYING:
+                    self.state.status = PlayerStatus.PAUSED
+            else:
+                if self.state.status == PlayerStatus.PAUSED:
+                    self.state.status = PlayerStatus.PLAYING

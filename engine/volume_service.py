@@ -11,22 +11,24 @@ from core.state import AppState, AudioOutput
 from core.value_objects import Volume
 
 
+import asyncio
+
 class VolumeService:
     def __init__(self, bus: EventBus, mpv: AudioPlayerPort, state: AppState):
         self.bus = bus
         self.mpv = mpv
         self.state = state
-        self.current_volume = state.volume
+        self._lock = asyncio.Lock()
 
     async def _on_volume_up(self, cmd=None):
-        self.current_volume = self.state.volume
-        self.current_volume = min(100, self.current_volume + 5)
-        await self._apply_volume()
+        async with self._lock:
+            new_vol = min(100, self.state.volume + 5)
+            await self._apply_volume(new_vol)
 
     async def _on_volume_down(self, cmd=None):
-        self.current_volume = self.state.volume
-        self.current_volume = max(0, self.current_volume - 5)
-        await self._apply_volume()
+        async with self._lock:
+            new_vol = max(0, self.state.volume - 5)
+            await self._apply_volume(new_vol)
 
     async def _on_volume_set(self, cmd):
         try:
@@ -34,15 +36,15 @@ class VolumeService:
         except (ValueError, TypeError):
             return
 
-        self.current_volume = vol
-        await self._apply_volume()
+        async with self._lock:
+            await self._apply_volume(vol)
 
-    async def _apply_volume(self):
-        self.state.volume = self.current_volume
+    async def _apply_volume(self, new_vol: int):
+        self.state.volume = new_vol
         if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
             await self.mpv.set_volume(0)
         else:
-            await self.mpv.set_volume(self.current_volume)
+            await self.mpv.set_volume(new_vol)
         from core.events import QueueUpdatedEvent
         await self.bus.publish(QueueUpdatedEvent())
-        await self.bus.publish(LogMessageEvent(message=f"Volume: {self.current_volume}%"))
+        await self.bus.publish(LogMessageEvent(message=f"Volume: {new_vol}%"))

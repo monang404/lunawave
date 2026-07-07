@@ -1,5 +1,5 @@
 # monitor_health.ps1 - Script to check if YTGUI is running and healthy
-$port = if ($env:YTGUI_PORT) { $env:YTGUI_PORT } else { "8765" }
+$port = if ($env:LUNAWAVE_PORT) { $env:LUNAWAVE_PORT } else { "8765" }
 $url = "http://localhost:$port/health"
 
 try {

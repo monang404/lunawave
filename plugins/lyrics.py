@@ -67,17 +67,17 @@ class LyricsFetcher:
                         data = await resp.json()
                         lrc = data.get("syncedLyrics") or data.get("plainLyrics", "")
 
-            clean_title = re.sub(r'[\(\[].*?[\)\]]', '', title)
-            for kw in ['official', 'music video', 'lyric', 'lyrics', 'audio', 'video', 'mv', 'hq']:
-                clean_title = re.sub(rf'\b{kw}s?\b', '', clean_title, flags=re.IGNORECASE)
-            clean_title = re.sub(r'\s+', ' ', clean_title).strip('- ')
-
-            if "-" in title:
-                search_query = clean_title
-            else:
-                search_query = f"{clean_title} {artist}" if artist and artist.lower() not in ["unknown", "topic"] else clean_title
-
             if not lrc:
+                clean_title = re.sub(r'[\(\[].*?[\)\]]', '', title)
+                for kw in ['official', 'music video', 'lyric', 'lyrics', 'audio', 'video', 'mv', 'hq']:
+                    clean_title = re.sub(rf'\b{kw}s?\b', '', clean_title, flags=re.IGNORECASE)
+                clean_title = re.sub(r'\s+', ' ', clean_title).strip('- ')
+
+                if "-" in title:
+                    search_query = clean_title
+                else:
+                    search_query = f"{clean_title} {artist}" if artist and artist.lower() not in ["unknown", "topic"] else clean_title
+
                 url_search = f"{LYRICS_API_BASE}/search"
                 params_search = {"q": search_query}
 
@@ -99,6 +99,9 @@ class LyricsFetcher:
                 except asyncio.TimeoutError:
                     logger.warning("syncedlyrics timeout (5.0s)")
                     lrc = None
+                except (ValueError, KeyError, TypeError, AttributeError) as e:
+                    logger.error("syncedlyrics plugin crashed (API structure changed?)", exc_info=e)
+                    lrc = None
 
             if self._current_generation == gen:
                 if lrc:
@@ -114,9 +117,9 @@ class LyricsFetcher:
                 else:
                     logger.info("Lyrics: No lyrics found anywhere")
 
-        except Exception as e:
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, TypeError, KeyError) as e:
             if self._current_generation == gen:
-                logger.debug(f"Lyrics fetch failed: {e}")
+                logger.warning("Lyrics fetch failed", exc_info=e)
         finally:
             if self._current_generation == gen:
                 self.state.lyrics_loading = False
@@ -135,9 +138,6 @@ class LyricsFetcher:
                 minutes, seconds, text = m.groups()
                 timestamp = int(minutes) * 60 + float(seconds)
                 result.append((timestamp, text.strip()))
-            else:
-                if line:
-                    result.append((0.0, line))
 
         return sorted(result, key=lambda x: x[0])
 

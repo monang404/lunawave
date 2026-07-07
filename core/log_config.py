@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 import time
+import structlog
 
 # psutil is optional: it fails to install on many Termux/Android setups
 # (no prebuilt wheel, needs a C compiler). The status bar simply shows
@@ -56,10 +57,12 @@ STATS = _Stats()
 _status_bar_active = False
 _status_bar_thread = None
 
+_stop_event = threading.Event()
+
 def _status_bar_worker():
     """Renders a live status bar at the bottom of the terminal without spamming."""
     proc = psutil.Process(os.getpid()) if psutil else None
-    while _status_bar_active:
+    while _status_bar_active and not _stop_event.is_set():
         try:
             if proc is not None:
                 ram_mb = int(proc.memory_info().rss / 1024 / 1024)
@@ -99,7 +102,7 @@ def _status_bar_worker():
         )
         sys.stderr.write(line)
         sys.stderr.flush()
-        time.sleep(5)
+        _stop_event.wait(5)
 
 def start_status_bar():
     global _status_bar_active, _status_bar_thread
@@ -114,11 +117,11 @@ def start_status_bar():
 def stop_status_bar():
     global _status_bar_active
     _status_bar_active = False
+    _stop_event.set()
 
 # ── Summary printer ──────────────────────────────────────────
 def _summary_worker():
-    while True:
-        time.sleep(600)  # every 10 minutes
+    while not _stop_event.wait(600):  # every 10 minutes
         with STATS.lock:
             songs   = STATS.songs_played
             errors  = STATS.errors
@@ -379,29 +382,29 @@ class _CompactRenderer:
     """structlog processor: renders compact ANSI log to stderr."""
 
     def __call__(self, logger, method, event_dict):
-        ts = event_dict.pop("timestamp", _fmt_time())
-        level = event_dict.pop("level", method or "info")
-        event = event_dict.pop("event", "")
-        name = event_dict.pop("logger", "") or (logger.name if hasattr(logger, 'name') else "")
+        ts = event_dict.get("timestamp", _fmt_time())
+        level = event_dict.get("level", method or "info")
+        event = event_dict.get("event", "")
+        name = event_dict.get("logger", "") or (logger.name if hasattr(logger, 'name') else "")
 
         # Drop noise
         debug_mode = os.environ.get("LunaWave_DEBUG", "").lower() in ("1", "true", "yes")
         if not debug_mode and _is_noise(str(event)):
-            return ""  # suppress
+            raise structlog.DropEvent
 
-        extra = {k: v for k, v in event_dict.items() if k not in ("exc_info",)}
+        extra = {k: v for k, v in event_dict.items() if k not in ("exc_info", "timestamp", "level", "event", "logger")}
 
         sym, msg = _rewrite_event(name, level, str(event), extra)
 
         if msg is None:  # error card
             _print_error_card(name, str(event), event_dict)
-            return ""
+            return event_dict
 
         tag = _module_tag(name)
         line = f"{_GY}{ts}{_R} {tag} {sym} {msg}"
         sys.stderr.write(line + "\n")
         sys.stderr.flush()
-        return ""  # prevent default handler from double-printing
+        return event_dict
 
 # ── File formatter (full, no ANSI) ──────────────────────────
 class _FileFormatter(logging.Formatter):

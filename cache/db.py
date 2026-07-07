@@ -1,11 +1,9 @@
-import time
 from pathlib import Path
 
 import aiosqlite
 import structlog
 
 from config import DB_PATH
-from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
@@ -52,6 +50,7 @@ class Database:
 
         await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")
         await self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama)")
+        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_is_favorite ON tracks(is_favorite) WHERE is_favorite = 1")
         await self._conn.commit()
 
         from cache.repositories.track_repository import TrackRepository
@@ -102,7 +101,7 @@ class Database:
                     INSERT OR IGNORE INTO genres (nama_genre)
                     VALUES (?)
                 ''', (genre_name,))
-                
+
                 async with self._conn.execute('SELECT id FROM genres WHERE nama_genre = ?', (genre_name,)) as c:
                     genre_id = (await c.fetchone())[0]
 
@@ -119,7 +118,7 @@ class Database:
                         INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
                         VALUES (?, ?, ?, ?)
                     ''', (artist_id, lagu['judul'], youtube_id, duration))
-        
+
         await self._conn.commit()
         logger.info("Database auto-seeded successfully.")
 

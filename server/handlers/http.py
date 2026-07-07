@@ -1,4 +1,5 @@
 
+import asyncio
 import time
 from pathlib import Path
 
@@ -45,28 +46,33 @@ async def health_check(request):
         "mpv": mpv_status
     }, status=status_code)
 
-async def serve_stream(request):
-    video_id_str = request.match_info.get("video_id")
-    try:
-        video_id = VideoId(video_id_str)
-    except ValueError:
-        return web.json_response(error_payload("HTTP_ERROR", "Invalid video_id"), status=400)
-
-    client_ip = request.remote
+def _enforce_rate_limit(client_ip):
     now = time.monotonic()
+    
+    stale_ips = [ip for ip, hist in _stream_rate_limit.items() if not any(now - t < 60 for t in hist)]
+    for ip in stale_ips:
+        _stream_rate_limit.pop(ip, None)
+        
     history = _stream_rate_limit[client_ip]
     history = [t for t in history if now - t < 60]
     if len(history) >= STREAM_RATE_LIMIT_MAX:
-        return web.json_response(error_payload("HTTP_ERROR", "Terlalu banyak request. Silakan coba lagi nanti."), status=429)
+        return False
     history.append(now)
     _stream_rate_limit[client_ip] = history
+    return True
 
+def _validate_origin(request):
     referer = request.headers.get("Referer", "")
     origin = request.headers.get("Origin", "")
     host = request.host
     if host not in referer and host not in origin and request.remote not in ("127.0.0.1", "::1"):
-        return web.json_response(error_payload("HTTP_ERROR", "Unauthorized origin"), status=403)
+        return False
+    return True
 
+def _get_cors_origin(request):
+    return request.headers.get("Origin", f"{request.scheme}://{request.host}")
+
+def _try_serve_cache(request, video_id, cors_origin):
     cache_file = CACHE_DIR / f"{video_id}.mp3"
     try:
         if not cache_file.resolve().is_relative_to(CACHE_DIR.resolve()):
@@ -79,26 +85,31 @@ async def serve_stream(request):
         etag = f'"{int(stat.st_mtime)}-{stat.st_size}"'
         if request.headers.get("If-None-Match") == etag:
             return web.Response(status=304)
-
         return web.FileResponse(
             cache_file,
             headers={
-                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Origin": cors_origin,
                 "Cache-Control": "private, max-age=3600",
                 "ETag": etag
             }
         )
+    return None
 
+def _validate_stream_url(stream_url):
+    from urllib.parse import urlparse
+    parsed_url = urlparse(stream_url)
+    if parsed_url.scheme != "https":
+        raise ValueError("Skema URL harus HTTPS")
+    domain = parsed_url.netloc.lower()
+    if not (domain.endswith(".googlevideo.com") or domain.endswith(".youtube.com")):
+        raise ValueError(f"Domain tidak sah: {domain}")
+    return True
+
+async def _proxy_stream(request, video_id, cors_origin, stream_url):
+    http_session = request.app.get("http_session")
     db = request.app["db"]
     ytdlp = request.app["ytdlp"]
-    stream_url = None
-
-    row = await db.get_track(video_id)
-    if row and row.stream_url and row.stream_url_ts:
-        if time.time() - row.stream_url_ts < STREAM_URL_TTL_SEC:
-            stream_url = row.stream_url
-
-    http_session = request.app.get("http_session")
+    
     if not http_session:
         if not stream_url:
             try:
@@ -107,15 +118,12 @@ async def serve_stream(request):
             except Exception as e:
                 logger.error(f"Gagal fetch stream URL untuk redirect: {e}")
                 return web.json_response(error_payload("HTTP_ERROR", "Stream tidak tersedia saat ini"), status=503)
-        from urllib.parse import urlparse as _urlparse
-        _p = _urlparse(stream_url)
-        _domain = _p.netloc.lower()
-        if _p.scheme != "https" or not (
-            _domain.endswith(".googlevideo.com") or _domain.endswith(".youtube.com")
-        ):
-            logger.error(f"URL stream tidak valid untuk redirect: {stream_url}")
+        try:
+            _validate_stream_url(stream_url)
+            return web.HTTPFound(stream_url)
+        except Exception as e:
+            logger.error(f"URL stream tidak valid untuk redirect: {stream_url} - {e}")
             return web.json_response(error_payload("HTTP_ERROR", "URL stream tidak valid"), status=403)
-        return web.HTTPFound(stream_url)
 
     for attempt in range(2):
         if not stream_url:
@@ -128,17 +136,10 @@ async def serve_stream(request):
                 await asyncio.sleep(1) # Backoff before retry
                 continue
             except Exception as e:
-                # Jangan retry untuk error selain timeout (misal video tidak ditemukan)
                 return web.json_response(error_payload("HTTP_ERROR", f"Gagal mencari stream: {e}"), status=500)
 
         try:
-            from urllib.parse import urlparse
-            parsed_url = urlparse(stream_url)
-            if parsed_url.scheme != "https":
-                raise ValueError("Skema URL harus HTTPS")
-            domain = parsed_url.netloc.lower()
-            if not (domain.endswith(".googlevideo.com") or domain.endswith(".youtube.com")):
-                raise ValueError(f"Domain tidak sah: {domain}")
+            _validate_stream_url(stream_url)
         except Exception as e:
             logger.error(f"SSRF terdeteksi atau URL stream tidak valid: {stream_url} - {e}")
             return web.json_response(error_payload("HTTP_ERROR", "URL stream tidak valid"), status=403)
@@ -159,7 +160,7 @@ async def serve_stream(request):
                     headers={
                         "Content-Type": upstream.headers.get("Content-Type", "audio/mpeg"),
                         "Accept-Ranges": "bytes",
-                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Origin": cors_origin,
                         "Cache-Control": "private, max-age=3600",
                     }
                 )
@@ -173,10 +174,8 @@ async def serve_stream(request):
                         pass
 
                 await response.prepare(request)
-
                 async for chunk in upstream.content.iter_chunked(16384):
                     await response.write(chunk)
-
                 await response.write_eof()
                 return response
 
@@ -187,6 +186,39 @@ async def serve_stream(request):
                 continue
             return web.json_response(error_payload("HTTP_ERROR", "Proxy stream error"), status=500)
 
+async def serve_stream(request):
+    video_id_str = request.match_info.get("video_id")
+    try:
+        video_id = VideoId(video_id_str)
+    except ValueError:
+        return web.json_response(error_payload("HTTP_ERROR", "Invalid video_id"), status=400)
+
+    if not _enforce_rate_limit(request.remote):
+        return web.json_response(error_payload("HTTP_ERROR", "Terlalu banyak request. Silakan coba lagi nanti."), status=429)
+
+    if not _validate_origin(request):
+        return web.json_response(error_payload("HTTP_ERROR", "Unauthorized origin"), status=403)
+
+    db = request.app["db"]
+    token = request.query.get("token")
+    if not token or not await db.verify_session(token):
+        # Fallback check for localhost development
+        if request.remote not in ("127.0.0.1", "::1", "::ffff:127.0.0.1"):
+            return web.json_response(error_payload("HTTP_ERROR", "Unauthorized token"), status=401)
+
+    cors_origin = _get_cors_origin(request)
+
+    cache_resp = _try_serve_cache(request, video_id, cors_origin)
+    if cache_resp is not None:
+        return cache_resp
+    stream_url = None
+    row = await db.get_track(video_id)
+    if row and row.stream_url and row.stream_url_ts:
+        if time.time() - row.stream_url_ts < STREAM_URL_TTL_SEC:
+            stream_url = row.stream_url
+
+    return await _proxy_stream(request, video_id, cors_origin, stream_url)
+
 async def serve_metrics(request):
     import os as _os
     client_ip = request.remote
@@ -194,13 +226,19 @@ async def serve_metrics(request):
     metrics_token = _os.environ.get("LUNAWAVE_METRICS_TOKEN")
     is_local = client_ip in _localhost_ips
     import secrets
+    
+    auth_header = request.headers.get("Authorization")
+    bearer_token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        bearer_token = auth_header[7:]
+        
     has_valid_token = (
         metrics_token
-        and request.headers.get("X-Metrics-Token") is not None
-        and secrets.compare_digest(request.headers.get("X-Metrics-Token"), metrics_token)
+        and bearer_token is not None
+        and secrets.compare_digest(bearer_token, metrics_token)
     )
     if not is_local and not has_valid_token:
-        return web.HTTPForbidden(text="Akses ditolak: metrics hanya untuk localhost atau gunakan X-Metrics-Token")
+        return web.HTTPForbidden(text="Akses ditolak: metrics hanya untuk localhost atau gunakan Authorization: Bearer token")
 
     content, content_type = get_metrics_content()
     ct = content_type.split(";")[0].strip()
