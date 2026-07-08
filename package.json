@@ -11,7 +11,7 @@
     "build:js": "esbuild web/static/js/main.js --bundle --minify --outfile=web/static/js/bundle.js --platform=browser --format=iife --pure:console.log",
     "build:css": "esbuild web/static/css/main.css --bundle --minify --outfile=web/static/css/bundle.css",
     "build:watch": "npm run build:js -- --watch & npm run build:css -- --watch",
-    "test": "python -m pytest tests/unit/web/ -v --tb=short"
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -25,8 +25,8 @@
     "url": "https://github.com/monang404/lunawave/issues"
   },
   "homepage": "https://github.com/monang404/lunawave#readme",
-  "dependencies": {
-    },
+  "dependencies": {},
   "devDependencies": {
-    }
+    "vitest": "^1.0.0"
+  }
 }
