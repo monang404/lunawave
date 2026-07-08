@@ -31,7 +31,6 @@ from engine.radio_engine import RadioMode
 logger = structlog.get_logger(__name__)
 from dataclasses import dataclass
 
-from core.log_config import STATS
 
 
 @dataclass
@@ -55,7 +54,7 @@ class PlaybackController:
         self.queue_mode = deps.queue_mode
         self.radio_mode = deps.radio_mode
         self.db = deps.db
-        self.track_loader = TrackLoader(deps.resolver, deps.sponsorblock, deps.lyrics_fetcher)
+        self.track_loader = TrackLoader(deps.resolver, deps.sponsorblock, deps.lyrics_fetcher, deps.db)
 
         self._lock = asyncio.Lock()
         self._play_lock = asyncio.Lock()  # A-05: proteksi race condition di play_track
@@ -90,7 +89,7 @@ class PlaybackController:
                 logger.error(f"Error in _persist_state_loop: {e}")
 
     async def _on_mpv_reconnected(self, event: MpvReconnectedEvent):
-        if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED) and self.state.current_track:
+        if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED, PlayerStatus.LOADING) and self.state.current_track:
             logger.info("MPV reconnected, restoring playback state...")
             try:
                 uri = await self.resolver.resolve(self.state.current_track)
@@ -112,9 +111,9 @@ class PlaybackController:
         if event.duration and event.duration > 0:
             async with self._lock:
                 if abs(self.state.duration - event.duration) >= 1.0:
-                    self.state.duration = event.duration  # type: ignore
+                    self.state.duration = event.duration
                     if self.state.current_track:
-                        self.state.current_track.duration = int(event.duration)  # type: ignore
+                        self.state.current_track.duration = int(event.duration)
                         safe_create_task(self.db.upsert_track(self.state.current_track), name="upsert_track_duration")
                     await self.bus.publish(QueueUpdatedEvent())
 
@@ -128,7 +127,7 @@ class PlaybackController:
             self.state.current_track = track
             self.state.status = PlayerStatus.LOADING
             self.state.position = 0.0
-            self.state.duration = float(track.duration)  # type: ignore
+            self.state.duration = float(track.duration)
             self.state.lyrics_lines = []
             self.state.lyrics_index = 0
 
@@ -147,9 +146,6 @@ class PlaybackController:
 
                 self.state.status = PlayerStatus.PLAYING
                 self._retry_count = 0
-                STATS.is_playing = True
-                STATS.current_track = track.title[:50] if track and track.title else '—'
-                STATS.inc('songs_played')
                 await self.bus.publish(TrackStartedEvent(track=track))
 
                 if self.state.duration == 0:
@@ -179,22 +175,22 @@ class PlaybackController:
         await asyncio.sleep(2)
         if self.state.current_track != track:
             return
-        dur = await self.mpv.get_duration()  # type: ignore
+        dur = await self.mpv.get_duration()
         if dur is not None and dur > 0:
             async with self._lock:
                 self.state.duration = dur
-                track.duration = int(dur)  # type: ignore
+                track.duration = int(dur)
                 if track:
                     safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
             await self.bus.publish(QueueUpdatedEvent())
         else:
             await asyncio.sleep(5)
             if self.state.current_track == track:
-                dur = await self.mpv.get_duration()  # type: ignore
+                dur = await self.mpv.get_duration()
                 if dur is not None and dur > 0:
                     async with self._lock:
                         self.state.duration = dur
-                        track.duration = int(dur)  # type: ignore
+                        track.duration = int(dur)
                         if track:
                             safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
                     await self.bus.publish(QueueUpdatedEvent())

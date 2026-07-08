@@ -10,8 +10,9 @@ async def test_db_has_is_favorite_index(tmp_path):
     await db.init()
 
     # Query sqlite_master to verify the index exists
-    async with db.conn.execute("SELECT name, sql FROM sqlite_master WHERE type='index' AND name='idx_is_favorite'") as cursor:
-        row = await cursor.fetchone()
+    async with db.pool.acquire() as conn:
+        async with conn.execute("SELECT name, sql FROM sqlite_master WHERE type='index' AND name='idx_is_favorite'") as cursor:
+            row = await cursor.fetchone()
 
     assert row is not None, "Index idx_is_favorite should exist"
     assert "is_favorite = 1" in row["sql"], "Should be a partial index"

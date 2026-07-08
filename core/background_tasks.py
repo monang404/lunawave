@@ -31,8 +31,19 @@ async def _db_cleanup(db):
             from config import DB_PATH
             try:
                 if DB_PATH.exists():
-                    await db.backup(Path(str(DB_PATH) + ".bak"))
-                    structlog.get_logger(__name__).info("Database backed up successfully.")
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    backup_path = Path(str(DB_PATH) + f".{timestamp}.bak")
+                    await db.backup(backup_path)
+                    structlog.get_logger(__name__).info(f"Database backed up to {backup_path.name}")
+                    
+                    # S05-076: Rotasi 7 hari
+                    backup_dir = DB_PATH.parent
+                    backups = sorted(backup_dir.glob("lunawave.db.*.bak"))
+                    if len(backups) > 7:
+                        for old_backup in backups[:-7]:
+                            old_backup.unlink(missing_ok=True)
+                            structlog.get_logger(__name__).info(f"Deleted old backup: {old_backup.name}")
             except Exception as e:
                 structlog.get_logger(__name__).error(f"DB backup failed: {e}")
 

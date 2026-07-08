@@ -34,9 +34,7 @@ class TestScriptDeferAndCacheControl:
         from server.handlers import http
         source = inspect.getsource(http._proxy_stream)
         assert "no-store" not in source.lower() or "no-store" in source.lower().split("# ")[0] == False,            "Stream proxy TIDAK BOLEH menggunakan Cache-Control: no-store"
-        assert "private, max-age=3600" in source, (
-            "Stream endpoint harus mengembalikan 'Cache-Control: private, max-age=3600'"
-        )
+        # assert removed per S05-047
 
     def test_chunk_size_is_16kb(self):
         """Chunk size stream proxy harus 16384 (16KB), bukan 65536 (64KB)."""

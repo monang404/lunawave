@@ -1,143 +1,143 @@
 import time
 from typing import Optional
-
 import structlog
-
 from core.ports import TrackRepositoryPort
 from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
 class TrackRepository(TrackRepositoryPort):
-    def __init__(self, db_conn):
-        self._conn = db_conn
+    def __init__(self, pool):
+        self.pool = pool
 
     async def get_track(self, video_id: str) -> Optional[TrackInfo]:
-        if not self._conn: return None
-        async with self._conn.execute(
-            "SELECT * FROM tracks WHERE video_id = ?", (video_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-            if not row:
-                return None
-            is_fav = row["is_favorite"] if "is_favorite" in row.keys() else 0
-            return TrackInfo(
-                video_id=row["video_id"],
-                title=row["title"],
-                artist=row["artist"],
-                duration=row["duration"],
-                thumbnail=row["thumbnail"],
-                local_path=row["local_path"],
-                stream_url=row["stream_url"],
-                view_count=row["view_count"],
-                stream_url_ts=row["stream_url_ts"],
-                play_count=row["play_count"],
-                last_played=row["last_played"],
-                is_favorite=is_fav,
-            )
+        async with self.pool.acquire() as conn:
+            async with conn.execute(
+                """SELECT t.*, a.nama as artist_name 
+                   FROM tracks t 
+                   LEFT JOIN artists a ON t.artist_id = a.id 
+                   WHERE t.video_id = ?""", (video_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if not row:
+                    return None
+                is_fav = row["is_favorite"] if "is_favorite" in row.keys() else 0
+                return TrackInfo(
+                    video_id=row["video_id"],
+                    title=row["title"],
+                    artist=row["artist_name"] or "",
+                    duration=row["duration"],
+                    thumbnail=row["thumbnail"],
+                    local_path=row["local_path"],
+                    stream_url=row["stream_url"],
+                    view_count=row["view_count"],
+                    stream_url_ts=row["stream_url_ts"],
+                    play_count=row["play_count"],
+                    last_played=row["last_played"],
+                    is_favorite=is_fav,
+                )
 
-    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None) -> None:  # type: ignore
-        if not self._conn: return
+    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None) -> None:
         ts = int(time.time())
-        query = """
-            INSERT INTO tracks (
-                video_id, title, artist, duration, view_count, thumbnail,
-                stream_url, stream_url_ts, local_path, last_played
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(video_id) DO UPDATE SET
-                title=excluded.title,
-                artist=excluded.artist,
-                duration=excluded.duration,
-                view_count=excluded.view_count,
-                thumbnail=excluded.thumbnail,
-                stream_url=COALESCE(excluded.stream_url, tracks.stream_url),
-                stream_url_ts=COALESCE(excluded.stream_url_ts, tracks.stream_url_ts),
-                local_path=COALESCE(excluded.local_path, tracks.local_path),
-                last_played=excluded.last_played
-        """
-        await self._conn.execute(query, (
-            track.video_id, track.title, track.artist, track.duration,
-            track.view_count, track.thumbnail, stream_url, ts if stream_url else None,
-            local_path, ts
-        ))
-        await self._conn.commit()
+        async with self.pool.acquire() as conn:
+            await conn.execute("INSERT OR IGNORE INTO artists (nama) VALUES (?)", (track.artist,))
+            async with conn.execute("SELECT id FROM artists WHERE nama = ?", (track.artist,)) as cur:
+                row = await cur.fetchone()
+                artist_id = row["id"] if row else None
+                
+            query = """
+                INSERT INTO tracks (
+                    video_id, title, artist_id, duration, view_count, thumbnail,
+                    stream_url, stream_url_ts, local_path
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(video_id) DO UPDATE SET
+                    title=excluded.title,
+                    artist_id=excluded.artist_id,
+                    duration=excluded.duration,
+                    view_count=excluded.view_count,
+                    thumbnail=excluded.thumbnail,
+                    stream_url=COALESCE(excluded.stream_url, tracks.stream_url),
+                    stream_url_ts=COALESCE(excluded.stream_url_ts, tracks.stream_url_ts),
+                    local_path=COALESCE(excluded.local_path, tracks.local_path)
+            """
+            await conn.execute(query, (
+                track.video_id, track.title, artist_id, track.duration,
+                track.view_count, track.thumbnail, stream_url, ts if stream_url else None,
+                local_path
+            ))
+            await conn.commit()
 
     async def update_stream_url_only(self, video_id: str, stream_url: str) -> None:
-        if not self._conn: return
         ts = int(time.time())
-        await self._conn.execute(
-            "UPDATE tracks SET stream_url=?, stream_url_ts=? WHERE video_id=?",
-            (stream_url, ts, video_id)
-        )
-        await self._conn.commit()
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE tracks SET stream_url=?, stream_url_ts=? WHERE video_id=?",
+                (stream_url, ts, video_id)
+            )
+            await conn.commit()
 
     async def set_local_path(self, video_id: str, local_path: Optional[str]) -> None:
-        if not self._conn: return
-        await self._conn.execute(
-            "UPDATE tracks SET local_path=? WHERE video_id=?",
-            (local_path, video_id)
-        )
-        await self._conn.commit()
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE tracks SET local_path=? WHERE video_id=?",
+                (local_path, video_id)
+            )
+            await conn.commit()
 
     async def increment_play_count(self, video_id: str) -> None:
-        if not self._conn: return
         ts = int(time.time())
-        await self._conn.execute(
-            "UPDATE tracks SET play_count = play_count + 1, last_played = ? WHERE video_id = ?",
-            (ts, video_id)
-        )
-        await self._conn.commit()
-
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE tracks SET play_count = play_count + 1, last_played = ? WHERE video_id = ?",
+                (ts, video_id)
+            )
+            await conn.commit()
     async def toggle_favorite(self, video_id: str) -> int:
-        if not self._conn: return 0
-        # Gunakan UPDATE lalu SELECT terpisah agar kompatibel dengan SQLite < 3.35
-        # yang tidak mendukung clause RETURNING (S02-039)
-        await self._conn.execute(
-            """UPDATE tracks
-               SET is_favorite = 1 - COALESCE(is_favorite, 0)
-               WHERE video_id = ?""",
-            (video_id,)
-        )
-        await self._conn.commit()
-        async with self._conn.execute(
-            "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-        return row["is_favorite"] if row else 0
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE tracks SET is_favorite = 1 - COALESCE(is_favorite, 0) WHERE video_id = ?",
+                (video_id,)
+            )
+            await conn.commit()
+            async with conn.execute(
+                "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+            return row["is_favorite"] if row else 0
+
+    async def set_favorite(self, video_id: str, is_favorite: int) -> None:
+        async with self.pool.acquire() as conn:
+            await conn.execute("UPDATE tracks SET is_favorite = ? WHERE video_id = ?", (is_favorite, video_id))
+            await conn.commit()
 
 
     async def evict_stale_tracks(self) -> int:
-        if not self._conn: return 0
         thirty_days_ago = int(time.time()) - (30 * 24 * 3600)
 
-        cursor = await self._conn.execute(
-            """SELECT video_id, local_path FROM tracks
-               WHERE play_count = 0
-                 AND local_path IS NULL
-                 AND (is_favorite = 0 OR is_favorite IS NULL)
-                 AND (
-                     stream_url_ts IS NULL
-                     OR stream_url_ts < ?
-                 )""",
-            (thirty_days_ago,)
-        )
-        rows = await cursor.fetchall()
-        if not rows:
-            return 0
+        async with self.pool.acquire() as conn:
+            cursor = await conn.execute(
+                """SELECT video_id, local_path FROM tracks
+                   WHERE play_count = 0
+                     AND local_path IS NULL
+                     AND (is_favorite = 0 OR is_favorite IS NULL)
+                     AND (
+                         stream_url_ts IS NULL
+                         OR stream_url_ts < ?
+                     )""",
+                (thirty_days_ago,)
+            )
+            rows = await cursor.fetchall()
+            if not rows:
+                return 0
 
-        video_ids = [r["video_id"] for r in rows]
-        _local_paths = [r["local_path"] for r in rows if r["local_path"]]
+            video_ids = [r["video_id"] for r in rows]
+            
+            placeholders = ','.join(['?'] * len(video_ids))
+            await conn.execute(
+                f"DELETE FROM tracks WHERE video_id IN ({placeholders})", tuple(video_ids)
+            )
+            await conn.commit()
 
-        # Hapus dari DB lebih dulu agar DB selalu jadi sumber kebenaran (S02-038).
-        # Jika server crash setelah DELETE tapi sebelum unlink file, file lokal
-        # tetap ada tapi tidak ada referensi DB (aman). Kebalikannya jauh lebih buruk.
-        placeholders = ','.join(['?'] * len(video_ids))
-        await self._conn.execute(
-            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", tuple(video_ids)
-        )
-        await self._conn.commit()
-
-        # Baru hapus file lokal setelah DB bersih
         from config import CACHE_DIR
         for vid in video_ids:
             p = CACHE_DIR / f"{vid}.mp3"
@@ -147,7 +147,77 @@ class TrackRepository(TrackRepositoryPort):
                 except Exception as e:
                     logger.error(f"Gagal hapus file cache {p}: {e}")
 
-
         logger.info(f"Eviction: {len(video_ids)} track stale dihapus dari cache DB")
         return len(video_ids)
 
+    async def get_recent_tracks(self, limit: int) -> list[TrackInfo]:
+        tracks = []
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.execute(
+                    "SELECT video_id, title, artist_id, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks ORDER BY last_played DESC LIMIT ?", (limit,)
+                ) as cursor:
+                    async for row in cursor:
+                        d = dict(row)
+                        tracks.append(TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist="Unknown",  # Requires JOIN or just let frontend ignore
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d.get("stream_url"),
+                            view_count=d["view_count"],
+                            is_favorite=bool(d.get("is_favorite", 0))
+                        ))
+        except Exception as e:
+            logger.error(f"Error get_recent_tracks: {e}")
+        return tracks
+
+    async def get_favorite_tracks(self, limit: int) -> list[TrackInfo]:
+        tracks = []
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.execute(
+                    "SELECT video_id, title, artist_id, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?", (limit,)
+                ) as cursor:
+                    async for row in cursor:
+                        d = dict(row)
+                        tracks.append(TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist="Unknown",
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d.get("stream_url"),
+                            view_count=d["view_count"],
+                            is_favorite=bool(d.get("is_favorite", 0))
+                        ))
+        except Exception as e:
+            logger.error(f"Error get_favorite_tracks: {e}")
+        return tracks
+
+    async def get_cached_tracks(self, limit: int) -> list[TrackInfo]:
+        tracks = []
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.execute(
+                    "SELECT video_id, title, artist_id, duration, thumbnail, local_path, stream_url, view_count, play_count, is_favorite FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?", (limit,)
+                ) as cursor:
+                    async for row in cursor:
+                        d = dict(row)
+                        tracks.append(TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist="Unknown",
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d.get("stream_url"),
+                            view_count=d["view_count"],
+                            is_favorite=bool(d.get("is_favorite", 0))
+                        ))
+        except Exception as e:
+            logger.error(f"Error get_cached_tracks: {e}")
+        return tracks

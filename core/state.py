@@ -45,7 +45,7 @@ class TrackInfo:
     stream_url_ts: Optional[int] = None
     play_count: Optional[int] = None
     last_played: Optional[int] = None
-    is_favorite: Optional[int] = 0
+    is_favorite: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -56,7 +56,7 @@ class TrackInfo:
             "thumbnail": self.thumbnail,
             "is_cached": bool(self.local_path),
             "view_count": self.view_count,
-            "is_favorite": bool(getattr(self, "is_favorite", 0)),
+            "is_favorite": bool(self.is_favorite),
         }
 
     @classmethod
@@ -84,7 +84,7 @@ class TrackInfo:
             local_path=None,
             stream_url=None,
             view_count=data.get("view_count"),
-            is_favorite=int(data.get("is_favorite", False)),
+            is_favorite=bool(data.get("is_favorite", False)),
         )
 
 
@@ -105,8 +105,8 @@ class AppState:
     volume:          Volume = field(default_factory=lambda: Volume(DEFAULT_VOLUME))
     sponsorblock_active: bool = True
 
-    queue:           deque = field(default_factory=deque)
-    radio_queue:     deque = field(default_factory=deque)
+    queue:           list = field(default_factory=list)
+    radio_queue:           list = field(default_factory=list)
     history:         deque = field(default_factory=lambda: deque(maxlen=50))
 
     lyrics_lines:    list[str] = field(default_factory=list)
@@ -200,9 +200,9 @@ class AppState:
                 state.current_track = TrackInfo.from_dict(data["current_track"])
             
             if "queue" in data:
-                state.queue = deque((TrackInfo.from_dict(t) for t in data["queue"] if t), maxlen=None)
+                state.queue = [TrackInfo.from_dict(t) for t in data["queue"] if t]
             if "radio_queue" in data:
-                state.radio_queue = deque((TrackInfo.from_dict(t) for t in data["radio_queue"] if t), maxlen=None)
+                state.radio_queue = [TrackInfo.from_dict(t) for t in data["radio_queue"] if t]
             if "history" in data:
                 # Default maxlen untuk history adalah 50
                 state.history = deque((TrackInfo.from_dict(t) for t in data["history"] if t), maxlen=50)

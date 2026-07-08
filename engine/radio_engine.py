@@ -23,7 +23,7 @@ from core.ports import MediaExtractorPort
 from core.state import AppState, PlayerStatus
 from core.task_utils import safe_create_task
 
-_log = structlog.get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 MAX_TRACK_DURATION = 600
 TRACKS_PER_ARTIST_TARGET = 3
@@ -83,7 +83,7 @@ class RadioMode:
             if self.db and self.db.conn:
                 self._seed_artists = await self.db.get_all_artists()
         except Exception as e:
-            _log.warning(f"Failed to load artists from DB: {e}")
+            logger.warning(f"Failed to load artists from DB: {e}")
 
         if not self._seed_artists:
             raise RuntimeError(
@@ -118,7 +118,6 @@ class RadioMode:
                 _track_task(self._bg_tasks, self._ensure_standby(controller), name="radio_ensure_standby")
             await controller.play_track(track)
         else:
-            # PATCH-RADIO-EMPTY-QUEUE-01: Queue habis — _start() jalan di background (bisa
             self.state.status = PlayerStatus.LOADING
             await controller.bus.publish(QueueUpdatedEvent())
             _track_task(self._bg_tasks, self._start(controller), name="radio_refill")
@@ -191,7 +190,7 @@ class RadioMode:
                         self.state.radio_queue.extend(tracks_to_add)
                         await controller.bus.publish(QueueUpdatedEvent())
             except Exception as e:
-                _log.warning(f"Radio backfill failed: {e}")
+                logger.warning(f"Radio backfill failed: {e}")
 
         _track_task(self._bg_tasks, self._build_standby(controller), name="radio_build_standby")
 
@@ -214,7 +213,7 @@ class RadioMode:
                     async with self._standby_lock:
                         self._standby = tracks
             except Exception as e:
-                _log.warning(f"Radio build_standby failed: {e}")
+                logger.warning(f"Radio build_standby failed: {e}")
 
     async def _ensure_standby(self, controller: "PlaybackController") -> None:
         """Pastikan standby sedang disiapkan kalau belum ada."""
@@ -259,7 +258,7 @@ class RadioMode:
             ))
             return
         except Exception as e:
-            _log.warning(f"Radio randomize failed: {e}")
+            logger.warning(f"Radio randomize failed: {e}")
             return
 
         if not tracks:
@@ -290,7 +289,7 @@ class RadioMode:
                 tracks = await self.db.get_random_songs(limit=limit, exclude_ids=existing, artist=prioritized_artist)
                 return tracks
             except Exception as e:
-                _log.warning(f"Failed to fetch random songs from DB: {e}")
+                logger.warning(f"Failed to fetch random songs from DB: {e}")
         return []
 
     def _build_exclusion_set(self) -> set[str]:
@@ -314,7 +313,7 @@ class RadioMode:
         try:
             await asyncio.wait_for(self._do_prefetch(controller), timeout=25.0)
         except Exception as e:
-            _log.warning(f"Prefetch next track failed: {e}")
+            logger.warning(f"Prefetch next track failed: {e}")
 
     async def _do_prefetch(self, controller: "PlaybackController") -> None:
         if not self.state.radio_queue:
@@ -324,6 +323,6 @@ class RadioMode:
             return
         try:
             await controller.track_loader.resolver.resolve(next_track)
-            _log.info(f"Successfully prefetched stream_url for: {next_track.title}")
+            logger.info(f"Successfully prefetched stream_url for: {next_track.title}")
         except Exception as e:
-            _log.warning(f"Error saat resolve stream_url prefetch: {e}")
+            logger.warning(f"Error saat resolve stream_url prefetch: {e}")

@@ -57,8 +57,18 @@ def setup_event_listeners(
         await broadcast_service.broadcast_state(playback_controller.state)
         if event.track:
             await playback_controller.resolver.db.upsert_track(event.track, local_path=event.track.local_path)
-            from server.handlers.ws.discover_handlers import broadcast_discover_data
-            await broadcast_discover_data(broadcast_service.manager, playback_controller.resolver.db)
+
+        db = playback_controller.resolver.db
+        recent = await db.get_recent_tracks(20)
+        favorites = await db.get_favorites()
+        data = {
+            "type": "discover_data",
+            "data": {
+                "recent": [t.to_dict() for t in recent],
+                "favorites": [t.to_dict() for t in favorites]
+            }
+        }
+        await broadcast_service.manager.broadcast(data)
 
     async def _on_log_message(event: LogMessageEvent):
         msg = event.message

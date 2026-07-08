@@ -1,7 +1,7 @@
 import structlog
 
 from core.events import LogMessageEvent, QueueUpdatedEvent
-from core.log_config import STATS as _LOG_STATS
+from core.cli_ui import STATS as _LOG_STATS
 from core.state import PlaybackMode, PlayerStatus
 
 logger = structlog.get_logger(__name__)
@@ -16,6 +16,11 @@ class PlaybackCommands:
         self.radio_mode = playback_controller.radio_mode
 
     async def on_play_track(self, cmd):
+        # S05-092: Idempotency check
+        if self.state.status == PlayerStatus.PLAYING and self.state.current_track and getattr(cmd.track, 'video_id', None) == self.state.current_track.video_id:
+            logger.info(f"Ignoring idempotent play request for {cmd.track.video_id}")
+            return
+
         async with self.playback_controller._lock:
             if self.state.playback_mode == PlaybackMode.RADIO:
                 # We need to make sure radio mode is deactivated safely

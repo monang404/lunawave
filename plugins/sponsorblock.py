@@ -21,7 +21,7 @@ class SponsorBlockHandler:
     HIGH-02 fix: Uses json.dumps for category serialization.
     MED-01 fix: Accepts a shared aiohttp session.
     """
-    def __init__(self, mpv: AudioPlayerPort, state: AppState, session: Optional[aiohttp.ClientSession] = None, event_bus: EventBus = None):  # type: ignore
+    def __init__(self, mpv: AudioPlayerPort, state: AppState, session: Optional[aiohttp.ClientSession] = None, event_bus: EventBus = None):
         if session is None:
             raise RuntimeError("aiohttp.ClientSession must be injected")
         if event_bus is None:

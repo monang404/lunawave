@@ -1,8 +1,10 @@
+import asyncio
 import json
 import secrets
+import time
 
 from config import ADMIN_USERNAME, get_admin_password
-from core.constants import MAX_LOGIN_ATTEMPTS
+from core.constants import AUTH_TIMEOUT, AUTH_MAX_LIMIT, TOKEN_TTL, MAX_LOGIN_ATTEMPTS
 from core.security import verify_password
 
 
@@ -10,7 +12,7 @@ def _prune_stale_ips(manager, now: float) -> None:
     """Hapus entry IP yang sudah melewati window dari kedua dict rate-limit.
     Dipanggil tiap handle_auth agar dict tidak tumbuh tanpa batas (memory leak).
     """
-    WINDOW_AUTH = 300
+    WINDOW_AUTH = AUTH_TIMEOUT
     WINDOW_CMD  = 60
 
     stale_auth = [ip for ip, ts_list in manager.login_attempts.items()
@@ -36,14 +38,14 @@ async def _verify_token(ws, token, manager, db) -> bool:
     return False
 
 async def _check_rate_limit(ws, client_ip, manager, now) -> list:
-    attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < 300]
+    attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < AUTH_TIMEOUT]
     if len(attempts) >= MAX_LOGIN_ATTEMPTS:
         manager.login_attempts[client_ip] = attempts
         await ws.send_str(json.dumps({
             "type": "auth_status",
             "data": {"success": False, "message": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}
         }))
-        return None  # type: ignore
+        return None
     return attempts
 
 async def _process_credentials(ws, data, manager, client_ip, db, now, attempts):
@@ -52,7 +54,7 @@ async def _process_credentials(ws, data, manager, client_ip, db, now, attempts):
     if secrets.compare_digest(username, ADMIN_USERNAME) and verify_password(password, get_admin_password()):
         new_token = secrets.token_hex(32)
         if db:
-            await db.create_session(new_token, int(now) + 14400)
+            await db.create_session(new_token, int(now) + TOKEN_TTL)
         manager.authenticated_connections.add(ws)
         manager.login_attempts.pop(client_ip, None)
         await ws.send_str(json.dumps({
@@ -69,15 +71,13 @@ async def _process_credentials(ws, data, manager, client_ip, db, now, attempts):
 
 async def handle_auth(ws, data, manager, client_ip, db, now):
     async with manager.rl_lock:
-        attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < 300]
+        attempts = [t for t in manager.login_attempts.get(client_ip, []) if now - t < AUTH_TIMEOUT]
         delay = min(len(attempts), 5) if attempts else 0
 
     if delay > 0:
-        import asyncio
         await asyncio.sleep(delay)
 
     async with manager.rl_lock:
-        import time
         now = time.monotonic()
         _prune_stale_ips(manager, now)
 

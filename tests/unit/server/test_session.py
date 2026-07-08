@@ -33,16 +33,18 @@ class TestSessionPersistence:
 
     async def test_sessions_table_exists(self, temp_db):
         """Tabel 'sessions' harus ada di database setelah init."""
-        async with temp_db._conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'"
-        ) as cursor:
-            row = await cursor.fetchone()
+        async with temp_db.pool.acquire() as conn:
+            async with conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'"
+            ) as cursor:
+                row = await cursor.fetchone()
         assert row is not None, "Tabel 'sessions' harus ada di schema"
 
     async def test_sessions_table_schema(self, temp_db):
         """Tabel sessions harus punya kolom token dan expires_at."""
-        async with temp_db._conn.execute("PRAGMA table_info(sessions)") as cursor:
-            columns = await cursor.fetchall()
+        async with temp_db.pool.acquire() as conn:
+            async with conn.execute("PRAGMA table_info(sessions)") as cursor:
+                columns = await cursor.fetchall()
         col_names = [c[1] for c in columns]
         assert "token" in col_names, "Kolom 'token' harus ada di tabel sessions"
         assert "expires_at" in col_names, "Kolom 'expires_at' harus ada di tabel sessions"
@@ -53,10 +55,11 @@ class TestSessionPersistence:
         expires_at = int(time.time()) + 86400
         await temp_db.create_session(token, expires_at)
 
-        async with temp_db._conn.execute(
-            "SELECT * FROM sessions WHERE token = ?", (token,)
-        ) as cursor:
-            row = await cursor.fetchone()
+        async with temp_db.pool.acquire() as conn:
+            async with conn.execute(
+                "SELECT * FROM sessions WHERE token = ?" , (token,)
+            ) as cursor:
+                row = await cursor.fetchone()
         assert row is not None, "Token harus tersimpan di database"
 
     async def test_verify_session_valid(self, temp_db):
@@ -107,5 +110,3 @@ class TestSessionPersistence:
         assert await temp_db.verify_session("valid_2") is True
         assert await temp_db.verify_session("expired_1") is False
         assert await temp_db.verify_session("expired_2") is False
-
-

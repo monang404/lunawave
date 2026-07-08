@@ -222,7 +222,7 @@ class TestTask04DownloadSignature:
         mgr.command_bus = __import__("unittest.mock").mock.AsyncMock()
         mgr.state = state
         mgr.ytdlp = MagicMock()
-        mgr._download_lock = asyncio.Lock()
+        mgr._download_queue = asyncio.Queue()
         mgr._downloading_ids = set()
         mgr.command_bus.register("download", mgr._on_download)
 
@@ -244,7 +244,7 @@ class TestTask04DownloadSignature:
         mgr.command_bus = __import__("unittest.mock").mock.AsyncMock()
         mgr.state = state
         mgr.ytdlp = MagicMock()
-        mgr._download_lock = asyncio.Lock()
+        mgr._download_queue = asyncio.Queue()
         mgr._downloading_ids = set()
         mgr.command_bus.register("download", mgr._on_download)
 
@@ -252,9 +252,8 @@ class TestTask04DownloadSignature:
             video_id="abc123", title="Test Song", artist="Test", duration=180
         )
 
-        with patch("engine.download_manager.safe_create_task") as mock_create:
-            await mgr._on_download(track)
-            mock_create.assert_called_once()
+        await mgr._on_download(track)
+        assert mgr._download_queue.qsize() == 1
 
 
 # TASK-0.5 — Evict key kosong dari login_attempts & command_history

@@ -46,7 +46,7 @@ class TermuxNowPlaying:
         self._stop = threading.Event()
         self._reader_thread = None
         self._fifo_path = _FIFO_PATH
-        self._action_paths = {}  # type: ignore
+        self._action_paths = {}
 
         self.bus.subscribe(TrackStartedEvent, self._on_track_started)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
@@ -57,13 +57,13 @@ class TermuxNowPlaying:
             return
 
         self._available = True
-        self._loop = asyncio.get_running_loop()  # type: ignore
+        self._loop = asyncio.get_running_loop()
 
         try:
             _SOCK_DIR.mkdir(parents=True, exist_ok=True)
             if self._fifo_path.exists():
                 self._fifo_path.unlink()
-            os.mkfifo(str(self._fifo_path))  # type: ignore
+            os.mkfifo(str(self._fifo_path))
 
             for token in ("prev", "toggle", "next"):
                 script_path = _SOCK_DIR / f"np_{token}.sh"
@@ -77,8 +77,8 @@ class TermuxNowPlaying:
             self._available = False
             return
 
-        self._reader_thread = threading.Thread(target=self._blocking_read_loop, daemon=True)  # type: ignore
-        self._reader_thread.start()  # type: ignore
+        self._reader_thread = threading.Thread(target=self._blocking_read_loop, daemon=True)
+        self._reader_thread.start()
 
     def _blocking_read_loop(self):
         while not self._stop.is_set():

@@ -5,7 +5,8 @@ from core.ws_actions import WSAction
 from server.handlers.ws.registry import register_ws_handler
 from server.services.discover_service import DiscoverService
 
-VIDEO_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
+from core.value_objects import VideoId
+VIDEO_ID_REGEX = VideoId._RE
 
 import asyncio
 
@@ -22,7 +23,11 @@ _discover_service_instance = None
 async def _build_discover_payload(db):
     global _discover_service_instance
     if _discover_service_instance is None:
-        _discover_service_instance = DiscoverService(db)
+        from cache.repositories.track_repository import TrackRepository
+        from cache.repositories.discover_repository import DiscoverRepository
+        track_repo = TrackRepository(db.pool)
+        discover_repo = DiscoverRepository(db.pool)
+        _discover_service_instance = DiscoverService(track_repo, discover_repo)
     ds = _discover_service_instance
 
     recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
@@ -79,8 +84,7 @@ async def _handle_toggle_favorite(data, ws, state, ytdlp, manager, db, command_b
     if video_id and VIDEO_ID_REGEX.match(str(video_id)):
         if set_favorite is not None:
             target = 1 if set_favorite else 0
-            await db.conn.execute("UPDATE tracks SET is_favorite = ? WHERE video_id = ?", (target, video_id))
-            await db.conn.commit()
+            await db.set_favorite(video_id, target)
             is_fav = target
         else:
             is_fav = await db.toggle_favorite(video_id)

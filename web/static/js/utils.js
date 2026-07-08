@@ -204,3 +204,30 @@ window.extractDominantColor = function(imageElement, callback) {
         }
     }, 10);
 };
+
+
+// Focus Trap utility (S05-096)
+function trapFocus(element) {
+    if (!element) return;
+    const focusableEls = element.querySelectorAll('a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])');
+    if (focusableEls.length === 0) return;
+    const firstFocusableEl = focusableEls[0];  
+    const lastFocusableEl = focusableEls[focusableEls.length - 1];
+
+    element.addEventListener('keydown', function(e) {
+        const isTabPressed = (e.key === 'Tab' || e.keyCode === 9);
+        if (!isTabPressed) return;
+
+        if (e.shiftKey) { 
+            if (document.activeElement === firstFocusableEl) {
+                lastFocusableEl.focus();
+                e.preventDefault();
+            }
+        } else {
+            if (document.activeElement === lastFocusableEl) {
+                firstFocusableEl.focus();
+                e.preventDefault();
+            }
+        }
+    });
+}

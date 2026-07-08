@@ -93,24 +93,13 @@ function logout() {
 
     closeSettings();
 
-    if (window.location.pathname !== "/admin") {
-        setTimeout(() => {
-            try {
-                if (typeof wsClient !== "undefined") {
-                    wsClient.close();
-                }
-            } catch (e) {}
-            window.location.href = "/admin";
-        }, 150);
-    } else {
-        if (dom.portalClientBtn) {
-            dom.portalClientBtn.style.display = "none";
-        }
-        applyRoleUI();
-        try {
-            if (typeof wsClient !== "undefined") {
-                wsClient.close();
-            }
-        } catch (e) {}
+    if (dom.portalClientBtn) {
+        dom.portalClientBtn.style.display = "none";
     }
+    applyRoleUI();
+    try {
+        if (typeof wsClient !== "undefined") {
+            wsClient.close();
+        }
+    } catch (e) {}
 }

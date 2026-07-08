@@ -11,7 +11,6 @@ from server.handlers.http import health_check, serve_index, serve_metrics, serve
 from server.handlers.websocket import ConnectionManager, ws_handler
 
 logger = structlog.get_logger(__name__)
-STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
 def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort, manager: ConnectionManager, command_bus=None, event_bus=None, http_session=None) -> web.Application:
     try:
@@ -34,7 +33,7 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     if event_bus:
         app["event_bus"] = event_bus
 
-    from server.routes import ROUTE_HEALTH, ROUTE_INDEX, ROUTE_METRICS, ROUTE_STATIC, ROUTE_STREAM, ROUTE_WS
+    from server.routes import ROUTE_HEALTH, ROUTE_INDEX, ROUTE_METRICS, ROUTE_STATIC, ROUTE_STREAM, ROUTE_WS, STATIC_DIR
     app.router.add_get(ROUTE_INDEX, serve_index)
     app.router.add_get(ROUTE_WS, ws_handler)
     app.router.add_get(ROUTE_STREAM, serve_stream)

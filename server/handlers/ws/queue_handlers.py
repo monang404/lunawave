@@ -46,7 +46,7 @@ async def _handle_queue_reorder(data, ws, state, ytdlp, manager, db, command_bus
 @register_ws_handler(WSAction.ENQUEUE_ARTIST_SONGS)
 async def _handle_enqueue_artist_songs(data, ws, state, ytdlp, manager, db, command_bus):
     artist_name = data.get("artist")
-    if artist_name:
+    if artist_name and isinstance(artist_name, str) and len(artist_name) <= 100:
         songs = await db.get_artist_songs_strict(artist=artist_name, limit=10)
         if songs:
             await db.increment_artist_click(artist_name)
@@ -61,7 +61,7 @@ _enqueue_genre_lock = _asyncio.Lock()
 @register_ws_handler(WSAction.ENQUEUE_GENRE_SONGS)
 async def _handle_enqueue_genre_songs(data, ws, state, ytdlp, manager, db, command_bus):
     genre_name = data.get("genre")
-    if genre_name:
+    if genre_name and isinstance(genre_name, str) and len(genre_name) <= 100:
         await db.increment_genre_click(genre_name)
         songs = await db.get_genre_songs(genre_name, total_limit=12, max_per_artist=3)
         if songs:

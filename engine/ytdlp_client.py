@@ -1,3 +1,4 @@
+from core.value_objects import VideoId
 
 import asyncio
 import re
@@ -153,7 +154,7 @@ class YtDlpClient:
         duration = int(duration_raw) if duration_raw else 0
 
         video_id = entry.get("id", "") or entry.get("url", "")
-        if video_id and not re.match(r'^[a-zA-Z0-9_\-]{1,64}$', video_id):
+        if video_id and not VideoId._RE.match(video_id):
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
         elif not video_id:
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
@@ -162,7 +163,7 @@ class YtDlpClient:
             video_id=video_id,
             title=entry.get("title", "Unknown"),
             artist=entry.get("uploader", "Unknown"),
-            duration=duration,  # type: ignore
+            duration=duration,
             thumbnail=entry.get("thumbnail"),
             view_count=entry.get("view_count"),
         )

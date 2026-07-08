@@ -1,7 +1,7 @@
 import structlog
 
 from core.events import LogMessageEvent, QueueUpdatedEvent
-from core.log_config import STATS as _LOG_STATS
+from core.cli_ui import STATS as _LOG_STATS
 from core.state import AudioOutput, PlaybackMode, PlayerStatus
 
 logger = structlog.get_logger(__name__)

@@ -1,4 +1,4 @@
-def error_payload(code: str, message: str, details: dict = None) -> dict:  # type: ignore
+def error_payload(code: str, message: str, details: dict = None) -> dict:
     return {
         "error": {
             "code": code,

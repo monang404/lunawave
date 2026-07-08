@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from engine.download_manager import DownloadManager
@@ -25,9 +26,12 @@ def state():
 def ytdlp():
     return AsyncMock()
 
-@pytest.fixture
-def manager(bus, command_bus, state, ytdlp):
-    return DownloadManager(bus, command_bus, state, ytdlp)
+@pytest_asyncio.fixture
+async def manager(bus, command_bus, state, ytdlp):
+    mgr = DownloadManager(bus, command_bus, state, ytdlp)
+    yield mgr
+    for worker in mgr._workers:
+        worker.cancel()
 
 @pytest.mark.asyncio
 async def test_on_download_no_target(manager, state):

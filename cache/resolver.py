@@ -21,7 +21,7 @@ class CacheResolver:
     def __init__(self, db: TrackRepositoryPort, ytdlp: MediaExtractorPort):
         self.db = db
         self.ytdlp = ytdlp
-        self._fetching = {}  # type: ignore
+        self._fetching = {}
         self._lock = asyncio.Lock()
 
     async def resolve(self, track: TrackInfo) -> str:
@@ -56,7 +56,7 @@ class CacheResolver:
                 await self.db.upsert_track(track, stream_url=url)
                 if not fut.done():
                     fut.set_result(url)
-                return url  # type: ignore
+                return url
             except Exception as e:
                 if not fut.done():
                     fut.set_exception(e)

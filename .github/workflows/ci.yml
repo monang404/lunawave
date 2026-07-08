@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.12"
         cache: 'pip'
@@ -47,10 +47,10 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.12"
         cache: 'pip'
@@ -61,9 +61,17 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
 
-    - name: Test start.bat syntax
+    - name: Run Windows Unit Tests
       run: |
-        # Just check if start.bat parses without syntax error
-        cmd.exe /c "start.bat --help" || exit 0
-      # Since we don't have a real mpv/ffmpeg environment on the runner out of the box,
-      # we simply execute it and let it fail gracefully or exit 0 to prove Windows CMD compatibility.
+        pytest tests/unit/server/ -v
+
+  deploy-stub:
+    needs: [test-ubuntu, test-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+    - name: Docker Build and Push Stub
+      run: |
+        echo "This is a placeholder for CD Pipeline (S05-104)."
+        echo "Pushing image to ghcr.io or docker hub..."

@@ -2,7 +2,7 @@
 
 @media (max-width: 600px) {
   #tab-home .lyrics-wrap {
-    max-height: 40px;
+    /* max-height removed per S05-050 */
     overflow: hidden;
   }
   #tab-home .lyrics-line.prev,

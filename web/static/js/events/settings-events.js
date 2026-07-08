@@ -117,3 +117,13 @@ function initSettingsEvents() {
         });
     }
 }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof trapFocus === 'function') {
+        trapFocus(document.getElementById('settings-sheet'));
+        trapFocus(document.getElementById('action-sheet'));
+        trapFocus(document.getElementById('lyrics-sheet'));
+        trapFocus(document.getElementById('help-sheet'));
+    }
+});
