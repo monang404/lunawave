@@ -6,6 +6,7 @@ Publishes: TRACK_STARTED, LOG_MESSAGE, QUEUE_UPDATED
 """
 
 import asyncio
+
 import structlog
 
 from cache.resolver import CacheResolver
@@ -20,7 +21,7 @@ from core.events import (
     TrackProgressEvent,
     TrackStartedEvent,
 )
-from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, DatabasePort
+from core.ports import AudioPlayerPort, DatabasePort, LyricsProvider, SponsorBlockProvider
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 from engine.playback.track_loader import TrackLoader
@@ -28,10 +29,10 @@ from engine.queue_manager import QueueMode
 from engine.radio_engine import RadioMode
 
 logger = structlog.get_logger(__name__)
+from dataclasses import dataclass
+
 from core.log_config import STATS
 
-
-from dataclasses import dataclass
 
 @dataclass
 class PlaybackDependencies:
@@ -59,12 +60,34 @@ class PlaybackController:
         self._lock = asyncio.Lock()
         self._play_lock = asyncio.Lock()  # A-05: proteksi race condition di play_track
         self._retry_count = 0
+        self._eof_advancing = False  # S02-023: guard agar EOF tidak memicu advance ganda
+        self._last_persistent_dict_hash = None
 
         self.bus.subscribe(TrackEndedEvent, self._on_track_ended)
         self.bus.subscribe(TrackProgressEvent, self._on_track_progress)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
         self.bus.subscribe(MpvReconnectedEvent, self._on_mpv_reconnected)
+        
+        safe_create_task(self._persist_state_loop(), name="persist_state_loop")
+
+    async def _persist_state_loop(self):
+        import json
+        import hashlib
+        from config import BASE_DIR
+        path = BASE_DIR / "data" / "state.json"
+        while True:
+            try:
+                await asyncio.sleep(5)
+                current_dict = self.state.to_persistent_dict()
+                current_hash = hashlib.md5(json.dumps(current_dict, sort_keys=True).encode()).hexdigest()
+                if current_hash != self._last_persistent_dict_hash:
+                    await self.state.save_to_disk(path)
+                    self._last_persistent_dict_hash = current_hash
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in _persist_state_loop: {e}")
 
     async def _on_mpv_reconnected(self, event: MpvReconnectedEvent):
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED) and self.state.current_track:
@@ -89,9 +112,9 @@ class PlaybackController:
         if event.duration and event.duration > 0:
             async with self._lock:
                 if abs(self.state.duration - event.duration) >= 1.0:
-                    self.state.duration = event.duration
+                    self.state.duration = event.duration  # type: ignore
                     if self.state.current_track:
-                        self.state.current_track.duration = int(event.duration)
+                        self.state.current_track.duration = int(event.duration)  # type: ignore
                         safe_create_task(self.db.upsert_track(self.state.current_track), name="upsert_track_duration")
                     await self.bus.publish(QueueUpdatedEvent())
 
@@ -105,7 +128,7 @@ class PlaybackController:
             self.state.current_track = track
             self.state.status = PlayerStatus.LOADING
             self.state.position = 0.0
-            self.state.duration = float(track.duration)
+            self.state.duration = float(track.duration)  # type: ignore
             self.state.lyrics_lines = []
             self.state.lyrics_index = 0
 
@@ -160,7 +183,7 @@ class PlaybackController:
         if dur is not None and dur > 0:
             async with self._lock:
                 self.state.duration = dur
-                track.duration = int(dur)
+                track.duration = int(dur)  # type: ignore
                 if track:
                     safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
             await self.bus.publish(QueueUpdatedEvent())
@@ -171,7 +194,7 @@ class PlaybackController:
                 if dur is not None and dur > 0:
                     async with self._lock:
                         self.state.duration = dur
-                        track.duration = int(dur)
+                        track.duration = int(dur)  # type: ignore
                         if track:
                             safe_create_task(self.db.upsert_track(track), name="upsert_track_duration_poll")
                     await self.bus.publish(QueueUpdatedEvent())

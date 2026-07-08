@@ -1,21 +1,21 @@
 
 import asyncio
+import collections
 import time
 from pathlib import Path
 
-import collections
 import structlog
 from aiohttp import web
 
 from config import CACHE_DIR, STREAM_URL_TTL_SEC
 from core.observability import get_metrics_content
-from server.handlers.ws.utils import error_payload
 from core.value_objects import VideoId
+from server.handlers.ws.utils import error_payload
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
-_stream_rate_limit = collections.defaultdict(list)
+_stream_rate_limit = collections.defaultdict(list)  # type: ignore
 STREAM_RATE_LIMIT_MAX = 20
 
 async def serve_index(request):
@@ -48,11 +48,11 @@ async def health_check(request):
 
 def _enforce_rate_limit(client_ip):
     now = time.monotonic()
-    
+
     stale_ips = [ip for ip, hist in _stream_rate_limit.items() if not any(now - t < 60 for t in hist)]
     for ip in stale_ips:
         _stream_rate_limit.pop(ip, None)
-        
+
     history = _stream_rate_limit[client_ip]
     history = [t for t in history if now - t < 60]
     if len(history) >= STREAM_RATE_LIMIT_MAX:
@@ -109,7 +109,7 @@ async def _proxy_stream(request, video_id, cors_origin, stream_url):
     http_session = request.app.get("http_session")
     db = request.app["db"]
     ytdlp = request.app["ytdlp"]
-    
+
     if not http_session:
         if not stream_url:
             try:
@@ -226,12 +226,12 @@ async def serve_metrics(request):
     metrics_token = _os.environ.get("LUNAWAVE_METRICS_TOKEN")
     is_local = client_ip in _localhost_ips
     import secrets
-    
+
     auth_header = request.headers.get("Authorization")
     bearer_token = None
     if auth_header and auth_header.startswith("Bearer "):
         bearer_token = auth_header[7:]
-        
+
     has_valid_token = (
         metrics_token
         and bearer_token is not None

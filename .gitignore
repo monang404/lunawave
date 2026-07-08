@@ -63,6 +63,8 @@ Thumbs.db
 
 # Windows artifacts
 desktop.ini
+win32-x64/
+node_modules/
 logs/
 
 # Development / Temporary

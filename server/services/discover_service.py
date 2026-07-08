@@ -4,13 +4,15 @@ Subscribes to: (tidak ada)
 Publishes: (tidak ada)
 """
 
+import structlog
+
 from cache.db import Database
 from core.state import TrackInfo
-import structlog
 
 logger = structlog.get_logger(__name__)
 
 import sqlite3
+
 
 class DiscoverService:
     def __init__(self, db: Database):

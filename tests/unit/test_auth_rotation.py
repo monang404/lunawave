@@ -1,7 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock
-from server.handlers.auth import handle_auth, handle_logout
 import json
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from server.handlers.auth import handle_auth, handle_logout
+
 
 @pytest.mark.asyncio
 async def test_auth_token_rotation():

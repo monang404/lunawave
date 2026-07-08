@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, List
-from core.state import TrackInfo, PlaybackMode, AudioOutput
+from typing import List, Optional
+
+from core.state import AudioOutput, PlaybackMode, TrackInfo
+
 
 class DomainCommand:
     pass

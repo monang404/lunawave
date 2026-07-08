@@ -4,7 +4,6 @@ from core.state import AppState
 from server.handlers.websocket import ConnectionManager
 
 
-
 class BroadcastService:
     def __init__(self, manager: ConnectionManager):
         self.manager = manager

@@ -20,7 +20,8 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     except Exception as e:
         logger.warning(f"Failed to bundle JS: {e}")
 
-    app = web.Application()
+    from server.middleware import security_headers_middleware
+    app = web.Application(middlewares=[security_headers_middleware])
 
     app["playback_controller"] = playback_controller
     app["state"] = playback_controller.state
@@ -33,7 +34,7 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     if event_bus:
         app["event_bus"] = event_bus
 
-    from server.routes import ROUTE_INDEX, ROUTE_WS, ROUTE_STREAM, ROUTE_HEALTH, ROUTE_METRICS, ROUTE_STATIC
+    from server.routes import ROUTE_HEALTH, ROUTE_INDEX, ROUTE_METRICS, ROUTE_STATIC, ROUTE_STREAM, ROUTE_WS
     app.router.add_get(ROUTE_INDEX, serve_index)
     app.router.add_get(ROUTE_WS, ws_handler)
     app.router.add_get(ROUTE_STREAM, serve_stream)
@@ -45,12 +46,23 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
 
 async def run_server(app: web.Application, host: str = "0.0.0.0", port: int = 8765):
     import logging as _l
+    import concurrent.futures
+    import os
+    
+    loop = asyncio.get_running_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(32, (os.cpu_count() or 1) + 4),
+        thread_name_prefix='aiohttp_worker'
+    )
+    loop.set_default_executor(executor)
+    
     _l.getLogger('aiohttp.access').setLevel(_l.CRITICAL + 1)
     runner = web.AppRunner(app, access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
-    import sys as _sys; _sys.stderr.write(f"\033[32mserver  ✓ listening\033[0m  http://{host}:{port}\n")
+    import sys as _sys  # noqa: I001
+    _sys.stderr.write(f"\033[32mserver  ✓ listening\033[0m  http://{host}:{port}\n")
 
     try:
         while True:

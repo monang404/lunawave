@@ -112,38 +112,42 @@ window.getCoverArt = async function(track) {
 };
 
 let _lazyCoverObserver = null;
+let _lazyCoverTimeout = null;
 
 window.loadLazyCovers = function() {
-    if (!_lazyCoverObserver) {
-        _lazyCoverObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    observer.unobserve(img);
-                    img.classList.add('loaded');
-                    const videoId = img.getAttribute('data-vid');
-                    const title = img.getAttribute('data-title');
-                    const artist = img.getAttribute('data-artist');
-                    const defaultThumb = img.getAttribute('data-thumb');
-                    
-                    if (!videoId) return;
-                    
-                    const track = { video_id: videoId, title: title, artist: artist, thumbnail: defaultThumb };
-                    window.getCoverArt(track).then(coverUrl => {
-                        if (coverUrl) {
-                            img.src = coverUrl;
-                        }
-                    });
-                }
-            });
-        }, { rootMargin: '200px' });
-    }
+    if (_lazyCoverTimeout) clearTimeout(_lazyCoverTimeout);
+    _lazyCoverTimeout = setTimeout(() => {
+        if (!_lazyCoverObserver) {
+            _lazyCoverObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        observer.unobserve(img);
+                        img.classList.add('loaded');
+                        const videoId = img.getAttribute('data-vid');
+                        const title = img.getAttribute('data-title');
+                        const artist = img.getAttribute('data-artist');
+                        const defaultThumb = img.getAttribute('data-thumb');
+                        
+                        if (!videoId) return;
+                        
+                        const track = { video_id: videoId, title: title, artist: artist, thumbnail: defaultThumb };
+                        window.getCoverArt(track).then(coverUrl => {
+                            if (coverUrl) {
+                                img.src = coverUrl;
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '200px' });
+        }
 
-    const images = document.querySelectorAll('img.lazy-cover:not(.observed)');
-    images.forEach((img) => {
-        img.classList.add('observed');
-        _lazyCoverObserver.observe(img);
-    });
+        const images = document.querySelectorAll('img.lazy-cover:not(.observed)');
+        images.forEach((img) => {
+            img.classList.add('observed');
+            _lazyCoverObserver.observe(img);
+        });
+    }, 50);
 };
 
 window.extractDominantColor = function(imageElement, callback) {
@@ -152,50 +156,51 @@ window.extractDominantColor = function(imageElement, callback) {
         return;
     }
     
-    try {
-        const canvas = document.createElement('canvas');
-        const canvasContext = canvas.getContext('2d', { willReadFrequently: true });
-        canvas.width = 50;
-        canvas.height = 50;
-        canvasContext.drawImage(imageElement, 0, 0, 50, 50);
-        
-        const data = canvasContext.getImageData(0, 0, 50, 50).data;
-        let bestR = 0, bestG = 0, bestB = 0;
-        let maxScore = -1;
-        
-        for (let i = 0; i < data.length; i += 16) {
-            let r = data[i], g = data[i+1], b = data[i+2];
-            let max = Math.max(r, g, b), min = Math.min(r, g, b);
-            let l = (max + min) / 2;
+    setTimeout(() => {
+        try {
+            const canvas = document.createElement('canvas');
+            const canvasContext = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = 50;
+            canvas.height = 50;
+            canvasContext.drawImage(imageElement, 0, 0, 50, 50);
             
-            if (l < 20 || l > 240) continue;
+            const data = canvasContext.getImageData(0, 0, 50, 50).data;
+            let bestR = 0, bestG = 0, bestB = 0;
+            let maxScore = -1;
             
-            let s = 0;
-            if (max !== min) {
-                s = l > 127 ? (max - min) / (510 - max - min) : (max - min) / (max + min);
-            }
-            
-            let score = s * 100;
-            if (score > maxScore) {
-                maxScore = score;
-                bestR = r; bestG = g; bestB = b;
-            }
-        }
-        
-        if (maxScore === -1) {
-            let r = 0, g = 0, b = 0, count = 0;
             for (let i = 0; i < data.length; i += 16) {
-                r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                let r = data[i], g = data[i+1], b = data[i+2];
+                let max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let l = (max + min) / 2;
+                
+                if (l < 20 || l > 240) continue;
+                
+                let s = 0;
+                if (max !== min) {
+                    s = l > 127 ? (max - min) / (510 - max - min) : (max - min) / (max + min);
+                }
+                
+                let score = s * 100;
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestR = r; bestG = g; bestB = b;
+                }
             }
-            bestR = Math.floor(r / count);
-            bestG = Math.floor(g / count);
-            bestB = Math.floor(b / count);
+            
+            if (maxScore === -1) {
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let i = 0; i < data.length; i += 16) {
+                    r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                }
+                bestR = Math.floor(r / count);
+                bestG = Math.floor(g / count);
+                bestB = Math.floor(b / count);
+            }
+            
+            if (callback) callback({r: bestR, g: bestG, b: bestB});
+        } catch (e) {
+            console.warn("Color extraction failed:", e);
+            if (callback) callback({r: 28, g: 28, b: 34}); // Fallback equivalent to var(--bg-elevated) #1C1C22
         }
-        
-        console.log("Cover Color Extracted:", bestR, bestG, bestB);
-        if (callback) callback({r: bestR, g: bestG, b: bestB});
-    } catch (e) {
-        console.warn("Color extraction failed:", e);
-        if (callback) callback({r: 28, g: 28, b: 34}); // Fallback equivalent to var(--bg-elevated) #1C1C22
-    }
+    }, 10);
 };

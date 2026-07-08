@@ -1,5 +1,7 @@
-from unittest.mock import patch, MagicMock
-from core.alerting import send_alert, handle_exception, handle_async_exception
+from unittest.mock import MagicMock, patch
+
+from core.alerting import handle_async_exception, handle_exception, send_alert
+
 
 def test_send_alert(monkeypatch):
     monkeypatch.setenv("LUNAWAVE_ALERT_WEBHOOK", "http://example.com/webhook")

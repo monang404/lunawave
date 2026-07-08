@@ -1,7 +1,9 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch
-from server.handlers.http import serve_stream, _stream_rate_limit
+
+from server.handlers.http import _stream_rate_limit, serve_stream
+
 
 @pytest.mark.asyncio
 async def test_stream_cors_no_wildcard():

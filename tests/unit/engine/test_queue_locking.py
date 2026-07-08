@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock
 from collections import deque
+from unittest.mock import AsyncMock, MagicMock
 
-from engine.playback.queue_commands import QueueCommands
+import pytest
+
 from engine.playback.playback_commands import PlaybackCommands
+from engine.playback.queue_commands import QueueCommands
 
 
 @pytest.mark.asyncio

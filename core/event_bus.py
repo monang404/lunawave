@@ -32,7 +32,7 @@ class EventBus:
         if inspect.ismethod(handler):
             ref = weakref.WeakMethod(handler)
         else:
-            ref = weakref.ref(handler)
+            ref = weakref.ref(handler)  # type: ignore
         self._subscribers[event_type].append(ref)
 
     def _resolve(self, ref):

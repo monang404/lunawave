@@ -49,13 +49,22 @@ function initEvents() {
         dom.adminPassword.addEventListener("keypress", (e) => {
             if (e.key === "Enter" && dom.adminSubmitBtn) dom.adminSubmitBtn.click();
         });
+        // S02-042: Hapus pesan error saat user mulai mengetik ulang
+        dom.adminPassword.addEventListener("input", () => {
+            if (dom.loginErrorMsg) dom.loginErrorMsg.textContent = "";
+        });
     }
 
     if (dom.adminUsername) {
         dom.adminUsername.addEventListener("keypress", (e) => {
             if (e.key === "Enter" && dom.adminSubmitBtn) dom.adminSubmitBtn.click();
         });
+        // S02-042: Hapus pesan error saat user mulai mengetik ulang
+        dom.adminUsername.addEventListener("input", () => {
+            if (dom.loginErrorMsg) dom.loginErrorMsg.textContent = "";
+        });
     }
+
 
     if (dom.logoutBtn) {
         dom.logoutBtn.addEventListener("click", () => {

@@ -1,6 +1,7 @@
-from server.handlers.ws.registry import register_ws_handler
 from core.commands import RadioRandomizeCommand
 from core.ws_actions import WSAction
+from server.handlers.ws.registry import register_ws_handler
+
 
 @register_ws_handler(WSAction.RADIO_RANDOMIZE)
 async def _handle_radio_randomize(data, ws, state, ytdlp, manager, db, command_bus):

@@ -43,11 +43,11 @@ class TestLyricsFetcherSessionScope:
         state = AppState()
         mock_sess = __import__("unittest.mock").mock.AsyncMock()
         fetcher = LyricsFetcher(state, session=mock_sess, event_bus=__import__("unittest.mock").mock.AsyncMock())
-        
+
         # Mock cache hit
         track = TrackInfo(video_id="vid1", title="test (official)", artist="artist", duration=100)
         fetcher._cache["vid1"] = "[00:10.00] Cached lyrics"
-        
+
         import unittest.mock
         with unittest.mock.patch("re.sub") as mock_sub:
             await fetcher.fetch(track)

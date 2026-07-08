@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 
 BASE_DIR = Path(os.environ.get("LUNAWAVE_BASE", Path(__file__).parent))
@@ -10,12 +11,10 @@ if os.name == 'nt':
     MPV_SOCKET = os.environ.get("LUNAWAVE_SOCKET", r"\\.\pipe\mpv-yt-player")
 else:
     socket_dir = BASE_DIR / "cache" / "sockets"
-    socket_dir.mkdir(parents=True, exist_ok=True)
     _raw_socket = os.environ.get("LUNAWAVE_SOCKET", str(socket_dir / "mpv-yt-player.sock"))
     _socket_path = Path(_raw_socket).resolve()
     _allowed_prefix = BASE_DIR.resolve()
     if not str(_socket_path).startswith(str(_allowed_prefix)):
-        import warnings
         warnings.warn(f"LUNAWAVE_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
         _socket_path = socket_dir / "mpv-yt-player.sock"
     MPV_SOCKET = str(_socket_path)
@@ -70,6 +69,7 @@ def get_admin_password() -> str:
                 _admin_password = f.read().strip()
         else:
             import secrets
+
             from core.security import hash_password
 
             raw_password = secrets.token_urlsafe(12)

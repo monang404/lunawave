@@ -1,8 +1,11 @@
-import pytest
 import json
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from aiohttp import WSMsgType
+
 from server.handlers.websocket import ws_handler
+
 
 @pytest.mark.asyncio
 async def test_websocket_xff_anti_spoofing():

@@ -1,5 +1,7 @@
 import time
+
 import structlog
+
 from core.ports import SessionRepositoryPort
 
 logger = structlog.get_logger(__name__)

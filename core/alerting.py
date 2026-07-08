@@ -1,10 +1,11 @@
-import sys
-import os
-import json
-import urllib.request
-import traceback
-import structlog
 import asyncio
+import json
+import os
+import sys
+import traceback
+import urllib.request
+
+import structlog
 
 logger = structlog.get_logger(__name__)
 

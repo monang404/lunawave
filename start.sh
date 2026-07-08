@@ -106,7 +106,7 @@ fi
 # ----------------------------------------------------------
 #  ADMIN ACCESS INFO
 # ----------------------------------------------------------
-PASS_FILE="${LUNAWAVE_BASE:-$(dirname "$0")}/cache/admin_password.txt"
+PASS_FILE="${LUNAWAVE_BASE:-$(dirname "$0")}/data/admin_initial_password.txt"
 echo ""
 echo -e "${MAGENTA}---------------------------------------------------------${RESET}"
 echo -e "${BOLD} Admin Access Information${RESET}"

@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from server.handlers.http import serve_stream, _stream_rate_limit
+
+import pytest
+
+from server.handlers.http import _stream_rate_limit, serve_stream
+
 
 @pytest.mark.asyncio
 async def test_rate_limit_garbage_collection():

@@ -1,7 +1,8 @@
 import structlog
-from core.state import PlayerStatus, PlaybackMode
+
 from core.events import LogMessageEvent, QueueUpdatedEvent
 from core.log_config import STATS as _LOG_STATS
+from core.state import PlaybackMode, PlayerStatus
 
 logger = structlog.get_logger(__name__)
 
@@ -19,13 +20,13 @@ class PlaybackCommands:
             if self.state.playback_mode == PlaybackMode.RADIO:
                 # We need to make sure radio mode is deactivated safely
                 pass
-        
+
         if self.state.playback_mode == PlaybackMode.RADIO:
             await self.radio_mode.on_deactivated()
             async with self.playback_controller._lock:
                 self.state.playback_mode = PlaybackMode.QUEUE
             await self.bus.publish(QueueUpdatedEvent())
-            
+
         await self.playback_controller.play_track(cmd.track)
 
     async def on_toggle_pause(self, cmd=None):
@@ -39,7 +40,7 @@ class PlaybackCommands:
                 if not self.state.current_track or self.state.current_track.video_id != cmd.video_id:
                     logger.info(f"Ignoring skip: requested {cmd.video_id} != current {getattr(self.state.current_track, 'video_id', None)}")
                     should_advance = False
-                    
+
         if should_advance:
             await self.playback_controller._advance_to_next()
 
@@ -49,7 +50,7 @@ class PlaybackCommands:
             if self.state.history:
                 track = self.state.history.pop()
                 self.state.current_track = None
-                
+
         if track:
             await self.playback_controller.play_track(track)
         else:

@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 import time
+
 import structlog
 
 # psutil is optional: it fails to install on many Termux/Android setups
@@ -160,8 +161,8 @@ class Spinner:
         sys.stderr.flush()
 
     def __enter__(self):
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
+        self._thread = threading.Thread(target=self._run, daemon=True)  # type: ignore
+        self._thread.start()  # type: ignore
         return self
 
     def __exit__(self, *_):
@@ -398,13 +399,13 @@ class _CompactRenderer:
 
         if msg is None:  # error card
             _print_error_card(name, str(event), event_dict)
-            return event_dict
+            return ((str(event),), {"extra": event_dict})
 
         tag = _module_tag(name)
         line = f"{_GY}{ts}{_R} {tag} {sym} {msg}"
         sys.stderr.write(line + "\n")
         sys.stderr.flush()
-        return event_dict
+        return ((str(event),), {"extra": event_dict})
 
 # ── File formatter (full, no ANSI) ──────────────────────────
 class _FileFormatter(logging.Formatter):

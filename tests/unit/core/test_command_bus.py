@@ -1,7 +1,10 @@
-import pytest
 from dataclasses import dataclass
+
+import pytest
+
 from core.command_bus import CommandBus
 from core.commands import DomainCommand
+
 
 @dataclass
 class TestCommand(DomainCommand):

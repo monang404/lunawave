@@ -14,7 +14,6 @@ __version__ = _get_version()
 import asyncio
 import stat
 
-
 from config import BASE_DIR
 from core.log_config import setup_logging
 
@@ -27,10 +26,10 @@ except OSError:
     pass
 
 async def main():
-    from core.bootstrap import build_app_context, shutdown_app_context
-    from core.background_tasks import start_background_tasks
-    from server.app import run_server
     from core.alerting import setup_alerting
+    from core.background_tasks import start_background_tasks
+    from core.bootstrap import build_app_context, shutdown_app_context
+    from server.app import run_server
 
     setup_alerting()
 

@@ -1,9 +1,10 @@
 import time
-import structlog
 from typing import Optional
 
-from core.state import TrackInfo
+import structlog
+
 from core.ports import TrackRepositoryPort
+from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
@@ -35,7 +36,7 @@ class TrackRepository(TrackRepositoryPort):
                 is_favorite=is_fav,
             )
 
-    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None) -> None:
+    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None) -> None:  # type: ignore
         if not self._conn: return
         ts = int(time.time())
         query = """
@@ -89,24 +90,28 @@ class TrackRepository(TrackRepositoryPort):
 
     async def toggle_favorite(self, video_id: str) -> int:
         if not self._conn: return 0
-        async with self._conn.execute(
+        # Gunakan UPDATE lalu SELECT terpisah agar kompatibel dengan SQLite < 3.35
+        # yang tidak mendukung clause RETURNING (S02-039)
+        await self._conn.execute(
             """UPDATE tracks
                SET is_favorite = 1 - COALESCE(is_favorite, 0)
-               WHERE video_id = ?
-               RETURNING is_favorite""",
+               WHERE video_id = ?""",
             (video_id,)
+        )
+        await self._conn.commit()
+        async with self._conn.execute(
+            "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
         ) as cursor:
             row = await cursor.fetchone()
-
-        await self._conn.commit()
         return row["is_favorite"] if row else 0
+
 
     async def evict_stale_tracks(self) -> int:
         if not self._conn: return 0
         thirty_days_ago = int(time.time()) - (30 * 24 * 3600)
 
         cursor = await self._conn.execute(
-            """SELECT video_id FROM tracks
+            """SELECT video_id, local_path FROM tracks
                WHERE play_count = 0
                  AND local_path IS NULL
                  AND (is_favorite = 0 OR is_favorite IS NULL)
@@ -121,7 +126,18 @@ class TrackRepository(TrackRepositoryPort):
             return 0
 
         video_ids = [r["video_id"] for r in rows]
+        _local_paths = [r["local_path"] for r in rows if r["local_path"]]
 
+        # Hapus dari DB lebih dulu agar DB selalu jadi sumber kebenaran (S02-038).
+        # Jika server crash setelah DELETE tapi sebelum unlink file, file lokal
+        # tetap ada tapi tidak ada referensi DB (aman). Kebalikannya jauh lebih buruk.
+        placeholders = ','.join(['?'] * len(video_ids))
+        await self._conn.execute(
+            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", tuple(video_ids)
+        )
+        await self._conn.commit()
+
+        # Baru hapus file lokal setelah DB bersih
         from config import CACHE_DIR
         for vid in video_ids:
             p = CACHE_DIR / f"{vid}.mp3"
@@ -131,11 +147,7 @@ class TrackRepository(TrackRepositoryPort):
                 except Exception as e:
                     logger.error(f"Gagal hapus file cache {p}: {e}")
 
-        placeholders = ','.join(['?'] * len(video_ids))
-        await self._conn.execute(
-            f"DELETE FROM tracks WHERE video_id IN ({placeholders})", tuple(video_ids)
-        )
-        await self._conn.commit()
 
         logger.info(f"Eviction: {len(video_ids)} track stale dihapus dari cache DB")
         return len(video_ids)
+

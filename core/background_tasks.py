@@ -1,10 +1,12 @@
 import asyncio
-import structlog
-import aiohttp
 from pathlib import Path
 
-from core.task_utils import safe_create_task
+import aiohttp
+import structlog
+
 from core.bootstrap import AppContext
+from core.task_utils import safe_create_task
+
 
 async def _connectivity_checker(state, http_session):
     while True:

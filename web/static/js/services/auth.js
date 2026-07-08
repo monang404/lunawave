@@ -42,7 +42,7 @@ function login(user, pass) {
     if (dom.adminPassword) {
         dom.adminPassword.value = "";
     }
-    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+    if (wsClient && wsClient.getReadyState() === WebSocket.OPEN) {
         wsSend(WS_ACTIONS.AUTH, { username: user, password: pass });
     } else {
         dom.loginErrorMsg.textContent = "Koneksi server terputus. Silakan tunggu/refresh.";
@@ -95,11 +95,11 @@ function logout() {
 
     if (window.location.pathname !== "/admin") {
         setTimeout(() => {
-            if (window.ws) {
-                try {
-                    window.ws.close();
-                } catch (e) {}
-            }
+            try {
+                if (typeof wsClient !== "undefined") {
+                    wsClient.close();
+                }
+            } catch (e) {}
             window.location.href = "/admin";
         }, 150);
     } else {
@@ -107,10 +107,10 @@ function logout() {
             dom.portalClientBtn.style.display = "none";
         }
         applyRoleUI();
-        if (window.ws) {
-            try {
-                window.ws.close();
-            } catch (e) {}
-        }
+        try {
+            if (typeof wsClient !== "undefined") {
+                wsClient.close();
+            }
+        } catch (e) {}
     }
 }

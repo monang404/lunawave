@@ -4,14 +4,14 @@ Subscribes to: CMD_VOLUME_UP, CMD_VOLUME_DOWN
 Publishes: LOG_MESSAGE
 """
 
+import asyncio
+
 from core.event_bus import EventBus
 from core.events import LogMessageEvent
 from core.ports import AudioPlayerPort
 from core.state import AppState, AudioOutput
 from core.value_objects import Volume
 
-
-import asyncio
 
 class VolumeService:
     def __init__(self, bus: EventBus, mpv: AudioPlayerPort, state: AppState):
@@ -40,7 +40,7 @@ class VolumeService:
             await self._apply_volume(vol)
 
     async def _apply_volume(self, new_vol: int):
-        self.state.volume = new_vol
+        self.state.volume = new_vol  # type: ignore
         if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
             await self.mpv.set_volume(0)
         else:
