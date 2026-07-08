@@ -76,8 +76,8 @@ echo  ----------------------------------------------------------------
 if defined LUNAWAVE_ADMIN_PASS (
     echo   [i] Password loaded from environment variable LUNAWAVE_ADMIN_PASS.
 ) else (
-    if exist "cache\admin_password.txt" (
-        echo   [i] Password stored securely in: cache\admin_password.txt
+    if exist "data\admin_password.txt" (
+        echo   [i] Password stored securely in: data\admin_password.txt
     ) else (
         echo   [i] A new password will be auto-generated on first launch.
     )
@@ -93,8 +93,7 @@ if defined LUNAWAVE_ADMIN_USER (
 :: ----------------------------------------------------------
 echo.
 echo    ================================================================
-echo       Client Interface : http://localhost:%LUNAWAVE_PORT%/
-echo       Admin Interface  : http://localhost:%LUNAWAVE_PORT%/admin
+echo       App Interface    : http://localhost:%LUNAWAVE_PORT%/  (login admin ada di halaman yang sama)
 echo       System Health    : http://localhost:%LUNAWAVE_PORT%/health
 echo       Metrics          : http://localhost:%LUNAWAVE_PORT%/metrics
 echo    ================================================================

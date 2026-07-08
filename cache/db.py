@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import asyncio
 import aiosqlite
 import structlog
 
@@ -7,75 +7,95 @@ from config import DB_PATH
 
 logger = structlog.get_logger(__name__)
 
+class ConnectionPool:
+    def __init__(self, db_path: Path, max_size: int = 5):
+        self.db_path = db_path
+        self.max_size = max_size
+        self._pool = asyncio.Queue(maxsize=max_size)
+        self._conns = []
+
+    async def init(self):
+        for _ in range(self.max_size):
+            conn = await aiosqlite.connect(self.db_path)
+            conn.row_factory = aiosqlite.Row
+            await conn.execute("PRAGMA journal_mode=WAL")
+            await conn.execute("PRAGMA foreign_keys=ON")
+            await conn.execute("PRAGMA busy_timeout=5000")
+            self._pool.put_nowait(conn)
+            self._conns.append(conn)
+            
+    def acquire(self):
+        return PoolContext(self)
+        
+    def release(self, conn):
+        self._pool.put_nowait(conn)
+        
+    async def close(self):
+        for conn in self._conns:
+            await conn.close()
+            
+class PoolContext:
+    def __init__(self, pool):
+        self.pool = pool
+        self.conn = None
+        
+    async def __aenter__(self):
+        self.conn = await self.pool._pool.get()
+        return self.conn
+        
+    async def __aexit__(self, exc_type, exc, tb):
+        self.pool.release(self.conn)
+
 class Database:
-    """
-    CRITICAL-04 fix: Uses a single persistent connection instead of
-    opening a new connection for every operation.
-    MED-10 fix: Added separate increment_play_count method.
-    """
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
         self._schema_path = Path(__file__).parent / "schema.sql"
-        self._conn = None
+        self.pool = ConnectionPool(db_path)
         self.tracks = None
         self.sessions = None
         self.discover = None
 
-    @property
-    def conn(self):
-        return self._conn
-
     async def init(self):
-        """Initializes the database using the schema.sql file."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = await aiosqlite.connect(self.db_path)
-        self._conn.row_factory = aiosqlite.Row  # type: ignore
-        await self._conn.execute("PRAGMA journal_mode=WAL")  # type: ignore
-        await self._conn.execute("PRAGMA foreign_keys=ON")  # type: ignore
+        await self.pool.init()
 
         with open(self._schema_path, "r", encoding="utf-8") as f:
             schema_sql = f.read()
-        await self._conn.executescript(schema_sql)  # type: ignore
-
-        async def add_column_if_not_exists(table, column, definition):
-            assert self._conn is not None
-            async with self._conn.execute(f"PRAGMA table_info({table})") as cursor:
-                columns = [row["name"] for row in await cursor.fetchall()]
-            if column not in columns:
-                await self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
-
-        await add_column_if_not_exists("tracks", "is_favorite", "INTEGER DEFAULT 0")
-        await add_column_if_not_exists("artists", "click_count", "INTEGER DEFAULT 0")
-        await add_column_if_not_exists("genres", "click_count", "INTEGER DEFAULT 0")
-
-        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")  # type: ignore
-        await self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama)")  # type: ignore
-        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_is_favorite ON tracks(is_favorite) WHERE is_favorite = 1")  # type: ignore
-        await self._conn.commit()  # type: ignore
+            
+        async with self.pool.acquire() as conn:
+            await conn.executescript(schema_sql)
+            
+            # Simple migration system
+            async with conn.execute("SELECT MAX(version) as v FROM schema_migrations") as cur:
+                row = await cur.fetchone()
+                current_version = row["v"] if row and row["v"] else 0
+                
+            if current_version < 1:
+                # Add version 1 logic if needed
+                await conn.execute("INSERT INTO schema_migrations (version) VALUES (1)")
+                await conn.commit()
 
         from cache.repositories.auth_repository import AuthRepository
         from cache.repositories.discover_repository import DiscoverRepository
         from cache.repositories.track_repository import TrackRepository
 
-        self.tracks = TrackRepository(self._conn)  # type: ignore
-        self.sessions = AuthRepository(self._conn)  # type: ignore
-        self.discover = DiscoverRepository(self._conn)  # type: ignore
+        self.tracks = TrackRepository(self.pool)
+        self.sessions = AuthRepository(self.pool)
+        self.discover = DiscoverRepository(self.pool)
 
         await self._seed_initial_data()
 
         logger.info(f"Database initialized at {self.db_path}")
 
     async def _seed_initial_data(self):
-        """Seeds initial data from JSON if the artists table is empty."""
-        assert self._conn is not None
-        async with self._conn.execute("SELECT COUNT(*) FROM artists") as cursor:
-            count = (await cursor.fetchone())[0]
-            if count > 0:
-                return
+        async with self.pool.acquire() as conn:
+            async with conn.execute("SELECT COUNT(*) as cnt FROM artists") as cursor:
+                row = await cursor.fetchone()
+                if row["cnt"] > 0:
+                    return
 
         json_path = self.db_path.parent / "artists_enriched.json"
         if not json_path.exists():
-            # Fallback if enriched doesn't exist
             json_path = self.db_path.parent / "artists.json"
             if not json_path.exists():
                 logger.warning("No initial data found to seed database.")
@@ -97,6 +117,8 @@ class Database:
             songs_data = []
 
             for artist in data.get('artists', []):
+                # We skip manual id parsing for artists since it's AUTOINCREMENT now, 
+                # but if we must maintain relations from json:
                 artist_id = artist['id']
                 artists_data.append((artist_id, artist['nama'], artist['kategori'], artist['tahun_aktif']))
 
@@ -109,67 +131,57 @@ class Database:
                         duration = lagu.get('durasi_detik', 0)
                         songs_data.append((artist_id, lagu['judul'], youtube_id, duration))
 
-            await self._conn.executemany('''
-                INSERT OR REPLACE INTO artists (id, nama, kategori, tahun_aktif)
-                VALUES (?, ?, ?, ?)
-            ''', artists_data)
+            async with self.pool.acquire() as conn:
+                await conn.executemany('''
+                    INSERT INTO artists (id, nama, kategori, tahun_aktif)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(nama) DO UPDATE SET 
+                        kategori=excluded.kategori, 
+                        tahun_aktif=excluded.tahun_aktif
+                ''', artists_data)
 
-            await self._conn.executemany('''
-                INSERT OR IGNORE INTO genres (nama_genre)
-                VALUES (?)
-            ''', list(genres_data))
+                await conn.executemany('''
+                    INSERT OR IGNORE INTO genres (nama_genre)
+                    VALUES (?)
+                ''', list(genres_data))
 
-            genre_map = {}
-            async with self._conn.execute('SELECT id, nama_genre FROM genres') as c:
-                async for row in c:
-                    genre_map[row[1]] = row[0]
+                genre_map = {}
+                async with conn.execute('SELECT id, nama_genre FROM genres') as c:
+                    async for row in c:
+                        genre_map[row["nama_genre"]] = row["id"]
 
-            for artist in data.get('artists', []):
-                artist_id = artist['id']
-                for genre_name in artist.get('genre', []):
-                    if genre_name in genre_map:
-                        artist_genres_data.append((artist_id, genre_map[genre_name]))
+                for artist in data.get('artists', []):
+                    artist_id = artist['id']
+                    for genre_name in artist.get('genre', []):
+                        if genre_name in genre_map:
+                            artist_genres_data.append((artist_id, genre_map[genre_name]))
 
-            await self._conn.executemany('''
-                INSERT OR IGNORE INTO artist_genres (artist_id, genre_id)
-                VALUES (?, ?)
-            ''', artist_genres_data)
+                await conn.executemany('''
+                    INSERT OR IGNORE INTO artist_genres (artist_id, genre_id)
+                    VALUES (?, ?)
+                ''', artist_genres_data)
 
-            await self._conn.executemany('''
-                INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
-                VALUES (?, ?, ?, ?)
-            ''', songs_data)
+                await conn.executemany('''
+                    INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
+                    VALUES (?, ?, ?, ?)
+                ''', songs_data)
 
-            await self._conn.commit()
+                await conn.commit()
             logger.info("Database auto-seeded successfully.")
-        except (sqlite3.Error, KeyError, ValueError, json.JSONDecodeError) as e:
-            # Rollback agar DB tidak tertinggal dalam kondisi partial seed (S02-045)
-            logger.error(f"Seed database gagal, melakukan rollback: {e}", exc_info=True)
-            try:
-                await self._conn.rollback()
-            except Exception:
-                pass
-
+        except Exception as e:
+            logger.error(f"Seed database gagal: {e}", exc_info=True)
 
     async def close(self):
-        """Close the persistent connection gracefully."""
-        if self._conn:
-            await self._conn.close()
-            self._conn = None
+        await self.pool.close()
 
     async def backup(self, backup_path):
-        """Creates a safe backup of the database using SQLite's backup API."""
-        if not self._conn:
-            return
         import aiosqlite
-        async with aiosqlite.connect(backup_path) as dest:
-            await self._conn.backup(dest)
+        # Since we use WAL, we acquire one connection to do backup
+        async with self.pool.acquire() as conn:
+            async with aiosqlite.connect(backup_path) as dest:
+                await conn.backup(dest)
 
-    # ==========================================
-    # Explicit Forwarding to Repositories
-    # ==========================================
-    
-    # --- TrackRepository ---
+    # --- Explicit Forwarding (Optional, but kept for compatibility) ---
     async def get_track(self, video_id: str):
         return await self.tracks.get_track(video_id)
 
@@ -191,7 +203,6 @@ class Database:
     async def evict_stale_tracks(self):
         return await self.tracks.evict_stale_tracks()
 
-    # --- DiscoverRepository ---
     async def increment_artist_click(self, artist_name: str):
         return await self.discover.increment_artist_click(artist_name)
 
@@ -204,8 +215,8 @@ class Database:
     async def get_all_artists(self, kategori: str | None = None):
         return await self.discover.get_all_artists(kategori)
 
-    async def get_random_songs(self, limit: int = 20, weight_favorite: bool = True, exclude_ids: list = None):
-        return await self.discover.get_random_songs(limit, weight_favorite, exclude_ids)
+    async def get_random_songs(self, limit: int = 20, exclude_ids: list = None, artist: str = None, max_per_artist: int = 3):
+        return await self.discover.get_random_songs(limit, exclude_ids, artist, max_per_artist)
 
     async def get_artist_songs_strict(self, artist: str, limit: int = 10):
         return await self.discover.get_artist_songs_strict(artist, limit)
@@ -213,7 +224,6 @@ class Database:
     async def get_genre_songs(self, genre_name: str, total_limit: int = 12, max_per_artist: int = 3):
         return await self.discover.get_genre_songs(genre_name, total_limit, max_per_artist)
 
-    # --- AuthRepository ---
     async def create_session(self, token: str, expires_at: int):
         return await self.sessions.create_session(token, expires_at)
 

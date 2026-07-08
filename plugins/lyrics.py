@@ -1,3 +1,4 @@
+import collections
 import asyncio
 import bisect
 import re
@@ -20,7 +21,7 @@ class LyricsFetcher:
     MED-01 fix: Accepts a shared aiohttp session.
     LOW-07 fix: Strips timestamp prefixes from displayed lyrics.
     """
-    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):  # type: ignore
+    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):
         if session is None:
             raise RuntimeError("aiohttp.ClientSession must be injected")
         if event_bus is None:
@@ -108,7 +109,7 @@ class LyricsFetcher:
                     if track.video_id not in self._cache:
                         self._cache[track.video_id] = lrc
                         if len(self._cache) > 50:
-                            self._cache.pop(next(iter(self._cache)))
+                            self._cache.popitem(last=False)
                     self.lyrics_data = self._parse_lrc(lrc)
                     self.state.lyrics_lines = [text for _, text in self.lyrics_data]
                     self.state.lyrics_timestamps = [t for t, _ in self.lyrics_data]

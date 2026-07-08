@@ -1,9 +1,26 @@
 PRAGMA journal_mode=WAL;
 
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at INTEGER DEFAULT (strftime('%s','now'))
+);
+
+-- Artists untuk Radio Mode seed
+CREATE TABLE IF NOT EXISTS artists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT NOT NULL,
+    kategori TEXT,
+    tahun_aktif TEXT,
+    click_count INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama);
+CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);
+
 CREATE TABLE IF NOT EXISTS tracks (
     video_id     TEXT PRIMARY KEY,
     title        TEXT NOT NULL,
-    artist       TEXT,
+    artist_id    INTEGER,        -- Normalized from TEXT to artist_id
     duration     INTEGER,
     view_count   INTEGER,
     thumbnail    TEXT,
@@ -13,7 +30,8 @@ CREATE TABLE IF NOT EXISTS tracks (
     play_count   INTEGER DEFAULT 0,
     last_played  INTEGER,        -- Unix timestamp
     is_favorite  INTEGER DEFAULT 0, -- 1 if liked, 0 otherwise
-    created_at   INTEGER DEFAULT (strftime('%s','now'))
+    created_at   INTEGER DEFAULT (strftime('%s','now')),
+    FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_path ON tracks(local_path) WHERE local_path IS NOT NULL;
@@ -29,17 +47,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
--- Artists untuk Radio Mode seed
-CREATE TABLE IF NOT EXISTS artists (
-    id INTEGER PRIMARY KEY,
-    nama TEXT NOT NULL,
-    kategori TEXT,
-    tahun_aktif TEXT
-);
-
 CREATE TABLE IF NOT EXISTS genres (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nama_genre TEXT UNIQUE NOT NULL
+    nama_genre TEXT UNIQUE NOT NULL,
+    click_count INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS artist_genres (
@@ -59,6 +70,4 @@ CREATE TABLE IF NOT EXISTS songs (
     FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama);
 CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);

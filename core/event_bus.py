@@ -32,7 +32,7 @@ class EventBus:
         if inspect.ismethod(handler):
             ref = weakref.WeakMethod(handler)
         else:
-            ref = weakref.ref(handler)  # type: ignore
+            ref = weakref.ref(handler)
         self._subscribers[event_type].append(ref)
 
     def _resolve(self, ref):
@@ -41,18 +41,19 @@ class EventBus:
             return ref()
         return ref
 
-    def purge_dead_refs(self):
-        """Hapus semua dead weakref dari seluruh subscriber list.
-        Dipanggil otomatis dari unsubscribe(). Bisa juga dipanggil
-        manual saat room dihancurkan untuk pembersihan menyeluruh.
+    def purge_dead_refs(self, specific_event_type=None):
+        """Hapus semua dead weakref dari subscriber list.
+        Dioptimasi O(1) event type jika dikirim argumen specific_event_type.
         """
-        for event_type in list(self._subscribers):
-            self._subscribers[event_type] = [
-                r for r in self._subscribers[event_type]
-                if self._resolve(r) is not None
-            ]
-            if not self._subscribers[event_type]:
-                del self._subscribers[event_type]
+        types_to_check = [specific_event_type] if specific_event_type else list(self._subscribers)
+        for event_type in types_to_check:
+            if event_type in self._subscribers:
+                self._subscribers[event_type] = [
+                    r for r in self._subscribers[event_type]
+                    if self._resolve(r) is not None
+                ]
+                if not self._subscribers[event_type]:
+                    del self._subscribers[event_type]
 
     def unsubscribe(self, event_type: Type[E], handler: Callable[[E], Any]):
         """Remove a handler from an event, sekaligus bersihkan dead refs."""
@@ -63,7 +64,7 @@ class EventBus:
             ]
             if not self._subscribers[event_type]:
                 del self._subscribers[event_type]
-        self.purge_dead_refs()
+        self.purge_dead_refs(event_type)
 
     async def publish(self, event: DomainEvent):
         """Publish event to all subscribers. Exceptions in one handler

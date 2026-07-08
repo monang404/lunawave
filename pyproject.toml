@@ -59,7 +59,7 @@ exclude_dirs = ["tests", "scratch", ".venv", "venv"]
 # B101: assert
 # B104: bind to all interfaces (0.0.0.0)
 # B108: hardcoded /tmp path
-skips = ["B101", "B104", "B108"]
+skips = ["B101"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -23,7 +23,7 @@
             
             if (diffX > 80 && diffX > diffY) {
                 if (store.userRole !== "admin") {
-                    showLogToast("Hanya admin yang bisa memutar musik");
+                    // no toast for non-admin swipe (S05-052)
                     return;
                 }
                 if (touchEndX < touchStartX) {

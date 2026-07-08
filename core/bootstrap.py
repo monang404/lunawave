@@ -4,11 +4,17 @@ from dataclasses import dataclass
 from typing import Any
 
 import aiohttp
+
+from engine.playback.playback_commands import PlaybackCommands
+from engine.playback.queue_commands import QueueCommands
+from engine.playback.radio_commands import RadioCommands
+from engine.playback.settings_commands import SettingsCommands
+
 import structlog
 
 from cache.db import Database
 from cache.resolver import CacheResolver
-from config import WEB_HOST, WEB_PORT
+from config import WEB_HOST, WEB_PORT, MPV_SOCKET
 from core.command_bus import CommandBus
 from core.event_bus import EventBus
 from core.state import AppState, PlayerStatus
@@ -62,10 +68,10 @@ async def build_app_context() -> AppContext:
     ytdlp = YtDlpClient()
 
     sys.stderr.write("\033[90m  [3/5]\033[0m Menghubungkan ke audio player (MPV)....\n")
-    mpv = MpvController(event_bus=event_bus)
+    mpv = MpvController(socket_path=MPV_SOCKET, event_bus=event_bus)
     try:
         await mpv.connect()
-        mpv.is_available = True  # type: ignore
+        mpv.is_available = True
     except Exception as e:
         structlog.get_logger(__name__).critical(f"mpv not available: {e}")
         state.error_msg = (
@@ -73,28 +79,28 @@ async def build_app_context() -> AppContext:
             "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
         )
         state.status = PlayerStatus.ERROR
-        mpv.is_available = False  # type: ignore
+        mpv.is_available = False
 
     http_session = aiohttp.ClientSession()
 
-    resolver = CacheResolver(db, ytdlp)  # type: ignore
+    resolver = CacheResolver(db, ytdlp)
 
     sponsorblock = SponsorBlockHandler(
-        mpv, state=state, session=http_session, event_bus=event_bus  # type: ignore
+        mpv, state=state, session=http_session, event_bus=event_bus
     )
     lyrics_fetcher = LyricsFetcher(
         state, session=http_session, event_bus=event_bus
     )
 
     queue_mode = QueueMode()
-    radio_mode = RadioMode(ytdlp, state, db=db)  # type: ignore
+    radio_mode = RadioMode(ytdlp, state, db=db)
 
-    volume_service = VolumeService(event_bus, mpv, state)  # type: ignore
+    volume_service = VolumeService(event_bus, mpv, state)
     from engine.playback.controller import PlaybackDependencies
     playback_deps = PlaybackDependencies(
         bus=event_bus,
         state=state,
-        mpv=mpv,  # type: ignore
+        mpv=mpv,
         resolver=resolver,
         sponsorblock=sponsorblock,
         lyrics_fetcher=lyrics_fetcher,
@@ -104,17 +110,12 @@ async def build_app_context() -> AppContext:
     )
     playback_controller = PlaybackController(deps=playback_deps)
 
-    from engine.playback.playback_commands import PlaybackCommands
-    from engine.playback.queue_commands import QueueCommands
-    from engine.playback.radio_commands import RadioCommands
-    from engine.playback.settings_commands import SettingsCommands
-
     playback_commands = PlaybackCommands(playback_controller)
     queue_commands = QueueCommands(playback_controller)
     settings_commands = SettingsCommands(playback_controller)
     radio_commands = RadioCommands(playback_controller)
 
-    _download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)  # type: ignore
+    _download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)
     _command_router = CommandRouter(
         command_bus,
         playback_commands,
@@ -128,11 +129,11 @@ async def build_app_context() -> AppContext:
     await nowplaying.start()
 
     manager = ConnectionManager()
-    prefetch_service = StreamPrefetchService(db, ytdlp)  # type: ignore
+    prefetch_service = StreamPrefetchService(db, ytdlp)
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
 
-    app = create_app(playback_controller, ytdlp, db, manager, command_bus=command_bus, event_bus=event_bus, http_session=http_session)  # type: ignore
+    app = create_app(playback_controller, ytdlp, db, manager, command_bus=command_bus, event_bus=event_bus, http_session=http_session)
 
     host = WEB_HOST
     port = WEB_PORT
@@ -154,7 +155,9 @@ async def build_app_context() -> AppContext:
         f"  Admin  : \033[36m{url_admin}\033[0m\n"
     )
 
-    from config import ADMIN_USERNAME, IS_PASSWORD_AUTO_GENERATED
+    from config import ADMIN_USERNAME, get_admin_password
+    get_admin_password()  # force resolve/generate password now, so IS_PASSWORD_AUTO_GENERATED below is accurate
+    from config import IS_PASSWORD_AUTO_GENERATED
     if IS_PASSWORD_AUTO_GENERATED:
         sys.stderr.write(
             f"  User   : \033[33m{ADMIN_USERNAME}\033[0m\n"

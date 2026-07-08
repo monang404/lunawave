@@ -13,7 +13,7 @@ logger = structlog.get_logger(__name__)
 @register_ws_handler(WSAction.DOWNLOAD)
 async def _handle_download(data, ws, state, ytdlp, manager, db, command_bus):
     track = TrackInfo.from_dict(data) if data else None
-    await command_bus.execute(DownloadCommand(track=track))  # type: ignore
+    await command_bus.execute(DownloadCommand(track=track))
 
 @register_ws_handler(WSAction.DELETE_DOWNLOAD)
 async def _handle_delete_download(data, ws, state, ytdlp, manager, db, command_bus):
@@ -44,7 +44,7 @@ async def _handle_delete_download(data, ws, state, ytdlp, manager, db, command_b
                     "data": state.to_dict()
                 })
 
-            await manager.broadcast({
-                "type": "log",
-                "data": f"Unduhan dihapus: {db_track.title}"
+            await ws.send_json({
+                "type": "delete_download_result",
+                "data": {"status": "success", "video_id": db_track.video_id, "title": db_track.title}
             })

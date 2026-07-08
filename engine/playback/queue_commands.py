@@ -14,8 +14,10 @@ class QueueCommands:
         async with self.playback_controller._lock:
             if 0 <= cmd.index < len(self.state.queue):
                 track = self.state.queue[cmd.index]
-                for _ in range(cmd.index + 1):
-                    self.state.queue.popleft()
+                for _ in range(cmd.index):
+                    skipped = self.state.queue.pop(0)
+                    self.state.history.append(skipped)
+                self.state.queue.pop(0)
                 await self.playback_controller.play_track(track)
 
     async def on_queue_remove(self, cmd):

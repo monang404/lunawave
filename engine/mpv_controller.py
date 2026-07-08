@@ -5,7 +5,6 @@ import time
 
 import structlog
 
-from config import MPV_SOCKET
 from core.constants import MAX_VOLUME
 from core.event_bus import EventBus
 from core.events import TrackEndedEvent, TrackPauseChangedEvent, TrackProgressEvent
@@ -25,7 +24,7 @@ class MpvController:
     MED-11: Basic reconnection support via is_connected flag.
     """
 
-    def __init__(self, socket_path: str = None, tcp_port: str = None, event_bus: EventBus = None):  # type: ignore
+    def __init__(self, socket_path: str = None, tcp_port: str = None, event_bus: EventBus = None):
         if event_bus is None:
             raise RuntimeError("EventBus must be injected")
         self._reader = None
@@ -37,7 +36,7 @@ class MpvController:
         self._observer_task = None
         self.is_connected = False
         self._mpv_process = None
-        self.socket_path = socket_path or MPV_SOCKET
+        self.socket_path = socket_path
         self.tcp_port = tcp_port or os.environ.get("LUNAWAVE_MPV_PORT", "12345")
         self._bus = event_bus
 
@@ -83,7 +82,7 @@ class MpvController:
             if ytdl_arg: cmd.insert(1, ytdl_arg)
 
         try:
-            self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore
+            self._mpv_process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
@@ -104,12 +103,12 @@ class MpvController:
         for attempt in range(10):
             try:
                 if os.name == 'nt':
-                    self._reader, self._writer = await asyncio.open_connection('127.0.0.1', int(self.tcp_port))  # type: ignore
+                    self._reader, self._writer = await asyncio.open_connection('127.0.0.1', int(self.tcp_port))
                 else:
-                    self._reader, self._writer = await asyncio.open_unix_connection(self.socket_path)  # type: ignore
+                    self._reader, self._writer = await asyncio.open_unix_connection(self.socket_path)
 
                 self.is_connected = True
-                self._observer_task = safe_create_task(self._observe_events(), name="mpv_observer")  # type: ignore
+                self._observer_task = safe_create_task(self._observe_events(), name="mpv_observer")
                 if os.name != 'nt':
                     try:
                         import stat
@@ -120,7 +119,7 @@ class MpvController:
                 return
             except (ConnectionError, OSError, FileNotFoundError):
                 await asyncio.sleep(0.5)
-        raise MpvConnectionError(f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('LUNAWAVE_MPV_PORT', 'N/A')}, Unix: {MPV_SOCKET})")
+        raise MpvConnectionError(f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('LUNAWAVE_MPV_PORT', 'N/A')}, Unix: {self.socket_path})")
 
     async def play(self, url_or_path: str):
         if not self.is_connected:
@@ -196,7 +195,7 @@ class MpvController:
 
             while self.is_connected:
                 try:
-                    line = await self._reader.readline()  # type: ignore
+                    line = await self._reader.readline()
                     if not line:
                         break
                     msg = json.loads(line.decode())

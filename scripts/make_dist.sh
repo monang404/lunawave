@@ -11,4 +11,8 @@ echo "Creating distributable archive: $OUTPUT"
 # git archive respects .gitignore, so cache/*.db, data/*.db, and *.log won't be included.
 git archive HEAD -o "$OUTPUT"
 
+# S05-072: Verify integrity
+sha256sum "$OUTPUT" > "$OUTPUT.sha256"
+echo "Checksum generated: $OUTPUT.sha256"
+
 echo "Packaging complete."

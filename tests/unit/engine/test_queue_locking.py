@@ -40,7 +40,7 @@ async def test_on_queue_select_uses_lock():
 
     mock_pc = AsyncMock()
     mock_pc._lock = mock_lock
-    mock_pc.state.queue = deque([MagicMock(title="Song A"), MagicMock(title="Song B")])
+    mock_pc.state.queue = [MagicMock(title="Song A"), MagicMock(title="Song B")]
 
     cmd = MagicMock()
     cmd.index = 1
@@ -63,7 +63,7 @@ async def test_on_next_uses_lock():
     mock_pc = AsyncMock()
     mock_pc._lock = mock_lock
     mock_pc.state = MagicMock()
-    mock_pc.state.queue = deque([MagicMock(title="Next Song")])
+    mock_pc.state.queue = [MagicMock(title="Next Song")]
     mock_pc.state.repeat_mode = "off"
 
     pc_cmds = PlaybackCommands(mock_pc)

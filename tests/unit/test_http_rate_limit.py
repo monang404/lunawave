@@ -2,7 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from server.handlers.http import _stream_rate_limit, serve_stream
+from server.handlers.http import serve_stream
+from core.rate_limit import global_rate_limiter
 
 
 @pytest.mark.asyncio
@@ -14,12 +15,13 @@ async def test_rate_limit_garbage_collection():
     mock_request.headers.get.side_effect = lambda k, d="": "http://localhost:8765" if k in ("Referer", "Origin") else d
     mock_request.host = "localhost:8765"
 
-    # Fill _stream_rate_limit with 1005 stale entries
-    _stream_rate_limit.clear()
+    # Fill global_rate_limiter.clients with 1005 stale entries
+    global_rate_limiter.clients.clear()
+    global_rate_limiter.last_gc = 0
     for i in range(1005):
-        _stream_rate_limit[f"10.0.0.{i}"] = [0.0] # Very old timestamp
+        global_rate_limiter.clients[f"10.0.0.{i}"] = [0.0] # Very old timestamp
 
-    assert len(_stream_rate_limit) == 1005
+    assert len(global_rate_limiter.clients) == 1005
 
     # Act
     with patch("server.handlers.http.time.monotonic", return_value=100.0):
@@ -33,5 +35,5 @@ async def test_rate_limit_garbage_collection():
     # Assert
     # The garbage collection should have cleared the 1005 stale entries
     # and added the new client_ip
-    assert len(_stream_rate_limit) == 1
-    assert "192.168.1.200" in _stream_rate_limit
+    assert len(global_rate_limiter.clients) == 1
+    assert "192.168.1.200" in global_rate_limiter.clients

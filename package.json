@@ -25,7 +25,8 @@
     "url": "https://github.com/monang404/lunawave/issues"
   },
   "homepage": "https://github.com/monang404/lunawave#readme",
+  "dependencies": {
+    },
   "devDependencies": {
-    "esbuild": "^0.28.1"
-  }
+    }
 }

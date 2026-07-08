@@ -17,7 +17,7 @@ from server.handlers.ws.utils import error_payload
 from server.middleware import check_rate_limit
 
 logger = structlog.get_logger(__name__)
-from core.log_config import STATS as _LOG_STATS
+from core.cli_ui import STATS as _LOG_STATS
 
 
 class ConnectionManager:
@@ -50,7 +50,7 @@ class ConnectionManager:
         logger.info(f"WebSocket disconnected. Total clients: {len(self.active_connections)}", clients=len(self.active_connections))
 
     async def broadcast(self, message: dict):
-        if not self.active_connections:
+        if not self.authenticated_connections:
             return
         data = json.dumps(message, ensure_ascii=False)
         import asyncio
@@ -61,7 +61,7 @@ class ConnectionManager:
             except Exception:
                 return ws
 
-        targets = list(self.active_connections)
+        targets = list(self.authenticated_connections)
         results = await asyncio.gather(*(send(ws) for ws in targets))
 
         for dead_ws in results:
@@ -135,12 +135,15 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         await handle_logout(ws, data, manager, db)
         return
 
-    if not require_auth(manager, ws):
-        await ws.send_str(json.dumps({
-            "type": "error",
-            "data": error_payload("AUTH_REQUIRED", "Akses ditolak. Silakan login sebagai Admin.")["error"],
-        }))
-        return
+    # Check if action requires auth (admin only)
+    ADMIN_ONLY_ACTIONS = {WSAction.SET_OUTPUT, WSAction.SET_SPONSORBLOCK, WSAction.DELETE_DOWNLOAD, WSAction.STOP, WSAction.SETTINGS_UPDATE}
+    if action in ADMIN_ONLY_ACTIONS:
+        if not require_auth(manager, ws):
+            await ws.send_str(json.dumps({
+                "type": "error",
+                "data": error_payload("AUTH_REQUIRED", "Akses ditolak. Silakan login sebagai Admin.")["error"],
+            }))
+            return
 
     if not await check_rate_limit(manager, client_ip, now):
         await ws.send_str(json.dumps({

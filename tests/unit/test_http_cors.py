@@ -2,7 +2,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from server.handlers.http import _stream_rate_limit, serve_stream
+from server.handlers.http import serve_stream
+from core.rate_limit import global_rate_limiter
 
 
 @pytest.mark.asyncio
@@ -20,7 +21,7 @@ async def test_stream_cors_no_wildcard():
     mock_request.app = {"db": AsyncMock()}
     mock_request.app["db"].verify_session = AsyncMock(return_value=True)
 
-    _stream_rate_limit.clear()
+    global_rate_limiter.clients.clear()
 
     with patch("server.handlers.http.CACHE_DIR") as mock_cache_dir:
         mock_cache_file = MagicMock()

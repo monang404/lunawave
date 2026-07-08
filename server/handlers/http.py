@@ -1,6 +1,8 @@
+import aiohttp
 
 import asyncio
 import collections
+from core.rate_limit import global_rate_limiter
 import time
 from pathlib import Path
 
@@ -13,10 +15,7 @@ from core.value_objects import VideoId
 from server.handlers.ws.utils import error_payload
 
 logger = structlog.get_logger(__name__)
-STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
-_stream_rate_limit = collections.defaultdict(list)  # type: ignore
-STREAM_RATE_LIMIT_MAX = 20
 
 async def serve_index(request):
     resp = web.FileResponse(STATIC_DIR / "index.html")
@@ -32,14 +31,15 @@ async def health_check(request):
     db_status = "disconnected"
     try:
         if db.conn:
-            async with db.conn.execute("SELECT 1") as cursor:
-                if await cursor.fetchone():
-                    db_status = "connected"
+            async with db.pool.acquire() as conn:
+                async with conn.execute("SELECT 1") as cursor:
+                    if await cursor.fetchone():
+                        db_status = "connected"
     except Exception:
         pass
 
     status_val = "ok" if db_status == "connected" else "degraded"
-    status_code = 200 if status_val == "ok" else 503
+    status_code = 200 if status_val == "ok" and mpv_status not in ("not_started", "disconnected", "error") else 503
     return web.json_response({
         "status": status_val,
         "db": db_status,
@@ -47,19 +47,7 @@ async def health_check(request):
     }, status=status_code)
 
 def _enforce_rate_limit(client_ip):
-    now = time.monotonic()
-
-    stale_ips = [ip for ip, hist in _stream_rate_limit.items() if not any(now - t < 60 for t in hist)]
-    for ip in stale_ips:
-        _stream_rate_limit.pop(ip, None)
-
-    history = _stream_rate_limit[client_ip]
-    history = [t for t in history if now - t < 60]
-    if len(history) >= STREAM_RATE_LIMIT_MAX:
-        return False
-    history.append(now)
-    _stream_rate_limit[client_ip] = history
-    return True
+    return global_rate_limiter.is_allowed(client_ip)
 
 def _validate_origin(request):
     referer = request.headers.get("Referer", "")
@@ -120,7 +108,7 @@ async def _proxy_stream(request, video_id, cors_origin, stream_url):
                 return web.json_response(error_payload("HTTP_ERROR", "Stream tidak tersedia saat ini"), status=503)
         try:
             _validate_stream_url(stream_url)
-            return web.HTTPFound(stream_url)
+            return web.HTTPTemporaryRedirect(stream_url)
         except Exception as e:
             logger.error(f"URL stream tidak valid untuk redirect: {stream_url} - {e}")
             return web.json_response(error_payload("HTTP_ERROR", "URL stream tidak valid"), status=403)
@@ -149,7 +137,7 @@ async def _proxy_stream(request, video_id, cors_origin, stream_url):
             if "Range" in request.headers:
                 headers["Range"] = request.headers["Range"]
 
-            async with http_session.get(stream_url, headers=headers) as upstream:
+            async with http_session.get(stream_url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as upstream:
                 if upstream.status in (403, 410) and attempt == 0:
                     logger.warning(f"YouTube stream URL expired ({upstream.status}), refetching...")
                     stream_url = None
@@ -161,7 +149,7 @@ async def _proxy_stream(request, video_id, cors_origin, stream_url):
                         "Content-Type": upstream.headers.get("Content-Type", "audio/mpeg"),
                         "Accept-Ranges": "bytes",
                         "Access-Control-Allow-Origin": cors_origin,
-                        "Cache-Control": "private, max-age=3600",
+                        "Cache-Control": upstream.headers.get("Cache-Control", "no-cache"),
                     }
                 )
 

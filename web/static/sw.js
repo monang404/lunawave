@@ -42,7 +42,7 @@ self.addEventListener('fetch', (event) => {
 
     if (event.request.method === 'GET') {
         event.respondWith(
-            caches.match(event.request).then(cached => {
+            caches.match(event.request, {ignoreSearch: true}).then(cached => {
                 if (cached) return cached;
                 return fetch(event.request).then(response => {
                     if (response.ok) {

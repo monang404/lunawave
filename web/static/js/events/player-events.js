@@ -11,11 +11,7 @@ function initPlayerEvents() {
         if (store.userRole === "admin") {
             // PATCH-AUDIO-UNLOCK-RACE-01: simpan intent SEBELUM store.status di-flip, supaya
             const wantsPlay = store.status !== "PLAYING";
-            store.status = wantsPlay ? "PLAYING" : "PAUSED";
-            window.lastToggleTime = Date.now();
-            renderPlayBtn();
-            renderNowPlaying();
-            renderQueue();
+            // Optimistic store.status set removed per S05-053
             if (store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
                 unlockBrowserAudio(wantsPlay);
                 syncBrowserAudio(wantsPlay);
@@ -275,7 +271,7 @@ function initPlayerEvents() {
         dom.actionDelete.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
             if (window.pendingTrack) {
-                wsSend(WS_ACTIONS.DELETE_DOWNLOAD, window.pendingTrack);
+                if (confirm("Hapus unduhan lagu ini dari sistem?")) { wsSend(WS_ACTIONS.DELETE_DOWNLOAD, window.pendingTrack); }
             }
             hideActionModal();
         });

@@ -121,9 +121,7 @@ function startVisualizerLoop() {
     }
 }
 
-function resumeVisualizerLoop() {
-    if (!_vizRafId && analyser) startVisualizerLoop();
-}
+
 
 // PATCH-ANDROID-AUDIO-01
 window.audioBlocked = false;

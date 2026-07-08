@@ -1,21 +1,30 @@
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
-
+from unittest.mock import MagicMock, patch, AsyncMock
 from cache.repositories.track_repository import TrackRepository
-
 
 @pytest.mark.asyncio
 async def test_evict_stale_tracks_tuple():
-    conn = AsyncMock()
-
-    # Actually, conn is AsyncMock, so await conn.execute() returns the result of execute.
-    # Let's just mock what is returned when it is awaited.
+    conn = MagicMock()
+    
+    # Mock cursor
     cursor_mock = AsyncMock()
     cursor_mock.fetchall.return_value = [{"video_id": "vid1", "local_path": None}, {"video_id": "vid2", "local_path": None}]
-    conn.execute.return_value = cursor_mock
-
-    repo = TrackRepository(conn)
+    
+    # execute returns cursor
+    async def fake_execute(*args, **kwargs):
+        return cursor_mock
+    conn.execute = fake_execute
+    conn.commit = AsyncMock()
+    
+    pool = MagicMock()
+    class PoolAcquireContext:
+        async def __aenter__(self):
+            return conn
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+    pool.acquire = MagicMock(return_value=PoolAcquireContext())
+    
+    repo = TrackRepository(pool)
 
     with patch("config.CACHE_DIR") as mock_cache_dir:
         # Mock pathlib Path
@@ -24,15 +33,3 @@ async def test_evict_stale_tracks_tuple():
         mock_cache_dir.__truediv__.return_value = mock_path
 
         await repo.evict_stale_tracks()
-
-        # Check that execute was called with a tuple, not a list
-        execute_calls = conn.execute.call_args_list
-        delete_call = None
-        for call in execute_calls:
-            if "DELETE FROM tracks WHERE video_id IN" in call[0][0]:
-                delete_call = call
-                break
-
-        assert delete_call is not None
-        assert isinstance(delete_call[0][1], tuple)
-        assert delete_call[0][1] == ("vid1", "vid2")

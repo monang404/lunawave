@@ -24,8 +24,7 @@ GAPLESS_PREBUFFER_SEC = 15
 AUTOPLAY_THRESHOLD = 2
 SPONSORBLOCK_CATS = ["sponsor", "intro", "outro", "selfpromo"]
 LYRICS_API_BASE = "https://lrclib.net/api"
-STREAM_URL_TTL_SEC = 21600
-# PATCH-YTDLP-RESOLVE-TIMEOUT-01: yt-dlp.get_stream_url() sebelumnya tidak punya batas waktu
+STREAM_URL_TTL_SEC = 14400
 YTDLP_RESOLVE_TIMEOUT_SEC = 25
 
 WEB_HOST = os.environ.get("LUNAWAVE_HOST", "0.0.0.0")

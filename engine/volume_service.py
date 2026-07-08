@@ -40,7 +40,7 @@ class VolumeService:
             await self._apply_volume(vol)
 
     async def _apply_volume(self, new_vol: int):
-        self.state.volume = new_vol  # type: ignore
+        self.state.volume = new_vol
         if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
             await self.mpv.set_volume(0)
         else:
