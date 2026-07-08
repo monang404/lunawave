@@ -281,7 +281,7 @@ class ServerManagerController:
 
     def _wait_for_server_ready(self, port: int):
         self.view.write_log("Waiting for server to bind and listen...", "dim")
-                start_time = time.time()
+        start_time = time.time()
         success = False
         while time.time() - start_time < 120:
             if not self.pm.is_running():
