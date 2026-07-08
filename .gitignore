@@ -70,3 +70,20 @@ logs/
 # Development / Temporary
 scratch/
 .backup_patchlog/
+
+# Sensitive runtime files
+data/admin_password.txt
+data/admin_initial_password.txt
+data/state.json
+
+# Test output
+pytest_output.txt
+
+# Folder scratch dan temp
+file_aneh/
+
+# Data archive lama
+data/archive/
+
+# Cache internal
+cache/pb_html.txt
