@@ -14,6 +14,23 @@ __version__ = _get_version()
 import asyncio
 import stat
 
+
+# Load .env file into environment before anything else (stdlib only, no python-dotenv needed)
+import os as _os
+from pathlib import Path as _Path
+
+_env_file = _Path(__file__).parent / ".env"
+if _env_file.exists():
+    with open(_env_file, encoding="utf-8") as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _key, _, _val = _line.partition("=")
+                _key = _key.strip()
+                _val = _val.strip().strip('"').strip("'")
+                if _key and _key not in _os.environ:   # env var sistem tetap menang
+                    _os.environ[_key] = _val
+
 from config import BASE_DIR
 from core.log_config import setup_logging
 
