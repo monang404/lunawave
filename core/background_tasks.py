@@ -26,19 +26,19 @@ async def _connectivity_checker(state, http_session):
 
 async def _db_cleanup(db):
     while True:
-        await asyncio.sleep(86400)
         try:
-            from config import DB_PATH
+            from config import DB_PATH, BASE_DIR
             try:
                 if DB_PATH.exists():
                     import datetime
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    backup_path = Path(str(DB_PATH) + f".{timestamp}.bak")
+                    backup_dir = BASE_DIR / "backups"
+                    backup_dir.mkdir(parents=True, exist_ok=True)
+                    backup_path = backup_dir / f"lunawave.db.{timestamp}.bak"
                     await db.backup(backup_path)
                     structlog.get_logger(__name__).info(f"Database backed up to {backup_path.name}")
                     
                     # S05-076: Rotasi 7 hari
-                    backup_dir = DB_PATH.parent
                     backups = sorted(backup_dir.glob("lunawave.db.*.bak"))
                     if len(backups) > 7:
                         for old_backup in backups[:-7]:
@@ -51,6 +51,7 @@ async def _db_cleanup(db):
             await db.cleanup_sessions()
         except Exception as e:
             structlog.get_logger(__name__).error(f"DB cleanup failed: {e}")
+        await asyncio.sleep(86400)
 
 def start_background_tasks(ctx: AppContext) -> list:
     connectivity_task = safe_create_task(
