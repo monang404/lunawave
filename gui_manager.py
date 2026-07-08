@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Constants from start.py
 BASE_DIR   = Path(__file__).parent
-SERVER_PORT = int(os.environ.get("LunaWave_PORT", 8765))
+SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", 8765))
 PYTHON     = sys.executable
 
 BG         = "#0E0E12"
@@ -256,8 +256,8 @@ class ServerManagerController:
 
         self.view.write_log(f"Starting server on port {port}...", "accent")
         env = os.environ.copy()
-        env["LunaWave_HOST"] = "0.0.0.0"
-        env["LunaWave_PORT"] = str(port)
+        env["LUNAWAVE_HOST"] = "0.0.0.0"
+        env["LUNAWAVE_PORT"] = str(port)
         env["PYTHONUTF8"] = "1"
         env["PYTHONIOENCODING"] = "utf-8"
         env["PYTHONUNBUFFERED"] = "1"

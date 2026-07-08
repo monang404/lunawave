@@ -24,7 +24,7 @@ import webbrowser
 from pathlib import Path
 
 BASE_DIR   = Path(__file__).parent
-SERVER_PORT = int(os.environ.get("LunaWave_PORT", 8765))
+SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", 8765))
 PYTHON     = sys.executable
 
 BG         = "#0E0E12"
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--headless":
         print("Running in headless mode...")
         manager = ServerProcessManager(BASE_DIR, PYTHON)
-        port = int(os.environ.get("LunaWave_PORT", 8765))
+        port = int(os.environ.get("LUNAWAVE_PORT", 8765))
         manager.start(port)
         try:
             while True:
@@ -195,7 +195,7 @@ if __name__ == "__main__":
             print(f"Failed to start GUI: {e}")
             print("Running in headless mode as fallback...")
             manager = ServerProcessManager(BASE_DIR, PYTHON)
-            port = int(os.environ.get("LunaWave_PORT", 8765))
+            port = int(os.environ.get("LUNAWAVE_PORT", 8765))
             manager.start(port)
             try:
                 while True:
