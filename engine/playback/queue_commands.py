@@ -1,4 +1,5 @@
 import structlog
+
 from core.events import LogMessageEvent, QueueUpdatedEvent
 
 logger = structlog.get_logger(__name__)

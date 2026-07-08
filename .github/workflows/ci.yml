@@ -38,7 +38,10 @@ jobs:
       run: pip-audit -r requirements.txt
       
     - name: Run tests with coverage
-      run: pytest tests/ -v --cov=. --cov-report=term-missing --cov-fail-under=40
+      run: pytest tests/ -v --cov=. --cov-report=term-missing --cov-fail-under=75
+
+    - name: Run Frontend JS structure tests (S02-056)
+      run: pytest tests/unit/web/ -v --tb=short
 
   test-windows:
     runs-on: windows-latest

@@ -480,6 +480,26 @@
   position: relative;
 }
 
+/* S02-043: CSS classes for skeleton loading pills */
+.skeleton-pill-sm {
+  width: 60px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+.skeleton-pill-md {
+  width: 80px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+.skeleton-pill-lg {
+  width: 100px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+
 /* Fallback for broken thumbnails */
 img.lazy-cover {
   position: relative;

@@ -24,6 +24,7 @@ include = ["core*", "server*", "engine*", "plugins*", "cache*"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+exclude = ["scratch_*.py", "insert_missing.py", "append_script*.py", "cleanup_summary.py", "generate_sp.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
@@ -37,19 +38,20 @@ select = ["E", "F", "W", "I"]
 # E741: ambiguous variable name
 # E701, E702: multiple statements on one line
 # I001: isort (import sorting)
-ignore = ["E501", "E722", "E731", "E402", "F841", "E712", "E741", "E701", "E702", "I001"]
+ignore = ["E501", "E731", "E402", "E712", "E741", "E701", "E702"]
 
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
 follow_imports = "skip"
-check_untyped_defs = false
+check_untyped_defs = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 exclude = [
     "^scratch/",
     "^venv/",
-    "^\\.venv/"
+    "^\\.venv/",
+    "^tests/"
 ]
 
 [tool.bandit]
@@ -62,3 +64,6 @@ skips = ["B101", "B104", "B108"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ["start.py"]

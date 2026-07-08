@@ -1,9 +1,13 @@
 const _hashtagColors = {};
 function getHashtagColor(hashtag) {
     if (_hashtagColors[hashtag]) return _hashtagColors[hashtag];
-    const hue = Math.floor(Math.random() * 360);
-    const saturation = 60 + Math.floor(Math.random() * 30);
-    const lightness = 50 + Math.floor(Math.random() * 20);
+    let hash = 0;
+    for (let i = 0; i < hashtag.length; i++) {
+        hash = hashtag.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    const saturation = 60 + (Math.abs(hash >> 8) % 30);
+    const lightness = 50 + (Math.abs(hash >> 16) % 20);
     const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     _hashtagColors[hashtag] = color;
     return color;
@@ -123,7 +127,6 @@ function renderDiscoverTab() {
                 }
                 
                 el.dataset.vid = track.video_id || '';
-                el.dataset.trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
                 
                 const thumbDiv = el.querySelector('.sr-thumb');
                 if (track.local_path && !thumbDiv.querySelector('.disc-tag')) {
@@ -189,7 +192,6 @@ function renderDiscoverTab() {
                 }
                 
                 el.dataset.vid = track.video_id || '';
-                el.dataset.trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
                 
                 const img = el.querySelector('.lazy-cover');
                 if (img.dataset.vid !== track.video_id) {
@@ -392,13 +394,11 @@ function renderRecentRow() {
             
             div.querySelector('.home-recent-more').addEventListener('click', (e) => {
                 e.stopPropagation();
-                try {
-                    const trackStr = div.dataset.track;
-                    if (trackStr) {
-                        const track = JSON.parse(trackStr);
-                        window.showActionModal(track);
-                    }
-                } catch(_) {}
+                if (store.userRole !== 'admin') return;
+                const vid = div.dataset.vid;
+                if (!vid) return;
+                const track = (store.discover_recent || []).find(t => t.video_id === vid);
+                if (track) window.showActionModal(track);
             });
             
             return div;
@@ -409,7 +409,6 @@ function renderRecentRow() {
             const isCurrent = track.video_id && track.video_id === currentId;
             
             el.dataset.vid = track.video_id || '';
-            el.dataset.track = JSON.stringify(track);
             
             if (isCurrent) el.classList.add('current');
             else el.classList.remove('current');

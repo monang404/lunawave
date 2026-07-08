@@ -1,26 +1,37 @@
 import json
 import re
+
 from core.ws_actions import WSAction
 from server.handlers.ws.registry import register_ws_handler
 from server.services.discover_service import DiscoverService
 
 VIDEO_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
+import asyncio
+
 from core.constants import (
-    DISCOVER_RECENT_LIMIT,
-    DISCOVER_FAVORITES_LIMIT,
     DISCOVER_CACHED_LIMIT,
+    DISCOVER_FAVORITES_LIMIT,
     DISCOVER_FEATURED_ARTISTS_LIMIT,
-    DISCOVER_FEATURED_GENRES_LIMIT
+    DISCOVER_FEATURED_GENRES_LIMIT,
+    DISCOVER_RECENT_LIMIT,
 )
 
+_discover_service_instance = None
+
 async def _build_discover_payload(db):
-    ds = DiscoverService(db)
-    recent = await ds.get_recent(DISCOVER_RECENT_LIMIT)
-    favorites = await ds.get_favorites(DISCOVER_FAVORITES_LIMIT)
-    cached = await ds.get_cached(DISCOVER_CACHED_LIMIT)
-    featured_artists = await ds.get_featured_artists(DISCOVER_FEATURED_ARTISTS_LIMIT)
-    featured_genres = await ds.get_featured_genres(DISCOVER_FEATURED_GENRES_LIMIT)
+    global _discover_service_instance
+    if _discover_service_instance is None:
+        _discover_service_instance = DiscoverService(db)
+    ds = _discover_service_instance
+
+    recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
+        ds.get_recent(DISCOVER_RECENT_LIMIT),
+        ds.get_favorites(DISCOVER_FAVORITES_LIMIT),
+        ds.get_cached(DISCOVER_CACHED_LIMIT),
+        ds.get_featured_artists(DISCOVER_FEATURED_ARTISTS_LIMIT),
+        ds.get_featured_genres(DISCOVER_FEATURED_GENRES_LIMIT)
+    )
     return {
         "type": "discover_data",
         "data": {

@@ -10,6 +10,8 @@ services:
       # Mount cache and db for persistence
       - ./data:/app/data
       - ./cache:/app/cache
+      # Mount logs so they persist across container restarts (S02-049)
+      - ./logs:/app/logs
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1

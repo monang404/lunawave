@@ -285,28 +285,54 @@ function initPlayerEvents() {
         const moreBtn = e.target.closest(".sr-more-btn");
         if (moreBtn) {
             const item = moreBtn.closest(".sr-item");
-            if (item) {
-                const trackStr = item.dataset.trackStr || item.dataset.searchTrackStr;
-                if (trackStr) {
-                    try {
-                        const track = JSON.parse(trackStr);
-                        showActionModal(track);
-                    } catch (err) { console.error(err); }
+            if (item && item.dataset.vid) {
+                const vid = item.dataset.vid;
+                let track = null;
+                const lists = [
+                    store.discover_recent || [],
+                    store.discover_favorites || [],
+                    store.discover_cached || [],
+                    store.queue || []
+                ];
+                for (const list of lists) {
+                    track = list.find(t => t.video_id === vid);
+                    if (track) break;
                 }
+                if (track && typeof showActionModal === "function") {
+                    showActionModal(track);
+                }
+            } else if (item && item.dataset.searchTrackStr) {
+                try {
+                    const track = JSON.parse(item.dataset.searchTrackStr);
+                    showActionModal(track);
+                } catch (err) { console.error(err); }
             }
             return;
         }
 
         const srItem = e.target.closest(".sr-item");
         if (srItem) {
-            const trackStr = srItem.dataset.trackStr || srItem.dataset.searchTrackStr;
-            if (trackStr) {
-                try {
-                    const track = JSON.parse(trackStr);
-                    if (store.userRole === "admin") {
-                        wsSend(WS_ACTIONS.PLAY_TRACK, track);
+            if (store.userRole === "admin") {
+                if (srItem.dataset.vid) {
+                    const vid = srItem.dataset.vid;
+                    let track = null;
+                    const lists = [
+                        store.discover_recent || [],
+                        store.discover_favorites || [],
+                        store.discover_cached || [],
+                        store.queue || []
+                    ];
+                    for (const list of lists) {
+                        track = list.find(t => t.video_id === vid);
+                        if (track) break;
                     }
-                } catch (err) { console.error(err); }
+                    if (track) wsSend(WS_ACTIONS.PLAY_TRACK, track);
+                } else if (srItem.dataset.searchTrackStr) {
+                    try {
+                        const track = JSON.parse(srItem.dataset.searchTrackStr);
+                        wsSend(WS_ACTIONS.PLAY_TRACK, track);
+                    } catch (err) { console.error(err); }
+                }
             }
             return;
         }

@@ -84,19 +84,16 @@ class TestTask13MetricsProtection:
     async def test_metrics_rejects_external_ip(self, aiohttp_client, mock_room_manager, mock_ytdlp, mock_db):
         from server.app import create_app
         app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
-        from unittest.mock import AsyncMock
+        from unittest.mock import AsyncMock, PropertyMock
         app["command_bus"] = AsyncMock()
         app["event_bus"] = AsyncMock()
-        await aiohttp_client(app)
+        client = await aiohttp_client(app)
 
-        with patch("server.handlers.http.get_metrics_content"):
-            with patch("aiohttp.web.BaseRequest.remote", new_callable=pytest.MonkeyPatch):
-                # Karena tidak mudah patch readonly property, kita patch dictionary
-                pass
-
-            # Mari gunakan patch untuk _localhost_ips yang digunakan di dalam fungsi
-            # Namun karena itu didefinisikan lokal di dalam fungsi, kita tidak bisa patch.
-            pass
+        with patch("server.handlers.http.get_metrics_content") as mock_get_content:
+            with patch("aiohttp.web.BaseRequest.remote", new_callable=PropertyMock) as mock_remote:
+                mock_remote.return_value = "192.168.1.100"
+                resp = await client.get("/metrics")
+                assert resp.status == 403
 
     @pytest.mark.asyncio
     async def test_metrics_accepts_localhost(self, aiohttp_client, mock_room_manager, mock_ytdlp, mock_db):
@@ -124,13 +121,15 @@ class TestTask13MetricsProtection:
 
             with patch.dict(os.environ, {"LUNAWAVE_METRICS_TOKEN": "secret"}):
                 app = create_app(mock_room_manager, mock_ytdlp, mock_db, mock_room_manager)
-                from unittest.mock import AsyncMock
+                from unittest.mock import AsyncMock, PropertyMock
                 app["command_bus"] = AsyncMock()
                 app["event_bus"] = AsyncMock()
                 client = await aiohttp_client(app)
 
-                resp = await client.get("/metrics", headers={"X-Metrics-Token": "secret"})
-                assert resp.status == 200
+                with patch("aiohttp.web.BaseRequest.remote", new_callable=PropertyMock) as mock_remote:
+                    mock_remote.return_value = "192.168.1.100"
+                    resp = await client.get("/metrics", headers={"Authorization": "Bearer secret"})
+                    assert resp.status == 200
 
 # TASK-1.5 — Penghapusan unauthenticated next bypass
 

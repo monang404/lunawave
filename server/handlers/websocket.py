@@ -8,13 +8,13 @@ from aiohttp import web
 
 from config import TRUSTED_PROXY
 from core.observability import ACTIVE_WEBSOCKETS
-from server.handlers.auth import handle_auth, require_auth, handle_logout
-from server.middleware import check_rate_limit
-from server.handlers.ws.utils import error_payload
+from core.ws_actions import WSAction
+from server.handlers.auth import handle_auth, handle_logout, require_auth
 
 # Import the WS handlers registry
 from server.handlers.ws import _ws_handlers
-from core.ws_actions import WSAction
+from server.handlers.ws.utils import error_payload
+from server.middleware import check_rate_limit
 
 logger = structlog.get_logger(__name__)
 from core.log_config import STATS as _LOG_STATS
@@ -22,7 +22,7 @@ from core.log_config import STATS as _LOG_STATS
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections = []
+        self.active_connections = set()
         self.authenticated_connections = set()
         self.session_tokens = {}
         self.login_attempts = {}
@@ -30,15 +30,19 @@ class ConnectionManager:
         self.rl_lock = asyncio.Lock()
 
     async def connect(self, ws):
-        self.active_connections.append(ws)
+        if len(self.active_connections) >= 1000:
+            logger.warning("Max WebSocket connections reached, rejecting.")
+            return False
+        self.active_connections.add(ws)
         ACTIVE_WEBSOCKETS.inc()
         _LOG_STATS.clients = len(self.active_connections)
         _LOG_STATS.is_playing = True if _LOG_STATS.current_track != "—" else _LOG_STATS.is_playing
         logger.info(f"WebSocket connected. Total clients: {len(self.active_connections)}", clients=len(self.active_connections))
+        return True
 
     def disconnect(self, ws):
         if ws in self.active_connections:
-            self.active_connections.remove(ws)
+            self.active_connections.discard(ws)
             ACTIVE_WEBSOCKETS.dec()
         if ws in self.authenticated_connections:
             self.authenticated_connections.remove(ws)
@@ -74,7 +78,9 @@ async def ws_handler(request):
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    await manager.connect(ws)
+    if not await manager.connect(ws):
+        await ws.close(code=1013, message=b"Server Too Busy")
+        return ws
 
     try:
         await ws.send_str(json.dumps({

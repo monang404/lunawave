@@ -138,7 +138,7 @@ class ServerProcessManager:
         else:
             kwargs["preexec_fn"] = os.setsid
 
-        self.process = subprocess.Popen(
+        self.process = subprocess.Popen(  # type: ignore
             [self.python_exec, "main.py"],
             cwd=str(self.base_dir),
             env=env,
@@ -153,7 +153,7 @@ class ServerProcessManager:
         if on_log_cb:
             def _pipe():
                 try:
-                    for line in self.process.stdout:
+                    for line in self.process.stdout:  # type: ignore
                         line = line.rstrip()
                         if not line:
                             continue
@@ -166,10 +166,10 @@ class ServerProcessManager:
 
     def wait_stop(self):
         try:
-            self.process.wait(timeout=6)
+            self.process.wait(timeout=6)  # type: ignore
         except subprocess.TimeoutExpired:
             try:
-                self.process.kill()
+                self.process.kill()  # type: ignore
             except Exception:
                 pass
 
@@ -208,7 +208,7 @@ class ServerReadyDialog(tk.Toplevel):
             btn_frame, text="🔑 Buka Halaman Login", bg=ACCENT, fg=BG,
             font=("Segoe UI", 10, "bold"), relief="flat", bd=0,
             cursor="hand2", padx=14, pady=6,
-            command=lambda: [webbrowser.open(f"http://localhost:{port}/admin"), self.destroy()]
+            command=lambda: [webbrowser.open(f"http://localhost:{port}/admin"), self.destroy()]  # type: ignore
         )
         btn_login.pack(side="left", padx=5)
 
@@ -353,7 +353,7 @@ class ServerManagerController:
         if running:
             status = "RUNNING"
             color = GREEN
-            self.view.update_running_state(port, self.pm.process.pid, status, color)
+            self.view.update_running_state(port, self.pm.process.pid, status, color)  # type: ignore
         else:
             in_use = False
             conflict_pid = None
@@ -419,7 +419,7 @@ class ServerManagerController:
                 self._last_stdout_line = line
                 self.view.write_log(line, tag)
             self.pm.start(port, env, on_log_cb=on_log)
-            self.view.write_log(f"Server process created — PID {self.pm.process.pid}", "ok")
+            self.view.write_log(f"Server process created — PID {self.pm.process.pid}", "ok")  # type: ignore
             threading.Thread(target=self._wait_for_server_ready, args=(port,), daemon=True).start()
         except Exception as e:
             self.view.write_log(f"Failed to start: {e}", "err")
@@ -453,7 +453,7 @@ class ServerManagerController:
             return
         self.view.write_log("Stopping server...", "accent")
         try:
-            self.pm.kill_process_tree(self.pm.process.pid)
+            self.pm.kill_process_tree(self.pm.process.pid)  # type: ignore
             threading.Thread(target=self.pm.wait_stop, daemon=True).start()
         except Exception as e:
             self.view.write_log(f"Error terminating: {e}", "err")
@@ -463,7 +463,7 @@ class ServerManagerController:
         def _do():
             if self.pm.is_running():
                 try:
-                    self.pm.kill_process_tree(self.pm.process.pid)
+                    self.pm.kill_process_tree(self.pm.process.pid)  # type: ignore
                     self.pm.wait_stop()
                 except Exception:
                     pass
@@ -531,7 +531,7 @@ class ServerManagerController:
     def on_destroy(self):
         if self.pm.is_running():
             try:
-                self.pm.kill_process_tree(self.pm.process.pid)
+                self.pm.kill_process_tree(self.pm.process.pid)  # type: ignore
             except Exception:
                 pass
 

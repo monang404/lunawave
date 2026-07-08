@@ -70,11 +70,23 @@ const wsClient = (function() {
         }
     }
 
+    function closeConnection() {
+        if (wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
+        }
+        if (ws) {
+            ws.onclose = null;
+            ws.onerror = null;
+            ws.close();
+        }
+    }
+
     function getReadyState() {
         return ws ? ws.readyState : (typeof WebSocket !== 'undefined' ? WebSocket.CLOSED : 3);
     }
 
-    return { connect, send, getReadyState };
+    return { connect, send, getReadyState, close: closeConnection };
 })();
 
 function wsConnect() {
@@ -165,7 +177,12 @@ function handleServerMessage(msg) {
                 }
             }
             if (store.lyrics_lines && store.lyrics_lines.length > 0) {
-                requestAnimationFrame(() => syncLocalLyrics());
+                if (!window._syncLyricsRaf) {
+                    window._syncLyricsRaf = requestAnimationFrame(() => {
+                        syncLocalLyrics();
+                        window._syncLyricsRaf = null;
+                    });
+                }
             }
             break;
         case "lyrics":

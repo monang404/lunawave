@@ -43,7 +43,7 @@ async def _check_rate_limit(ws, client_ip, manager, now) -> list:
             "type": "auth_status",
             "data": {"success": False, "message": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}
         }))
-        return None
+        return None  # type: ignore
     return attempts
 
 async def _process_credentials(ws, data, manager, client_ip, db, now, attempts):
@@ -75,7 +75,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
     if delay > 0:
         import asyncio
         await asyncio.sleep(delay)
-        
+
     async with manager.rl_lock:
         import time
         now = time.monotonic()
@@ -88,7 +88,10 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         if attempts is None:
             return
 
-        await _process_credentials(ws, data, manager, client_ip, db, now, attempts)
+    # _process_credentials dipanggil di LUAR rl_lock agar operasi I/O
+    # (db.create_session) tidak menahan request login client lain (S02-008 fix lengkap)
+    await _process_credentials(ws, data, manager, client_ip, db, now, attempts)
+
 
 def require_auth(manager, ws) -> bool:
     return ws in manager.authenticated_connections

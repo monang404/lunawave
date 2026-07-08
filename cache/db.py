@@ -29,13 +29,13 @@ class Database:
         """Initializes the database using the schema.sql file."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = await aiosqlite.connect(self.db_path)
-        self._conn.row_factory = aiosqlite.Row
-        await self._conn.execute("PRAGMA journal_mode=WAL")
-        await self._conn.execute("PRAGMA foreign_keys=ON")
+        self._conn.row_factory = aiosqlite.Row  # type: ignore
+        await self._conn.execute("PRAGMA journal_mode=WAL")  # type: ignore
+        await self._conn.execute("PRAGMA foreign_keys=ON")  # type: ignore
 
         with open(self._schema_path, "r", encoding="utf-8") as f:
             schema_sql = f.read()
-        await self._conn.executescript(schema_sql)
+        await self._conn.executescript(schema_sql)  # type: ignore
 
         async def add_column_if_not_exists(table, column, definition):
             assert self._conn is not None
@@ -48,18 +48,18 @@ class Database:
         await add_column_if_not_exists("artists", "click_count", "INTEGER DEFAULT 0")
         await add_column_if_not_exists("genres", "click_count", "INTEGER DEFAULT 0")
 
-        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")
-        await self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama)")
-        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_is_favorite ON tracks(is_favorite) WHERE is_favorite = 1")
-        await self._conn.commit()
+        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")  # type: ignore
+        await self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_nama_unique ON artists(nama)")  # type: ignore
+        await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_is_favorite ON tracks(is_favorite) WHERE is_favorite = 1")  # type: ignore
+        await self._conn.commit()  # type: ignore
 
-        from cache.repositories.track_repository import TrackRepository
         from cache.repositories.auth_repository import AuthRepository
         from cache.repositories.discover_repository import DiscoverRepository
+        from cache.repositories.track_repository import TrackRepository
 
-        self.tracks = TrackRepository(self._conn)
-        self.sessions = AuthRepository(self._conn)
-        self.discover = DiscoverRepository(self._conn)
+        self.tracks = TrackRepository(self._conn)  # type: ignore
+        self.sessions = AuthRepository(self._conn)  # type: ignore
+        self.discover = DiscoverRepository(self._conn)  # type: ignore
 
         await self._seed_initial_data()
 
@@ -82,45 +82,74 @@ class Database:
                 return
 
         import json
+        import sqlite3
         import sys
         logger.info("Auto-seeding database from JSON, this may take a moment...")
         sys.stderr.write("\033[90m  [+] \033[0mMengekspor data ke SQLite untuk pertama kali...\n")
 
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
 
-        for artist in data.get('artists', []):
-            artist_id = artist['id']
-            await self._conn.execute('''
+            artists_data = []
+            genres_data = set()
+            artist_genres_data = []
+            songs_data = []
+
+            for artist in data.get('artists', []):
+                artist_id = artist['id']
+                artists_data.append((artist_id, artist['nama'], artist['kategori'], artist['tahun_aktif']))
+
+                for genre_name in artist.get('genre', []):
+                    genres_data.add((genre_name,))
+
+                for lagu in artist.get('lagu_populer', []):
+                    youtube_id = lagu.get('youtube_id')
+                    if youtube_id:
+                        duration = lagu.get('durasi_detik', 0)
+                        songs_data.append((artist_id, lagu['judul'], youtube_id, duration))
+
+            await self._conn.executemany('''
                 INSERT OR REPLACE INTO artists (id, nama, kategori, tahun_aktif)
                 VALUES (?, ?, ?, ?)
-            ''', (artist_id, artist['nama'], artist['kategori'], artist['tahun_aktif']))
+            ''', artists_data)
 
-            for genre_name in artist.get('genre', []):
-                await self._conn.execute('''
-                    INSERT OR IGNORE INTO genres (nama_genre)
-                    VALUES (?)
-                ''', (genre_name,))
+            await self._conn.executemany('''
+                INSERT OR IGNORE INTO genres (nama_genre)
+                VALUES (?)
+            ''', list(genres_data))
 
-                async with self._conn.execute('SELECT id FROM genres WHERE nama_genre = ?', (genre_name,)) as c:
-                    genre_id = (await c.fetchone())[0]
+            genre_map = {}
+            async with self._conn.execute('SELECT id, nama_genre FROM genres') as c:
+                async for row in c:
+                    genre_map[row[1]] = row[0]
 
-                await self._conn.execute('''
-                    INSERT OR IGNORE INTO artist_genres (artist_id, genre_id)
-                    VALUES (?, ?)
-                ''', (artist_id, genre_id))
+            for artist in data.get('artists', []):
+                artist_id = artist['id']
+                for genre_name in artist.get('genre', []):
+                    if genre_name in genre_map:
+                        artist_genres_data.append((artist_id, genre_map[genre_name]))
 
-            for lagu in artist.get('lagu_populer', []):
-                youtube_id = lagu.get('youtube_id')
-                if youtube_id:
-                    duration = lagu.get('durasi_detik', 0)
-                    await self._conn.execute('''
-                        INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
-                        VALUES (?, ?, ?, ?)
-                    ''', (artist_id, lagu['judul'], youtube_id, duration))
+            await self._conn.executemany('''
+                INSERT OR IGNORE INTO artist_genres (artist_id, genre_id)
+                VALUES (?, ?)
+            ''', artist_genres_data)
 
-        await self._conn.commit()
-        logger.info("Database auto-seeded successfully.")
+            await self._conn.executemany('''
+                INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
+                VALUES (?, ?, ?, ?)
+            ''', songs_data)
+
+            await self._conn.commit()
+            logger.info("Database auto-seeded successfully.")
+        except (sqlite3.Error, KeyError, ValueError, json.JSONDecodeError) as e:
+            # Rollback agar DB tidak tertinggal dalam kondisi partial seed (S02-045)
+            logger.error(f"Seed database gagal, melakukan rollback: {e}", exc_info=True)
+            try:
+                await self._conn.rollback()
+            except Exception:
+                pass
+
 
     async def close(self):
         """Close the persistent connection gracefully."""
@@ -136,12 +165,63 @@ class Database:
         async with aiosqlite.connect(backup_path) as dest:
             await self._conn.backup(dest)
 
-    def __getattr__(self, name):
-        """Proxy missing methods to the repositories to maintain backward compatibility."""
-        if self.tracks and hasattr(self.tracks, name):
-            return getattr(self.tracks, name)
-        if self.sessions and hasattr(self.sessions, name):
-            return getattr(self.sessions, name)
-        if self.discover and hasattr(self.discover, name):
-            return getattr(self.discover, name)
-        raise AttributeError(f"'Database' object has no attribute '{name}'")
+    # ==========================================
+    # Explicit Forwarding to Repositories
+    # ==========================================
+    
+    # --- TrackRepository ---
+    async def get_track(self, video_id: str):
+        return await self.tracks.get_track(video_id)
+
+    async def upsert_track(self, track, stream_url: str = None, local_path: str = None):
+        return await self.tracks.upsert_track(track, stream_url, local_path)
+
+    async def update_stream_url_only(self, video_id: str, stream_url: str):
+        return await self.tracks.update_stream_url_only(video_id, stream_url)
+
+    async def set_local_path(self, video_id: str, local_path: str = None):
+        return await self.tracks.set_local_path(video_id, local_path)
+
+    async def increment_play_count(self, video_id: str):
+        return await self.tracks.increment_play_count(video_id)
+
+    async def toggle_favorite(self, video_id: str):
+        return await self.tracks.toggle_favorite(video_id)
+
+    async def evict_stale_tracks(self):
+        return await self.tracks.evict_stale_tracks()
+
+    # --- DiscoverRepository ---
+    async def increment_artist_click(self, artist_name: str):
+        return await self.discover.increment_artist_click(artist_name)
+
+    async def increment_genre_click(self, genre_name: str):
+        return await self.discover.increment_genre_click(genre_name)
+
+    async def get_genre_artists(self, genre_name: str, limit: int = 4):
+        return await self.discover.get_genre_artists(genre_name, limit)
+
+    async def get_all_artists(self, kategori: str | None = None):
+        return await self.discover.get_all_artists(kategori)
+
+    async def get_random_songs(self, limit: int = 20, weight_favorite: bool = True, exclude_ids: list = None):
+        return await self.discover.get_random_songs(limit, weight_favorite, exclude_ids)
+
+    async def get_artist_songs_strict(self, artist: str, limit: int = 10):
+        return await self.discover.get_artist_songs_strict(artist, limit)
+
+    async def get_genre_songs(self, genre_name: str, total_limit: int = 12, max_per_artist: int = 3):
+        return await self.discover.get_genre_songs(genre_name, total_limit, max_per_artist)
+
+    # --- AuthRepository ---
+    async def create_session(self, token: str, expires_at: int):
+        return await self.sessions.create_session(token, expires_at)
+
+    async def verify_session(self, token: str):
+        return await self.sessions.verify_session(token)
+
+    async def delete_session(self, token: str):
+        return await self.sessions.delete_session(token)
+
+    async def cleanup_sessions(self):
+        return await self.sessions.cleanup_sessions()

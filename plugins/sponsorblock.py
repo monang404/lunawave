@@ -15,6 +15,7 @@ SPONSORBLOCK_API = "https://sponsor.ajay.app/api/skipSegments"
 
 import asyncio
 
+
 class SponsorBlockHandler:
     """
     HIGH-02 fix: Uses json.dumps for category serialization.
@@ -59,7 +60,7 @@ class SponsorBlockHandler:
                     pass
         except Exception as e:
             logger.debug(f"SponsorBlock fetch failed: {e}")
-            
+
         async with self._lock:
             self.segments = new_segments
 
@@ -68,7 +69,7 @@ class SponsorBlockHandler:
         current_pos = event.position
         if getattr(self.state, "sponsorblock_active", True) == False:
             return
-            
+
         async with self._lock:
             if not self.segments or not isinstance(current_pos, (int, float)):
                 return

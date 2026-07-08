@@ -1,9 +1,9 @@
-from .registry import register_ws_handler, _ws_handlers
-from .playback_handlers import *
-from .queue_handlers import *
-from .radio_handlers import *
-from .discover_handlers import *
-from .download_handlers import *
-from .settings_handlers import *
+from .discover_handlers import *  # noqa: F403
+from .download_handlers import *  # noqa: F403
+from .playback_handlers import *  # noqa: F403
+from .queue_handlers import *  # noqa: F403
+from .radio_handlers import *  # noqa: F403
+from .registry import _ws_handlers, register_ws_handler
+from .settings_handlers import *  # noqa: F403
 
 __all__ = ["register_ws_handler", "_ws_handlers"]

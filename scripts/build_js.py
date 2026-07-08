@@ -1,6 +1,7 @@
 import re
-from pathlib import Path
 import time
+from pathlib import Path
+
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -50,6 +51,18 @@ def build():
 
     bundle_path = js_dir / "bundle.js"
     bundle_path.write_text(bundle_content, encoding="utf-8")
+
+    import subprocess
+    try:
+        subprocess.run(
+            ["npx", "esbuild", str(bundle_path), "--minify", f"--outfile={bundle_path}", "--allow-overwrite"],
+            check=True,
+            capture_output=True,
+            shell=True
+        )
+        logger.info("Minified bundle.js using esbuild")
+    except Exception as e:
+        logger.warning(f"Failed to minify bundle.js: {e}")
 
     index_path = static_dir / "index.html"
     index_html = index_path.read_text(encoding="utf-8")

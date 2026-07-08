@@ -71,7 +71,9 @@ class MpvController:
             cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
             if ytdl_arg: cmd.insert(1, ytdl_arg)
         else:
-            os.makedirs(os.path.dirname(self.socket_path), exist_ok=True)
+            if self.socket_path:
+                import pathlib
+                pathlib.Path(self.socket_path).parent.mkdir(parents=True, exist_ok=True)
             if os.path.exists(self.socket_path):
                 try:
                     os.remove(self.socket_path)
@@ -81,7 +83,7 @@ class MpvController:
             if ytdl_arg: cmd.insert(1, ytdl_arg)
 
         try:
-            self._mpv_process = await asyncio.create_subprocess_exec(
+            self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
@@ -102,12 +104,12 @@ class MpvController:
         for attempt in range(10):
             try:
                 if os.name == 'nt':
-                    self._reader, self._writer = await asyncio.open_connection('127.0.0.1', int(self.tcp_port))
+                    self._reader, self._writer = await asyncio.open_connection('127.0.0.1', int(self.tcp_port))  # type: ignore
                 else:
-                    self._reader, self._writer = await asyncio.open_unix_connection(self.socket_path)
+                    self._reader, self._writer = await asyncio.open_unix_connection(self.socket_path)  # type: ignore
 
                 self.is_connected = True
-                self._observer_task = safe_create_task(self._observe_events(), name="mpv_observer")
+                self._observer_task = safe_create_task(self._observe_events(), name="mpv_observer")  # type: ignore
                 if os.name != 'nt':
                     try:
                         import stat
@@ -194,7 +196,7 @@ class MpvController:
 
             while self.is_connected:
                 try:
-                    line = await self._reader.readline()
+                    line = await self._reader.readline()  # type: ignore
                     if not line:
                         break
                     msg = json.loads(line.decode())
@@ -215,8 +217,14 @@ class MpvController:
                 if self._mpv_process:
                     try:
                         self._mpv_process.terminate()
-                        self._mpv_process.kill()
-                    except OSError:
+                        # Beri waktu sebentar sebelum kill agar terminate sempat bekerja (S02-048)
+                        try:
+                            self._mpv_process.wait(timeout=1)
+                        except Exception:
+                            pass
+                        if self._mpv_process.poll() is None:
+                            self._mpv_process.kill()
+                    except (OSError, ProcessLookupError):
                         pass
                     self._mpv_process = None
 
@@ -286,9 +294,17 @@ class MpvController:
             self._writer.write(payload.encode())
             await self._writer.drain()
             return await asyncio.wait_for(future, timeout=2.0)
+        except asyncio.CancelledError:
+            # Pastikan future di-cancel agar tidak menggantung (S02-037)
+            if not future.done():
+                future.cancel()
+            raise
         except (OSError, asyncio.TimeoutError):
-            self._pending.pop(request_id, None)
             return None
+        finally:
+            # Selalu bersihkan _pending, termasuk saat CancelledError (S02-037)
+            self._pending.pop(request_id, None)
+
 
     async def _command(self, command: list):
         return await self._send_request(command)

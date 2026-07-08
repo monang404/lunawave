@@ -1,10 +1,17 @@
-from server.handlers.ws.registry import register_ws_handler
 from core.commands import (
-    VolumeUpCommand, VolumeDownCommand, VolumeSetCommand, SetOutputCommand, SetSponsorblockCommand, LyricsOffsetCommand, SetModeCommand
+    LyricsOffsetCommand,
+    SetModeCommand,
+    SetOutputCommand,
+    SetSponsorblockCommand,
+    VolumeDownCommand,
+    VolumeSetCommand,
+    VolumeUpCommand,
 )
+from core.constants import DEFAULT_AUDIO_OUTPUT, DEFAULT_PLAYBACK_MODE, DEFAULT_VOLUME
 from core.state import AudioOutput, PlaybackMode
-from core.constants import DEFAULT_VOLUME, DEFAULT_PLAYBACK_MODE, DEFAULT_AUDIO_OUTPUT
 from core.ws_actions import WSAction
+from server.handlers.ws.registry import register_ws_handler
+
 
 @register_ws_handler(WSAction.VOLUME_UP)
 async def _handle_volume_up(data, ws, state, ytdlp, manager, db, command_bus):

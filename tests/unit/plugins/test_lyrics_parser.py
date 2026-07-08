@@ -48,9 +48,9 @@ class TestLyricsGenerationCounter:
         state = AppState()
         fetcher = LyricsFetcher(state, session=__import__("unittest.mock").mock.AsyncMock(), event_bus=__import__("unittest.mock").mock.AsyncMock())
         lrc_text = "[ti:Some Title]\n[00:10.00] Line 1\n[00:20.00] Line 2\nPlain text line"
-        
+
         parsed = fetcher._parse_lrc(lrc_text)
-        
+
         assert len(parsed) == 2
         assert parsed[0] == (10.0, "Line 1")
         assert parsed[1] == (20.0, "Line 2")

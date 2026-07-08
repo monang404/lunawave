@@ -24,10 +24,10 @@ from server.app import create_app
 def mock_db():
     db = MagicMock(spec=DatabasePort)
     db.conn = True
-    
+
     async def _mock_verify(token):
         return token == "valid-token"
-        
+
     db.verify_session = AsyncMock(side_effect=_mock_verify)
     db.get_track = AsyncMock(return_value=None)
     db.increment_play_count = AsyncMock()

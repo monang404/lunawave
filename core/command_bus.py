@@ -10,8 +10,8 @@ from typing import Any, Callable, Dict, Type, TypeVar
 
 import structlog
 
-from core.observability import COMMAND_COUNT, COMMAND_LATENCY
 from core.commands import DomainCommand
+from core.observability import COMMAND_COUNT, COMMAND_LATENCY
 
 logger = structlog.get_logger(__name__)
 

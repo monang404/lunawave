@@ -8,9 +8,14 @@ from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Optional
+from pathlib import Path
+import json
 
+import aiofiles
+import structlog
 
-from core.value_objects import VideoId, Volume, Duration
+from core.value_objects import Duration, VideoId, Volume
+
 
 class PlayerStatus(Enum):
     IDLE     = auto()
@@ -74,14 +79,19 @@ class TrackInfo:
             artist=str(data.get("artist", "Unknown"))[:255],
             duration=duration,
             thumbnail=data.get("thumbnail"),
-            local_path=data.get("local_path"),
-            stream_url=data.get("stream_url"),
+            # stream_url dan local_path TIDAK diambil dari client payload (S02-040).
+            # Field ini hanya boleh diisi dari DB/server untuk mencegah SSRF/injection.
+            local_path=None,
+            stream_url=None,
             view_count=data.get("view_count"),
             is_favorite=int(data.get("is_favorite", False)),
         )
 
+
 import asyncio
+
 from core.constants import DEFAULT_VOLUME
+
 
 @dataclass
 class AppState:
@@ -133,3 +143,71 @@ class AppState:
             "is_online": self.is_online,
             "download_progress": self.download_progress,
         }
+
+    def to_persistent_dict(self) -> dict:
+        """Serialize state untuk disimpan ke disk. Mengabaikan state temporer seperti posisi."""
+        return {
+            "status": self.status.name,
+            "playback_mode": self.playback_mode.name,
+            "current_track": self.current_track.to_dict() if self.current_track else None,
+            "volume": self.volume,
+            "audio_output": getattr(self, "audio_output", AudioOutput.DEVICE).value,
+            "sponsorblock_active": self.sponsorblock_active,
+            "queue": [t.to_dict() for t in self.queue],
+            "radio_queue": [t.to_dict() for t in self.radio_queue],
+            "history": [t.to_dict() for t in self.history],
+        }
+
+    async def save_to_disk(self, path: Path):
+        """Menyimpan state ke file JSON."""
+        data = self.to_persistent_dict()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            async with aiofiles.open(path, mode='w', encoding='utf-8') as f:
+                await f.write(json.dumps(data, ensure_ascii=False))
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"Gagal menyimpan AppState: {e}")
+
+    @classmethod
+    async def load_from_disk(cls, path: Path) -> 'AppState':
+        """Memuat state dari file JSON jika ada, jika tidak kembalikan AppState baru."""
+        state = cls()
+        if not path.exists():
+            return state
+
+        try:
+            async with aiofiles.open(path, mode='r', encoding='utf-8') as f:
+                content = await f.read()
+                data = json.loads(content)
+
+            if "status" in data:
+                # Jangan langsung set status PLAYING/LOADING karena butuh di-resume ulang oleh engine
+                loaded_status = PlayerStatus[data["status"]]
+                if loaded_status in (PlayerStatus.PLAYING, PlayerStatus.LOADING):
+                    loaded_status = PlayerStatus.PAUSED
+                state.status = loaded_status
+            
+            if "playback_mode" in data:
+                state.playback_mode = PlaybackMode[data["playback_mode"]]
+            if "volume" in data:
+                state.volume = Volume(data["volume"])
+            if "audio_output" in data:
+                state.audio_output = AudioOutput(data["audio_output"])
+            if "sponsorblock_active" in data:
+                state.sponsorblock_active = bool(data["sponsorblock_active"])
+            
+            if data.get("current_track"):
+                state.current_track = TrackInfo.from_dict(data["current_track"])
+            
+            if "queue" in data:
+                state.queue = deque((TrackInfo.from_dict(t) for t in data["queue"] if t), maxlen=None)
+            if "radio_queue" in data:
+                state.radio_queue = deque((TrackInfo.from_dict(t) for t in data["radio_queue"] if t), maxlen=None)
+            if "history" in data:
+                # Default maxlen untuk history adalah 50
+                state.history = deque((TrackInfo.from_dict(t) for t in data["history"] if t), maxlen=50)
+
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"Gagal memuat AppState: {e}")
+            
+        return state

@@ -1,5 +1,6 @@
-from core.value_objects import Volume, VideoId, Duration
 from core.constants import MAX_VOLUME
+from core.value_objects import Duration, VideoId, Volume
+
 
 def test_volume_clamp():
     assert Volume(50) == 50

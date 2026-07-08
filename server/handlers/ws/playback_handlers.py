@@ -1,9 +1,8 @@
-from server.handlers.ws.registry import register_ws_handler
-from core.ws_actions import WSAction
-from core.commands import (
-    PlayTrackCommand, TogglePauseCommand, NextCommand, PrevCommand, StopCommand, SeekCommand
-)
+from core.commands import NextCommand, PlayTrackCommand, PrevCommand, SeekCommand, StopCommand, TogglePauseCommand
 from core.state import TrackInfo
+from core.ws_actions import WSAction
+from server.handlers.ws.registry import register_ws_handler
+
 
 @register_ws_handler(WSAction.PLAY_TRACK)
 async def _handle_play_track(data, ws, state, ytdlp, manager, db, command_bus):

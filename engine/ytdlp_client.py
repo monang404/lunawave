@@ -162,7 +162,7 @@ class YtDlpClient:
             video_id=video_id,
             title=entry.get("title", "Unknown"),
             artist=entry.get("uploader", "Unknown"),
-            duration=duration,
+            duration=duration,  # type: ignore
             thumbnail=entry.get("thumbnail"),
             view_count=entry.get("view_count"),
         )

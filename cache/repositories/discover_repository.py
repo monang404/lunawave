@@ -1,4 +1,5 @@
 import structlog
+
 from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
@@ -55,7 +56,7 @@ class DiscoverRepository:
             params = (kategori,)
         else:
             query = "SELECT nama FROM artists ORDER BY id"
-            params = ()
+            params = ()  # type: ignore
 
         async with self._conn.execute(query, params) as cursor:
             rows = await cursor.fetchall()
@@ -63,7 +64,7 @@ class DiscoverRepository:
         return [row["nama"] for row in rows]
 
     async def get_random_songs(
-        self, limit: int = 12, exclude_ids: set[str] = None, artist: str = None, max_per_artist: int = 3
+        self, limit: int = 12, exclude_ids: set[str] = None, artist: str = None, max_per_artist: int = 3  # type: ignore
     ) -> list[TrackInfo]:
         """Ambil lagu acak langsung dari database untuk Radio Mode, dengan limit per artis."""
         if not self._conn: return []
@@ -79,7 +80,7 @@ class DiscoverRepository:
                 JOIN artists a ON s.artist_id = a.id
                 WHERE 1=1
         """
-        params = []
+        params = []  # type: ignore
         if exclude_ids:
             query += f" AND s.youtube_id NOT IN ({placeholders})"
             params.extend(exclude_ids)
@@ -94,7 +95,7 @@ class DiscoverRepository:
 
         if artist:
             query += " ORDER BY CASE WHEN nama = ? THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
-            params.extend([artist, limit])
+            params.extend([artist, limit])  # type: ignore
         else:
             query += " ORDER BY RANDOM() LIMIT ?"
             params.append(limit)

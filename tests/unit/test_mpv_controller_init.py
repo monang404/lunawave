@@ -1,5 +1,7 @@
-from engine.mpv_controller import MpvController
 from unittest.mock import MagicMock
+
+from engine.mpv_controller import MpvController
+
 
 def test_mpv_controller_initialization():
     bus_mock = MagicMock()

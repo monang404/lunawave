@@ -1,4 +1,4 @@
-_ws_handlers = {}
+_ws_handlers = {}  # type: ignore
 
 def register_ws_handler(action: str):
     def decorator(func):

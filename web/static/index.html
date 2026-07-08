@@ -34,10 +34,10 @@
     <link rel="stylesheet" href="/static/css/portal.css">
 
     <!-- Platform Overrides -->
-    <link rel="stylesheet" href="/static/css/platform/mobile.css">
-    <link rel="stylesheet" href="/static/css/platform/tablet.css">
-    <link rel="stylesheet" href="/static/css/platform/desktop.css">
-    <link rel="stylesheet" href="/static/css/platform/landscape.css">
+    <link rel="stylesheet" href="/static/css/platform/mobile.css" media="(max-width: 767px)">
+    <link rel="stylesheet" href="/static/css/platform/tablet.css" media="(min-width: 768px) and (max-width: 1024px)">
+    <link rel="stylesheet" href="/static/css/platform/desktop.css" media="(min-width: 1025px)">
+    <link rel="stylesheet" href="/static/css/platform/landscape.css" media="(orientation: landscape)">
     <link rel="stylesheet" href="/static/css/platform/safe-area.css">
 </head>
 
@@ -318,9 +318,9 @@
                     <span class="label-text">Jelajahi Artis</span>
                 </div>
                 <div id="discover-artists" class="hashtag-cloud-container">
-                    <div class="hashtag-pill skeleton-box" style="width:60px; height:24px; border-radius:12px;"></div>
-                    <div class="hashtag-pill skeleton-box" style="width:100px; height:24px; border-radius:12px;"></div>
-                    <div class="hashtag-pill skeleton-box" style="width:80px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-sm"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-lg"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-md"></div>
                 </div>
 
                 <!-- Genre (Featured Genres) -->
@@ -328,9 +328,9 @@
                     <span class="label-text">Jelajahi Genre</span>
                 </div>
                 <div id="discover-genres" class="hashtag-cloud-container">
-                    <div class="hashtag-pill skeleton-box" style="width:70px; height:24px; border-radius:12px;"></div>
-                    <div class="hashtag-pill skeleton-box" style="width:50px; height:24px; border-radius:12px;"></div>
-                    <div class="hashtag-pill skeleton-box" style="width:90px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-md"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-sm"></div>
+                    <div class="hashtag-pill skeleton-box skeleton-pill-lg"></div>
                 </div>
 
 
@@ -620,7 +620,7 @@
     // Script hapus SW dimatikan agar SW yang baru terdaftar tidak di-kill
     </script>
 
-    <script src="/static/js/bundle.js?v=1783411234" defer></script>
+    <script src="/static/js/bundle.js?v=1783478645" defer></script>
 
 </body>
 

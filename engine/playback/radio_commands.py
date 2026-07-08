@@ -1,6 +1,7 @@
 import structlog
-from core.state import PlaybackMode, PlayerStatus
+
 from core.events import LogMessageEvent, QueueUpdatedEvent
+from core.state import PlaybackMode, PlayerStatus
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
@@ -15,24 +16,24 @@ class RadioCommands:
 
     async def on_radio_randomize(self, cmd):
         seed = None
-        should_fetch = False
         async with self.playback_controller._lock:
-            if self.state.playback_mode == PlaybackMode.RADIO:
-                seed = cmd.seed_artist if cmd else None
-                self.state.radio_queue.clear()
-                await self.mpv.pause()
-                self.state.current_track = None
-                self.state.status = PlayerStatus.LOADING
-                self.state.position = 0.0
-                self.radio_mode._artist_rotation = []
-                await self.bus.publish(QueueUpdatedEvent())
-                await self.bus.publish(LogMessageEvent(message="Mengacak ulang stasiun radio..."))
-                should_fetch = True
-            else:
-                await self.bus.publish(LogMessageEvent(message="Radio tidak aktif"))
+            seed = cmd.seed_artist if cmd else None
+            # S02-044: Izinkan dari mode QUEUE juga — otomatis switch ke RADIO dulu
+            if self.state.playback_mode != PlaybackMode.RADIO:
+                self.state.playback_mode = PlaybackMode.RADIO
+                logger.info("RadioRandomize: auto-switch ke RADIO mode")
 
-        if should_fetch:
-            safe_create_task(
-                self.radio_mode._fetch_and_play_initial(self.playback_controller, seed_artist=seed),
-                name="radio_randomize_fetch"
-            )
+            self.state.radio_queue.clear()
+            await self.mpv.pause()
+            self.state.current_track = None
+            self.state.status = PlayerStatus.LOADING
+            self.state.position = 0.0
+            self.radio_mode._artist_rotation = []
+            await self.bus.publish(QueueUpdatedEvent())
+            await self.bus.publish(LogMessageEvent(message="Mengacak ulang stasiun radio..."))
+
+        safe_create_task(
+            self.radio_mode._fetch_and_play_initial(self.playback_controller, seed_artist=seed),
+            name="radio_randomize_fetch"
+        )
+

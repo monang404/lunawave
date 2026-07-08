@@ -1,5 +1,7 @@
 import pytest
+
 from cache.db import Database
+
 
 @pytest.mark.asyncio
 async def test_db_has_is_favorite_index(tmp_path):

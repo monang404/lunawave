@@ -1,5 +1,6 @@
 import re
 
+
 class VideoId(str):
     _RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 
@@ -9,6 +10,7 @@ class VideoId(str):
         return super().__new__(cls, str(value))
 
 from core.constants import MAX_VOLUME
+
 
 class Volume(int):
     def __new__(cls, value: int):

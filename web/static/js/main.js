@@ -29,6 +29,7 @@
         }
     }
 
+    let lastDiscoverReq = 0;
     window.switchTab = function(tab) {
         store.active_tab = tab;
         document.body.dataset.activeTab = tab;
@@ -55,7 +56,11 @@
             setTimeout(() => dom.searchInput.focus(), 100);
         }
         if (tab === "discover" || tab === "home") {
-            wsSend(WS_ACTIONS.DISCOVER);
+            const now = Date.now();
+            if (now - lastDiscoverReq > 30000) {
+                lastDiscoverReq = now;
+                wsSend(WS_ACTIONS.DISCOVER);
+            }
         }
     };
 

@@ -39,10 +39,15 @@ function initVisualizer() {
 }
 
 let _fakeBeatRaf = null;
+let _fakeBeatTimeout = null;
 function startFakeBeatLoop() {
     if (_fakeBeatRaf) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return; // Stop entirely for accessibility
+    
     const BASE_INTERVAL = 500;
     let lastBeat = 0;
+    
     function tick(ts) {
         if (store.status !== 'PLAYING') {
             if (dom.tabHome) {
@@ -54,18 +59,29 @@ function startFakeBeatLoop() {
                 cancelAnimationFrame(_fakeBeatRaf);
                 _fakeBeatRaf = null;
             }
+            if (_fakeBeatTimeout) {
+                clearTimeout(_fakeBeatTimeout);
+                _fakeBeatTimeout = null;
+            }
             return;
         }
+        
         _fakeBeatRaf = requestAnimationFrame(tick);
+        
+        if (document.hidden) return; // Skip updating DOM when page is hidden
+        
         const elapsed = ts - lastBeat;
         if (elapsed < BASE_INTERVAL) return;
         lastBeat = ts;
+        
         if (!dom.tabHome) return;
         dom.tabHome.style.setProperty('--beat-glow-opacity', '0.5');
         dom.tabHome.style.setProperty('--beat-bg-brightness', '0.28');
         dom.tabHome.style.setProperty('--beat-glow-transition', '0.15s');
-        setTimeout(() => {
-            if (!dom.tabHome) return;
+        
+        if (_fakeBeatTimeout) clearTimeout(_fakeBeatTimeout);
+        _fakeBeatTimeout = setTimeout(() => {
+            if (!dom.tabHome || document.hidden) return;
             dom.tabHome.style.setProperty('--beat-glow-opacity', '0.4');
             dom.tabHome.style.setProperty('--beat-bg-brightness', '0.22');
             dom.tabHome.style.setProperty('--beat-glow-transition', '0.4s');
@@ -78,7 +94,9 @@ let _vizRafId = null;
 function startVisualizerLoop() {
     if (!analyser || !dom.vinylRecord) return;
     const isBrowser = store.userRole === "client" || store.audio_output === "browser";
-    if (!isBrowser || store.status !== "PLAYING") {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!isBrowser || store.status !== "PLAYING" || prefersReducedMotion) {
         if (dom.tabHome) {
             dom.tabHome.style.removeProperty('--beat-glow-opacity');
             dom.tabHome.style.removeProperty('--beat-bg-brightness');
@@ -87,6 +105,11 @@ function startVisualizerLoop() {
         _vizRafId = null;
         return;
     }
+    
+    _vizRafId = requestAnimationFrame(startVisualizerLoop);
+    
+    if (document.hidden) return; // Skip updating DOM when page is hidden
+    
     analyser.getByteFrequencyData(dataArray);
     let bassSum = 0;
     for (let i = 0; i < 10; i++) bassSum += dataArray[i];
@@ -96,7 +119,6 @@ function startVisualizerLoop() {
         dom.tabHome.style.setProperty('--beat-bg-brightness', (0.2 + ratio * 0.1).toFixed(3));
         dom.tabHome.style.setProperty('--beat-glow-transition', ratio > 0.4 ? '0.2s' : '0.4s');
     }
-    _vizRafId = requestAnimationFrame(startVisualizerLoop);
 }
 
 function resumeVisualizerLoop() {
