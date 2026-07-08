@@ -66,6 +66,7 @@ desktop.ini
 win32-x64/
 node_modules/
 logs/
+start_original.py
 
 # Development / Temporary
 scratch/
