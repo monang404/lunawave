@@ -4,7 +4,7 @@ import secrets
 import time
 
 from config import ADMIN_USERNAME, get_admin_password
-from core.constants import AUTH_TIMEOUT, AUTH_MAX_LIMIT, TOKEN_TTL, MAX_LOGIN_ATTEMPTS
+from core.constants import AUTH_TIMEOUT, TOKEN_TTL, MAX_LOGIN_ATTEMPTS
 from core.security import verify_password
 
 

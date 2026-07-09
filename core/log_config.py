@@ -20,6 +20,8 @@ _W  = "\033[1m"
 _BG = "\033[1;32m"
 
 class _CompactRenderer:
+    _NOISE_PATTERNS = ("favicon", "/static/", "/health")
+
     def __init__(self):
         self.last_ts = ""
 
@@ -28,7 +30,15 @@ class _CompactRenderer:
         level = event_dict.pop("level", "").lower()
         exc = event_dict.pop("exc_info", None)
         req_id = event_dict.pop("request_id", "")
-        
+
+        msg = event_dict.pop("event", "")
+
+        # Drop noisy log events
+        msg_str = str(msg)
+        for pattern in self._NOISE_PATTERNS:
+            if pattern in msg_str:
+                raise structlog.DropEvent
+
         # Colorize level
         lvl_col = _W
         if level in ("warning", "warn"): lvl_col = _Y
@@ -37,8 +47,7 @@ class _CompactRenderer:
         
         lvl_str = f"{lvl_col}{level.upper():<5}{_R}"
 
-        msg = event_dict.pop("event", "")
-        if "HTTP Request: " in str(msg):
+        if "HTTP Request: " in msg_str:
             msg = f"{_GY}{msg}{_R}"
             
         req_str = f" {_GY}[{req_id[:8]}]{_R}" if req_id else ""
@@ -55,8 +64,8 @@ class _CompactRenderer:
         
         if exc:
             out += f"\n{_RE}{exc}{_R}"
-            
-        return out
+
+        return (msg,), {"extra": event_dict}
 
 class _FileFormatter(logging.Formatter):
     _ANSI_RE = re.compile(r"\033\[[0-9;]*m")

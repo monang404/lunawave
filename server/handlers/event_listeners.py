@@ -60,12 +60,14 @@ def setup_event_listeners(
 
         db = playback_controller.resolver.db
         recent = await db.get_recent_tracks(20)
-        favorites = await db.get_favorites()
+        favorites = await db.get_favorite_tracks()
+        cached_tracks = await db.get_cached_tracks(50)
         data = {
             "type": "discover_data",
             "data": {
                 "recent": [t.to_dict() for t in recent],
-                "favorites": [t.to_dict() for t in favorites]
+                "favorites": [t.to_dict() for t in favorites],
+                "cached_tracks": [t.to_dict() for t in cached_tracks],
             }
         }
         await broadcast_service.manager.broadcast(data)

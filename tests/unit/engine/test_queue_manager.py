@@ -22,7 +22,7 @@ async def test_queue_mode_next_with_items():
     mode = QueueMode()
     controller = MagicMock()
     track = TrackInfo(video_id="test", title="Test", artist="A", duration=10)
-    controller.state.queue = deque([track])
+    controller.state.queue = [track]
     controller.play_track = AsyncMock()
     
     await mode.next(controller)

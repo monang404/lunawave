@@ -1,3 +1,4 @@
+from aiohttp import web
 from core.constants import MAX_RATE_LIMIT
 
 
@@ -15,7 +16,6 @@ async def check_rate_limit(manager, client_ip: str, now: float) -> bool:
         manager.command_history[client_ip] = cmd_history
         return True
 
-from aiohttp import web
 
 @web.middleware
 async def security_headers_middleware(request, handler):

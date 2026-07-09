@@ -146,13 +146,11 @@ async def build_app_context() -> AppContext:
     except Exception:
         display_host = host if host != "0.0.0.0" else "127.0.0.1"
 
-    url_client = f"http://{display_host}:{port}"
-    url_admin = f"http://{display_host}:{port}/admin"
+    url_portal = f"http://{display_host}:{port}/"
     sys.stderr.write(
         f"\n\033[1;32m{'─'*54}\033[0m\n"
         f"  \033[1m▸ LunaWave\033[0m  Web Server\n"
-        f"  Client : \033[36m{url_client}\033[0m\n"
-        f"  Admin  : \033[36m{url_admin}\033[0m\n"
+        f"  Portal : \033[36m{url_portal}\033[0m\n"
     )
 
     from config import ADMIN_USERNAME, get_admin_password
@@ -162,6 +160,11 @@ async def build_app_context() -> AppContext:
         sys.stderr.write(
             f"  User   : \033[33m{ADMIN_USERNAME}\033[0m\n"
             f"  Pass   : \033[33m(lihat data/admin_initial_password.txt)\033[0m\n"
+        )
+    else:
+        sys.stderr.write(
+            f"  User   : \033[33m{ADMIN_USERNAME}\033[0m\n"
+            f"  Pass   : \033[33m(dari LUNAWAVE_ADMIN_PASS di .env)\033[0m\n"
         )
     sys.stderr.write(f"\033[1;32m{'─'*54}\033[0m\n\n")
 
@@ -195,6 +198,15 @@ async def shutdown_app_context(ctx: AppContext, tasks: list):
 
     for t in tasks:
         t.cancel()
+
+    # Cancel download workers
+    # Cancel persist_state_task
+    try:
+        persist_task = getattr(ctx.playback_controller, '_persist_state_task', None)
+        if persist_task and not persist_task.done():
+            persist_task.cancel()
+    except AttributeError:
+        pass
 
     await ctx.nowplaying.cleanup()
     try:

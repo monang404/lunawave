@@ -27,5 +27,5 @@ class QueueMode:
             await controller.bus.publish(QueueUpdatedEvent())
             return
 
-        track = controller.state.queue.popleft()
+        track = controller.state.queue.pop(0)
         await controller.play_track(track)

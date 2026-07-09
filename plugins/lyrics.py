@@ -55,6 +55,7 @@ class LyricsFetcher:
 
         try:
             lrc = None
+            search_query = ""
             if track.video_id in self._cache:
                 lrc = self._cache[track.video_id]
                 logger.debug(f"Lyrics: Using cached lyrics for {track.video_id}")

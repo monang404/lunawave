@@ -65,4 +65,6 @@ class CacheResolver:
                 async with self._lock:
                     self._fetching.pop(track.video_id, None)
         else:
-            return await asyncio.wait_for(fut, timeout=35.0)
+            url = await asyncio.wait_for(fut, timeout=35.0)
+            track.stream_url = url
+            return url

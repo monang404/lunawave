@@ -216,12 +216,10 @@ class MpvController:
                 if self._mpv_process:
                     try:
                         self._mpv_process.terminate()
-                        # Beri waktu sebentar sebelum kill agar terminate sempat bekerja (S02-048)
+                        # Use proper async API matching close() pattern (S02-048)
                         try:
-                            self._mpv_process.wait(timeout=1)
-                        except Exception:
-                            pass
-                        if self._mpv_process.poll() is None:
+                            await asyncio.wait_for(self._mpv_process.wait(), timeout=1.0)
+                        except asyncio.TimeoutError:
                             self._mpv_process.kill()
                     except (OSError, ProcessLookupError):
                         pass

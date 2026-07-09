@@ -1,6 +1,8 @@
 const wsClient = (function() {
     let ws = null;
     let wsReconnectTimer = null;
+    let _wsAuthConfirmed = false;  // true setelah auth_status success
+    let _pendingQueue = [];        // buffer command sebelum auth dikonfirmasi
 
     function connect() {
         const protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -19,23 +21,35 @@ const wsClient = (function() {
         ws = new WebSocket(url);
 
         ws.onopen = () => {
+            // Reset auth state setiap kali reconnect — ws object baru belum terautentikasi
+            _wsAuthConfirmed = false;
+            _pendingQueue = [];
+
             if (typeof store !== "undefined") store.is_online = true;
             if (typeof hideConnectionToast === "function") hideConnectionToast();
             if (wsReconnectTimer) {
                 clearTimeout(wsReconnectTimer);
                 wsReconnectTimer = null;
             }
-            
+
             if (typeof store !== "undefined" && store.userRole === "admin") {
                 const token = window.safeStorage ? window.safeStorage.get("ytgui_session_token") : null;
                 if (token && typeof WS_ACTIONS !== "undefined") {
-                    send(WS_ACTIONS.AUTH, { token: token });
+                    // Kirim AUTH langsung tanpa queue — ini command pertama yang HARUS dikirim
+                    _sendRaw(WS_ACTIONS.AUTH, { token: token });
+                    // Tahan command lain sampai auth_status sukses balik dari server
+                    // (lihat confirmAuth() yang dipanggil dari handleServerMessage)
+                } else {
+                    // Tidak ada token → langsung anggap bukan admin, tidak perlu queue
+                    _wsAuthConfirmed = true;
                 }
-                const savedOutput = window.safeStorage ? (window.safeStorage.get("ytgui_audio_output") || "browser") : "browser";
-                if (typeof WS_ACTIONS !== "undefined") send(WS_ACTIONS.SET_OUTPUT, { output: savedOutput });
-            } else if (typeof store !== "undefined" && store.userRole === "client") {
-                if (store.active_tab === "home" || store.active_tab === "discover") {
-                    if (typeof WS_ACTIONS !== "undefined") send(WS_ACTIONS.DISCOVER);
+            } else {
+                // Role client atau portal tidak butuh auth token
+                _wsAuthConfirmed = true;
+                if (typeof store !== "undefined" && store.userRole === "client") {
+                    if (store.active_tab === "home" || store.active_tab === "discover") {
+                        if (typeof WS_ACTIONS !== "undefined") _sendRaw(WS_ACTIONS.DISCOVER);
+                    }
                 }
             }
             if (typeof renderHeader === "function") renderHeader();
@@ -64,10 +78,34 @@ const wsClient = (function() {
         };
     }
 
-    function send(action, data) {
+    // Kirim langsung ke socket tanpa melewati queue (untuk AUTH dan flush)
+    function _sendRaw(action, data) {
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
         }
+    }
+
+    // Public send — buffer command sampai auth dikonfirmasi
+    function send(action, data) {
+        if (!_wsAuthConfirmed) {
+            // Queue command, akan di-flush setelah auth_status success
+            _pendingQueue.push({ action, data: data || {} });
+            return;
+        }
+        _sendRaw(action, data);
+    }
+
+    // Dipanggil oleh handleServerMessage saat auth_status success
+    function confirmAuth() {
+        _wsAuthConfirmed = true;
+        // Flush semua command yang tertahan selama auth berjalan
+        const queued = _pendingQueue.splice(0);
+        for (const { action, data } of queued) {
+            _sendRaw(action, data);
+        }
+        // Kirim SET_OUTPUT setelah auth dikonfirmasi (butuh auth di backend sekarang)
+        const savedOutput = window.safeStorage ? (window.safeStorage.get("ytgui_audio_output") || "browser") : "browser";
+        if (typeof WS_ACTIONS !== "undefined") _sendRaw(WS_ACTIONS.SET_OUTPUT, { output: savedOutput });
     }
 
     function closeConnection() {
@@ -86,7 +124,7 @@ const wsClient = (function() {
         return ws ? ws.readyState : (typeof WebSocket !== 'undefined' ? WebSocket.CLOSED : 3);
     }
 
-    return { connect, send, getReadyState, close: closeConnection };
+    return { connect, send, getReadyState, close: closeConnection, confirmAuth };
 })();
 
 function wsConnect() {
@@ -114,6 +152,8 @@ function handleServerMessage(msg) {
                 dom.portalLoginForm.classList.add("hidden");
                 applyRoleUI();
                 showLogToast("Akses Admin Diterima!");
+                // Konfirmasi auth → flush pending queue + kirim SET_OUTPUT
+                wsClient.confirmAuth();
                 if (store.active_tab === "home" || store.active_tab === "discover") {
                     showLogToast("Meminta data lagu...");
                     wsSend(WS_ACTIONS.DISCOVER);

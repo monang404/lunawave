@@ -69,7 +69,7 @@ class ConnectionManager:
                 self.disconnect(dead_ws)
 
 async def ws_handler(request):
-    request.app["playback_controller"]
+    playback_controller = request.app["playback_controller"]
     state = request.app["state"]
     manager = request.app["manager"]
     db = request.app["db"]
@@ -136,7 +136,29 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         return
 
     # Check if action requires auth (admin only)
-    ADMIN_ONLY_ACTIONS = {WSAction.SET_OUTPUT, WSAction.SET_SPONSORBLOCK, WSAction.DELETE_DOWNLOAD, WSAction.STOP, WSAction.SETTINGS_UPDATE}
+    # All mutating / sensitive actions must be listed here.
+    # Read-only / public actions (SEARCH, DISCOVER) are intentionally excluded.
+    ADMIN_ONLY_ACTIONS = {
+        # Playback
+        WSAction.PLAY_TRACK, WSAction.TOGGLE_PAUSE, WSAction.NEXT,
+        WSAction.PREV, WSAction.STOP, WSAction.SEEK,
+        # Queue
+        WSAction.QUEUE_ADD, WSAction.QUEUE_REMOVE, WSAction.QUEUE_REORDER,
+        WSAction.QUEUE_SELECT,
+        # Enqueue helpers
+        WSAction.ENQUEUE_ARTIST_SONGS, WSAction.ENQUEUE_GENRE_SONGS,
+        # Radio
+        WSAction.RADIO_RANDOMIZE,
+        # Volume / Mode
+        WSAction.VOLUME_SET, WSAction.VOLUME_UP, WSAction.VOLUME_DOWN,
+        WSAction.SET_MODE,
+        # Output / Sponsorblock / Settings
+        WSAction.SET_OUTPUT, WSAction.SET_SPONSORBLOCK,
+        # Download
+        WSAction.DOWNLOAD, WSAction.DELETE_DOWNLOAD,
+        # Misc
+        WSAction.TOGGLE_FAVORITE, WSAction.LYRICS_OFFSET,
+    }
     if action in ADMIN_ONLY_ACTIONS:
         if not require_auth(manager, ws):
             await ws.send_str(json.dumps({

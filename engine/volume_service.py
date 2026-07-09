@@ -22,7 +22,8 @@ class VolumeService:
 
     async def _on_volume_up(self, cmd=None):
         async with self._lock:
-            new_vol = min(100, self.state.volume + 5)
+            from core.constants import MAX_VOLUME
+            new_vol = min(MAX_VOLUME, self.state.volume + 5)
             await self._apply_volume(new_vol)
 
     async def _on_volume_down(self, cmd=None):

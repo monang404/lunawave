@@ -1,7 +1,7 @@
 import aiohttp
 
 import asyncio
-import collections
+
 from core.rate_limit import global_rate_limiter
 import time
 from pathlib import Path
@@ -10,6 +10,7 @@ import structlog
 from aiohttp import web
 
 from config import CACHE_DIR, STREAM_URL_TTL_SEC
+from server.routes import STATIC_DIR
 from core.observability import get_metrics_content
 from core.value_objects import VideoId
 from server.handlers.ws.utils import error_payload
@@ -30,7 +31,7 @@ async def health_check(request):
 
     db_status = "disconnected"
     try:
-        if db.conn:
+        if db.pool:
             async with db.pool.acquire() as conn:
                 async with conn.execute("SELECT 1") as cursor:
                     if await cursor.fetchone():
@@ -230,4 +231,6 @@ async def serve_metrics(request):
 
     content, content_type = get_metrics_content()
     ct = content_type.split(";")[0].strip()
+    if isinstance(content, str):
+        content = content.encode("utf-8")
     return web.Response(body=content, content_type=ct)
