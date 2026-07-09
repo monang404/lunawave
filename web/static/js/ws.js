@@ -174,18 +174,11 @@ function handleServerMessage(msg) {
         case "discover_data":
             showLogToast("Menerima data lagu! " + (msg.data.recent ? msg.data.recent.length : 0) + " items");
             store.discover_recent = msg.data.recent || [];
-            store.discover_favorites = msg.data.favorites || [];
             store.discover_cached   = msg.data.cached_tracks || [];
             store.discover_featured_artists = msg.data.featured_artists || [];
             store.discover_featured_genres = msg.data.featured_genres || [];
             renderDiscoverTab();
             renderRecentRow();
-            break;
-        case "favorite_status":
-            if (store.current_track && store.current_track.video_id === msg.data.video_id) {
-                store.current_track.is_favorite = msg.data.is_favorite;
-                if (typeof renderNowPlaying === "function") renderNowPlaying();
-            }
             break;
         case "log":
             showLogToast(msg.data);

@@ -151,32 +151,6 @@
   text-align: center;
 }
 
-/* ── Favorite Button ── */
-.home-fav-btn {
-  background: none;
-  border: none;
-  color: var(--text-3);
-  font-size: 22px;
-  cursor: pointer;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-sm);
-  flex-shrink: 0;
-  transition: color var(--dur-fast) var(--ease);
-  position: absolute;
-  right: var(--s4);
-}
-
-.home-fav-btn:hover {
-  color: var(--accent);
-}
-
-.home-fav-btn.active {
-  color: var(--accent);
-}
 
 .home-fav-btn.active i::before {
   content: "\ecd5";

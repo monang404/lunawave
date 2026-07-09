@@ -155,14 +155,6 @@ function initPlayerEvents() {
         });
     }
 
-    if (dom.btnFavorite) {
-        dom.btnFavorite.addEventListener("click", () => {
-            if (store.userRole === "admin" && store.current_track) {
-                wsSend("toggle_favorite", { video_id: store.current_track.video_id });
-            }
-        });
-    }
-
     if (dom.outputToggleBtn) {
         dom.outputToggleBtn.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
@@ -329,7 +321,6 @@ function initPlayerEvents() {
                 // find in store lists
                 const lists = [
                     store.discover_recent || [],
-                    store.discover_favorites || [],
                     store.discover_cached || [],
                     store.queue || []
                 ];

@@ -188,7 +188,6 @@ window.extractDominantColor = function(imgEl, callback) {
             bestB = Math.floor(b / count);
         }
         
-        console.log("Cover Color Extracted:", bestR, bestG, bestB);
         if (callback) callback({r: bestR, g: bestG, b: bestB});
     } catch (e) {
         console.warn("Color extraction failed:", e);

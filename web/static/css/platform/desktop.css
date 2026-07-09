@@ -301,12 +301,6 @@
     text-align: center;
   }
 
-  #tab-home .home-fav-btn {
-    position: absolute;
-    right: 0;
-    margin-left: 0;
-  }
-
   .lyrics-wrap {
     grid-area: lyrics;
     text-align: left;
@@ -325,26 +319,28 @@
     padding-right: 0 !important;
   }
 
-  /* ── Settings Sheet — Desktop Popover ── */
+  /* ── Settings Sheet — Desktop Centered Popover ── */
+  /* Selalu di tengah horizontal parent window, bukan kanan layar. */
+  /* Bekerja di normal, maximize, resize, dan multi-monitor. */
   .settings-sheet {
-    position: absolute;
-    bottom: 80px;
-    right: 20px;
-    left: auto;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    right: auto;
     max-width: 400px;
+    width: 400px;
     border-radius: var(--r-lg);
     margin: 0;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(20px);
+    transform: translateX(-50%) translateY(20px);
     transition: opacity var(--dur-normal) var(--ease), transform var(--dur-normal) var(--ease), visibility var(--dur-normal);
   }
 
   .settings-sheet.open {
-    bottom: 80px;
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 
   /* ── Desktop IDLE / EMPTY QUEUE overrides ── */

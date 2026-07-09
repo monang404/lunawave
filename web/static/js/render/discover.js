@@ -9,29 +9,8 @@ function getHashtagColor(hashtag) {
     return color;
 }
 
-function renderDiscoverTab() {
-    if (dom.discFavorites && store.discover_favorites) {
-        if (store.discover_favorites.length === 0) {
-            dom.discFavorites.innerHTML = '<div class="discover-empty"><i class="ti ti-heart-broken" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada data favorit</div>';
-        } else {
-            dom.discFavorites.innerHTML = store.discover_favorites.map((track, i) => {
-                const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
-                const playCnt = track.play_count > 0 ? ` · ${track.play_count}×` : '';
-                return `
-                <div class="fav-card" data-vid="${escapeHtml(track.video_id || '')}">
-                    <div class="fav-num">${i + 1}</div>
-                    <div class="fav-thumb">
-                        <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
-                    </div>
-                    <div class="fav-info">
-                        <div class="fav-title">${title}</div>
-                        <div class="fav-cnt">${escapeHtml(track.artist || '')}${playCnt}</div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-    }
 
+function renderDiscoverTab() {
     if (dom.discRecent && store.discover_recent) {
         if (store.discover_recent.length === 0) {
             dom.discRecent.innerHTML = '<div class="discover-empty"><i class="ti ti-history" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada riwayat</div>';
