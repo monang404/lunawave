@@ -57,20 +57,27 @@ class DownloadManager:
                             loop.call_soon_threadsafe(self._update_progress, percent)
 
                 local_path = await self.ytdlp.download_mp3(track.video_id, on_progress=sync_progress_hook)
-                track.local_path = local_path
-                self.state.download_progress = None
                 
-                # Copy to downloads folder with nice name
                 import shutil
                 from pathlib import Path
                 import re
+                
                 downloads_dir = Path("downloads")
                 downloads_dir.mkdir(exist_ok=True)
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", track.title)
                 user_path = downloads_dir / f"{safe_artist} - {safe_title}.mp3"
-                if not user_path.exists():
-                    shutil.copy2(local_path, user_path)
+                
+                if user_path.exists():
+                    try:
+                        user_path.unlink()
+                    except Exception as e:
+                        logger.warning(f"Could not remove existing user path {user_path}: {e}")
+                        
+                shutil.move(local_path, user_path)
+                
+                track.local_path = str(user_path)
+                self.state.download_progress = None
                 
                 await self.bus.publish(LogMessageEvent(message=f"Download sukses: {track.title} (Tersimpan di folder 'downloads')"))
                 await self.bus.publish(DownloadCompleteEvent(track=track))

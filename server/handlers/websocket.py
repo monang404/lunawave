@@ -199,18 +199,18 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
                     from pathlib import Path
                     import re
                     
-                    # Hapus file cache
+                    # Hapus file utama yang terdaftar di DB (bisa berupa downloads/ atau cache/mp3/ lama)
                     if os.path.exists(db_track.local_path):
                         try:
                             os.remove(db_track.local_path)
                         except Exception as e:
-                            logger.error(f"Gagal menghapus cache {db_track.local_path}: {e}")
+                            logger.error(f"Gagal menghapus file lokal {db_track.local_path}: {e}")
                             
-                    # Hapus file downloads
+                    # Fallback legacy: hapus juga dari folder downloads jika dulu file tersimpan ganda
                     safe_artist = re.sub(r'[\\/*?:"<>|]', "", db_track.artist)
                     safe_title = re.sub(r'[\\/*?:"<>|]', "", db_track.title)
                     user_path = Path("downloads") / f"{safe_artist} - {safe_title}.mp3"
-                    if user_path.exists():
+                    if user_path.exists() and str(user_path) != db_track.local_path:
                         try:
                             os.remove(str(user_path))
                         except:

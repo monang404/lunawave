@@ -54,11 +54,17 @@ function renderHomeLyrics() {
     if (!store.lyrics_lines || store.lyrics_lines.length === 0) {
         document.body.setAttribute("data-has-lyrics", "false");
         if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "none";
+        // Equalizer jadi fallback kalau tidak ada lirik dan lagu sedang playing
+        if (dom.homeEqualizer) {
+            dom.homeEqualizer.style.display = (store.status === "PLAYING") ? "flex" : "none";
+        }
         return;
     }
 
     document.body.setAttribute("data-has-lyrics", "true");
     if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "flex";
+    // Sembunyikan equalizer karena lirik sudah tersedia
+    if (dom.homeEqualizer) dom.homeEqualizer.style.display = "none";
 
     dom.lyricsCurrent.className = "lyrics-line current lyric-pop";
     

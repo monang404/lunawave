@@ -47,3 +47,37 @@ File baru:
 **File berubah:** `docs/INDEX.md` [NEW], `docs/STRUCTURE.md` [NEW], `docs/FILE_INDEX.md` [NEW], `docs/PATCHLOG.md` [NEW], `docs/REPORT.md` [NEW]
 **Alasan:** Tidak ada documentation index sebelumnya (hanya `docs/Index.md` kosong 0 bytes)
 **Status:** âœ… SELESAI â€” dibuat dari scan source code + `PROJECT_STRUCTURE_AUDIT.md`
+
+---
+
+## [2026-07-09] Bugfix â€” Radio Cover Image Disappearing
+
+**Tanggal:** 2026-07-09
+**Ringkasan:** Memperbaiki bug dimana cover image pada mode radio (dan antrean) menghilang atau menjadi broken image karena `.observed` class tidak dihapus saat elemen DOM di-_recycle_.
+**File berubah:** `web/static/js/render/queue.js`
+**Alasan:** Bugfix untuk memastikan intersection observer memicu ulang lazy-loading gambar.
+**Status:** âœ… SELESAI
+
+---
+
+## [2026-07-09] Optimasi Storage Unduhan (Single-File)
+
+**Tanggal:** 2026-07-09
+**Ringkasan:** Mengubah logika *download* agar memindahkan (*move*) file langsung ke folder `downloads/` tanpa menduplikatnya di `cache/mp3/`.
+**File berubah:** `engine/download_manager.py`, `server/handlers/websocket.py`
+**Alasan:** Menghemat 50% kapasitas penyimpanan saat mengunduh lagu, serta memperbaiki logika `delete_download` agar membersihkan file yang tepat.
+**Status:** âœ… SELESAI
+---
+
+## [2026-07-09] Patch — Offline CDN Fix
+
+**Tanggal:** 2026-07-09
+**Ringkasan:** Self-host Tabler Icons & hapus Google Fonts CDN. UI kini berfungsi penuh tanpa internet.
+**File berubah:**
+- `web/static/index.html` — hapus 4 baris Google Fonts, ganti 1 baris Tabler CDN ? lokal
+- `web/static/css/tokens.css` — pastikan font fallback stack
+- `web/static/css/vendor/tabler-icons.min.css` — [NEW] self-hosted
+- `web/static/css/vendor/fonts/*` — [NEW] font files
+- `web/static/sw.js` — bump CACHE_VERSION, tambah vendor ke PRECACHE_ASSETS
+**Alasan:** Aplikasi rusak tanpa internet karena icon hilang. Lagu lokal tidak bisa diputar dengan UX yang baik.
+**Status:** ? SELESAI

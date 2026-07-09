@@ -142,11 +142,11 @@ docs/
 ```
 ## Current Status
 
-Version :
-Sprint :
-Branch :
-Architecture :
-Last Patch :
+Version : 1.0 (LunaWave)
+Sprint : 3.2 (Refactoring Launcher)
+Branch : main
+Architecture : Hexagonal (Ports & Adapters)
+Last Patch : 2026-07-09 (Optimasi Storage Unduhan)
 
 
 **Alur kerja AI agent:** Baca `INDEX.md` → `STRUCTURE.md` → `FILE_INDEX.md` → cek `PATCHLOG.md` → baru sentuh source code. Setiap perubahan wajib append ke `PATCHLOG.md`.

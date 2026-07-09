@@ -1,7 +1,7 @@
 // ── Service Worker — LunaWave ──
 // Strategy: Cache-first untuk static assets, network-first untuk API/WS
 
-const CACHE_VERSION = 'lunawave-20260709-dev';
+const CACHE_VERSION = 'lunawave-20260709-offline-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Assets yang di-cache saat install
@@ -12,6 +12,12 @@ const PRECACHE_ASSETS = [
     // ── Icons ──
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
+
+    // ── Vendor (self-hosted, offline-safe) ──
+    '/static/css/vendor/tabler-icons.min.css',
+    '/static/css/vendor/fonts/tabler-icons.woff2',
+    '/static/css/vendor/fonts/tabler-icons.woff',
+    '/static/css/vendor/fonts/tabler-icons.ttf',
 
     // ── CSS: Base ──
     '/static/css/tokens.css',
