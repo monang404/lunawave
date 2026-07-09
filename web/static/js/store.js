@@ -20,7 +20,6 @@ const store = {
     is_online: true,
     download_progress: null,
     discover_recent: [],
-    discover_favorites: [],
     discover_cached: [],
     search_results: [],
     server_ts: 0

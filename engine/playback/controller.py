@@ -180,6 +180,9 @@ class PlaybackController:
 
     async def _on_cmd_toggle_pause(self, _data=None):
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
+            new_status = PlayerStatus.PAUSED if self.state.status == PlayerStatus.PLAYING else PlayerStatus.PLAYING
+            self.state.status = new_status
+            await self.bus.publish(TrackPauseChangedEvent(is_paused=(new_status == PlayerStatus.PAUSED)))
             await self.mpv.toggle_pause()
 
     async def _on_next(self, data=None):

@@ -135,9 +135,7 @@ class MpvController:
     async def toggle_pause(self):
         if not self.is_connected:
             return
-        paused = await self._get_property("pause")
-        if paused is not None:
-            await self._set_property("pause", not paused)
+        await self._command(["cycle", "pause"])
 
     async def set_volume(self, vol: int):
         if not self.is_connected:

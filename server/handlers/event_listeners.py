@@ -54,7 +54,6 @@ def setup_event_listeners(
             from server.serializers import track_to_dict
             ds = DiscoverService(playback_controller.resolver.db)
             recent = await ds.get_recent(15)
-            favorites = await ds.get_favorites(15)
             cached = await ds.get_cached(15)
             featured_artists = await ds.get_featured_artists(100)
             featured_genres = await ds.get_featured_genres(100)
@@ -62,7 +61,6 @@ def setup_event_listeners(
                 "type": "discover_data",
                 "data": {
                     "recent": [track_to_dict(t) for t in recent],
-                    "favorites": [track_to_dict(t) for t in favorites],
                     "cached_tracks": [track_to_dict(t) for t in cached],
                     "featured_artists": featured_artists,
                     "featured_genres": featured_genres
