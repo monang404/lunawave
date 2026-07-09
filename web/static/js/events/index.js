@@ -3,7 +3,7 @@ function initEvents() {
         card.addEventListener("click", () => {
             const mood = card.getAttribute("data-mood");
             if (mood && store.userRole === "admin") {
-                switchTab("search");
+                if (typeof switchTab === "function") switchTab("search");
                 if (dom.searchInput) {
                     dom.searchInput.value = mood + " mix";
                     dom.searchInput.dispatchEvent(new Event("input"));
@@ -20,9 +20,9 @@ function initEvents() {
             } else {
                 localStorage.setItem("ytgui_user_role", "client");
             }
-            applyRoleUI();
-            unlockBrowserAudio();
-            syncBrowserAudio();
+            if (typeof applyRoleUI === "function") applyRoleUI();
+            if (typeof unlockBrowserAudio === "function") unlockBrowserAudio();
+            if (typeof syncBrowserAudio === "function") syncBrowserAudio();
         });
     }
 
@@ -41,7 +41,9 @@ function initEvents() {
         dom.adminSubmitBtn.addEventListener("click", () => {
             const user = dom.adminUsername ? dom.adminUsername.value.trim() : "";
             const pass = dom.adminPassword ? dom.adminPassword.value : "";
-            login(user, pass);
+            if (typeof login === 'function') {
+                login(user, pass);
+            }
         });
     }
 
@@ -49,38 +51,24 @@ function initEvents() {
         dom.adminPassword.addEventListener("keypress", (e) => {
             if (e.key === "Enter" && dom.adminSubmitBtn) dom.adminSubmitBtn.click();
         });
-        // S02-042: Hapus pesan error saat user mulai mengetik ulang
-        dom.adminPassword.addEventListener("input", () => {
-            if (dom.loginErrorMsg) dom.loginErrorMsg.textContent = "";
-        });
     }
-
-    if (dom.adminUsername) {
-        dom.adminUsername.addEventListener("keypress", (e) => {
-            if (e.key === "Enter" && dom.adminSubmitBtn) dom.adminSubmitBtn.click();
-        });
-        // S02-042: Hapus pesan error saat user mulai mengetik ulang
-        dom.adminUsername.addEventListener("input", () => {
-            if (dom.loginErrorMsg) dom.loginErrorMsg.textContent = "";
-        });
-    }
-
 
     if (dom.logoutBtn) {
         dom.logoutBtn.addEventListener("click", () => {
-            logout();
+            if (typeof logout === "function") logout();
         });
     }
 
     document.querySelectorAll(".nav-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-            switchTab(btn.dataset.tab);
+            if (typeof switchTab === "function") switchTab(btn.dataset.tab);
         });
     });
 
-    initPlayerEvents();
-    initQueueEvents();
-    initQueueDragDrop();
-    initLyricsEvents();
-    initSettingsEvents();
+    // Initialize sub-modules
+    if (typeof initPlayerEvents === "function") initPlayerEvents();
+    if (typeof initQueueEvents === "function") initQueueEvents();
+    if (typeof initQueueDragDrop === "function") initQueueDragDrop();
+    if (typeof initLyricsEvents === "function") initLyricsEvents();
+    if (typeof initSettingsEvents === "function") initSettingsEvents();
 }

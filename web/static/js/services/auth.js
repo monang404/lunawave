@@ -16,6 +16,10 @@ function applyRoleUI() {
         document.body.classList.remove("client-mode");
         dom.logoutBtn.style.display = "flex";
         switchTab("home");
+        // FIX BUG-1: setelah #app visible, paksa recalculate tinggi viewport.
+        // Android Chrome tidak auto-fire visualViewport resize saat element
+        // berubah dari display:none ke display:flex, sehingga nav-bar bisa
+        // terpotong sampai user scroll atau resize manual.
         if (window.visualViewport) {
             const _app = document.getElementById("app");
             if (_app) {
@@ -39,11 +43,10 @@ function login(user, pass) {
     dom.loginErrorMsg.textContent = "";
     
     store.adminUsername = user;
-    if (dom.adminPassword) {
-        dom.adminPassword.value = "";
-    }
-    if (wsClient && wsClient.getReadyState() === WebSocket.OPEN) {
-        wsSend(WS_ACTIONS.AUTH, { username: user, password: pass });
+    store.adminPassword = pass;
+    
+    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+        wsSend("auth", { username: user, password: pass });
     } else {
         dom.loginErrorMsg.textContent = "Koneksi server terputus. Silakan tunggu/refresh.";
         if (dom.adminSubmitBtn) {
@@ -54,6 +57,7 @@ function login(user, pass) {
 }
 
 function logout() {
+    // 1. Stop local browser/client audio
     if (typeof localAudio !== "undefined" && localAudio) {
         try {
             localAudio.pause();
@@ -68,38 +72,48 @@ function logout() {
         _lastLoadedVideoId = null;
     }
 
+    // 2. Stop server playback if admin
     if (store.userRole === "admin") {
         try {
-            wsSend(WS_ACTIONS.STOP);
+            wsSend("stop");
         } catch (e) {
             console.warn("Failed to send stop command:", e);
         }
     }
 
-    const token = safeStorage.get("ytgui_session_token");
-    if (token) {
-        try {
-            wsSend(WS_ACTIONS.LOGOUT, { token: token });
-        } catch (e) {
-            console.warn("Failed to send logout command:", e);
-        }
-    }
-
+    // 3. Clear store & local storage
     store.userRole = "portal";
     store.adminUsername = "";
+    store.adminPassword = "";
     safeStorage.remove("ytgui_user_role");
     safeStorage.remove("ytgui_admin_username");
+    safeStorage.remove("ytgui_admin_password");
     safeStorage.remove("ytgui_session_token");
 
-    closeSettings();
-
-    if (dom.portalClientBtn) {
-        dom.portalClientBtn.style.display = "none";
+    // 4. Close settings sheet UI if open
+    if (typeof closeSettings === "function") {
+        closeSettings();
     }
-    applyRoleUI();
-    try {
-        if (typeof wsClient !== "undefined") {
-            wsClient.close();
+
+    // 5. Redirect or adjust view
+    if (window.location.pathname !== "/admin") {
+        setTimeout(() => {
+            if (window.ws) {
+                try {
+                    window.ws.close();
+                } catch (e) {}
+            }
+            window.location.href = "/admin";
+        }, 150);
+    } else {
+        if (dom.portalClientBtn) {
+            dom.portalClientBtn.style.display = "none";
         }
-    } catch (e) {}
+        applyRoleUI();
+        if (window.ws) {
+            try {
+                window.ws.close();
+            } catch (e) {}
+        }
+    }
 }

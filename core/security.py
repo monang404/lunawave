@@ -1,7 +1,6 @@
-import base64
 import hashlib
 import secrets
-
+import base64
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)
@@ -11,6 +10,8 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed_password: str) -> bool:
     if not hashed_password.startswith("pbkdf2:sha256:"):
         # TASK-1.1: Tolak semua format non-pbkdf2 — hapus plaintext fallback
+        # Plaintext comparison adalah security hole: password mentah tersimpan
+        # di env var, log, dan /proc/self/environ.
         return False
     try:
         _, _, iterations, salt_b64, key_b64 = hashed_password.split("$")[0].split(":") + hashed_password.split("$")[1:]

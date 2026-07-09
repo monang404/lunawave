@@ -23,7 +23,7 @@ cache/admin_password.txt
 
 # Database utama (berisi session tokens — jangan commit)
 # Data artis di-seed ulang via: python data/import_artists.py
-data/lunawave.db
+data/ytgui.db
 data/*.db-shm
 data/*.db-wal
 
@@ -63,28 +63,3 @@ Thumbs.db
 
 # Windows artifacts
 desktop.ini
-win32-x64/
-node_modules/
-logs/
-start_original.py
-
-# Development / Temporary
-scratch/
-.backup_patchlog/
-
-# Sensitive runtime files
-data/admin_password.txt
-data/admin_initial_password.txt
-data/state.json
-
-# Test output
-pytest_output.txt
-
-# Folder scratch dan temp
-file_aneh/
-
-# Data archive lama
-data/archive/
-
-# Cache internal
-cache/pb_html.txt

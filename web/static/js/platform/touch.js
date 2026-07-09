@@ -3,7 +3,9 @@
     let touchStartY = 0;
 
     document.addEventListener('touchstart', e => {
-        unlockBrowserAudio();
+        if (typeof unlockBrowserAudio === 'function') {
+            unlockBrowserAudio();
+        }
         if (e.touches.length === 1) {
             touchStartX = e.touches[0].screenX;
             touchStartY = e.touches[0].screenY;
@@ -11,6 +13,7 @@
     }, { passive: true });
 
     document.addEventListener('touchend', e => {
+        // FIX BUG-2: jangan intercept tap pada elemen yang punya handler sendiri.
         if (e.target.closest(
             "#radio-toggle-btn, button, a, input, select, textarea, [role=\"button\"], .mood-row, .disc-row2, [style*=\"overflow-x\"]"
         )) return;
@@ -23,13 +26,13 @@
             
             if (diffX > 80 && diffX > diffY) {
                 if (store.userRole !== "admin") {
-                    // no toast for non-admin swipe (S05-052)
+                    if (typeof showLogToast === "function") showLogToast("Hanya admin yang bisa memutar musik");
                     return;
                 }
                 if (touchEndX < touchStartX) {
-                    wsSend(WS_ACTIONS.NEXT);
+                    if (typeof wsSend === 'function') wsSend('next');
                 } else {
-                    wsSend(WS_ACTIONS.PREV);
+                    if (typeof wsSend === 'function') wsSend('prev');
                 }
             }
         }

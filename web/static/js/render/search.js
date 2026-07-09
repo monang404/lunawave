@@ -2,8 +2,7 @@ function buildSrThumbHtml(track) {
     return `<img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt=""><div class="thumb-eq-overlay"><div class="eq-anim-icon"><span></span><span></span><span></span></div></div>`;
 }
 
-function renderSearchResults(data) {
-    let results = Array.isArray(data) ? data : (data && data.items ? data.items : []);
+function renderSearchResults(results) {
     store.search_results = results || [];
     dom.searchResults.innerHTML = "";
     if (!results || results.length === 0) {
@@ -31,7 +30,7 @@ function renderSearchResults(data) {
 
         const title = document.createElement("div");
         title.className = "sr-title";
-        title.textContent = cleanTrackTitle(track.title);
+        title.textContent = typeof cleanTrackTitle === "function" ? cleanTrackTitle(track.title) : track.title;
 
         const meta = document.createElement("div");
         meta.className = "sr-meta";
@@ -48,12 +47,13 @@ function renderSearchResults(data) {
         duration.className = "sr-duration";
         duration.textContent = formatTime(track.duration);
 
+        // 3-dots context menu button
         const moreBtn = document.createElement("button");
         moreBtn.className = "sr-more-btn";
         moreBtn.innerHTML = '<i class="ti ti-dots-vertical"></i>';
         moreBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            showActionModal(track);
+            e.stopPropagation(); // Prevent playing track
+            if (typeof showActionModal === "function") showActionModal(track);
         });
 
         item.appendChild(thumb);
@@ -79,12 +79,14 @@ function updateSearchPlayingState() {
         item.classList.toggle("playing", !!(isCurrent && isPlaying));
     });
     
-    window.loadLazyCovers();
+    if (typeof window.loadLazyCovers === "function") {
+        window.loadLazyCovers();
+    }
 }
 
 function playSearchTrack(track) {
     if (store.userRole !== "admin" || !track) return;
-    wsSend(WS_ACTIONS.PLAY_TRACK, track);
+    wsSend("play_track", track);
 }
 
 function showActionModal(track) {

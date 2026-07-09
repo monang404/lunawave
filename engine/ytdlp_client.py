@@ -1,21 +1,15 @@
-from core.value_objects import VideoId
-
 import asyncio
+import yt_dlp
 import re
 from concurrent.futures import ThreadPoolExecutor
-
-import structlog
-import yt_dlp
-
-from config import CACHE_DIR, YTDLP_RESOLVE_TIMEOUT_SEC
 from core.state import TrackInfo
-
+from config import CACHE_DIR, YTDLP_RESOLVE_TIMEOUT_SEC
 
 class YtDlpClient:
     """
     yt-dlp is run in a thread executor because it is synchronous.
     Do NOT call yt-dlp directly in the event loop.
-
+    
     HIGH-04 note: extract_flat=True returns minimal metadata for speed.
     Fields like view_count and thumbnail may be None. This is an
     intentional trade-off — full extraction takes 2-5x longer.
@@ -27,7 +21,6 @@ class YtDlpClient:
         "extract_flat": False,
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "format_sort": ["abr", "asr"],
-        "concurrent_fragment_downloads": 5,
     }
 
     def __init__(self):
@@ -42,43 +35,45 @@ class YtDlpClient:
             raise Exception("DownloadCancelled")
 
     async def search(self, query: str, max_results: int = 10) -> list[TrackInfo]:
-        options = {**self._YDL_OPTS_INFO,
+        opts = {**self._YDL_OPTS_INFO,
                 "extract_flat": True}
-        url = f"ytsearch{max_results}:{query}"
+        url = f"ytsearch10:{query}"
         loop = asyncio.get_running_loop()
-        results = await loop.run_in_executor(self._executor, self._extract_sync, url, options)
-
+        results = await loop.run_in_executor(self._executor, self._extract_sync, url, opts)
+        
         tracks = []
-        for entry in results.get("entries", []):
-            if not entry:
+        for e in results.get("entries", []):
+            if not e:
                 continue
-
-            duration_raw = entry.get("duration")
+                
+            duration_raw = e.get("duration")
             try:
                 duration = int(duration_raw) if duration_raw else 0
             except (ValueError, TypeError):
                 duration = 0
-
-            title_raw = entry.get("title")
+                
+            title_raw = e.get("title")
             title = str(title_raw).lower() if title_raw else ""
-
-            if duration > 600:
+            
+            # Filter kompilasi, album, dan mashup:
+            if duration > 600:  # 10 menit (sinkron dengan Radio Mode)
                 continue
             if any(kw in title for kw in ["compilation", "full album", "mix", "playlist", "mashup", "medley", "megamix"]):
                 continue
-
-            tracks.append(self._to_track(entry))
+                
+            tracks.append(self._to_track(e))
             if len(tracks) >= max_results:
                 break
-
+                
         return tracks
 
     async def get_stream_url(self, video_id: str) -> str:
         """Get direct audio URL using yt-dlp to allow true caching.
         Raises RuntimeError jika ekstraksi gagal — caller wajib handle.
         """
-        _log = structlog.get_logger(__name__)
-        options = {
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+        opts = {
             **self._YDL_OPTS_INFO,
             "extract_flat": False,
         }
@@ -86,8 +81,12 @@ class YtDlpClient:
         loop = asyncio.get_running_loop()
         try:
             # PATCH-YTDLP-RESOLVE-TIMEOUT-01: dulu run_in_executor() di sini tidak punya batas
+            # waktu -> network lambat/flaky bisa bikin proses hang tanpa
+            # batas tanpa pernah throw, jadi play_track() nyangkut selamanya
+            # di status LOADING. Sekarang dibungkus asyncio.wait_for supaya
+            # gagal cepat & jelas kalau kelamaan.
             info = await asyncio.wait_for(
-                loop.run_in_executor(self._executor, self._extract_sync, url, options),
+                loop.run_in_executor(self._executor, self._extract_sync, url, opts),
                 timeout=YTDLP_RESOLVE_TIMEOUT_SEC,
             )
             if info:
@@ -112,12 +111,12 @@ class YtDlpClient:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', video_id)
         out_path = CACHE_DIR / f"{safe_id}.%(ext)s"
-
+        
         hooks = [self._check_cancel_hook]
         if on_progress:
             hooks.append(on_progress)
-
-        options = {
+            
+        opts = {
             **self._YDL_OPTS_INFO,
             "format": "bestaudio/best",
             "format_sort": ["abr", "asr"],
@@ -130,35 +129,37 @@ class YtDlpClient:
             "progress_hooks": hooks,
         }
         loop = asyncio.get_running_loop()  # HIGH-03 fix
-        await loop.run_in_executor(self._executor, self._download_sync, video_id, options)
+        await loop.run_in_executor(self._executor, self._download_sync, video_id, opts)
         return str(CACHE_DIR / f"{safe_id}.mp3")
 
-    def _extract_sync(self, url, options):
-        with yt_dlp.YoutubeDL(options) as ytdl_instance:
-            return ytdl_instance.extract_info(url, download=False)
+    def _extract_sync(self, url, opts):
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            return ydl.extract_info(url, download=False)
 
-    def _download_sync(self, video_id, options):
+    def _download_sync(self, video_id, opts):
         url = f"https://www.youtube.com/watch?v={video_id}"
-        with yt_dlp.YoutubeDL(options) as ytdl_instance:
-            ytdl_instance.download([url])
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
 
     def _pick_audio_url(self, info: dict) -> str:
         formats = info.get("formats", [])
-        for format_info in reversed(formats):
-            if format_info.get("acodec") != "none" and format_info.get("vcodec") == "none":
-                return format_info["url"]
+        for fmt in reversed(formats):
+            if fmt.get("acodec") != "none" and fmt.get("vcodec") == "none":
+                return fmt["url"]
         return info["url"]
 
     def _to_track(self, entry: dict) -> TrackInfo:
+        # Some yt-dlp versions return duration as float or None
         duration_raw = entry.get("duration", 0)
         duration = int(duration_raw) if duration_raw else 0
-
+        
+        # MED-07 fix: Guard against missing/empty video ID
         video_id = entry.get("id", "") or entry.get("url", "")
-        if video_id and not VideoId._RE.match(video_id):
+        if video_id and not re.match(r'^[a-zA-Z0-9_\-]{1,64}$', video_id):
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
         elif not video_id:
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
-
+        
         return TrackInfo(
             video_id=video_id,
             title=entry.get("title", "Unknown"),
