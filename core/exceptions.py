@@ -1,5 +1,5 @@
 class YtPlayerError(Exception):
-    """Base exception for YT Termux Player Pro."""
+    """Base exception for LunaWave."""
     pass
 
 class MpvConnectionError(YtPlayerError):

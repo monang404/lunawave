@@ -1,5 +1,5 @@
 """
-Purpose: Menyimpan state aplikasi YTGUI V2, termasuk status pemutar, mode pemutaran, lagu saat ini, antrean, riwayat, status download, lirik, dan tab aktif.
+Purpose: Menyimpan state aplikasi LunaWave, termasuk status pemutar, mode pemutaran, lagu saat ini, antrean, riwayat, status download, lirik, dan tab aktif.
 Subscribes to: (tidak ada)
 Publishes: (tidak ada)
 """

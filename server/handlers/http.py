@@ -147,7 +147,7 @@ async def serve_metrics(request):
     import os as _os
     client_ip = request.remote
     _localhost_ips = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
-    metrics_token = _os.environ.get("YTGUI_METRICS_TOKEN")
+    metrics_token = _os.environ.get("LUNAWAVE_METRICS_TOKEN", _os.environ.get("YTGUI_METRICS_TOKEN"))
     is_local = client_ip in _localhost_ips
     has_valid_token = (
         metrics_token

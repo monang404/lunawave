@@ -5,11 +5,11 @@ from core.state import TrackInfo
 import sqlite3
 
 async def main():
-    db = Database(Path("data/ytgui.db"))
+    db = Database(Path("data/lunawave.db"))
     await db.init()
     
     # Check current tracks with local_path
-    conn = sqlite3.connect("data/ytgui.db")
+    conn = sqlite3.connect("data/lunawave.db")
     rows = conn.execute("SELECT video_id, title, local_path FROM tracks WHERE local_path IS NOT NULL").fetchall()
     print("Currently in DB:", rows)
     

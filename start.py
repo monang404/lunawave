@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bagas.fm — Server Manager
+LunaWave — Server Manager
 Jalankan: python start.py
 """
 
@@ -25,10 +25,10 @@ import secrets
 
 # ── Config ────────────────────────────────────────────────
 BASE_DIR   = Path(__file__).parent
-SERVER_PORT = int(os.environ.get("YTGUI_PORT", 8765))
+SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
 PYTHON     = sys.executable
 
-# ── Colors (bagas.fm dark theme) ─────────────────────────
+# ── Colors (LunaWave dark theme) ─────────────────────────
 BG         = "#0E0E12"
 BG_SURFACE = "#151518"
 BG_CARD    = "#1C1C22"
@@ -90,7 +90,7 @@ class ServerManager(tk.Tk):
 
     # ── Window setup ──────────────────────────────────────
     def _build_window(self):
-        self.title("bagas.fm — Server Manager")
+        self.title("LunaWave — Server Manager")
         self.geometry("600x680")
         self.minsize(520, 600)
         self.configure(bg=BG)
@@ -103,7 +103,12 @@ class ServerManager(tk.Tk):
         self.geometry(f"+{x}+{y}")
 
         try:
-            self.iconbitmap(default="")
+            icon_path = BASE_DIR / "web" / "static" / "icons" / "icon-512.png"
+            if icon_path.exists():
+                img = tk.PhotoImage(file=str(icon_path))
+                self.iconphoto(True, img)
+            else:
+                self.iconbitmap(default="")
         except Exception:
             pass
 
@@ -114,7 +119,7 @@ class ServerManager(tk.Tk):
         header.pack(fill="x")
 
         tk.Label(
-            header, text="bagas.fm",
+            header, text="LunaWave",
             bg=BG_SURFACE, fg=ACCENT,
             font=("Segoe UI", 18, "bold"),
         ).pack()
@@ -577,6 +582,8 @@ class ServerManager(tk.Tk):
 
         self._write_log(f"Starting server on port {port}...", "accent")
         env = os.environ.copy()
+        env["LUNAWAVE_HOST"] = "0.0.0.0"
+        env["LUNAWAVE_PORT"] = str(port)
         env["YTGUI_HOST"] = "0.0.0.0"
         env["YTGUI_PORT"] = str(port)
         env["PYTHONUTF8"] = "1"
@@ -657,7 +664,7 @@ class ServerManager(tk.Tk):
         # Message
         tk.Label(
             popup, 
-            text=f"Server ytgui aktif pada port {port}.\nSilakan login untuk mengelola room.",
+            text=f"Server LunaWave aktif pada port {port}.\nSilakan login untuk mengelola room.",
             bg=BG, fg=TEXT_2, font=("Segoe UI", 10),
             justify="center"
         ).pack(pady=(0, 15))

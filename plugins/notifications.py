@@ -22,7 +22,7 @@ from config import BASE_DIR
 
 logger = structlog.get_logger(__name__)
 
-NOTIFICATION_ID = "ytgui_nowplaying"
+NOTIFICATION_ID = "lunawave_nowplaying"
 _SOCK_DIR = BASE_DIR / "cache" / "sockets"
 _FIFO_PATH = _SOCK_DIR / "nowplaying.fifo"
 _SHEBANG = "#!/data/data/com.termux/files/usr/bin/bash"
@@ -114,7 +114,7 @@ class TermuxNowPlaying:
         if not self._available or not self._track:
             return
 
-        title = self._track.title or "YTGUI"
+        title = self._track.title or "LunaWave"
         artist = self._track.artist or "Now playing"
 
         args = [

@@ -100,7 +100,7 @@ class RadioMode:
             # Bug #3 fix: pesan error sebut path DB yang benar
             raise RuntimeError(
                 "Tabel artists kosong. Jalankan: python data/import_artists.py "
-                "--db data/ytgui.db --json data/artists.json"
+                "--db data/lunawave.db --json data/artists.json"
             )
 
     # ── lifecycle ─────────────────────────────────────────────

@@ -20,7 +20,7 @@ COMMAND_LATENCY = Histogram(
 )
 
 # 3. Domain Events Published (Counter)
-EVENT_COUNT = Counter("ytgui_events_total", "Total events published", ["event_type"])
+EVENT_COUNT = Counter("lunawave_events_total", "Total events published", ["event_type"])
 
 # 4. Active WebSockets (Gauge)
 ACTIVE_WEBSOCKETS = Gauge(

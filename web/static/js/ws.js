@@ -28,11 +28,11 @@ function wsConnect() {
         }
         
         if (store.userRole === "admin") {
-            const token = window.safeStorage.get("ytgui_session_token");
+            const token = window.safeStorage.get("lunawave_session_token");
             if (token) {
                 wsSend("auth", { token: token });
             }
-            const savedOutput = window.safeStorage.get("ytgui_audio_output") || "browser";
+            const savedOutput = window.safeStorage.get("lunawave_audio_output") || "browser";
             wsSend("set_output", { output: savedOutput });
         } else if (store.userRole === "client") {
             if (store.active_tab === "home" || store.active_tab === "discover") {
@@ -78,11 +78,12 @@ function handleServerMessage(msg) {
             }
             if (msg.data.success) {
                 store.userRole = "admin";
-                window.safeStorage.set("ytgui_user_role", "admin");
-                if (msg.data.token) {
-                    window.safeStorage.set("ytgui_session_token", msg.data.token);
+                window.safeStorage.set("lunawave_user_role", "admin");
+                store.userRole = "admin";
+                if (msg.data && msg.data.token) {
+                    window.safeStorage.set("lunawave_session_token", msg.data.token);
                 }
-                window.safeStorage.remove("ytgui_admin_password");
+                window.safeStorage.remove("lunawave_admin_password");
                 dom.loginErrorMsg.textContent = "";
                 dom.portalLoginForm.classList.add("hidden");
                 applyRoleUI();

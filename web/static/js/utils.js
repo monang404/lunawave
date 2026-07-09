@@ -7,13 +7,29 @@ function formatTime(secs) {
 
 window.safeStorage = {
     get: function(key) {
-        try { return localStorage.getItem(key); } catch(e) { return null; }
+        try { 
+            let val = localStorage.getItem(key);
+            if (val === null && key.startsWith("lunawave_")) {
+                let legacyKey = key.replace("lunawave_", "ytgui_");
+                val = localStorage.getItem(legacyKey);
+                if (val !== null) {
+                    localStorage.setItem(key, val);
+                    localStorage.removeItem(legacyKey);
+                }
+            }
+            return val;
+        } catch(e) { return null; }
     },
     set: function(key, value) {
         try { localStorage.setItem(key, value); } catch(e) {}
     },
     remove: function(key) {
-        try { localStorage.removeItem(key); } catch(e) {}
+        try { 
+            localStorage.removeItem(key); 
+            if (key.startsWith("lunawave_")) {
+                localStorage.removeItem(key.replace("lunawave_", "ytgui_"));
+            }
+        } catch(e) {}
     }
 };
 

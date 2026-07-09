@@ -3,11 +3,12 @@
 # ----------------------------------------------------------
 #  CONFIGURATION
 # ----------------------------------------------------------
-export YTGUI_HOST="0.0.0.0"
-export YTGUI_PORT=${YTGUI_PORT:-8765}
-
-# export YTGUI_ADMIN_USER="admin"
-# export YTGUI_ADMIN_PASS="your_secret_password"
+export LUNAWAVE_HOST=${LUNAWAVE_HOST:-${YTGUI_HOST:-"0.0.0.0"}}
+export LUNAWAVE_PORT=${LUNAWAVE_PORT:-${YTGUI_PORT:-8765}}
+export LUNAWAVE_ADMIN_USER=${LUNAWAVE_ADMIN_USER:-${YTGUI_ADMIN_USER:-"admin"}}
+if [ -n "$YTGUI_ADMIN_PASS" ]; then
+    export LUNAWAVE_ADMIN_PASS=${LUNAWAVE_ADMIN_PASS:-$YTGUI_ADMIN_PASS}
+fi
 
 # ----------------------------------------------------------
 #  COLORS & FORMATTING
@@ -26,15 +27,15 @@ MAGENTA="\033[1;35m"
 clear
 echo -e "${MAGENTA}${BOLD}"
 cat << "EOF"
-   __   __ _____  ____  _   _   ___     _____  __  __
-   \ \ / /|_   _|/ ___|| | | |  | |    |  ___||  \/  |
-    \ V /   | | | |  _ | | | |  | |    | |_   | |\/| |
-     | |    | | | |_| || |_| |  | |    |  _|  | |  | |
-     |_|    |_|  \____| \___/   |_|    |_|    |_|  |_|
+ _      _    _ _   _   ___   __    __   ___  __      __ _____ 
+| |    | |  | | \ | | / _ \  \ \  / /  / _ \ \ \    / /|  ___|
+| |    | |  | |  \| |/ /_\ \  \ \/ /  / /_\ \ \ \  / / | |__  
+| |___ | |__| | |\  |  ___  \  \  /\  /  ___  \ \ \/ /  |  __| 
+|_____| \____/|_| \_/_/   \_\  \/  \/_/_/   \_\  \__/   |_____|
 
 EOF
 echo -e "${CYAN}    ========================================================="
-echo -e "                    YTGUI Web Server Startup                 "
+echo -e "                    LunaWave Web Server Startup              "
 echo -e "    =========================================================${RESET}"
 echo ""
 
@@ -92,14 +93,14 @@ if [ -d "$SOCKET_DIR" ]; then
 fi
 
 if command -v fuser &> /dev/null; then
-    fuser -k ${YTGUI_PORT}/tcp > /dev/null 2>&1
+    fuser -k ${LUNAWAVE_PORT}/tcp > /dev/null 2>&1
 elif command -v lsof &> /dev/null; then
-    lsof -ti tcp:${YTGUI_PORT} | xargs kill -9 > /dev/null 2>&1
+    lsof -ti tcp:${LUNAWAVE_PORT} | xargs kill -9 > /dev/null 2>&1
 else
     if command -v ss &> /dev/null; then
-        ss -lptn "sport = :${YTGUI_PORT}" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | xargs -r kill -9 > /dev/null 2>&1
+        ss -lptn "sport = :${LUNAWAVE_PORT}" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | xargs -r kill -9 > /dev/null 2>&1
     elif command -v netstat &> /dev/null; then
-        netstat -nlp 2>/dev/null | grep ":${YTGUI_PORT} " | awk '{print $7}' | cut -d'/' -f1 | xargs -r kill -9 > /dev/null 2>&1
+        netstat -nlp 2>/dev/null | grep ":${LUNAWAVE_PORT} " | awk '{print $7}' | cut -d'/' -f1 | xargs -r kill -9 > /dev/null 2>&1
     fi
 fi
 
@@ -112,24 +113,24 @@ echo -e "${MAGENTA}---------------------------------------------------------${RE
 echo -e "${BOLD} Admin Access Information${RESET}"
 echo -e "${MAGENTA}---------------------------------------------------------${RESET}"
 
-if [ -n "$YTGUI_ADMIN_PASS" ]; then
-    echo -e "  [i] Password loaded from environment (YTGUI_ADMIN_PASS)."
+if [ -n "$LUNAWAVE_ADMIN_PASS" ]; then
+    echo -e "  [i] Password loaded from environment (LUNAWAVE_ADMIN_PASS)."
 elif [ -f "$PASS_FILE" ]; then
     echo -e "  [i] Password stored securely in: $PASS_FILE"
 else
     echo -e "  [i] A new password will be auto-generated on first launch."
 fi
-echo -e "  [i] Username: ${BOLD}${YTGUI_ADMIN_USER:-admin}${RESET}"
+echo -e "  [i] Username: ${BOLD}${LUNAWAVE_ADMIN_USER:-admin}${RESET}"
 
 # ----------------------------------------------------------
 #  SERVER STARTUP
 # ----------------------------------------------------------
 echo ""
 echo -e "${CYAN}    =========================================================${RESET}"
-echo -e "       Client Interface : ${BOLD}http://localhost:${YTGUI_PORT}/${RESET}"
-echo -e "       Admin Interface  : ${BOLD}http://localhost:${YTGUI_PORT}/admin${RESET}"
-echo -e "       System Health    : ${BOLD}http://localhost:${YTGUI_PORT}/health${RESET}"
-echo -e "       Metrics          : ${BOLD}http://localhost:${YTGUI_PORT}/metrics${RESET}"
+echo -e "       Client Interface : ${BOLD}http://localhost:${LUNAWAVE_PORT}/${RESET}"
+echo -e "       Admin Interface  : ${BOLD}http://localhost:${LUNAWAVE_PORT}/admin${RESET}"
+echo -e "       System Health    : ${BOLD}http://localhost:${LUNAWAVE_PORT}/health${RESET}"
+echo -e "       Metrics          : ${BOLD}http://localhost:${LUNAWAVE_PORT}/metrics${RESET}"
 echo -e "${CYAN}    =========================================================${RESET}"
 echo ""
 echo -e "${GREEN}[*] Starting Server...${RESET}"

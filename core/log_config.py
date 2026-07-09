@@ -22,7 +22,7 @@ def setup_logging():
     import queue
     from logging.handlers import QueueHandler, QueueListener
 
-    log_path = BASE_DIR / "ytplayer.log"
+    log_path = BASE_DIR / "lunawave.log"
     _file_handler = RotatingFileHandler(
         log_path,
         maxBytes=1 * 1024 * 1024,
