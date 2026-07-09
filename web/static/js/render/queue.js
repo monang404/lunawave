@@ -115,6 +115,7 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
                 img.dataset.thumb = track.thumbnail || '';
                 img.src = '';
                 img.classList.remove('loaded');
+                img.classList.remove('observed');
             }
         }
     } else {
