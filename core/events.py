@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from core.state import TrackInfo
-
 
 @dataclass
 class DomainEvent:
@@ -48,7 +47,3 @@ class LogMessageEvent(DomainEvent):
 @dataclass
 class TrackPauseChangedEvent(DomainEvent):
     is_paused: bool = False
-
-@dataclass
-class MpvReconnectedEvent(DomainEvent):
-    pass

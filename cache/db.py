@@ -1,249 +1,388 @@
-from pathlib import Path
-import asyncio
 import aiosqlite
+import time
 import structlog
-
+from pathlib import Path
+from core.state import TrackInfo
 from config import DB_PATH
 
 logger = structlog.get_logger(__name__)
 
-class ConnectionPool:
-    def __init__(self, db_path: Path, max_size: int = 5):
-        self.db_path = db_path
-        self.max_size = max_size
-        self._pool = asyncio.Queue(maxsize=max_size)
-        self._conns = []
-
-    async def init(self):
-        for _ in range(self.max_size):
-            conn = await aiosqlite.connect(self.db_path)
-            conn.row_factory = aiosqlite.Row
-            await conn.execute("PRAGMA journal_mode=WAL")
-            await conn.execute("PRAGMA foreign_keys=ON")
-            await conn.execute("PRAGMA busy_timeout=5000")
-            self._pool.put_nowait(conn)
-            self._conns.append(conn)
-            
-    def acquire(self):
-        return PoolContext(self)
-        
-    def release(self, conn):
-        self._pool.put_nowait(conn)
-        
-    async def close(self):
-        for conn in self._conns:
-            await conn.close()
-            
-class PoolContext:
-    def __init__(self, pool):
-        self.pool = pool
-        self.conn = None
-        
-    async def __aenter__(self):
-        self.conn = await self.pool._pool.get()
-        return self.conn
-        
-    async def __aexit__(self, exc_type, exc, tb):
-        self.pool.release(self.conn)
-
 class Database:
+    """
+    CRITICAL-04 fix: Uses a single persistent connection instead of
+    opening a new connection for every operation.
+    MED-10 fix: Added separate increment_play_count method.
+    """
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
         self._schema_path = Path(__file__).parent / "schema.sql"
-        self.pool = ConnectionPool(db_path)
-        self.tracks = None
-        self.sessions = None
-        self.discover = None
+        self._conn = None
+
+    @property
+    def conn(self):
+        return self._conn
 
     async def init(self):
+        """Initializes the database using the schema.sql file."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        await self.pool.init()
-
+        self._conn = await aiosqlite.connect(self.db_path)
+        self._conn.row_factory = aiosqlite.Row
+        await self._conn.execute("PRAGMA journal_mode=WAL")
+        
         with open(self._schema_path, "r", encoding="utf-8") as f:
             schema_sql = f.read()
+        await self._conn.executescript(schema_sql)
+        
+        # Migrasi: Tambahkan kolom is_favorite jika belum ada
+        try:
+            await self._conn.execute("ALTER TABLE tracks ADD COLUMN is_favorite INTEGER DEFAULT 0")
+            await self._conn.commit()
+        except Exception:
+            pass
             
-        async with self.pool.acquire() as conn:
-            await conn.executescript(schema_sql)
-            
-            # Simple migration system
-            async with conn.execute("SELECT MAX(version) as v FROM schema_migrations") as cur:
-                row = await cur.fetchone()
-                current_version = row["v"] if row and row["v"] else 0
-                
-            if current_version < 1:
-                # Add version 1 logic if needed
-                await conn.execute("INSERT INTO schema_migrations (version) VALUES (1)")
-                await conn.commit()
+        # Migrasi: Tambahkan kolom click_count untuk artists
+        try:
+            await self._conn.execute("ALTER TABLE artists ADD COLUMN click_count INTEGER DEFAULT 0")
+            await self._conn.commit()
+        except Exception:
+            pass
 
-        from cache.repositories.auth_repository import AuthRepository
-        from cache.repositories.discover_repository import DiscoverRepository
-        from cache.repositories.track_repository import TrackRepository
-
-        self.tracks = TrackRepository(self.pool)
-        self.sessions = AuthRepository(self.pool)
-        self.discover = DiscoverRepository(self.pool)
-
-        await self._seed_initial_data()
-
+        # Migrasi: Tambahkan kolom click_count untuk genres
+        try:
+            await self._conn.execute("ALTER TABLE genres ADD COLUMN click_count INTEGER DEFAULT 0")
+            await self._conn.commit()
+        except Exception:
+            pass
+        
         logger.info(f"Database initialized at {self.db_path}")
 
-    async def _seed_initial_data(self):
-        async with self.pool.acquire() as conn:
-            async with conn.execute("SELECT COUNT(*) as cnt FROM artists") as cursor:
-                row = await cursor.fetchone()
-                if row["cnt"] > 0:
-                    return
-
-        json_path = self.db_path.parent / "artists_enriched.json"
-        if not json_path.exists():
-            json_path = self.db_path.parent / "artists.json"
-            if not json_path.exists():
-                logger.warning("No initial data found to seed database.")
-                return
-
-        import json
-        import sqlite3
-        import sys
-        logger.info("Auto-seeding database from JSON, this may take a moment...")
-        sys.stderr.write("\033[90m  [+] \033[0mMengekspor data ke SQLite untuk pertama kali...\n")
-
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-
-            artists_data = []
-            genres_data = set()
-            artist_genres_data = []
-            songs_data = []
-
-            for artist in data.get('artists', []):
-                # We skip manual id parsing for artists since it's AUTOINCREMENT now, 
-                # but if we must maintain relations from json:
-                artist_id = artist['id']
-                artists_data.append((artist_id, artist['nama'], artist['kategori'], artist['tahun_aktif']))
-
-                for genre_name in artist.get('genre', []):
-                    genres_data.add((genre_name,))
-
-                for lagu in artist.get('lagu_populer', []):
-                    youtube_id = lagu.get('youtube_id')
-                    if youtube_id:
-                        duration = lagu.get('durasi_detik', 0)
-                        songs_data.append((artist_id, lagu['judul'], youtube_id, duration))
-
-            async with self.pool.acquire() as conn:
-                await conn.executemany('''
-                    INSERT INTO artists (id, nama, kategori, tahun_aktif)
-                    VALUES (?, ?, ?, ?)
-                    ON CONFLICT(nama) DO UPDATE SET 
-                        kategori=excluded.kategori, 
-                        tahun_aktif=excluded.tahun_aktif
-                ''', artists_data)
-
-                await conn.executemany('''
-                    INSERT OR IGNORE INTO genres (nama_genre)
-                    VALUES (?)
-                ''', list(genres_data))
-
-                genre_map = {}
-                async with conn.execute('SELECT id, nama_genre FROM genres') as c:
-                    async for row in c:
-                        genre_map[row["nama_genre"]] = row["id"]
-
-                for artist in data.get('artists', []):
-                    artist_id = artist['id']
-                    for genre_name in artist.get('genre', []):
-                        if genre_name in genre_map:
-                            artist_genres_data.append((artist_id, genre_map[genre_name]))
-
-                await conn.executemany('''
-                    INSERT OR IGNORE INTO artist_genres (artist_id, genre_id)
-                    VALUES (?, ?)
-                ''', artist_genres_data)
-
-                await conn.executemany('''
-                    INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
-                    VALUES (?, ?, ?, ?)
-                ''', songs_data)
-
-                await conn.commit()
-            logger.info("Database auto-seeded successfully.")
-        except Exception as e:
-            logger.error(f"Seed database gagal: {e}", exc_info=True)
+    async def evict_stale_tracks(self) -> int:
+        """Hapus track yang benar-benar tidak aktif:
+        - Tidak pernah diputar (play_count = 0)
+        - Tidak pernah di-cache stream dalam 30 hari terakhir
+        - Bukan favorit dan bukan file lokal
+        Mengembalikan jumlah baris yang dihapus.
+        """
+        thirty_days_ago = int(time.time()) - (30 * 24 * 3600)
+        cursor = await self._conn.execute(
+            """DELETE FROM tracks
+               WHERE play_count = 0
+                 AND local_path IS NULL
+                 AND (is_favorite = 0 OR is_favorite IS NULL)
+                 AND (
+                     -- stream_url stale atau tidak pernah ada
+                     stream_url_ts IS NULL
+                     OR stream_url_ts < ?
+                 )""",
+            (thirty_days_ago,)
+        )
+        await self._conn.commit()
+        deleted = cursor.rowcount
+        if deleted:
+            logger.info(f"Eviction: {deleted} track stale dihapus dari cache DB")
+        return deleted
 
     async def close(self):
-        await self.pool.close()
-
-    async def backup(self, backup_path):
-        import aiosqlite
-        # Since we use WAL, we acquire one connection to do backup
-        async with self.pool.acquire() as conn:
-            async with aiosqlite.connect(backup_path) as dest:
-                await conn.backup(dest)
-
-    # --- Explicit Forwarding (Optional, but kept for compatibility) ---
-    async def get_track(self, video_id: str):
-        return await self.tracks.get_track(video_id)
-
-    async def upsert_track(self, track, stream_url: str = None, local_path: str = None):
-        return await self.tracks.upsert_track(track, stream_url, local_path)
-
-    async def update_stream_url_only(self, video_id: str, stream_url: str):
-        return await self.tracks.update_stream_url_only(video_id, stream_url)
-
-    async def set_local_path(self, video_id: str, local_path: str = None):
-        return await self.tracks.set_local_path(video_id, local_path)
-
-    async def increment_play_count(self, video_id: str):
-        return await self.tracks.increment_play_count(video_id)
-
-    async def toggle_favorite(self, video_id: str):
-        return await self.tracks.toggle_favorite(video_id)
-
-    async def evict_stale_tracks(self):
-        return await self.tracks.evict_stale_tracks()
+        """Close the persistent connection gracefully."""
+        if self._conn:
+            await self._conn.close()
+            self._conn = None
 
     async def increment_artist_click(self, artist_name: str):
-        return await self.discover.increment_artist_click(artist_name)
+        """Increment the click count for a given artist."""
+        if not self._conn: return
+        try:
+            await self._conn.execute(
+                "UPDATE artists SET click_count = COALESCE(click_count, 0) + 1 WHERE nama = ?", (artist_name,)
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing artist click: {e}")
 
     async def increment_genre_click(self, genre_name: str):
-        return await self.discover.increment_genre_click(genre_name)
+        """Increment the click count for a given genre."""
+        if not self._conn: return
+        try:
+            await self._conn.execute(
+                "UPDATE genres SET click_count = COALESCE(click_count, 0) + 1 WHERE nama_genre = ?", (genre_name,)
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing genre click: {e}")
 
-    async def get_genre_artists(self, genre_name: str, limit: int = 4):
-        return await self.discover.get_genre_artists(genre_name, limit)
+    async def get_genre_artists(self, genre_name: str, limit: int = 4) -> list[str]:
+        """Get random artist names that belong to a specific genre."""
+        if not self._conn: return []
+        artists = []
+        try:
+            async with self._conn.execute(
+                """SELECT a.nama FROM artists a
+                   JOIN artist_genres ag ON a.id = ag.artist_id
+                   JOIN genres g ON ag.genre_id = g.id
+                   WHERE g.nama_genre = ?
+                   ORDER BY RANDOM() LIMIT ?""", (genre_name, limit)
+            ) as cursor:
+                async for row in cursor:
+                    artists.append(row["nama"])
+        except Exception as e:
+            logger.error(f"Error getting genre artists: {e}")
+        return artists
 
-    async def get_all_artists(self, kategori: str | None = None):
-        return await self.discover.get_all_artists(kategori)
+    async def get_track(self, video_id: str) -> TrackInfo | None:
+        """Retrieves track metadata from the database as a TrackInfo entity."""
+        async with self._conn.execute(
+            "SELECT * FROM tracks WHERE video_id = ?", (video_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if not row:
+                return None
+            is_fav = 0
+            if "is_favorite" in row.keys():
+                is_fav = row["is_favorite"] or 0
+            return TrackInfo(
+                video_id=row["video_id"],
+                title=row["title"],
+                artist=row["artist"],
+                duration=row["duration"],
+                thumbnail=row["thumbnail"],
+                local_path=row["local_path"],
+                stream_url=row["stream_url"],
+                view_count=row["view_count"],
+                stream_url_ts=row["stream_url_ts"],
+                play_count=row["play_count"],
+                last_played=row["last_played"],
+                is_favorite=is_fav,
+            )
 
-    async def get_random_songs(self, limit: int = 20, exclude_ids: list = None, artist: str = None, max_per_artist: int = 3):
-        return await self.discover.get_random_songs(limit, exclude_ids, artist, max_per_artist)
+    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None):
+        """Inserts or updates a track record (metadata + cache URLs only)."""
+        ts = int(time.time())
+        query = """
+            INSERT INTO tracks (
+                video_id, title, artist, duration, view_count, thumbnail,
+                stream_url, stream_url_ts, local_path, last_played
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(video_id) DO UPDATE SET
+                title=excluded.title,
+                artist=excluded.artist,
+                duration=excluded.duration,
+                view_count=excluded.view_count,
+                thumbnail=excluded.thumbnail,
+                stream_url=COALESCE(excluded.stream_url, tracks.stream_url),
+                stream_url_ts=COALESCE(excluded.stream_url_ts, tracks.stream_url_ts),
+                local_path=COALESCE(excluded.local_path, tracks.local_path),
+                last_played=excluded.last_played
+        """
+        await self._conn.execute(query, (
+            track.video_id, track.title, track.artist, track.duration,
+            track.view_count, track.thumbnail, stream_url, ts if stream_url else None,
+            local_path, ts
+        ))
+        await self._conn.commit()
 
-    async def get_artist_songs_strict(self, artist: str, limit: int = 10):
-        return await self.discover.get_artist_songs_strict(artist, limit)
+    async def update_stream_url_only(self, video_id: str, stream_url: str):
+        """Hanya update stream_url tanpa mengubah metadata (mencegah overwite dengan 'Temp')."""
+        ts = int(time.time())
+        await self._conn.execute(
+            "UPDATE tracks SET stream_url=?, stream_url_ts=? WHERE video_id=?",
+            (stream_url, ts, video_id)
+        )
+        await self._conn.commit()
 
-    async def get_genre_songs(self, genre_name: str, total_limit: int = 12, max_per_artist: int = 3):
-        return await self.discover.get_genre_songs(genre_name, total_limit, max_per_artist)
+    async def set_local_path(self, video_id: str, local_path: str | None):
+        """Set local_path explicitly (can be used to clear it by passing None)."""
+        await self._conn.execute(
+            "UPDATE tracks SET local_path=? WHERE video_id=?",
+            (local_path, video_id)
+        )
+        await self._conn.commit()
+
+    async def increment_play_count(self, video_id: str):
+        """MED-10 fix: Only called when a track actually starts playing."""
+        ts = int(time.time())
+        await self._conn.execute(
+            "UPDATE tracks SET play_count = play_count + 1, last_played = ? WHERE video_id = ?",
+            (ts, video_id)
+        )
+        await self._conn.commit()
 
     async def create_session(self, token: str, expires_at: int):
-        return await self.sessions.create_session(token, expires_at)
+        await self._conn.execute(
+            "INSERT INTO sessions (token, expires_at) VALUES (?, ?)",
+            (token, expires_at)
+        )
+        await self._conn.commit()
 
-    async def verify_session(self, token: str):
-        return await self.sessions.verify_session(token)
+    async def verify_session(self, token: str) -> bool:
+        now = int(time.time())
+        async with self._conn.execute(
+            "SELECT expires_at FROM sessions WHERE token = ?", (token,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row and row["expires_at"] > now:
+                return True
+            if row:
+                await self.delete_session(token)
+            return False
 
     async def delete_session(self, token: str):
-        return await self.sessions.delete_session(token)
-
+        await self._conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        await self._conn.commit()
+        
     async def cleanup_sessions(self):
-        return await self.sessions.cleanup_sessions()
+        now = int(time.time())
+        await self._conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (now,))
+        await self._conn.commit()
 
-    async def get_recent_tracks(self, limit: int = 20):
-        return await self.tracks.get_recent_tracks(limit)
+    async def get_all_artists(self, kategori: str | None = None) -> list[str]:
+        """Ambil semua nama artis dari DB untuk seed radio mode.
 
-    async def get_favorite_tracks(self, limit: int = 50):
-        return await self.tracks.get_favorite_tracks(limit)
+        Args:
+            kategori: filter 'individu' atau 'band'. None = semua.
 
-    async def get_cached_tracks(self, limit: int = 50):
-        return await self.tracks.get_cached_tracks(limit)
+        Returns:
+            List nama artis (string), siap dipakai random.choice/shuffle.
+        """
+        if kategori:
+            query = "SELECT nama FROM artists WHERE kategori = ? ORDER BY id"
+            params = (kategori,)
+        else:
+            query = "SELECT nama FROM artists ORDER BY id"
+            params = ()
 
-    async def set_favorite(self, video_id: str, is_favorite: bool):
-        return await self.tracks.set_favorite(video_id, is_favorite)
+        async with self._conn.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+
+        return [row["nama"] for row in rows]
+
+    async def get_random_songs(
+        self, limit: int = 12, exclude_ids: set[str] = None, artist: str = None, max_per_artist: int = 3
+    ) -> list[TrackInfo]:
+        """Ambil lagu acak langsung dari database untuk Radio Mode, dengan limit per artis."""
+        if exclude_ids is None:
+            exclude_ids = set()
+            
+        placeholders = ','.join('?' for _ in exclude_ids)
+        query = f"""
+            WITH RankedSongs AS (
+                SELECT s.youtube_id, s.judul, s.duration, a.nama,
+                       ROW_NUMBER() OVER (PARTITION BY s.artist_id ORDER BY RANDOM()) as rn
+                FROM songs s
+                JOIN artists a ON s.artist_id = a.id
+                WHERE 1=1
+        """
+        params = []
+        if exclude_ids:
+            query += f" AND s.youtube_id NOT IN ({placeholders})"
+            params.extend(exclude_ids)
+            
+        query += """
+            )
+            SELECT youtube_id, judul, duration, nama
+            FROM RankedSongs
+            WHERE rn <= ?
+        """
+        params.append(max_per_artist)
+        
+        if artist:
+            query += " ORDER BY CASE WHEN nama = ? THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
+            params.extend([artist, limit])
+        else:
+            query += " ORDER BY RANDOM() LIMIT ?"
+            params.append(limit)
+
+        async with self._conn.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+
+        tracks = []
+        for row in rows:
+            tracks.append(TrackInfo(
+                video_id=row["youtube_id"],
+                title=row["judul"],
+                artist=row["nama"],
+                duration=row["duration"],
+                thumbnail=f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg"
+            ))
+        return tracks
+
+    async def get_artist_songs_strict(self, artist: str, limit: int = 10) -> list[TrackInfo]:
+        """Ambil lagu khusus dari artis tertentu saja (bukan campuran)."""
+        query = """
+            SELECT s.youtube_id, s.judul, s.duration, a.nama
+            FROM songs s
+            JOIN artists a ON s.artist_id = a.id
+            WHERE a.nama = ?
+            ORDER BY RANDOM() LIMIT ?
+        """
+        async with self._conn.execute(query, (artist, limit)) as cursor:
+            rows = await cursor.fetchall()
+
+        tracks = []
+        for row in rows:
+            tracks.append(TrackInfo(
+                video_id=row["youtube_id"],
+                title=row["judul"],
+                artist=row["nama"],
+                duration=row["duration"],
+                thumbnail=f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg"
+            ))
+        return tracks
+
+    async def get_genre_songs(self, genre_name: str, total_limit: int = 12, max_per_artist: int = 3) -> list[TrackInfo]:
+        """Ambil lagu dari genre tertentu, maksimal max_per_artist lagu per artis, total total_limit lagu."""
+        query = """
+            WITH GenreSongs AS (
+                SELECT s.youtube_id, s.judul, s.duration, a.nama,
+                       ROW_NUMBER() OVER (PARTITION BY s.artist_id ORDER BY RANDOM()) as rn
+                FROM songs s
+                JOIN artists a ON s.artist_id = a.id
+                JOIN artist_genres ag ON a.id = ag.artist_id
+                JOIN genres g ON ag.genre_id = g.id
+                WHERE g.nama_genre = ?
+            )
+            SELECT youtube_id, judul, duration, nama
+            FROM GenreSongs
+            WHERE rn <= ?
+            ORDER BY RANDOM() LIMIT ?
+        """
+        async with self._conn.execute(query, (genre_name, max_per_artist, total_limit)) as cursor:
+            rows = await cursor.fetchall()
+
+        tracks = []
+        for row in rows:
+            tracks.append(TrackInfo(
+                video_id=row["youtube_id"],
+                title=row["judul"],
+                artist=row["nama"],
+                duration=row["duration"],
+                thumbnail=f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg"
+            ))
+        return tracks
+
+
+
+
+    async def toggle_favorite(self, video_id: str) -> int:
+        """Toggles the favorite status of a track dan kembalikan state baru (0 atau 1).
+        Atomic: satu UPDATE statement — tidak ada SELECT+UPDATE race condition.
+        """
+        # Cek dulu apakah track ada
+        async with self._conn.execute(
+            "SELECT 1 FROM tracks WHERE video_id = ?", (video_id,)
+        ) as cursor:
+            if not await cursor.fetchone():
+                return 0
+
+        # Atomic toggle dalam satu statement: 1-0=1, 1-1=0
+        await self._conn.execute(
+            "UPDATE tracks SET is_favorite = 1 - COALESCE(is_favorite, 0) WHERE video_id = ?",
+            (video_id,)
+        )
+        await self._conn.commit()
+
+        # Baca nilai baru setelah update
+        async with self._conn.execute(
+            "SELECT is_favorite FROM tracks WHERE video_id = ?", (video_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return int(row["is_favorite"] or 0) if row else 0

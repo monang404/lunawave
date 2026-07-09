@@ -1,12 +1,12 @@
 function openSettings() {
     if (dom.settingsSheet) dom.settingsSheet.classList.add("open");
     if (dom.mainOverlay) dom.mainOverlay.classList.add("open");
-    renderSettingsSheet();
+    if (typeof renderSettingsSheet === "function") renderSettingsSheet();
 }
 
 function closeSettings() {
     if (dom.settingsSheet) dom.settingsSheet.classList.remove("open");
-    closeMainOverlay();
+    if (typeof closeMainOverlay === "function") closeMainOverlay();
 }
 
 function renderSettingsSheet() {
@@ -67,7 +67,7 @@ function initSettingsEvents() {
             const newVal = dom.sbToggle.dataset.on !== "true";
             dom.sbToggle.dataset.on = newVal ? "true" : "false";
             store.sponsorblock_active = newVal;
-            wsSend(WS_ACTIONS.SET_SPONSORBLOCK, { enabled: newVal });
+            wsSend("set_sponsorblock", { enabled: newVal });
         });
     }
 
@@ -76,7 +76,7 @@ function initSettingsEvents() {
             if (store.userRole !== "admin") return;
             const newOutput = store.audio_output === "browser" ? "device" : "browser";
             if (newOutput === "browser" && typeof unlockBrowserAudio === "function") unlockBrowserAudio();
-            wsSend(WS_ACTIONS.SET_OUTPUT, { output: newOutput });
+            wsSend("set_output", { output: newOutput });
             closeSettings();
         });
     }
@@ -84,7 +84,7 @@ function initSettingsEvents() {
     if (dom.ssStopBtn) {
         dom.ssStopBtn.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
-            wsSend(WS_ACTIONS.STOP);
+            wsSend("stop");
             closeSettings();
         });
     }
@@ -92,8 +92,8 @@ function initSettingsEvents() {
     if (dom.ssHistoryBtn) {
         dom.ssHistoryBtn.addEventListener('click', () => {
             closeSettings();
-            switchTab('discover');
-            wsSend(WS_ACTIONS.DISCOVER, {});
+            if (typeof switchTab === "function") switchTab('discover');
+            wsSend('discover', {});
             setTimeout(() => {
                 if (dom.discRecent) {
                     dom.discRecent.scrollIntoView({ behavior: 'smooth' });
@@ -117,13 +117,3 @@ function initSettingsEvents() {
         });
     }
 }
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (typeof trapFocus === 'function') {
-        trapFocus(document.getElementById('settings-sheet'));
-        trapFocus(document.getElementById('action-sheet'));
-        trapFocus(document.getElementById('lyrics-sheet'));
-        trapFocus(document.getElementById('help-sheet'));
-    }
-});

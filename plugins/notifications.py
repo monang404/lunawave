@@ -8,18 +8,17 @@ Publishes: CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
 """
 
 import asyncio
+import structlog
 import os
 import shutil
 import threading
 import time
 
-import structlog
-
-from config import BASE_DIR
-from core.commands import NextCommand, PrevCommand, TogglePauseCommand
 from core.event_bus import EventBus
-from core.events import TrackPauseChangedEvent, TrackStartedEvent
+from core.events import TrackStartedEvent, TrackPauseChangedEvent
+from core.command_bus import command_bus, CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
 from core.state import TrackInfo
+from config import BASE_DIR
 
 logger = structlog.get_logger(__name__)
 
@@ -28,16 +27,15 @@ _SOCK_DIR = BASE_DIR / "cache" / "sockets"
 _FIFO_PATH = _SOCK_DIR / "nowplaying.fifo"
 _SHEBANG = "#!/data/data/com.termux/files/usr/bin/bash"
 _TOKEN_TO_EVENT = {
-    "prev": PrevCommand,
-    "next": NextCommand,
-    "toggle": TogglePauseCommand,
+    "prev": CMD_PREV,
+    "next": CMD_NEXT,
+    "toggle": CMD_TOGGLE_PAUSE,
 }
 
 
 class TermuxNowPlaying:
-    def __init__(self, bus: EventBus, command_bus, state):
+    def __init__(self, bus: EventBus, state):
         self.bus = bus
-        self.command_bus = command_bus
         self.state = state
         self._track: TrackInfo | None = None
         self._paused = False
@@ -65,6 +63,9 @@ class TermuxNowPlaying:
                 self._fifo_path.unlink()
             os.mkfifo(str(self._fifo_path))
 
+            # Write one tiny standalone script per action — the notification
+            # action string must be a single bare path, no quotes/redirects,
+            # since the action runner is not guaranteed to use real shell parsing.
             for token in ("prev", "toggle", "next"):
                 script_path = _SOCK_DIR / f"np_{token}.sh"
                 script_path.write_text(
@@ -95,9 +96,9 @@ class TermuxNowPlaying:
                 time.sleep(1)
 
     async def _handle_token(self, token: str):
-        command_cls = _TOKEN_TO_EVENT.get(token)
-        if command_cls:
-            await self.command_bus.execute(command_cls())
+        event = _TOKEN_TO_EVENT.get(token)
+        if event:
+            await command_bus.execute(event)
 
     async def _on_track_started(self, event: TrackStartedEvent):
         self._track = event.track
@@ -138,18 +139,17 @@ class TermuxNowPlaying:
 
     async def cleanup(self):
         self._stop.set()
-
+        
+        # Unblock the FIFO reader thread
         if self._available and hasattr(self, "_fifo_path"):
             try:
                 import os
-                flags = getattr(os, "O_WRONLY", 1) | getattr(os, "O_NONBLOCK", getattr(os, "O_NDELAY", 0))
-                fd = os.open(self._fifo_path, flags)
+                fd = os.open(self._fifo_path, os.O_WRONLY | os.O_NONBLOCK)
                 os.write(fd, b"\n")
                 os.close(fd)
             except OSError:
                 pass
-
-
+                
         if self._available:
             try:
                 proc = await asyncio.create_subprocess_exec(

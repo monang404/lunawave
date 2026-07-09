@@ -4,18 +4,20 @@
 <head>
     <link rel="manifest" href="/static/manifest.json">
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/static/inter.css">
+    <!-- C-14: non-blocking font load -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/static/lunawave_logo.png" type="image/png">
-    <meta name="description" content="LunaWave — YouTube music player with search, radio, queue, and lyrics">
+    <meta name="description" content="YTGUI — YouTube music player for Termux with search, radio, queue, and lyrics">
     <meta name="theme-color" content="#090A0D">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>LunaWave — Midnight Audio Experience</title>
+    <title>Bagas.FM — Midnight Audio Experience</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" integrity="sha384-bwXm/zkV6n5XGP9yIcUpKqATFAKcmKWYBVG6tbgRAHzcLakIlI2qlRbLBmgb/y3D" crossorigin="anonymous" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css" integrity="sha384-bwXm/zkV6n5XGP9yIcUpKqATFAKcmKWYBVG6tbgRAHzcLakIlI2qlRbLBmgb/y3D" crossorigin="anonymous"></noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     <link rel="stylesheet" href="/static/css/tokens.css">
     <link rel="stylesheet" href="/static/css/base/reset.css">
     <link rel="stylesheet" href="/static/css/base/typography.css">
@@ -34,10 +36,10 @@
     <link rel="stylesheet" href="/static/css/portal.css">
 
     <!-- Platform Overrides -->
-    <link rel="stylesheet" href="/static/css/platform/mobile.css" media="(max-width: 767px)">
-    <link rel="stylesheet" href="/static/css/platform/tablet.css" media="(min-width: 768px) and (max-width: 1024px)">
-    <link rel="stylesheet" href="/static/css/platform/desktop.css" media="(min-width: 1025px)">
-    <link rel="stylesheet" href="/static/css/platform/landscape.css" media="(orientation: landscape)">
+    <link rel="stylesheet" href="/static/css/platform/mobile.css">
+    <link rel="stylesheet" href="/static/css/platform/tablet.css">
+    <link rel="stylesheet" href="/static/css/platform/desktop.css">
+    <link rel="stylesheet" href="/static/css/platform/landscape.css">
     <link rel="stylesheet" href="/static/css/platform/safe-area.css">
 </head>
 
@@ -53,11 +55,9 @@
                 <div class="portal-admin-wrapper" style="width: 100%;">
                     <div id="portal-login-form" class="portal-login-form">
                         <div class="login-input-group">
-                            <label for="admin-username" class="visually-hidden">Username</label>
                             <input type="text" id="admin-username" placeholder="Username" autocomplete="off">
                         </div>
                         <div class="login-input-group">
-                            <label for="admin-password" class="visually-hidden">Password</label>
                             <input type="password" id="admin-password" placeholder="Password">
                         </div>
                         <button id="admin-submit-btn">Login Admin</button>
@@ -95,7 +95,7 @@
                 <!-- ══ Header: Good Evening / Bagas FM ══ -->
                 <header class="home-header" id="home-header-inner">
                     <div></div>
-                    <div class="u-flex-row">
+                    <div style="display:flex; align-items:center; gap:8px;">
                     </div>
                 </header>
 
@@ -160,7 +160,7 @@
                 <div class="pbar" id="player-bar">
                     <div class="pb-row1">
                         <div class="pb-title" id="pb-track-info" style="flex:1;"></div>
-                        <div class="u-flex-row">
+                        <div style="display:flex; align-items:center; gap:8px;">
                             <span class="pb-badge queue" id="pb-mode-badge" style="margin:0;">≡ queue</span>
                         </div>
                     </div>
@@ -179,7 +179,7 @@
                     <div class="pb-ctrl">
                         <div class="vol-grp">
                             <i class="ti ti-volume" aria-hidden="true"></i>
-                            <input type="range" min="0" max="150" value="80" class="vol-slider" id="vol-slider">
+                            <input type="range" min="0" max="100" value="80" class="vol-slider" id="vol-slider">
                             <span class="vol-label" id="pb-vol-label">80%</span>
                         </div>
 
@@ -190,7 +190,8 @@
                         </div>
 
                         <div class="main-ctrl">
-                            
+                            <button class="btn-shuffle" aria-label="Shuffle" id="btn-shuffle"><i
+                                    class="ti ti-arrows-shuffle" aria-hidden="true"></i></button>
                             <button class="btn-prev" aria-label="Previous" id="btn-prev"><svg
                                     class="svg-filled-icon player-icon-svg" xmlns="http://www.w3.org/2000/svg"
                                     width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -211,7 +212,8 @@
                                         d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" />
                                 </svg>
                             </button>
-                            
+                            <button class="btn-repeat" aria-label="Repeat" id="btn-repeat"><i class="ti ti-repeat"
+                                    aria-hidden="true"></i></button>
                         </div>
                     </div>
                 </div>
@@ -226,7 +228,7 @@
                             <span class="label-text">Antrean Putar</span>
                             <div id="queue-footer" style="font-size: var(--t-xs); color: var(--text-3); font-weight: var(--w-medium);">Mode: QUEUE</div>
                         </div>
-                        <div id="queue-list" class="u-flex-col"><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div></div>
+                        <div id="queue-list" style="display:flex; flex-direction:column;"></div>
                     </div>
                 </div>
 
@@ -235,7 +237,7 @@
 
 
             <!-- Tab: Search -->
-            <section id="tab-search" class="tab-panel" role="tabpanel">
+            <section id="tab-search" class="tab-panel">
                 <div class="search-header" id="search-header">
                     <h1 class="search-title">Search</h1>
                 </div>
@@ -257,7 +259,7 @@
 
 
             <!-- Tab: Radio -->
-            <section id="tab-radio" class="tab-panel" role="tabpanel">
+            <section id="tab-radio" class="tab-panel">
 
 
                 <!-- Featured Station Hero (Clickable to Toggle Radio Mode) -->
@@ -298,14 +300,14 @@
                 </div>
 
                 <!-- Station List (rendered from radio_queue) -->
-                <div id="radio-queue-list" style="display:flex; flex-direction:column; padding-bottom:80px;"><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div><div class="queue-item"><div class="qi-thumb skeleton-box" style="border-radius:6px;"></div><div class="qi-info"><div class="qi-title skeleton-box" style="width:70%; height:14px; margin-bottom:4px; border-radius:4px;"></div><div class="qi-meta skeleton-box" style="width:40%; height:12px; border-radius:4px;"></div></div></div></div>
+                <div id="radio-queue-list" style="display:flex; flex-direction:column; padding-bottom:80px;"></div>
             </section>
 
 
 
 
             <!-- Tab: Discover -->
-            <section id="tab-discover" class="tab-panel" role="tabpanel">
+            <section id="tab-discover" class="tab-panel">
                 <!-- Header -->
                 <div class="discover-header">
                     <h1 class="discover-title">Discover</h1>
@@ -318,9 +320,9 @@
                     <span class="label-text">Jelajahi Artis</span>
                 </div>
                 <div id="discover-artists" class="hashtag-cloud-container">
-                    <div class="hashtag-pill skeleton-box skeleton-pill-sm"></div>
-                    <div class="hashtag-pill skeleton-box skeleton-pill-lg"></div>
-                    <div class="hashtag-pill skeleton-box skeleton-pill-md"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:60px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:100px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:80px; height:24px; border-radius:12px;"></div>
                 </div>
 
                 <!-- Genre (Featured Genres) -->
@@ -328,9 +330,9 @@
                     <span class="label-text">Jelajahi Genre</span>
                 </div>
                 <div id="discover-genres" class="hashtag-cloud-container">
-                    <div class="hashtag-pill skeleton-box skeleton-pill-md"></div>
-                    <div class="hashtag-pill skeleton-box skeleton-pill-sm"></div>
-                    <div class="hashtag-pill skeleton-box skeleton-pill-lg"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:70px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:50px; height:24px; border-radius:12px;"></div>
+                    <div class="hashtag-pill skeleton-box" style="width:90px; height:24px; border-radius:12px;"></div>
                 </div>
 
 
@@ -522,7 +524,7 @@
                 </div>
             </div>
             <button id="lyrics-close-btn" class="ss-out-btn"
-                class="u-btn-block">Tutup</button>
+                style="width: 100%; padding: 12px; font-size: 14px; margin-top: 10px;">Tutup</button>
         </div>
 
         <!-- ═══ Action Sheet ═══ -->
@@ -617,11 +619,85 @@
     // sudah jalan benar tapi browser "tidak berubah". Jalankan SEKALI di
     // awal load, sebelum script lain: unregister semua SW yang nyangkut +
     // hapus semua Cache Storage punya origin ini, lalu kalau memang ada
-    // Script hapus SW dimatikan agar SW yang baru terdaftar tidak di-kill
+    // yang dihapus, force reload sekali biar fetch ulang semua asset
+    // langsung dari network (bukan dari SW yang baru mati).
+    (function () {
+        "use strict";
+        if (!('serviceWorker' in navigator)) return;
+        var didCleanup = false;
+
+        var unregisterAll = navigator.serviceWorker.getRegistrations()
+            .then(function (regs) {
+                if (!regs.length) return;
+                didCleanup = true;
+                return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            })
+            .catch(function (e) { console.warn('[sw-kill] unregister failed:', e); });
+
+        var clearCaches = ('caches' in window)
+            ? caches.keys().then(function (keys) {
+                if (!keys.length) return;
+                didCleanup = true;
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }).catch(function (e) { console.warn('[sw-kill] cache clear failed:', e); })
+            : Promise.resolve();
+
+        Promise.all([unregisterAll, clearCaches]).then(function () {
+            if (didCleanup && !sessionStorage.getItem('sw_killswitch_reloaded')) {
+                console.log('[sw-kill] stale service worker / cache dibersihkan, reload sekali...');
+                sessionStorage.setItem('sw_killswitch_reloaded', '1');
+                location.reload();
+            } else if (didCleanup) {
+                console.log('[sw-kill] dibersihkan (reload sudah pernah dilakukan sesi ini).');
+            }
+        });
+    })();
     </script>
 
-    <script src="/static/js/bundle.js?v=1783562538" defer></script>
-
+    <script src="/static/js/config.js" defer></script>
+    <script src="/static/js/store.js" defer></script>
+    <script src="/static/js/dom.js" defer></script>
+    <script src="/static/js/utils.js" defer></script>
+    <script src="/static/js/services/auth.js" defer></script>
+    <script src="/static/js/render/player.js" defer></script>
+    <script src="/static/js/render/now-playing.js" defer></script>
+    <script src="/static/js/render/queue.js?v=3" defer></script>
+    <script src="/static/js/render/discover.js?v=6" defer></script>
+    <script src="/static/js/render/favorites.js" defer></script>
+    <script src="/static/js/render/lyrics.js" defer></script>
+    <script src="/static/js/render/search.js" defer></script>
+    <script src="/static/js/events/player-events.js" defer></script>
+    <script src="/static/js/events/queue-events.js?v=3" defer></script>
+    <script src="/static/js/events/lyrics-events.js" defer></script>
+    <script src="/static/js/events/settings-events.js" defer></script>
+    <script src="/static/js/events/index.js" defer></script>
+    <script src="/static/js/portal.js" defer></script>
+    <script src="/static/js/platform/viewport.js" defer></script>
+    <script src="/static/js/platform/touch.js" defer></script>
+    <script src="/static/js/platform/keyboard.js" defer></script>
+    <script src="/static/js/audio.js" defer></script>
+    <script src="/static/js/ws.js" defer></script>
+    <script src="/static/js/main.js" defer></script>
+<!-- AUTO-UNREGISTER-SW: matikan SW lama + bersihkan cache. Hapus blok ini setelah selesai development. -->
+<script>
+(function () {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) {
+            r.unregister();
+            console.log('[dev] Service worker unregistered:', r.scope);
+        });
+    });
+    if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+            keys.forEach(function (k) {
+                caches.delete(k);
+                console.log('[dev] Cache dihapus:', k);
+            });
+        });
+    }
+})();
+</script>
 </body>
 
 </html>

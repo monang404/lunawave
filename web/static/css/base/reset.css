@@ -14,5 +14,4 @@ html, body {
   background: var(--bg-primary);
   overflow: hidden;
   overscroll-behavior: none;  /* C-12: cegah scroll-bleed di iOS Safari */
-  -webkit-tap-highlight-color: transparent;
 }

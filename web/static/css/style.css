@@ -1,6 +1,0 @@
-/* Utility classes from S05-027 */
-.u-flex-row { display: flex; align-items: center; gap: 8px; }
-.u-flex-col { display: flex; flex-direction: column; }
-.u-hidden { display: none !important; }
-.u-w-full { width: 100%; }
-.u-btn-block { width: 100%; padding: 12px; font-size: 14px; margin-top: 10px; }

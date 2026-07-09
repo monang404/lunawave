@@ -1,12 +1,8 @@
-/** Utilities (no ESM imports - shared global scope) */
-
-const ITUNES_API_URL = "https://itunes.apple.com/search";
-
-function formatTime(seconds) {
-    if (!seconds || seconds < 0) return "00:00";
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return String(minutes).padStart(2, "0") + ":" + String(remainingSeconds).padStart(2, "0");
+function formatTime(secs) {
+    if (!secs || secs < 0) return "00:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
 }
 
 window.safeStorage = {
@@ -66,23 +62,21 @@ window.getCoverArt = async function(track) {
         try {
             if (cachedStr.startsWith("{")) {
                 const cached = JSON.parse(cachedStr);
+                // 7 days TTL
                 if (Date.now() - cached.ts < 7 * 24 * 60 * 60 * 1000) {
                     return cached.url;
                 }
             } else {
+                // legacy format without TTL
                 return cachedStr;
             }
         } catch(e) {}
     }
     
-    const ytFallback = `https://i.ytimg.com/vi/${track.video_id}/mqdefault.jpg`;
+    const ytFallback = `https://i.ytimg.com/vi/${track.video_id}/hqdefault.jpg`;
     
     if (!track.title || !track.artist) {
-        let fallback = track.thumbnail || ytFallback;
-        if (typeof fallback === "string") {
-            fallback = fallback.replace("hqdefault.jpg", "mqdefault.jpg").replace("sddefault.jpg", "mqdefault.jpg");
-        }
-        return fallback;
+        return track.thumbnail || ytFallback;
     }
     
     const saveCache = (url) => {
@@ -93,10 +87,10 @@ window.getCoverArt = async function(track) {
     try {
         const cleanTitle = window.cleanTrackTitle(track.title);
         const query = encodeURIComponent(track.artist + " " + cleanTitle);
-        const response = await fetch(`${ITUNES_API_URL}?term=${query}&media=music&limit=1`);
-        if (!response.ok) throw new Error("iTunes API failed");
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=1`);
+        if (!res.ok) throw new Error("iTunes API failed");
         
-        const data = await response.json();
+        const data = await res.json();
         if (data.results && data.results.length > 0) {
             let artworkUrl = data.results[0].artworkUrl100;
             if (artworkUrl) {
@@ -112,122 +106,92 @@ window.getCoverArt = async function(track) {
 };
 
 let _lazyCoverObserver = null;
-let _lazyCoverTimeout = null;
 
 window.loadLazyCovers = function() {
-    if (_lazyCoverTimeout) clearTimeout(_lazyCoverTimeout);
-    _lazyCoverTimeout = setTimeout(() => {
-        if (!_lazyCoverObserver) {
-            _lazyCoverObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        observer.unobserve(img);
-                        img.classList.add('loaded');
-                        const videoId = img.getAttribute('data-vid');
-                        const title = img.getAttribute('data-title');
-                        const artist = img.getAttribute('data-artist');
-                        const defaultThumb = img.getAttribute('data-thumb');
-                        
-                        if (!videoId) return;
-                        
-                        const track = { video_id: videoId, title: title, artist: artist, thumbnail: defaultThumb };
-                        window.getCoverArt(track).then(coverUrl => {
-                            if (coverUrl) {
-                                img.src = coverUrl;
-                            }
-                        });
-                    }
-                });
-            }, { rootMargin: '200px' });
-        }
+    if (!_lazyCoverObserver) {
+        _lazyCoverObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    observer.unobserve(img);
+                    img.classList.add('loaded');
+                    const vid = img.getAttribute('data-vid');
+                    const title = img.getAttribute('data-title');
+                    const artist = img.getAttribute('data-artist');
+                    const defaultThumb = img.getAttribute('data-thumb');
+                    
+                    if (!vid) return;
+                    
+                    const track = { video_id: vid, title: title, artist: artist, thumbnail: defaultThumb };
+                    window.getCoverArt(track).then(coverUrl => {
+                        if (coverUrl) {
+                            img.src = coverUrl;
+                        }
+                    });
+                }
+            });
+        }, { rootMargin: '200px' });
+    }
 
-        const images = document.querySelectorAll('img.lazy-cover:not(.observed)');
-        images.forEach((img) => {
-            img.classList.add('observed');
-            _lazyCoverObserver.observe(img);
-        });
-    }, 50);
+    const images = document.querySelectorAll('img.lazy-cover:not(.observed)');
+    images.forEach((img) => {
+        img.classList.add('observed');
+        _lazyCoverObserver.observe(img);
+    });
 };
 
-window.extractDominantColor = function(imageElement, callback) {
-    if (!imageElement.complete || imageElement.naturalWidth === 0) {
-        imageElement.addEventListener('load', () => window.extractDominantColor(imageElement, callback), { once: true });
+window.extractDominantColor = function(imgEl, callback) {
+    if (!imgEl.complete || imgEl.naturalWidth === 0) {
+        imgEl.addEventListener('load', () => window.extractDominantColor(imgEl, callback), { once: true });
         return;
     }
     
-    setTimeout(() => {
-        try {
-            const canvas = document.createElement('canvas');
-            const canvasContext = canvas.getContext('2d', { willReadFrequently: true });
-            canvas.width = 50;
-            canvas.height = 50;
-            canvasContext.drawImage(imageElement, 0, 0, 50, 50);
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = 50;
+        canvas.height = 50;
+        ctx.drawImage(imgEl, 0, 0, 50, 50);
+        
+        const data = ctx.getImageData(0, 0, 50, 50).data;
+        let bestR = 0, bestG = 0, bestB = 0;
+        let maxScore = -1;
+        
+        for (let i = 0; i < data.length; i += 16) {
+            let r = data[i], g = data[i+1], b = data[i+2];
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let l = (max + min) / 2;
             
-            const data = canvasContext.getImageData(0, 0, 50, 50).data;
-            let bestR = 0, bestG = 0, bestB = 0;
-            let maxScore = -1;
+            // Skip colors that are too dark or too bright
+            if (l < 20 || l > 240) continue;
             
+            let s = 0;
+            if (max !== min) {
+                s = l > 127 ? (max - min) / (510 - max - min) : (max - min) / (max + min);
+            }
+            
+            let score = s * 100;
+            if (score > maxScore) {
+                maxScore = score;
+                bestR = r; bestG = g; bestB = b;
+            }
+        }
+        
+        // Fallback to average if no saturated pixel found (e.g. grayscale or pure black/white image)
+        if (maxScore === -1) {
+            let r = 0, g = 0, b = 0, count = 0;
             for (let i = 0; i < data.length; i += 16) {
-                let r = data[i], g = data[i+1], b = data[i+2];
-                let max = Math.max(r, g, b), min = Math.min(r, g, b);
-                let l = (max + min) / 2;
-                
-                if (l < 20 || l > 240) continue;
-                
-                let s = 0;
-                if (max !== min) {
-                    s = l > 127 ? (max - min) / (510 - max - min) : (max - min) / (max + min);
-                }
-                
-                let score = s * 100;
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestR = r; bestG = g; bestB = b;
-                }
+                r += data[i]; g += data[i+1]; b += data[i+2]; count++;
             }
-            
-            if (maxScore === -1) {
-                let r = 0, g = 0, b = 0, count = 0;
-                for (let i = 0; i < data.length; i += 16) {
-                    r += data[i]; g += data[i+1]; b += data[i+2]; count++;
-                }
-                bestR = Math.floor(r / count);
-                bestG = Math.floor(g / count);
-                bestB = Math.floor(b / count);
-            }
-            
-            if (callback) callback({r: bestR, g: bestG, b: bestB});
-        } catch (e) {
-            console.warn("Color extraction failed:", e);
-            if (callback) callback({r: 28, g: 28, b: 34}); // Fallback equivalent to var(--bg-elevated) #1C1C22
+            bestR = Math.floor(r / count);
+            bestG = Math.floor(g / count);
+            bestB = Math.floor(b / count);
         }
-    }, 10);
+        
+        console.log("Cover Color Extracted:", bestR, bestG, bestB);
+        if (callback) callback({r: bestR, g: bestG, b: bestB});
+    } catch (e) {
+        console.warn("Color extraction failed:", e);
+        if (callback) callback("var(--bg-elevated)");
+    }
 };
-
-
-// Focus Trap utility (S05-096)
-function trapFocus(element) {
-    if (!element) return;
-    const focusableEls = element.querySelectorAll('a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])');
-    if (focusableEls.length === 0) return;
-    const firstFocusableEl = focusableEls[0];  
-    const lastFocusableEl = focusableEls[focusableEls.length - 1];
-
-    element.addEventListener('keydown', function(e) {
-        const isTabPressed = (e.key === 'Tab' || e.keyCode === 9);
-        if (!isTabPressed) return;
-
-        if (e.shiftKey) { 
-            if (document.activeElement === firstFocusableEl) {
-                lastFocusableEl.focus();
-                e.preventDefault();
-            }
-        } else {
-            if (document.activeElement === lastFocusableEl) {
-                firstFocusableEl.focus();
-                e.preventDefault();
-            }
-        }
-    });
-}

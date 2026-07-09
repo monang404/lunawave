@@ -99,7 +99,7 @@
     height: 76px !important;
     min-height: 76px !important;
     z-index: 1000;
-    background: var(--bg-surface) !important;
+    background: var(--bg-elevated) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -107,7 +107,7 @@
     border-radius: 16px !important;
     margin: 0 !important;
     padding: 0 24px !important;
-    box-shadow: var(--shadow-lg) !important;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6) !important;
     gap: 24px !important;
   }
   
@@ -116,12 +116,12 @@
   }
 
   /* Show all player sections */
-  #player-bar .pb-row1 { display: flex ; }
-  #player-bar .pb-seek { display: flex ; }
-  #player-bar .pb-ctrl { display: flex ; }
-  #player-bar .pb-track { display: block ; flex: 1 ; width: 100% ; height: 4px ; min-width: 100px; }
+  #player-bar .pb-row1 { display: flex !important; }
+  #player-bar .pb-seek { display: flex !important; }
+  #player-bar .pb-ctrl { display: flex !important; }
+  #player-bar .pb-track { display: block !important; flex: 1 !important; width: 100% !important; height: 4px !important; min-width: 100px; }
 
-  #player-bar .pb-time { display: block ; }
+  #player-bar .pb-time { display: block !important; }
   #player-bar #btn-settings { 
     display: flex !important; 
     align-items: center !important;
@@ -135,12 +135,12 @@
     height: 40px !important;
     cursor: pointer !important;
   }
-  #player-bar .pb-main-btns { display: flex ; }
+  #player-bar .pb-main-btns { display: flex !important; }
   #player-bar .btn-play {
     width: 42px !important; height: 42px !important; font-size: 16px !important;
   }
   
-  #player-bar #pb-mode-badge { display: none ; }
+  #player-bar #pb-mode-badge { display: none !important; }
 
   /* Symmetrical Player Controls */
   .pb-row1 { display: flex !important; align-items: center; gap: 12px; flex: 0 0 220px !important; width: 220px !important; min-width: 0; margin: 0 !important; }

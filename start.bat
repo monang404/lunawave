@@ -16,12 +16,12 @@ echo.
 :: ----------------------------------------------------------
 ::  CONFIGURATION
 :: ----------------------------------------------------------
-set "LUNAWAVE_HOST=0.0.0.0"
-set "LUNAWAVE_PORT=8765"
+set "YTGUI_HOST=0.0.0.0"
+set "YTGUI_PORT=8765"
 
 :: Admin credentials (uncomment to set explicitly)
-:: set "LUNAWAVE_ADMIN_USER=admin"
-:: set "LUNAWAVE_ADMIN_PASS=your_secret_password"
+:: set "YTGUI_ADMIN_USER=admin"
+:: set "YTGUI_ADMIN_PASS=your_secret_password"
 
 :: ----------------------------------------------------------
 ::  STARTUP SEQUENCE
@@ -64,7 +64,7 @@ if %ERRORLEVEL% neq 0 (
 
 echo  [*] Cleaning Up Previous Sessions...
 taskkill /F /IM mpv.exe > nul 2>&1
-powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort %LUNAWAVE_PORT% -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force" > nul 2>&1
+powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort %YTGUI_PORT% -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force" > nul 2>&1
 
 :: ----------------------------------------------------------
 ::  ADMIN ACCESS INFO
@@ -73,17 +73,17 @@ echo.
 echo  ----------------------------------------------------------------
 echo   Admin Access Information
 echo  ----------------------------------------------------------------
-if defined LUNAWAVE_ADMIN_PASS (
-    echo   [i] Password loaded from environment variable LUNAWAVE_ADMIN_PASS.
+if defined YTGUI_ADMIN_PASS (
+    echo   [i] Password loaded from environment variable YTGUI_ADMIN_PASS.
 ) else (
-    if exist "data\admin_password.txt" (
-        echo   [i] Password stored securely in: data\admin_password.txt
+    if exist "cache\admin_password.txt" (
+        echo   [i] Password stored securely in: cache\admin_password.txt
     ) else (
         echo   [i] A new password will be auto-generated on first launch.
     )
 )
-if defined LUNAWAVE_ADMIN_USER (
-    echo   [i] Username: %LUNAWAVE_ADMIN_USER%
+if defined YTGUI_ADMIN_USER (
+    echo   [i] Username: %YTGUI_ADMIN_USER%
 ) else (
     echo   [i] Username: admin
 )
@@ -93,34 +93,19 @@ if defined LUNAWAVE_ADMIN_USER (
 :: ----------------------------------------------------------
 echo.
 echo    ================================================================
-echo       App Interface    : http://localhost:%LUNAWAVE_PORT%/  (login admin ada di halaman yang sama)
-echo       System Health    : http://localhost:%LUNAWAVE_PORT%/health
-echo       Metrics          : http://localhost:%LUNAWAVE_PORT%/metrics
+echo       Client Interface : http://localhost:%YTGUI_PORT%/
+echo       Admin Interface  : http://localhost:%YTGUI_PORT%/admin
+echo       System Health    : http://localhost:%YTGUI_PORT%/health
+echo       Metrics          : http://localhost:%YTGUI_PORT%/metrics
 echo    ================================================================
 echo.
 echo  [*] Starting Server...
 ping 127.0.0.1 -n 2 > nul
 
-:restart_loop
 python main.py
-set EXIT_CODE=%ERRORLEVEL%
 echo.
-
-if %EXIT_CODE% equ 0 (
-    echo  [+] Server stopped gracefully.
-    goto end
+if %ERRORLEVEL% neq 0 (
+    echo  [X] Server terminated with error code: %ERRORLEVEL%
+    echo      Please check the application logs for details.
 )
-:: Catch SIGINT / KeyboardInterrupt commonly exits with 130 or -1073741510 on windows sometimes, 
-:: but we'll try catching specific codes or if user stops it.
-if %EXIT_CODE% equ 130 (
-    echo  [+] Server stopped by user (Ctrl+C).
-    goto end
-)
-
-echo  [X] Server crashed with error code: %EXIT_CODE%.
-echo  [!] Restarting in 5 seconds... Press Ctrl+C to cancel.
-ping 127.0.0.1 -n 6 > nul
-goto restart_loop
-
-:end
 pause

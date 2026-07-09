@@ -5,10 +5,9 @@ Publishes: QUEUE_UPDATED
 """
 
 
-from typing import TYPE_CHECKING
-
 from core.events import QueueUpdatedEvent
 from core.state import PlayerStatus
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController
@@ -27,5 +26,5 @@ class QueueMode:
             await controller.bus.publish(QueueUpdatedEvent())
             return
 
-        track = controller.state.queue.pop(0)
+        track = controller.state.queue.popleft()
         await controller.play_track(track)

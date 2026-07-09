@@ -3,11 +3,11 @@
 # ----------------------------------------------------------
 #  CONFIGURATION
 # ----------------------------------------------------------
-export LUNAWAVE_HOST="0.0.0.0"
-export LUNAWAVE_PORT=${LUNAWAVE_PORT:-8765}
+export YTGUI_HOST="0.0.0.0"
+export YTGUI_PORT=${YTGUI_PORT:-8765}
 
-# export LUNAWAVE_ADMIN_USER="admin"
-# export LUNAWAVE_ADMIN_PASS="your_secret_password"
+# export YTGUI_ADMIN_USER="admin"
+# export YTGUI_ADMIN_PASS="your_secret_password"
 
 # ----------------------------------------------------------
 #  COLORS & FORMATTING
@@ -86,67 +86,58 @@ if [ -d "/tmp" ]; then
     rm -f /tmp/mpv-socket-* 2>/dev/null
 fi
 
-SOCKET_DIR="${LUNAWAVE_BASE:-$(dirname "$0")}/cache/sockets"
+SOCKET_DIR="${YT_PLAYER_BASE:-$(dirname "$0")}/cache/sockets"
 if [ -d "$SOCKET_DIR" ]; then
     rm -f "$SOCKET_DIR"/*.sock 2>/dev/null
 fi
 
 if command -v fuser &> /dev/null; then
-    fuser -k ${LUNAWAVE_PORT}/tcp > /dev/null 2>&1
+    fuser -k ${YTGUI_PORT}/tcp > /dev/null 2>&1
 elif command -v lsof &> /dev/null; then
-    lsof -ti tcp:${LUNAWAVE_PORT} | xargs kill -9 > /dev/null 2>&1
+    lsof -ti tcp:${YTGUI_PORT} | xargs kill -9 > /dev/null 2>&1
 else
     if command -v ss &> /dev/null; then
-        ss -lptn "sport = :${LUNAWAVE_PORT}" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | xargs -r kill -9 > /dev/null 2>&1
+        ss -lptn "sport = :${YTGUI_PORT}" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | xargs -r kill -9 > /dev/null 2>&1
     elif command -v netstat &> /dev/null; then
-        netstat -nlp 2>/dev/null | grep ":${LUNAWAVE_PORT} " | awk '{print $7}' | cut -d'/' -f1 | xargs -r kill -9 > /dev/null 2>&1
+        netstat -nlp 2>/dev/null | grep ":${YTGUI_PORT} " | awk '{print $7}' | cut -d'/' -f1 | xargs -r kill -9 > /dev/null 2>&1
     fi
 fi
 
 # ----------------------------------------------------------
 #  ADMIN ACCESS INFO
 # ----------------------------------------------------------
-PASS_FILE="${LUNAWAVE_BASE:-$(dirname "$0")}/data/admin_initial_password.txt"
+PASS_FILE="${YT_PLAYER_BASE:-$(dirname "$0")}/cache/admin_password.txt"
 echo ""
 echo -e "${MAGENTA}---------------------------------------------------------${RESET}"
 echo -e "${BOLD} Admin Access Information${RESET}"
 echo -e "${MAGENTA}---------------------------------------------------------${RESET}"
 
-if [ -n "$LUNAWAVE_ADMIN_PASS" ]; then
-    echo -e "  [i] Password loaded from environment (LUNAWAVE_ADMIN_PASS)."
+if [ -n "$YTGUI_ADMIN_PASS" ]; then
+    echo -e "  [i] Password loaded from environment (YTGUI_ADMIN_PASS)."
 elif [ -f "$PASS_FILE" ]; then
     echo -e "  [i] Password stored securely in: $PASS_FILE"
 else
     echo -e "  [i] A new password will be auto-generated on first launch."
 fi
-echo -e "  [i] Username: ${BOLD}${LUNAWAVE_ADMIN_USER:-admin}${RESET}"
+echo -e "  [i] Username: ${BOLD}${YTGUI_ADMIN_USER:-admin}${RESET}"
 
 # ----------------------------------------------------------
 #  SERVER STARTUP
 # ----------------------------------------------------------
 echo ""
 echo -e "${CYAN}    =========================================================${RESET}"
-echo -e "       App Interface    : ${BOLD}http://localhost:${LUNAWAVE_PORT}/${RESET} (login admin ada di halaman yang sama)"
-echo -e "       System Health    : ${BOLD}http://localhost:${LUNAWAVE_PORT}/health${RESET}"
-echo -e "       Metrics          : ${BOLD}http://localhost:${LUNAWAVE_PORT}/metrics${RESET}"
+echo -e "       Client Interface : ${BOLD}http://localhost:${YTGUI_PORT}/${RESET}"
+echo -e "       Admin Interface  : ${BOLD}http://localhost:${YTGUI_PORT}/admin${RESET}"
+echo -e "       System Health    : ${BOLD}http://localhost:${YTGUI_PORT}/health${RESET}"
+echo -e "       Metrics          : ${BOLD}http://localhost:${YTGUI_PORT}/metrics${RESET}"
 echo -e "${CYAN}    =========================================================${RESET}"
 echo ""
 echo -e "${GREEN}[*] Starting Server...${RESET}"
 sleep 1
 
-while true; do
-    python main.py
-    EXIT_CODE=$?
-    
-    if [ $EXIT_CODE -eq 0 ]; then
-        echo -e "\n${GREEN}[*] Server stopped gracefully.${RESET}"
-        break
-    elif [ $EXIT_CODE -eq 130 ]; then
-        echo -e "\n${YELLOW}[*] Server stopped by user (Ctrl+C).${RESET}"
-        break
-    else
-        echo -e "\n${RED}[X] Server terminated with error code $EXIT_CODE.${RESET}"
-        echo -e "    ${YELLOW}[!] Restarting in 5 seconds... Press Ctrl+C to cancel.${RESET}"
-        sleep 5
-    fi
-done
+python main.py
+
+if [ $? -ne 0 ]; then
+    echo -e "\n${RED}[X] Server terminated with an error.${RESET}"
+    echo -e "    Please check the application logs for details."
+fi
