@@ -51,6 +51,8 @@ class AppContext:
     nowplaying: TermuxNowPlaying
     lyrics_fetcher: LyricsFetcher
     sponsorblock: SponsorBlockHandler
+    download_manager: Any
+    download_manager: Any
     host: str
     port: int
 
@@ -115,7 +117,7 @@ async def build_app_context() -> AppContext:
     settings_commands = SettingsCommands(playback_controller)
     radio_commands = RadioCommands(playback_controller)
 
-    _download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)
+    download_manager = DownloadManager(event_bus, command_bus, state, ytdlp)
     _command_router = CommandRouter(
         command_bus,
         playback_commands,
@@ -182,6 +184,7 @@ async def build_app_context() -> AppContext:
         nowplaying=nowplaying,
         lyrics_fetcher=lyrics_fetcher,
         sponsorblock=sponsorblock,
+        download_manager=download_manager,
         host=host,
         port=port
     )
@@ -200,6 +203,10 @@ async def shutdown_app_context(ctx: AppContext, tasks: list):
         t.cancel()
 
     # Cancel download workers
+    try:
+        await ctx.download_manager.shutdown()
+    except Exception:
+        pass
     # Cancel persist_state_task
     try:
         persist_task = getattr(ctx.playback_controller, '_persist_state_task', None)
