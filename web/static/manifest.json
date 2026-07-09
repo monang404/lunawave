@@ -1,7 +1,7 @@
 {
-  "name": "bagas.fm",
-  "short_name": "bagas.fm",
-  "description": "Personal YouTube Music Player",
+  "name": "LunaWave",
+  "short_name": "LunaWave",
+  "description": "LunaWave — Personal YouTube Music Player",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090A0D",

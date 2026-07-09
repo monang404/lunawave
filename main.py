@@ -21,7 +21,7 @@ from config import BASE_DIR, WEB_HOST, WEB_PORT
 setup_logging()
 
 try:
-    log_path = BASE_DIR / "ytplayer.log"
+    log_path = BASE_DIR / "lunawave.log"
     log_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
 except OSError:
     pass
@@ -158,7 +158,7 @@ async def main():
         url_client = f"http://{display_host}:{port}"
         url_admin = f"http://{display_host}:{port}/admin"
         print(f"=====================================================")
-        print(f"|   YTGUI Web Server                                |")
+        print(f"|   LunaWave Web Server                             |")
         print(f"|   Client : {url_client:<37} |")
         print(f"|   Admin  : {url_admin:<37} |")
         

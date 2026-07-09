@@ -52,7 +52,7 @@ def create_tables(cursor):
 
 def main():
     json_file = 'artists_enriched.json'
-    db_file = 'ytgui.db'
+    db_file = 'lunawave.db'
 
     if not os.path.exists(json_file):
         print(f"Error: File {json_file} tidak ditemukan!")

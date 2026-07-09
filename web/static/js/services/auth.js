@@ -85,10 +85,10 @@ function logout() {
     store.userRole = "portal";
     store.adminUsername = "";
     store.adminPassword = "";
-    safeStorage.remove("ytgui_user_role");
-    safeStorage.remove("ytgui_admin_username");
-    safeStorage.remove("ytgui_admin_password");
-    safeStorage.remove("ytgui_session_token");
+    safeStorage.remove("lunawave_user_role");
+    safeStorage.remove("lunawave_admin_username");
+    safeStorage.remove("lunawave_admin_password");
+    safeStorage.remove("lunawave_session_token");
 
     // 4. Close settings sheet UI if open
     if (typeof closeSettings === "function") {

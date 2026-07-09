@@ -2,28 +2,28 @@ import os
 from pathlib import Path
 
 # BASE_DIR defaults to the project root
-# can be overridden by YT_PLAYER_BASE env var
-BASE_DIR = Path(os.environ.get("YT_PLAYER_BASE", Path(__file__).parent))
+# can be overridden by LUNAWAVE_BASE or YT_PLAYER_BASE env var
+BASE_DIR = Path(os.environ.get("LUNAWAVE_BASE", os.environ.get("YT_PLAYER_BASE", Path(__file__).parent)))
 
 CACHE_DIR = BASE_DIR / "cache" / "mp3"
-DB_PATH = BASE_DIR / "data" / "ytgui.db"
+DB_PATH = BASE_DIR / "data" / "lunawave.db"
 
 # Handle Windows compatibility for Unix Sockets
 if os.name == 'nt':
     # Windows doesn't support Unix sockets natively in the same way,
     # mpv on Windows supports named pipes instead.
     # Defaulting to a named pipe for Windows testing.
-    MPV_SOCKET = os.environ.get("YT_PLAYER_SOCKET", r"\\.\pipe\mpv-yt-player")
+    MPV_SOCKET = os.environ.get("LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", r"\\.\pipe\mpv-lunawave"))
 else:
     socket_dir = BASE_DIR / "cache" / "sockets"
     socket_dir.mkdir(parents=True, exist_ok=True)
-    _raw_socket = os.environ.get("YT_PLAYER_SOCKET", str(socket_dir / "mpv-yt-player.sock"))
+    _raw_socket = os.environ.get("LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", str(socket_dir / "mpv-lunawave.sock")))
     _socket_path = Path(_raw_socket).resolve()
     _allowed_prefix = BASE_DIR.resolve()
     if not str(_socket_path).startswith(str(_allowed_prefix)):
         import warnings
-        warnings.warn(f"YT_PLAYER_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
-        _socket_path = socket_dir / "mpv-yt-player.sock"
+        warnings.warn(f"LUNAWAVE_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
+        _socket_path = socket_dir / "mpv-lunawave.sock"
     MPV_SOCKET = str(_socket_path)
 
 DEFAULT_VOLUME = int(os.environ.get("YT_PLAYER_VOLUME", 80))
@@ -41,16 +41,18 @@ STREAM_URL_TTL_SEC = 21600
 YTDLP_RESOLVE_TIMEOUT_SEC = 25
 
 # Web Server
-WEB_HOST = os.environ.get("YTGUI_HOST", "0.0.0.0")
-WEB_PORT = int(os.environ.get("YTGUI_PORT", 8765))
+WEB_HOST = os.environ.get("LUNAWAVE_HOST", os.environ.get("YTGUI_HOST", "0.0.0.0"))
+WEB_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
 
 # Web Security
-ADMIN_USERNAME = os.environ.get("YTGUI_ADMIN_USER", "admin")
+ADMIN_USERNAME = os.environ.get("LUNAWAVE_ADMIN_USER", os.environ.get("YTGUI_ADMIN_USER", "admin"))
 
 IS_PASSWORD_AUTO_GENERATED = False
 _password_file = BASE_DIR / "cache" / "admin_password.txt"
 
-if "YTGUI_ADMIN_PASS" in os.environ:
+if "LUNAWAVE_ADMIN_PASS" in os.environ:
+    _raw_env_pass = os.environ["LUNAWAVE_ADMIN_PASS"]
+elif "YTGUI_ADMIN_PASS" in os.environ:
     _raw_env_pass = os.environ["YTGUI_ADMIN_PASS"]
     if _raw_env_pass.startswith("pbkdf2:sha256:"):
         # Sudah di-hash sebelumnya (misalnya dari file yang di-backup)
