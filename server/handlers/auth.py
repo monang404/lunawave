@@ -78,7 +78,7 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         await asyncio.sleep(delay)
 
     async with manager.rl_lock:
-        now = time.monotonic()
+        now = time.time()
         _prune_stale_ips(manager, now)
 
         if await _verify_token(ws, data.get("token"), manager, db):

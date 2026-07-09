@@ -36,6 +36,20 @@ class DownloadManager:
 
         self.command_bus.register(DownloadCommand, self._route(self._on_download))
 
+    async def shutdown(self):
+        """Cancel semua download worker saat aplikasi shutdown."""
+        for t in self._workers:
+            if not t.done():
+                t.cancel()
+        self._workers.clear()
+
+    async def shutdown(self):
+        """Cancel semua download worker saat aplikasi shutdown."""
+        for t in self._workers:
+            if not t.done():
+                t.cancel()
+        self._workers.clear()
+
     def _route(self, action):
         async def handler(command):
             # Task S05-034: Removed inline import asyncio

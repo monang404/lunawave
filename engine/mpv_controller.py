@@ -95,7 +95,16 @@ class MpvController:
                     if os.path.exists(self.socket_path):
                         break
             else:
-                await asyncio.sleep(1.0)
+                # Windows: poll TCP port sampai MPV siap (max 5 detik)
+                import socket as _socket
+                for _ in range(50):
+                    await asyncio.sleep(0.1)
+                    try:
+                        s = _socket.create_connection(('127.0.0.1', int(self.tcp_port)), timeout=0.1)
+                        s.close()
+                        break
+                    except OSError:
+                        pass
         except OSError as e:
             logger.error(f"Failed to spawn mpv process: {e}")
             raise MpvConnectionError(f"Failed to spawn mpv process: {e}")

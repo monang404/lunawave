@@ -111,6 +111,24 @@ def _summary_worker():
                 queue=STATS.queue_size
             )
 
+def stop_status_bar():
+    """Hentikan status bar worker — dipanggil saat shutdown atau dari test."""
+    global _status_bar_active
+    _status_bar_active = False
+    _stop_event.set()
+
+def stop_status_bar():
+    """Hentikan status bar worker — dipanggil saat shutdown atau dari test."""
+    global _status_bar_active
+    _status_bar_active = False
+    _stop_event.set()
+
+def stop_status_bar():
+    """Hentikan status bar worker — dipanggil saat shutdown atau dari test."""
+    global _status_bar_active
+    _status_bar_active = False
+    _stop_event.set()
+
 def start_ui_threads():
     global _status_bar_active, _status_bar_thread, _summary_active, _summary_thread
     if os.environ.get("LUNAWAVE_CLI_UI", "1") == "1":

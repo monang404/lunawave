@@ -33,7 +33,7 @@ def test_compact_renderer_drops_noise():
 def test_status_bar_worker_exit_condition():
     import threading
 
-    from core.log_config import _status_bar_worker, _stop_event, stop_status_bar
+    from core.cli_ui import _status_bar_worker, _stop_event, stop_status_bar
 
     # Reset event just in case
     _stop_event.clear()
@@ -41,8 +41,8 @@ def test_status_bar_worker_exit_condition():
     # Start the worker thread explicitly for testing
     t = threading.Thread(target=_status_bar_worker)
 
-    import core.log_config
-    core.log_config._status_bar_active = True
+    import core.cli_ui
+    core.cli_ui._status_bar_active = True
 
     import unittest.mock
     with unittest.mock.patch("sys.stderr.write"):
@@ -60,7 +60,7 @@ def test_status_bar_worker_exit_condition():
 def test_summary_worker_exit_condition():
     import threading
 
-    from core.log_config import _stop_event, _summary_worker
+    from core.cli_ui import _stop_event, _summary_worker
 
     _stop_event.clear()
 
