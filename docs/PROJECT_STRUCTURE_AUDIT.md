@@ -358,16 +358,4 @@ server/
 
 ---
 
-## Ringkasan Prioritas Roadmap
 
-| Prioritas | Item | Effort | Impact |
-|-----------|------|--------|--------|
-| 🔴 Tinggi | Hapus `data/ytgui.db` warisan | Rendah | Kebersihan repo |
-| 🔴 Tinggi | Pindahkan `inject_svgs.py` dari `cache/` ke `scripts/` | Rendah | Kebersihan folder |
-| 🔴 Tinggi | Pisahkan `ConnectionManager` dari `websocket.py` | Menengah | Cegah circular dependency |
-| 🟡 Menengah | Pisahkan `adapters/` dari `engine/` (mpv, ytdlp) | Menengah | Arsitektur lebih clean |
-| 🟡 Menengah | Pecah `cache/db.py` ke repositories per concern | Menengah | Testability |
-| ✅ Selesai | Refactor `start.py` ke package `launcher/` | Menengah | Maintainability |
-| 🟢 Rendah | Pindahkan `export_to_sqlite.py` ke `scripts/` | Rendah | Organisasi |
-| 🟢 Rendah | Migrasi `artists_enriched.json` ke database | Tinggi | Performa & konsistensi |
-| 🟢 Rendah | Pertimbangkan build tooling untuk frontend | Sangat Tinggi | Skala jangka panjang |
