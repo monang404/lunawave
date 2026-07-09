@@ -235,3 +235,15 @@ class Database:
 
     async def cleanup_sessions(self):
         return await self.sessions.cleanup_sessions()
+
+    async def get_recent_tracks(self, limit: int = 20):
+        return await self.tracks.get_recent_tracks(limit)
+
+    async def get_favorite_tracks(self, limit: int = 50):
+        return await self.tracks.get_favorite_tracks(limit)
+
+    async def get_cached_tracks(self, limit: int = 50):
+        return await self.tracks.get_cached_tracks(limit)
+
+    async def set_favorite(self, video_id: str, is_favorite: bool):
+        return await self.tracks.set_favorite(video_id, is_favorite)

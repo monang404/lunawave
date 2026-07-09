@@ -27,8 +27,9 @@ class SimpleTTLCache:
     def set(self, key: str, data):
         self.cache[key] = {'data': data, 'time': time.time()}
 
+from core.ports import DatabasePort
+
 class DiscoverService:
-    from core.ports import DatabasePort
     def __init__(self, track_repo: DatabasePort, discover_repo: DatabasePort):
         self.track_repo = track_repo
         self.discover_repo = discover_repo

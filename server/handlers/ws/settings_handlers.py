@@ -21,7 +21,7 @@ async def _handle_volume_up(data, ws, state, ytdlp, manager, db, command_bus):
 async def _handle_volume_down(data, ws, state, ytdlp, manager, db, command_bus):
     await command_bus.execute(VolumeDownCommand())
 
-@register_ws_handler("volume_set")
+@register_ws_handler(WSAction.VOLUME_SET)
 async def _handle_volume_set(data, ws, state, ytdlp, manager, db, command_bus):
     try:
         vol = max(0, min(150, int(data.get("volume", DEFAULT_VOLUME))))
@@ -29,13 +29,13 @@ async def _handle_volume_set(data, ws, state, ytdlp, manager, db, command_bus):
     except (ValueError, TypeError):
         pass
 
-@register_ws_handler("set_mode")
+@register_ws_handler(WSAction.SET_MODE)
 async def _handle_set_mode(data, ws, state, ytdlp, manager, db, command_bus):
     mode_str = data.get("mode", DEFAULT_PLAYBACK_MODE).upper()
     mode = PlaybackMode.RADIO if mode_str == "RADIO" else PlaybackMode.QUEUE
     await command_bus.execute(SetModeCommand(mode=mode))
 
-@register_ws_handler("set_output")
+@register_ws_handler(WSAction.SET_OUTPUT)
 async def _handle_set_output(data, ws, state, ytdlp, manager, db, command_bus):
     output_str = data.get("output", DEFAULT_AUDIO_OUTPUT)
     output_val = AudioOutput.BROWSER if output_str == "browser" else AudioOutput.DEVICE

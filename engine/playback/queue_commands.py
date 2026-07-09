@@ -11,6 +11,7 @@ class QueueCommands:
         self.bus = playback_controller.bus
 
     async def on_queue_select(self, cmd):
+        track = None
         async with self.playback_controller._lock:
             if 0 <= cmd.index < len(self.state.queue):
                 track = self.state.queue[cmd.index]
@@ -18,7 +19,8 @@ class QueueCommands:
                     skipped = self.state.queue.pop(0)
                     self.state.history.append(skipped)
                 self.state.queue.pop(0)
-                await self.playback_controller.play_track(track)
+        if track is not None:
+            await self.playback_controller.play_track(track)
 
     async def on_queue_remove(self, cmd):
         async with self.playback_controller._lock:

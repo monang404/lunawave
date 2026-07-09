@@ -13,6 +13,18 @@ from pathlib import Path
 
 # Constants from start.py
 BASE_DIR   = Path(__file__).parent
+
+# Load .env file manually so GUI knows about LUNAWAVE_ADMIN_PASS
+_env_file = BASE_DIR / ".env"
+if _env_file.exists():
+    with open(_env_file, encoding="utf-8") as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _key, _, _val = _line.partition("=")
+                if _key.strip() not in os.environ:
+                    os.environ[_key.strip()] = _val.strip().strip('"').strip("'")
+
 SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", 8765))
 PYTHON     = sys.executable
 
@@ -39,9 +51,14 @@ class ServerReadyDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        x = self.winfo_x() + (self.winfo_width() - 380) // 2
-        y = self.winfo_y() + (self.winfo_height() - 200) // 2
-        self.geometry(f"+{x}+{y}")
+        self.update_idletasks()
+        pw = parent.winfo_rootx()
+        py = parent.winfo_rooty()
+        pw_width  = parent.winfo_width()
+        pw_height = parent.winfo_height()
+        x = pw + (pw_width  - 380) // 2
+        y = py + (pw_height - 200) // 2
+        self.geometry(f"380x200+{x}+{y}")
 
         tk.Label(
             self, text="🚀 Server Berhasil Dijalankan!",
@@ -63,7 +80,7 @@ class ServerReadyDialog(tk.Toplevel):
             btn_frame, text="🔑 Buka Halaman Login", bg=ACCENT, fg=BG,
             font=("Segoe UI", 10, "bold"), relief="flat", bd=0,
             cursor="hand2", padx=14, pady=6,
-            command=lambda: [webbrowser.open(f"http://localhost:{port}/admin"), self.destroy()]
+            command=lambda: [webbrowser.open(f"http://localhost:{port}/"), self.destroy()]
         )
         btn_login.pack(side="left", padx=5)
 
@@ -96,9 +113,14 @@ class PasswordResetDialog(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
 
-        x = self.winfo_x() + (self.winfo_width() - 400) // 2
-        y = self.winfo_y() + (self.winfo_height() - 240) // 2
-        self.geometry(f"+{x}+{y}")
+        self.update_idletasks()
+        pw = parent.winfo_rootx()
+        py = parent.winfo_rooty()
+        pw_width  = parent.winfo_width()
+        pw_height = parent.winfo_height()
+        x = pw + (pw_width  - 400) // 2
+        y = py + (pw_height - 240) // 2
+        self.geometry(f"400x240+{x}+{y}")
 
         title_text = "🔑 Password Admin Dibuat Otomatis" if is_first_run else "🔑 Password Admin Berhasil Direset"
         tk.Label(
@@ -182,7 +204,11 @@ class ServerManagerController:
         threading.Thread(target=_thread_fn, daemon=True).start()
 
     def check_first_run(self):
-        password_file = BASE_DIR / "cache" / "admin_password.txt"
+        # Jika user menggunakan password dari .env, tidak perlu generate password otomatis
+        if "LUNAWAVE_ADMIN_PASS" in os.environ:
+            return
+
+        password_file = BASE_DIR / "data" / "admin_password.txt"
         if not password_file.exists():
             try:
                 from core.security import hash_password
@@ -346,6 +372,10 @@ class ServerManagerController:
         self.refresh_status()
 
     def on_reset_password(self):
+        if "LUNAWAVE_ADMIN_PASS" in os.environ:
+            messagebox.showinfo("Informasi", "Password Anda saat ini diatur melalui file .env (LUNAWAVE_ADMIN_PASS).\nUntuk mengubah password, silakan edit file .env secara langsung.")
+            return
+
         if not messagebox.askyesno("Reset Password", "Apakah Anda yakin ingin mereset password admin? Ini akan menimpa password yang ada."):
             return
 
@@ -511,10 +541,16 @@ class ServerManagerWindow(tk.Tk):
             bg=BG_CARD, fg=TEXT_3, font=("Segoe UI", 8, "bold")
         ).pack(side="left", anchor="w")
 
-        tk.Label(
-            admin_frame, text="User: admin  ·  Pass: [Hashed]",
-            bg=BG_CARD, fg=TEXT_2, font=("Segoe UI", 9)
-        ).pack(side="left", padx=15)
+        if "LUNAWAVE_ADMIN_PASS" in os.environ:
+            tk.Label(
+                admin_frame, text="User: admin  ·  Pass: [Dari .env]",
+                bg=BG_CARD, fg=TEXT_2, font=("Segoe UI", 9)
+            ).pack(side="left", padx=15)
+        else:
+            tk.Label(
+                admin_frame, text="User: admin  ·  Pass: [Hashed]",
+                bg=BG_CARD, fg=TEXT_2, font=("Segoe UI", 9)
+            ).pack(side="left", padx=15)
 
         btn_reset = tk.Button(
             admin_frame, text="Reset Password",
@@ -538,10 +574,9 @@ class ServerManagerWindow(tk.Tk):
             bg=BG_CARD, fg=TEXT_3, font=("Segoe UI", 8, "bold")
         ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 6))
 
-        self._link_client = self._make_link(links_frame, "Client Portal", "/", 1, 0)
-        self._link_admin = self._make_link(links_frame, "Admin Console", "/admin", 1, 1)
-        self._link_health = self._make_link(links_frame, "System Health", "/health", 1, 2)
-        self._link_metrics = self._make_link(links_frame, "Metrics API", "/metrics", 1, 3)
+        self._link_client = self._make_link(links_frame, "App Portal", "/", 1, 0)
+        self._link_health = self._make_link(links_frame, "System Health", "/health", 1, 1)
+        self._link_metrics = self._make_link(links_frame, "Metrics API", "/metrics", 1, 2)
 
         deps_frame = tk.Frame(self, bg=BG_CARD, pady=10, padx=16)
         deps_frame.pack(fill="x", padx=16, pady=(10, 0))

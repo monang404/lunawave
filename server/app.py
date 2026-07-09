@@ -1,5 +1,6 @@
 
 import asyncio
+import sys
 from pathlib import Path
 
 import structlog
@@ -28,10 +29,8 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     app["db"] = db
     app["manager"] = manager
     app["http_session"] = http_session
-    if command_bus:
-        app["command_bus"] = command_bus
-    if event_bus:
-        app["event_bus"] = event_bus
+    app["command_bus"] = command_bus
+    app["event_bus"] = event_bus
 
     from server.routes import ROUTE_HEALTH, ROUTE_INDEX, ROUTE_METRICS, ROUTE_STATIC, ROUTE_STREAM, ROUTE_WS, STATIC_DIR
     app.router.add_get(ROUTE_INDEX, serve_index)
@@ -60,8 +59,7 @@ async def run_server(app: web.Application, host: str = "0.0.0.0", port: int = 87
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
-    import sys as _sys  # noqa: I001
-    _sys.stderr.write(f"\033[32mserver  ✓ listening\033[0m  http://{host}:{port}\n")
+    sys.stderr.write(f"\033[32mserver  ✓ listening\033[0m  http://{host}:{port}\n")
 
     try:
         while True:

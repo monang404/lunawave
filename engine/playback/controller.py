@@ -68,7 +68,7 @@ class PlaybackController:
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
         self.bus.subscribe(MpvReconnectedEvent, self._on_mpv_reconnected)
         
-        safe_create_task(self._persist_state_loop(), name="persist_state_loop")
+        self._persist_state_task = safe_create_task(self._persist_state_loop(), name="persist_state_loop")
 
     async def _persist_state_loop(self):
         import json

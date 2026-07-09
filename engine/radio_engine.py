@@ -80,7 +80,7 @@ class RadioMode:
         if self._seed_artists:
             return
         try:
-            if self.db and self.db.conn:
+            if self.db and self.db.pool:
                 self._seed_artists = await self.db.get_all_artists()
         except Exception as e:
             logger.warning(f"Failed to load artists from DB: {e}")
@@ -113,7 +113,7 @@ class RadioMode:
 
     async def next(self, controller: "PlaybackController") -> None:
         if self.state.radio_queue:
-            track = self.state.radio_queue.popleft()
+            track = self.state.radio_queue.pop(0)
             if len(self.state.radio_queue) <= 5:
                 _track_task(self._bg_tasks, self._ensure_standby(controller), name="radio_ensure_standby")
             await controller.play_track(track)
@@ -284,7 +284,7 @@ class RadioMode:
         if not prioritized_artist and self._seed_artists:
             prioritized_artist = random.choice(self._seed_artists)
 
-        if self.db and self.db.conn:
+        if self.db and self.db.pool:
             try:
                 tracks = await self.db.get_random_songs(limit=limit, exclude_ids=existing, artist=prioritized_artist)
                 return tracks
