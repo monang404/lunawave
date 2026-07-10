@@ -725,6 +725,7 @@ def render_json(results: list[CheckResult]) -> None:
     fail_count = sum(1 for r in results if r.status == "FAIL")
     pass_count = sum(1 for r in results if r.status == "PASS")
     data = {
+        "checker": "verify_docs",
         "repository_status": _overall_status(results),
         "score": _score(results),
         "pass": pass_count,
