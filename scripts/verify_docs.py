@@ -1,102 +1,99 @@
 #!/usr/bin/env python3
 """
-validate_docs.py — Pemeriksa kesehatan dokumentasi LunaWave.
+verify_docs.py — Documentation Health Checker untuk LunaWave.
 
-Ini BUKAN linter markdown biasa. Script ini khusus ngecek 3 hal yang
-gampang basi/rusak kalau diupdate manual terus-terusan:
+Purpose:
+    Memeriksa kualitas dokumentasi project, bukan memvalidasi semua path
+    yang tertulis di file Markdown. Fokus pada kondisi repository saat ini,
+    bukan histori, roadmap, atau proposal refactor.
 
-  1. PATCHLOG.md   — apakah semua ID unik & formatnya benar, dan apakah
-                      `latest_patch_id` di frontmatter cocok sama entry terakhir?
-  2. Frontmatter    — apakah setiap dokumen di docs/ punya `last_verified`,
-                      dan apakah tanggalnya masih segar (< N hari)?
-  3. Referensi file — apakah path file yang disebut di STATUS.md / REPORT.md /
-                      dokumen lain (dalam backtick) benar-benar ada di project?
+    Cek yang dijalankan: Documentation Structure, PATCHLOG, Frontmatter
+    (termasuk owner opsional), Generated Sections, FILE_INDEX, REPORT,
+    Documentation Coverage (file .py belum tercatat di FILE_INDEX/REPORT),
+    Module Docstring Coverage, Large Files (>300 LOC), Empty Packages.
 
-Cara pakai (boleh dijalankan dari mana saja — root project ATAU dari
-dalam folder scripts/ itu sendiri; default docs-dir & project-root
-dihitung dari lokasi script ini, bukan dari folder tempat kamu ngetik
-command):
+Subscribes to:
+    docs/ filesystem, project .py files
 
-    python scripts/verify_docs.py          # dari root project
-    cd scripts && python verify_docs.py    # dari dalam scripts/, hasilnya sama
-    python scripts/verify_docs.py --stale-days 14
-    python scripts/verify_docs.py --include-kompas
-    python scripts/verify_docs.py --docs-dir /path/lain/docs --project-root /path/lain
+Publishes:
+    stdout (ringkasan, detail verbose, atau JSON)
 
-Exit code: 0 kalau tidak ada masalah kategori ❌ (error).
-           1 kalau ada minimal 1 ❌. (Berguna kalau nanti mau dipasang
-           sebagai git pre-commit hook.)
+Cara pakai:
+    python scripts/verify_docs.py                # ringkasan
+    python scripts/verify_docs.py --verbose      # detail lengkap
+    python scripts/verify_docs.py --show-docstring   # file tanpa module docstring
+    python scripts/verify_docs.py --show-large-files # file >300 LOC
+    python scripts/verify_docs.py --json         # output JSON
 
-Keterbatasan yang perlu disadari (baca ini sebelum panik lihat outputnya):
-  - Script ini TIDAK tahu mana "belum ada" yang memang disengaja
-    (misal docs/CONSTRAINTS.md yang statusnya ⏳ Belum di STATUS.md)
-    vs yang beneran salah ketik/lupa update. Semua "missing path"
-    tetap dilaporkan — kamu yang menilai mana yang expected.
-  - Deteksi "path file" pakai heuristik (isi backtick yang mengandung
-    "/" atau ".") — bukan parser markdown penuh. Sudah difilter dari
-    cuplikan kode (`fn()`), penyebutan ekstensi generik (`.py`), route
-    HTTP (`/health`), dan notasi module.attribute (`werkzeug.security`).
-    Referensi tanpa ekstensi (`core/event_bus`) atau basename doang
-    (`state.py`, gaya tree-listing) dicek dengan menebak ekstensi umum
-    dan mencari di seluruh project — tapi ini tetap heuristik, bukan
-    parser AST/import resolver, jadi bukan 100% presisi.
-  - Kalau docs/ dan source code project TIDAK ada di lokasi normal relatif
-    ke script ini (`<project_root>/scripts/verify_docs.py` dan
-    `<project_root>/docs/`), atau kamu memang mau nunjuk ke folder lain,
-    pakai --docs-dir dan --project-root eksplisit.
+Exit code: 0 = PASS / WARN,  1 = ada FAIL
 """
 
 import argparse
+import ast
+import json
 import os
 import re
 import sys
+from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 
-# Lokasi script ini sendiri (mis. <project_root>/scripts/verify_docs.py).
-# Dipakai buat nentuin default docs-dir & project-root SUPAYA TIDAK
-# tergantung dari mana kamu menjalankan script-nya (cwd) — jadi tetap benar
-# baik dijalankan dari root project (`python scripts/verify_docs.py`)
-# maupun dari dalam folder scripts/ itu sendiri (`python verify_docs.py`).
+# ---------------------------------------------------------------------------
+# Konstanta & path default
+# ---------------------------------------------------------------------------
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
 DEFAULT_DOCS_DIR = DEFAULT_PROJECT_ROOT / "docs"
 
 PATCH_ID_RE = re.compile(r"\*\*ID:\*\*\s*`(PATCH-\d{4}-\d{2}-\d{2}-\d{3})`")
-FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
-BACKTICK_RE = re.compile(r"`([^`\n]+)`")
-PURE_VERSION_RE = re.compile(r"^[\d.]+$")  # contoh: "3.2", "1.0" — bukan path
+FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---", re.DOTALL)
+GENERATED_BEGIN_RE = re.compile(r"<!--\s*BEGIN:GENERATED\s*-->")
+GENERATED_END_RE = re.compile(r"<!--\s*END:GENERATED\s*-->")
 
-# Ekstensi generik yang sering disebut TANPA nama file di depannya, misal
-# "total file `.py`" atau "ekskl. `.git`" — itu bukan path, cuma nyebut tipe file.
-GENERIC_EXTENSION_MENTIONS = {
-    "py", "js", "jsx", "ts", "tsx", "css", "scss", "html", "htm", "json",
-    "sql", "txt", "md", "sh", "bat", "yml", "yaml", "xml", "git",
-}
+# Pattern untuk mengambil referensi path .py dari teks markdown
+PY_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_/\\.-]*\.py)")
 
-# Ekstensi yang dianggap "file beneran" kalau muncul di akhir path/basename.
-KNOWN_FILE_EXTENSIONS = {
-    "py", "js", "jsx", "ts", "tsx", "css", "scss", "html", "htm", "json",
-    "sql", "txt", "md", "sh", "bat", "yml", "yaml", "toml", "cfg", "ini",
-    "xml", "db", "log", "conf", "service", "env",
-}
+NOISE_DIRS: frozenset[str] = frozenset({
+    "__pycache__", ".git", "node_modules", ".venv", "venv",
+    ".mypy_cache", ".pytest_cache", ".tox", "dist", "build",
+})
 
-# Kalau nemu path tanpa ekstensi (gaya penyebutan modul, misal "core/event_bus"),
-# coba tempel salah satu ekstensi ini buat lihat apakah file aslinya ada.
-EXTENSIONS_TO_GUESS = ["py", "js", "ts", "css", "md", "sql", "json", "txt", "html"]
+REQUIRED_DOCS = [
+    "INDEX.md", "STATUS.md", "REPORT.md", "PATCHLOG.md",
+    "FILE_INDEX.md", "STRUCTURE.md", "AI_CONTEXT.md",
+]
 
-# Notasi "module.attribute"/"module.function" tanpa slash, misal "werkzeug.security"
-# atau "asyncio.sleep" — dua identifier dipisah satu titik, TIDAK diawali titik
-# (jadi bukan dotfile seperti ".editorconfig") dan tidak ada tanda hubung/angka
-# aneh (jadi bukan nama file majemuk seperti "lunawave.db-shm").
-DOTTED_ATTR_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*$")
+# Docstring module wajib mengandung field-field ini
+DOCSTRING_REQUIRED_FIELDS = ("Purpose:", "Subscribes to:", "Publishes:")
 
-# Folder yang dilewati saat membangun index nama file (noise / hasil build).
-NOISE_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv", ".mypy_cache", ".pytest_cache", ".tox"}
+LARGE_FILE_THRESHOLD = 300   # LOC
+STALE_DAYS_DEFAULT = 30
+PREVIEW_COUNT = 3             # item ditampilkan sebelum "(+N more)"
+
+# Dokumen yang di-skip dari cek frontmatter (dicek terpisah atau memang historis)
+SKIP_FRONTMATTER = frozenset({"PATCHLOG.md"})
 
 
 # ---------------------------------------------------------------------------
-# Util kecil
+# Model data
+# ---------------------------------------------------------------------------
+
+@dataclass
+class CheckResult:
+    name: str
+    status: str          # "PASS" | "WARN" | "FAIL"
+    message: str = ""    # satu baris keterangan
+    items: list[str] = field(default_factory=list)
+
+    @property
+    def count(self) -> int:
+        return len(self.items)
+
+
+# ---------------------------------------------------------------------------
+# Utilitas
 # ---------------------------------------------------------------------------
 
 def read_text(path: Path) -> str:
@@ -104,11 +101,10 @@ def read_text(path: Path) -> str:
 
 
 def parse_frontmatter(text: str) -> dict | None:
-    """Ambil isi frontmatter --- ... --- di baris paling atas file (kalau ada)."""
     m = FRONTMATTER_RE.match(text)
     if not m:
         return None
-    fm = {}
+    fm: dict[str, str] = {}
     for line in m.group(1).splitlines():
         line = line.strip()
         if not line or ":" not in line:
@@ -118,304 +114,581 @@ def parse_frontmatter(text: str) -> dict | None:
     return fm
 
 
-def looks_like_path(candidate: str) -> str | None:
-    """Heuristik: apakah isi backtick ini kemungkinan path file/folder?
-    Return path yang sudah dibersihkan (tanpa suffix :L47,L64 dsb), atau None."""
-    c = candidate.strip()
-    if not c or " " in c:
+def collect_py_files(project_root: Path) -> list[Path]:
+    """Kumpulkan semua .py file (relatif ke project_root), exclude noise dirs."""
+    result: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(project_root):
+        dirnames[:] = [d for d in dirnames if d not in NOISE_DIRS]
+        dp = Path(dirpath)
+        for fn in filenames:
+            if fn.endswith(".py"):
+                result.append((dp / fn).relative_to(project_root))
+    return sorted(result)
+
+
+def count_lines(abs_path: Path) -> int:
+    try:
+        return len(read_text(abs_path).splitlines())
+    except Exception:
+        return 0
+
+
+def get_module_docstring(abs_path: Path) -> str | None:
+    """Ambil module-level docstring via AST. Return None jika tidak ada / syntax error."""
+    try:
+        tree = ast.parse(abs_path.read_text(encoding="utf-8", errors="replace"))
+        return ast.get_docstring(tree)
+    except SyntaxError:
         return None
-    if PURE_VERSION_RE.match(c):
-        return None
-    if "/" not in c and "." not in c:
-        return None
-    if c.endswith("*") or "*" in c:  # pola env var seperti LUNAWAVE_*
-        return None
-    if c.startswith("http://") or c.startswith("https://"):
-        return None
-    # cuplikan kode seperti `asyncio.run()`, `db.get_track()`, `ServerManager(tk.Tk)`
-    # — ini pemanggilan fungsi/class, bukan path file.
-    if "(" in c or ")" in c:
-        return None
-    # penyebutan ekstensi generik doang, misal "total file `.py`" atau
-    # "ekskl. `.git`" — bukan path ke file spesifik.
-    if c.startswith(".") and c[1:].lower() in GENERIC_EXTENSION_MENTIONS:
-        return None
-    # endpoint HTTP/WS seperti `/stream`, `/health`, `/auth/login` — bukan path
-    # filesystem relatif terhadap project root (yang di sini tidak pernah pakai
-    # leading slash), jadi kalau tidak ada ekstensi file, anggap itu route.
-    if c.startswith("/") and "." not in c:
-        return None
-    # buang suffix "path/to/file.py:L47,L64" -> "path/to/file.py"
-    c = c.split(":")[0]
-    return c
+
+
+def fmt_items(items: list[str], verbose: bool, indent: str = "  ") -> list[str]:
+    """Format daftar item dengan truncation opsional."""
+    if not items:
+        return []
+    if verbose or len(items) <= PREVIEW_COUNT:
+        return [f"{indent}{it}" for it in items]
+    shown = items[:PREVIEW_COUNT]
+    rest = len(items) - PREVIEW_COUNT
+    return [f"{indent}{it}" for it in shown] + [f"{indent}(+{rest} more)"]
 
 
 # ---------------------------------------------------------------------------
-# Cek 1 — PATCHLOG ID unik, valid, dan sinkron dengan frontmatter
+# Cek 1 — Struktur docs/
 # ---------------------------------------------------------------------------
 
-def check_patchlog(docs_dir: Path) -> tuple[list[str], list[str], list[str]]:
-    ok, warn, err = [], [], []
+def check_docs_structure(docs_dir: Path) -> CheckResult:
+    missing = [f"docs/{doc}" for doc in REQUIRED_DOCS if not (docs_dir / doc).exists()]
+    if missing:
+        return CheckResult(
+            "Documentation Structure", "FAIL",
+            f"{len(missing)} file wajib tidak ditemukan", missing,
+        )
+    return CheckResult(
+        "Documentation Structure", "PASS",
+        f"{len(REQUIRED_DOCS)} file wajib hadir",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cek 2 — PATCHLOG (ID unik, urutan, sinkron frontmatter)
+# ---------------------------------------------------------------------------
+
+def check_patchlog(docs_dir: Path) -> CheckResult:
     patchlog = docs_dir / "PATCHLOG.md"
     if not patchlog.exists():
-        err.append("PATCHLOG.md tidak ditemukan di docs/.")
-        return ok, warn, err
+        return CheckResult("PATCHLOG", "FAIL", "docs/PATCHLOG.md tidak ditemukan")
 
     text = read_text(patchlog)
     ids = PATCH_ID_RE.findall(text)
 
     if not ids:
-        warn.append("PATCHLOG.md: tidak ada entry dengan format **ID:** `PATCH-YYYY-MM-DD-NNN` ditemukan.")
-        return ok, warn, err
+        return CheckResult(
+            "PATCHLOG", "WARN",
+            "Tidak ada entry dengan format PATCH-YYYY-MM-DD-NNN",
+        )
 
-    # unik?
-    seen = set()
-    dupes = set()
+    issues: list[str] = []
+
+    # ID unik
+    seen: set[str] = set()
+    dupes: list[str] = []
     for pid in ids:
         if pid in seen:
-            dupes.add(pid)
+            dupes.append(pid)
         seen.add(pid)
     if dupes:
-        err.append(f"PATCHLOG.md: ID duplikat ditemukan: {', '.join(sorted(dupes))}")
-    else:
-        ok.append(f"PATCHLOG.md: {len(ids)} entry, semua ID unik & formatnya valid.")
+        issues.append(f"ID duplikat: {', '.join(sorted(set(dupes)))}")
 
-    # cocok sama frontmatter latest_patch_id?
+    # Urutan kronologis (ID berbasis tanggal → lexicographic sort sudah cukup)
+    if ids != sorted(ids):
+        issues.append("ID tidak berurutan kronologis")
+
+    # Sinkron dengan frontmatter latest_patch_id
     fm = parse_frontmatter(text)
-    last_id_in_body = ids[-1]
     if fm is None:
-        warn.append("PATCHLOG.md: tidak ada frontmatter (last_verified/latest_patch_id).")
+        issues.append("Frontmatter tidak ditemukan — latest_patch_id tidak bisa diverifikasi")
     else:
-        latest_fm = fm.get("latest_patch_id")
-        if latest_fm is None:
-            warn.append("PATCHLOG.md: frontmatter tidak punya field 'latest_patch_id'.")
-        elif latest_fm != last_id_in_body:
-            err.append(
-                f"PATCHLOG.md: frontmatter latest_patch_id='{latest_fm}' "
-                f"TIDAK COCOK dengan entry terakhir di body ('{last_id_in_body}'). "
-                f"Kemungkinan ada entry baru yang lupa diupdate ke frontmatter."
+        latest_fm = fm.get("latest_patch_id", "")
+        last_id = ids[-1]
+        if not latest_fm:
+            issues.append("Frontmatter tidak punya field 'latest_patch_id'")
+        elif latest_fm != last_id:
+            issues.append(
+                f"latest_patch_id='{latest_fm}' tidak cocok dengan entry terakhir ('{last_id}')"
             )
-        else:
-            ok.append(f"PATCHLOG.md: latest_patch_id frontmatter cocok dengan entry terakhir ({last_id_in_body}).")
 
-    return ok, warn, err
+    if issues:
+        status = "FAIL" if dupes else "WARN"
+        return CheckResult("PATCHLOG", status, "", issues)
+    return CheckResult("PATCHLOG", "PASS", f"{len(ids)} entries, IDs unik & sinkron")
 
 
 # ---------------------------------------------------------------------------
-# Cek 2 — Frontmatter ada & masih segar di semua dokumen
+# Cek 3 — Frontmatter semua docs/*.md
 # ---------------------------------------------------------------------------
 
-def check_frontmatter_freshness(docs_dir: Path, stale_days: int, include_kompas: bool) -> tuple[list, list, list]:
-    ok, warn, err = [], [], []
-    md_files = sorted(docs_dir.glob("*.md"))
-    if include_kompas:
-        md_files += sorted((docs_dir / "kompas").rglob("*.md"))
-
+def check_frontmatter(docs_dir: Path, stale_days: int) -> CheckResult:
     today = date.today()
-    for f in md_files:
+    issues: list[str] = []
+    checked = 0
+
+    for f in sorted(docs_dir.glob("*.md")):
+        if f.name in SKIP_FRONTMATTER:
+            continue
+        checked += 1
         text = read_text(f)
+        rel = f"docs/{f.name}"
         fm = parse_frontmatter(text)
-        rel = f.relative_to(docs_dir.parent)
+
         if fm is None:
-            warn.append(f"{rel}: tidak punya frontmatter (--- last_verified: ... ---) di baris paling atas.")
+            issues.append(f"{rel}: tidak punya frontmatter")
             continue
-        lv = fm.get("last_verified")
-        if lv is None:
-            warn.append(f"{rel}: frontmatter ada, tapi field 'last_verified' tidak ditemukan.")
-            continue
-        try:
-            lv_date = datetime.strptime(lv, "%Y-%m-%d").date()
-        except ValueError:
-            err.append(f"{rel}: format last_verified='{lv}' tidak valid (harus YYYY-MM-DD).")
-            continue
-        age = (today - lv_date).days
-        if age < 0:
-            warn.append(f"{rel}: last_verified={lv} adalah tanggal masa depan — cek typo tahun.")
-        elif age > stale_days:
-            warn.append(f"{rel}: last_verified={lv} sudah {age} hari lalu (ambang: {stale_days} hari) — perlu re-verify.")
-        else:
-            ok.append(f"{rel}: frontmatter segar (last_verified {age} hari lalu).")
 
-    return ok, warn, err
+        # Field wajib
+        for req in ("title", "last_verified"):
+            if req not in fm:
+                issues.append(f"{rel}: field '{req}' tidak ditemukan")
+
+        # Owner — opsional, tapi kalau ada tidak boleh kosong
+        if "owner" in fm and not fm["owner"]:
+            issues.append(f"{rel}: field 'owner' ada tapi kosong")
+
+        # Validasi & freshness last_verified
+        lv = fm.get("last_verified", "")
+        if lv:
+            try:
+                lv_date = datetime.strptime(lv, "%Y-%m-%d").date()
+                age = (today - lv_date).days
+                if age < 0:
+                    issues.append(f"{rel}: last_verified={lv} adalah tanggal masa depan")
+                elif age > stale_days:
+                    issues.append(
+                        f"{rel}: last_verified={lv} sudah {age} hari lalu (ambang: {stale_days})"
+                    )
+            except ValueError:
+                issues.append(f"{rel}: format last_verified='{lv}' tidak valid (harus YYYY-MM-DD)")
+
+        # Validasi generated (kalau ada)
+        gen = fm.get("generated", "")
+        if gen and gen.lower() not in ("true", "false", "yes", "no", "manual"):
+            issues.append(f"{rel}: nilai 'generated' tidak dikenali ('{gen}')")
+
+    if not checked:
+        return CheckResult("Frontmatter", "WARN", "Tidak ada file .md di docs/")
+    if issues:
+        return CheckResult("Frontmatter", "WARN", f"{len(issues)} issue(s)", issues)
+    return CheckResult("Frontmatter", "PASS", f"{checked} file OK")
 
 
 # ---------------------------------------------------------------------------
-# Cek 3 — Path file yang disebut di dokumen benar-benar ada di project
+# Cek 4 — Generated Markers (BEGIN:GENERATED / END:GENERATED) di semua docs
 # ---------------------------------------------------------------------------
 
-def build_basename_index(project_root: Path) -> tuple[dict[str, list[Path]], dict[str, list[Path]]]:
-    """Index semua nama file & folder di project (basename -> daftar path
-    relatif). Dipakai buat fallback: dokumen gaya tree-listing sering cuma
-    nyebut nama file/folder doang ('state.py', 'components/') tanpa path
-    lengkap di depannya ('core/state.py', 'web/static/css/components/')."""
-    file_index: dict[str, list[Path]] = {}
-    dir_index: dict[str, list[Path]] = {}
-    for dirpath, dirnames, filenames in os.walk(project_root):
-        dirnames[:] = [d for d in dirnames if d not in NOISE_DIRS]
-        for d in dirnames:
-            rel = (Path(dirpath) / d).relative_to(project_root)
-            dir_index.setdefault(d, []).append(rel)
-        for fn in filenames:
-            rel = (Path(dirpath) / fn).relative_to(project_root)
-            file_index.setdefault(fn, []).append(rel)
-    return file_index, dir_index
+def check_generated_blocks(docs_dir: Path) -> CheckResult:
+    issues: list[str] = []
 
-
-def resolve_candidate(
-    candidate: str,
-    bases: list[Path],
-    file_index: dict[str, list[Path]],
-    dir_index: dict[str, list[Path]],
-) -> bool | None:
-    """Coba cari `candidate` di beberapa base dir (project_root, docs_dir,
-    folder dokumen itu sendiri). Return True (ketemu), False (tidak ketemu,
-    perlu dilaporkan), atau None (bukan path — abaikan, jangan hitung sama
-    sekali, misal ini ternyata dotted attribute/module reference)."""
-    for b in bases:
-        if (b / candidate).exists():
-            return True
-
-    if candidate.endswith("/"):
-        # referensi folder — gaya tree-listing sering cuma nyebut nama folder
-        # doang ("components/") tanpa path lengkap di depannya. Coba cari di
-        # seluruh project kalau namanya tidak mengandung "/" sama sekali.
-        bare_dir = candidate.rstrip("/")
-        if "/" not in bare_dir and bare_dir in dir_index:
-            return True
-        return False
-
-    last_seg = candidate.rsplit("/", 1)[-1]
-
-    if "." in last_seg:
-        suffix = last_seg.rsplit(".", 1)[-1].lower()
-        if suffix in KNOWN_FILE_EXTENSIONS:
-            # basename dengan ekstensi valid tapi tidak ketemu langsung —
-            # coba cari di mana saja di project (gaya tree-listing).
-            if "/" not in candidate and last_seg in file_index:
-                return True
-            return False
-        # akhiran bukan ekstensi file yang dikenal -> kemungkinan besar ini
-        # notasi "module.attribute"/"module.function" (mis. `core/security.hash_password`,
-        # atau `werkzeug.security`), bukan path literal. Coba tebak sebagai
-        # "prefix" + ekstensi kode dulu.
-        prefix = candidate.rsplit(".", 1)[0]
-        for ext in EXTENSIONS_TO_GUESS:
-            for b in bases:
-                if (b / f"{prefix}.{ext}").exists():
-                    return True
-        if "/" not in candidate and DOTTED_ATTR_RE.match(candidate):
-            # pola persis "word.word" tanpa slash (mis. "werkzeug.security") ->
-            # ini kemungkinan besar referensi import/atribut, bukan path project.
-            return None
-        # selain itu (dotfile seperti ".editorconfig", atau nama file majemuk
-        # seperti "lunawave.db-shm") — ini tetap kandidat path yang sah, cuma
-        # kebetulan tidak ketemu.
-        return False
-
-    # tidak ada ekstensi sama sekali tapi ada "/", gaya penyebutan modul
-    # (mis. "core/event_bus", "engine/mpv_controller") — coba tebak ekstensinya.
-    for ext in EXTENSIONS_TO_GUESS:
-        for b in bases:
-            if (b / f"{candidate}.{ext}").exists():
-                return True
-    return False
-
-
-def check_file_references(docs_dir: Path, project_root: Path, include_kompas: bool) -> tuple[list, list, list]:
-    ok, warn, err = [], [], []
-    md_files = sorted(docs_dir.glob("*.md"))
-    if include_kompas:
-        md_files += sorted((docs_dir / "kompas").rglob("*.md"))
-
-    file_index, dir_index = build_basename_index(project_root)
-
-    total_checked = 0
-    total_ignored = 0
-    for f in md_files:
+    for f in sorted(docs_dir.glob("*.md")):
         text = read_text(f)
-        rel_doc = f.relative_to(docs_dir.parent)
-        bases = [project_root, docs_dir, f.parent]
-        for line_no, line in enumerate(text.splitlines(), start=1):
-            for raw in BACKTICK_RE.findall(line):
-                candidate = looks_like_path(raw)
-                if candidate is None:
-                    continue
-                result = resolve_candidate(candidate, bases, file_index, dir_index)
-                if result is None:
-                    total_ignored += 1
-                    continue
-                total_checked += 1
-                if not result:
-                    warn.append(f"{rel_doc}:{line_no} — path `{candidate}` disebut tapi tidak ditemukan di project.")
+        has_begin = bool(GENERATED_BEGIN_RE.search(text))
+        has_end = bool(GENERATED_END_RE.search(text))
+        rel = f"docs/{f.name}"
 
-    if total_checked == 0:
-        warn.append("Tidak ada kandidat path yang terdeteksi untuk dicek (cek heuristik atau isi dokumen).")
-    else:
-        found_issues = len(warn)
-        extra = f" ({total_ignored} kandidat diabaikan karena bukan path, mis. referensi module/atribut)." if total_ignored else ""
-        ok.append(f"{total_checked} referensi path dicek, {total_checked - found_issues} ditemukan cocok.{extra}")
+        if has_begin and not has_end:
+            issues.append(f"{rel}: BEGIN:GENERATED ada, END:GENERATED hilang")
+        elif has_end and not has_begin:
+            issues.append(f"{rel}: END:GENERATED ada, BEGIN:GENERATED hilang")
+        elif has_begin and has_end:
+            begin_pos = GENERATED_BEGIN_RE.search(text).start()  # type: ignore[union-attr]
+            end_pos = GENERATED_END_RE.search(text).start()      # type: ignore[union-attr]
+            if begin_pos > end_pos:
+                issues.append(f"{rel}: END:GENERATED muncul sebelum BEGIN:GENERATED")
 
-    return ok, warn, err
+    if issues:
+        return CheckResult("Generated Sections", "WARN", f"{len(issues)} broken marker(s)", issues)
+    return CheckResult("Generated Sections", "PASS", "Semua marker BEGIN/END lengkap")
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Cek 5 — FILE_INDEX (sinkron dengan .py di disk)
 # ---------------------------------------------------------------------------
 
-def main():
-    parser = argparse.ArgumentParser(description="Validator kesehatan docs/ LunaWave.")
+def check_file_index(docs_dir: Path, project_root: Path) -> CheckResult:
+    fi_path = docs_dir / "FILE_INDEX.md"
+    if not fi_path.exists():
+        return CheckResult("FILE_INDEX", "FAIL", "docs/FILE_INDEX.md tidak ditemukan")
+
+    fi_text = read_text(fi_path)
+    actual_py = collect_py_files(project_root)
+    issues: list[str] = []
+
+    # Semua .py aktual harus muncul di FILE_INDEX (nama file cukup, tidak harus path penuh)
+    missing_from_index: list[str] = []
+    for py_path in actual_py:
+        py_str = str(py_path).replace("\\", "/")
+        py_name = py_path.name
+        if py_str not in fi_text and py_name not in fi_text:
+            missing_from_index.append(py_str)
+
+    for m in missing_from_index:
+        issues.append(f"Belum ada di FILE_INDEX: {m}")
+
+    # Entry di FILE_INDEX yang tidak ada di disk
+    indexed_refs = {
+        m.group(1).replace("\\", "/")
+        for m in PY_REF_RE.finditer(fi_text)
+    }
+    actual_names = {p.name for p in actual_py}
+
+    for ref in sorted(indexed_refs):
+        ref_path = project_root / ref
+        if not ref_path.exists() and Path(ref).name not in actual_names:
+            issues.append(f"Entry di FILE_INDEX tidak ada di disk: {ref}")
+
+    if issues:
+        has_stale = any("tidak ada di disk" in i for i in issues)
+        status = "FAIL" if has_stale else "WARN"
+        return CheckResult("FILE_INDEX", status, f"{len(issues)} issue(s)", issues)
+    return CheckResult("FILE_INDEX", "PASS", f"{len(actual_py)} file Python terdaftar")
+
+
+# ---------------------------------------------------------------------------
+# Cek 6 — REPORT (generated section valid)
+# ---------------------------------------------------------------------------
+
+def check_report(docs_dir: Path) -> CheckResult:
+    path = docs_dir / "REPORT.md"
+    if not path.exists():
+        return CheckResult("REPORT", "FAIL", "docs/REPORT.md tidak ditemukan")
+
+    text = read_text(path)
+    has_begin = bool(GENERATED_BEGIN_RE.search(text))
+    has_end = bool(GENERATED_END_RE.search(text))
+
+    if has_begin and not has_end:
+        return CheckResult("REPORT", "WARN", "BEGIN:GENERATED ada, END:GENERATED hilang")
+    if has_end and not has_begin:
+        return CheckResult("REPORT", "WARN", "END:GENERATED ada, BEGIN:GENERATED hilang")
+
+    if has_begin and has_end:
+        m_begin = GENERATED_BEGIN_RE.search(text)
+        m_end = GENERATED_END_RE.search(text)
+        if m_begin and m_end:
+            inner = text[m_begin.end():m_end.start()].strip()
+            if not inner:
+                return CheckResult("REPORT", "WARN", "Generated section kosong (tidak ada konten)")
+
+    return CheckResult("REPORT", "PASS", "Generated section valid")
+
+
+# ---------------------------------------------------------------------------
+# Cek 7 — Module Docstring Coverage
+# ---------------------------------------------------------------------------
+
+def check_module_docstrings(project_root: Path) -> CheckResult:
+    py_files = collect_py_files(project_root)
+    missing: list[str] = []
+
+    for py_rel in py_files:
+        docstring = get_module_docstring(project_root / py_rel)
+        if not docstring:
+            missing.append(str(py_rel).replace("\\", "/"))
+            continue
+        # Cek field wajib
+        for req_field in DOCSTRING_REQUIRED_FIELDS:
+            if req_field not in docstring:
+                missing.append(str(py_rel).replace("\\", "/"))
+                break
+
+    if missing:
+        return CheckResult(
+            "Module Docstring", "WARN",
+            f"{len(missing)} file tanpa docstring lengkap", missing,
+        )
+    return CheckResult("Module Docstring", "PASS", f"{len(py_files)} file OK")
+
+
+# ---------------------------------------------------------------------------
+# Cek 8 — Documentation Coverage (file .py belum tercatat di FILE_INDEX atau REPORT)
+# ---------------------------------------------------------------------------
+
+def check_documentation_coverage(docs_dir: Path, project_root: Path) -> CheckResult:
+    """File Python baru wajib disebut minimal di salah satu dari FILE_INDEX.md
+    atau REPORT.md (cukup nama file, tidak harus path lengkap). Kalau tidak
+    disebut di keduanya, berarti file itu belum terdokumentasi sama sekali."""
+    fi_path = docs_dir / "FILE_INDEX.md"
+    report_path = docs_dir / "REPORT.md"
+
+    fi_text = read_text(fi_path) if fi_path.exists() else ""
+    report_text = read_text(report_path) if report_path.exists() else ""
+
+    py_files = collect_py_files(project_root)
+    missing: list[str] = []
+
+    for py_rel in py_files:
+        py_str = str(py_rel).replace("\\", "/")
+        py_name = py_rel.name
+        in_index = py_str in fi_text or py_name in fi_text
+        in_report = py_str in report_text or py_name in report_text
+        if not in_index and not in_report:
+            missing.append(py_str)
+
+    if missing:
+        return CheckResult(
+            "Documentation Coverage", "WARN",
+            f"{len(missing)} file belum disebut di FILE_INDEX maupun REPORT", missing,
+        )
+    return CheckResult("Documentation Coverage", "PASS", f"{len(py_files)} file terdokumentasi")
+
+
+# ---------------------------------------------------------------------------
+# Cek 9 — Large Files (>300 LOC)
+# ---------------------------------------------------------------------------
+
+def check_large_files(project_root: Path) -> CheckResult:
+    py_files = collect_py_files(project_root)
+    large: list[tuple[str, int]] = []
+
+    for py_rel in py_files:
+        n = count_lines(project_root / py_rel)
+        if n > LARGE_FILE_THRESHOLD:
+            large.append((str(py_rel).replace("\\", "/"), n))
+
+    if large:
+        large.sort(key=lambda x: -x[1])
+        items = [f"{path} ({loc})" for path, loc in large]
+        return CheckResult(
+            "Large Files", "WARN",
+            f"{len(large)} file >{LARGE_FILE_THRESHOLD} LOC", items,
+        )
+    return CheckResult("Large Files", "PASS", f"Semua file ≤{LARGE_FILE_THRESHOLD} LOC")
+
+
+# ---------------------------------------------------------------------------
+# Cek 10 — Empty Packages (hanya __init__.py kosong, tidak ada modul lain)
+# ---------------------------------------------------------------------------
+
+def check_empty_packages(project_root: Path) -> CheckResult:
+    py_files = collect_py_files(project_root)
+    py_set = set(py_files)
+
+    # Kelompokkan per parent directory
+    by_dir: dict[Path, list[Path]] = defaultdict(list)
+    for p in py_files:
+        by_dir[p.parent].append(p)
+
+    empty_pkgs: list[str] = []
+
+    for dir_path, files_in_dir in sorted(by_dir.items()):
+        init_rel = dir_path / "__init__.py"
+        if init_rel not in py_set:
+            continue  # bukan package
+
+        # Ada modul lain (selain __init__.py) di direktori ini?
+        non_init = [f for f in files_in_dir if f.name != "__init__.py"]
+        if non_init:
+            continue
+
+        # Ada file .py di subdirektori manapun?
+        dir_parts = dir_path.parts
+        has_sub_py = any(
+            p
+            for p in py_files
+            if len(p.parts) > len(dir_parts) + 1
+            and p.parts[: len(dir_parts)] == dir_parts
+            and p.name != "__init__.py"
+        )
+        if has_sub_py:
+            continue
+
+        # __init__.py kontennya kosong/trivial?
+        init_abs = project_root / init_rel
+        try:
+            content = init_abs.read_text(encoding="utf-8", errors="replace").strip()
+            meaningful = [
+                ln for ln in content.splitlines()
+                if ln.strip() and not ln.strip().startswith("#")
+            ]
+            if meaningful:
+                continue
+        except Exception:
+            continue
+
+        label = str(dir_path).replace("\\", "/") if dir_path != Path(".") else "."
+        empty_pkgs.append(label)
+
+    if empty_pkgs:
+        return CheckResult(
+            "Empty Packages", "WARN",
+            f"{len(empty_pkgs)} package kosong ditemukan", empty_pkgs,
+        )
+    return CheckResult("Empty Packages", "PASS", "Tidak ada empty package")
+
+
+# ---------------------------------------------------------------------------
+# Render output
+# ---------------------------------------------------------------------------
+
+def _score(results: list[CheckResult]) -> int:
+    warn_count = sum(1 for r in results if r.status == "WARN")
+    fail_count = sum(1 for r in results if r.status == "FAIL")
+    return max(0, 100 - warn_count - fail_count * 10)
+
+
+def render_summary(results: list[CheckResult], verbose: bool) -> None:
+    print("=" * 50)
+    print("Documentation Health")
+    print()
+
+    pass_results = [r for r in results if r.status == "PASS"]
+    non_pass = [r for r in results if r.status != "PASS"]
+
+    # PASS ditampilkan berurutan tanpa spasi
+    for r in pass_results:
+        print(f"PASS {r.name}")
+
+    # WARN / FAIL masing-masing dipisah baris kosong, tampilkan item
+    for r in non_pass:
+        print()
+        suffix = f" ({r.count})" if r.count > 0 else ""
+        print(f"{r.status} {r.name}{suffix}")
+        for line in fmt_items(r.items, verbose):
+            print(line)
+
+    # Overall
+    warn_count = sum(1 for r in results if r.status == "WARN")
+    fail_count = sum(1 for r in results if r.status == "FAIL")
+    pass_count = len(pass_results)
+    score = _score(results)
+
+    print()
+    print("-" * 50)
+    print("Overall")
+    print()
+    print(f"Score : {score}/100")
+    print(f"PASS  : {pass_count}")
+    print(f"WARN  : {warn_count}")
+    print(f"FAIL  : {fail_count}")
+
+
+def render_json(results: list[CheckResult]) -> None:
+    warn_count = sum(1 for r in results if r.status == "WARN")
+    fail_count = sum(1 for r in results if r.status == "FAIL")
+    pass_count = sum(1 for r in results if r.status == "PASS")
+    data = {
+        "score": _score(results),
+        "pass": pass_count,
+        "warn": warn_count,
+        "fail": fail_count,
+        "checks": [
+            {
+                "name": r.name,
+                "status": r.status,
+                "message": r.message,
+                "count": r.count,
+                "items": r.items,
+            }
+            for r in results
+        ],
+    }
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def _run_all_checks(docs_dir: Path, project_root: Path, stale_days: int) -> list[CheckResult]:
+    return [
+        check_docs_structure(docs_dir),
+        check_patchlog(docs_dir),
+        check_frontmatter(docs_dir, stale_days),
+        check_generated_blocks(docs_dir),
+        check_file_index(docs_dir, project_root),
+        check_report(docs_dir),
+        check_documentation_coverage(docs_dir, project_root),
+        check_module_docstrings(project_root),
+        check_large_files(project_root),
+        check_empty_packages(project_root),
+    ]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Documentation Health Checker untuk LunaWave.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
     parser.add_argument(
         "--docs-dir", default=str(DEFAULT_DOCS_DIR),
-        help=f"Folder docs (default: {DEFAULT_DOCS_DIR}, dihitung dari lokasi script ini, bukan cwd)",
+        help="Folder docs (default: dihitung dari lokasi script ini, bukan cwd)",
     )
     parser.add_argument(
         "--project-root", default=str(DEFAULT_PROJECT_ROOT),
-        help=f"Root project untuk cek path file (default: {DEFAULT_PROJECT_ROOT}, dihitung dari lokasi script ini, bukan cwd)",
+        help="Root project (default: parent dari folder scripts/)",
     )
-    parser.add_argument("--stale-days", type=int, default=30, help="Ambang hari sebelum last_verified dianggap basi (default: 30)")
-    parser.add_argument("--include-kompas", action="store_true", help="Ikut cek docs/kompas/ juga (default: tidak, karena isinya blueprint aspirational)")
+    parser.add_argument(
+        "--stale-days", type=int, default=STALE_DAYS_DEFAULT,
+        help=f"Ambang hari sebelum last_verified dianggap basi (default: {STALE_DAYS_DEFAULT})",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Tampilkan seluruh detail item tanpa truncation",
+    )
+    parser.add_argument(
+        "--show-docstring", action="store_true",
+        help="Hanya tampilkan daftar file yang belum punya module docstring standar",
+    )
+    parser.add_argument(
+        "--show-large-files", action="store_true",
+        help=f"Hanya tampilkan file Python >{LARGE_FILE_THRESHOLD} LOC",
+    )
+    parser.add_argument(
+        "--json", action="store_true", dest="json_output",
+        help="Output JSON (cocok untuk CI atau integrasi tool lain)",
+    )
     args = parser.parse_args()
 
     docs_dir = Path(args.docs_dir).resolve()
     project_root = Path(args.project_root).resolve()
 
     if not docs_dir.exists():
-        print(f"❌ Folder docs tidak ditemukan: {docs_dir}")
+        print(f"FAIL  Folder docs tidak ditemukan: {docs_dir}", file=sys.stderr)
         sys.exit(1)
 
-    sections = [
-        ("1. PATCHLOG — ID unik & sinkron frontmatter", check_patchlog(docs_dir)),
-        ("2. Frontmatter — ada & masih segar", check_frontmatter_freshness(docs_dir, args.stale_days, args.include_kompas)),
-        ("3. Referensi path file — masih valid", check_file_references(docs_dir, project_root, args.include_kompas)),
-    ]
+    # --- Mode khusus (single-check, tidak tampilkan keseluruhan) ---
 
-    total_ok = total_warn = total_err = 0
-    for title, (ok, warn, err) in sections:
-        print(f"\n=== {title} ===")
-        for m in ok:
-            print(f"  ✅ {m}")
-        for m in warn:
-            print(f"  ⚠️  {m}")
-        for m in err:
-            print(f"  ❌ {m}")
-        if not (ok or warn or err):
-            print("  (tidak ada yang dicek)")
-        total_ok += len(ok)
-        total_warn += len(warn)
-        total_err += len(err)
-
-    print(f"\n=== Ringkasan ===")
-    print(f"✅ {total_ok}   ⚠️  {total_warn}   ❌ {total_err}")
-
-    if total_err > 0:
-        print("\nAda masalah kategori ❌ — sebaiknya dibereskan dulu.")
-        sys.exit(1)
-    elif total_warn > 0:
-        print("\nTidak ada error fatal, tapi ada beberapa ⚠️ yang perlu ditinjau.")
+    if args.show_docstring:
+        result = check_module_docstrings(project_root)
+        if result.status == "PASS":
+            print("Semua file Python sudah punya module docstring lengkap.")
+        else:
+            print(f"File tanpa module docstring standar ({result.count}):")
+            for item in result.items:
+                print(f"  {item}")
         sys.exit(0)
+
+    if args.show_large_files:
+        result = check_large_files(project_root)
+        if result.status == "PASS":
+            print(f"Semua file Python ≤{LARGE_FILE_THRESHOLD} LOC.")
+        else:
+            print(f"File >{LARGE_FILE_THRESHOLD} LOC ({result.count}):")
+            for item in result.items:
+                print(f"  {item}")
+        sys.exit(0)
+
+    # --- Mode normal: jalankan semua cek ---
+
+    results = _run_all_checks(docs_dir, project_root, args.stale_days)
+
+    if args.json_output:
+        render_json(results)
     else:
-        print("\nSemua bersih.")
-        sys.exit(0)
+        render_summary(results, verbose=args.verbose)
+
+    has_fail = any(r.status == "FAIL" for r in results)
+    sys.exit(1 if has_fail else 0)
 
 
 if __name__ == "__main__":
