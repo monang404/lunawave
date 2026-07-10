@@ -6,29 +6,34 @@ status: current
 
 ## Quick Navigation
 
-1. AI_CONTEXT - untuk ai mehamai progress aplikasi ini
-2. STRUCTURE.md → pahami struktur project
-3. FILE_INDEX.md → cari fungsi file
-4. PROJECT_STRUCTURE_AUDIT.md -> masiih struktur projek
-5. PATCHLOG.md → lihat perubahan terakhir
-6. REPORT.md → lihat kondisi project
-7. MIGRATION_GUIDE.md panduan untuk migrasi ke /kompas
-8. /docs/kompas/* Gambaran arsitektur impian dari aplikasi ini
-9. STATUS.md → cek kondisi per-file (sudah/belum di-refactor)
+1. `AI_CONTEXT.md` → **baca ini dulu** — constraints, alur kerja AI, scripts
+2. `STATUS.md` → kondisi per-file & sprint target
+3. `PATCHLOG.md` → perubahan terakhir
+4. `REPORT.md` → analisis, temuan, statistik (auto-generated)
+5. `FILE_INDEX.md` → inventaris file (auto-generated, jangan edit manual)
+6. `STRUCTURE.md` → detail setiap folder
+7. `MIGRATION_GUIDE.md` → panduan refactoring bertahap ke arsitektur target
+8. `kompas/` → arsitektur impian, ADR, blueprint
 
 # Untuk AI Agent
 
 ## Baca urutan ini sebelum kerja:
-1. INDEX.md (ini) — orientasi
-2. PATCHLOG.md — perubahan terakhir
-3. REPORT.md — kondisi & temuan aktif
-4. FILE_INDEX.md — cari file spesifik (mungkin stale, verify dulu)
+1. `docs/AI_CONTEXT.md` — **wajib pertama**, berisi constraints, batasan, dan alur kerja lengkap
+2. `docs/STATUS.md` — kondisi per-file & sprint target
+3. `docs/PATCHLOG.md` — 2-3 entri terakhir
+4. Jalankan `python scripts/find_owner.py <nama_file_atau_class>` — orientasi modul yang relevan
 5. Baru sentuh source code
 
+> ⚙️ `FILE_INDEX.md` dan blok statistik `REPORT.md` adalah **auto-generated** — jangan edit manual.
+> Jalankan `python scripts/generate_file_index.py` atau `run_all.py` setelah ada perubahan kode.
+
 ## Setelah selesai kerja:
-1. Append PATCHLOG.md (jangan edit entri lama)
-2. Update FILE_INDEX.md kalau ada file yang berubah fungsi
-3. Update status temuan di REPORT.md kalau ada yang resolved
+1. Jalankan `python scripts/architecture_lint.py` — pastikan tidak ada violation baru
+2. Jalankan `python scripts/generate_file_index.py` — jika ada file/class/fungsi yang berubah
+3. Jalankan `python scripts/generate_report.py` — jika ada penambahan/penghapusan file
+   *(atau `python scripts/run_all.py` untuk jalankan semua sekaligus)*
+4. Append entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
+5. Update `docs/STATUS.md` jika kondisi file berubah
 
 ## ⚠️ Danger Zones — hati-hati ekstra:
 | File | Kenapa Berbahaya | Instruksi |
@@ -52,7 +57,6 @@ status: current
 
 > **Last Scan:** 2026-07-09
 > **Source:** Source code + `PROJECT_STRUCTURE_AUDIT.md`
-> **Status:** Sprint 3.2 selesai. Sprint berikutnya: refactor `cache/`, `engine/adapters/`, pisah `ConnectionManager`.
 
 ---
 
@@ -135,15 +139,8 @@ lunawave/
 
 ## Statistik Project
 
-| Metrik | Nilai |
-|--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | ~35 |
-| Total file `.py` (ekskl. `__pycache__`) | 54 |
-| Total file `.js` | 21 |
-| Total file `.css` | 21 |
-| Total class (Python) | 49 |
-| Total function/method (Python) | 255 |
-| Last Sprint | 3.2 — Extract `start.py` → `launcher/` |
+> Statistik aktual ada di `docs/REPORT.md` §Statistik Project (auto-generated, selalu akurat).
+> Angka di bawah ini **tidak diupdate manual** — lihat REPORT.md untuk data terkini.
 
 ---
 
@@ -151,17 +148,13 @@ lunawave/
 
 ```
 docs/
-├── INDEX.md              ← Mulai di sini: ringkasan & orientasi
+├── AI_CONTEXT.md         ← Entry point AI — baca ini dulu
+├── INDEX.md              ← Orientasi & navigasi (ini)
+├── STATUS.md             ← Kondisi per-file & sprint target
 ├── STRUCTURE.md          ← Detail setiap folder & hubungannya
-├── FILE_INDEX.md         ← Inventaris setiap file .py penting
-├── PATCHLOG.md           ← Riwayat semua perubahan (append-only)
-├── REPORT.md             ← Ringkasan analisis & rekomendasi
-
+├── FILE_INDEX.md         ← Inventaris file (sebagian auto-generated)
+├── PATCHLOG.md           ← Riwayat perubahan (append-only)
+├── REPORT.md             ← Analisis, temuan, statistik (sebagian auto-generated)
+├── MIGRATION_GUIDE.md    ← Panduan refactoring bertahap
+└── kompas/               ← Arsitektur target & ADR
 ```
-## Current Status
-
-Version : 1.0 (LunaWave)
-Sprint : 3.2 (Refactoring Launcher)
-Branch : main
-Architecture : Hexagonal (Ports & Adapters)
-Last Patch : 2026-07-09 (Optimasi Storage Unduhan)

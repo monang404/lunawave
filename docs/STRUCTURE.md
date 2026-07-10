@@ -88,7 +88,7 @@ sprint: 3.2
 - `export_to_sqlite.py` — ⚠️ One-time migration script (sebaiknya dipindah ke `scripts/`)
 
 **Digunakan oleh:** `config.py` (DB_PATH), `cache/db.py`, `engine/radio_engine.py`
-**⚠️ Catatan:** `data/ytgui.db` (warisan, 212 KB) tidak terdeteksi di RAR ini — kemungkinan sudah dihapus ✅
+
 
 ---
 
@@ -198,8 +198,18 @@ sprint: 3.2
 ## scripts/ & scratch/
 
 **Folder:** `scripts/`
-**Fungsi:** Utility scripts developer
-**Isi:** `generate_icons.py` (PWA icons), `inject_svgs.py`, `shortcuts/` (play_pause, next_track, volume_up shell scripts)
+**Fungsi:** Developer tooling — documentation generation, architecture validation, project health
+**Isi:**
+- `generate_file_index.py` — generate `docs/FILE_INDEX.md` dari AST source code
+- `generate_report.py` — update blok statistik di `docs/REPORT.md`
+- `architecture_lint.py` — validasi import boundary antar layer; exit 1 jika ada violation baru
+- `doctor.py` — health check menyeluruh: docs, architecture, big files
+- `find_owner.py` — lookup cepat ownership modul/class/fungsi
+- `run_all.py` — entry point tunggal: jalankan semua generator + health check
+- `verify_docs.py` — validasi frontmatter, path referensi, PATCHLOG ID
+- `archive/` — scripts lama (generate_icons.py, inject_svgs.py, dll)
+
+> Lihat `docs/AI_CONTEXT.md §Developer Scripts` untuk cara pakai lengkap.
 
 **Folder:** `scratch/`
 **Fungsi:** File debug/dev sementara
@@ -207,8 +217,4 @@ sprint: 3.2
 
 ---
 
-## docs/
 
-**Folder:** `docs/`
-**Fungsi:** Knowledge base project — acuan utama sebelum AI melakukan perubahan
-**Isi:** `INDEX.md`, `STRUCTURE.md`, `FILE_INDEX.md`, `PATCHLOG.md`, `REPORT.md`, `PROJECT_STRUCTURE_AUDIT.md`, `LOG/`, `REPORT/`

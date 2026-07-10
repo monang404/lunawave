@@ -14,6 +14,10 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 ## Statistik Project
 
+> ⚙️ Blok ini di-generate otomatis oleh `scripts/generate_report.py`. **Jangan edit manual.**
+> Jalankan `python scripts/generate_report.py` untuk memperbarui.
+
+<!-- BEGIN:GENERATED -->
 | Metrik | Nilai |
 |--------|-------|
 | Total folder (ekskl. `__pycache__`, `.git`) | ~35 |
@@ -24,6 +28,7 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | Total function/method (Python) | 255 |
 | Ukuran DB utama (`data/lunawave.db`) | 180 KB (+ WAL 160 KB) |
 | Ukuran DB library (`cache/library.db`) | 69 KB |
+<!-- END:GENERATED -->
 
 ---
 

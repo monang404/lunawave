@@ -40,10 +40,10 @@ sprint: 3.2
 
 ## Docs
 
-| Dokumen | Kondisi Aktual | Tindakan | Status |
-|---------|---------------|----------|--------|
-| `docs/INDEX.md` | Ada, manual | Maintain rutin | ✅ |
-| `docs/STATUS.md` | File ini | Maintain tiap sprint | ✅ |
-| `docs/AI_CONTEXT.md` | Sudah ada | Maintain tiap sprint | ✅ |
-| `docs/CONSTRAINTS.md` | Belum ada | Buat Sprint 3.3 | ⏳ |
-| `docs/kompas/rfc/` | Folder kosong | Isi atau hapus | 🔄 |
+| Dokumen               | Kondisi Aktual | Tindakan             | Status |
+| -----------------------| ----------------| ----------------------| --------|
+| `docs/INDEX.md`       | Ada, manual    | Maintain rutin       | ✅　　　|
+| `docs/STATUS.md`      | File ini       | Maintain tiap sprint | ✅　　　|
+| `docs/AI_CONTEXT.md`  | Sudah ada      | Maintain tiap sprint | ✅　　　|
+| `docs/CONSTRAINTS.md` | Belum ada      | Buat Sprint 3.3      | ⏳　　　|
+| `docs/kompas/rfc/`    | Folder kosong  | Isi atau hapus       | 🔄　　 |

@@ -1,0 +1,29 @@
+repos:
+  - repo: local
+    hooks:
+      # ---------------------------------------------------------------------------
+      # 1. Architecture boundary validation
+      #    Blok commit jika ada import yang melanggar dependency rules.
+      #    Known violations (F-06: config.py -> core) di-suppress otomatis.
+      #    Untuk skip sementara: git commit --no-verify
+      # ---------------------------------------------------------------------------
+      - id: architecture-lint
+        name: "LunaWave — Architecture Boundary Check"
+        entry: python scripts/architecture_lint.py
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # ---------------------------------------------------------------------------
+      # 2. Documentation health check
+      #    Cek PATCHLOG ID unik, frontmatter segar, referensi path valid.
+      #    Exit 1 hanya jika ada ❌ error (bukan ⚠️ warning).
+      # ---------------------------------------------------------------------------
+      - id: verify-docs
+        name: "LunaWave — Docs Health Check"
+        entry: python scripts/verify_docs.py
+        language: system
+        types: [markdown]
+        pass_filenames: false
+        stages: [pre-commit]
