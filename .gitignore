@@ -23,7 +23,7 @@ cache/admin_password.txt
 
 # Database utama (berisi session tokens — jangan commit)
 # Data artis di-seed ulang via: python data/import_artists.py
-data/ytgui.db
+data/lunawave.db
 data/*.db-shm
 data/*.db-wal
 
@@ -49,7 +49,6 @@ ui_*.md
 .pytest_cache/
 htmlcov/
 .coverage
-verify_*.py
 debug_*.py
 
 # File init kosong di widgets (tidak berguna)
