@@ -1,26 +1,49 @@
+---
+last_verified: 2026-07-10
+sprint: 3.2
+status: current
+---
+
 ## Quick Navigation
 
-1. STRUCTURE.md → pahami struktur project
-2. FILE_INDEX.md → cari fungsi file
-3. PROJECT_STRUCTURE_AUDIT.md -> masiih struktur projek
-4. PATCHLOG.md → lihat perubahan terakhir
-5. REPORT.md → lihat kondisi project
+1. AI_CONTEXT - untuk ai mehamai progress aplikasi ini
+2. STRUCTURE.md → pahami struktur project
+3. FILE_INDEX.md → cari fungsi file
+4. PROJECT_STRUCTURE_AUDIT.md -> masiih struktur projek
+5. PATCHLOG.md → lihat perubahan terakhir
+6. REPORT.md → lihat kondisi project
+7. MIGRATION_GUIDE.md panduan untuk migrasi ke /kompas
+8. /docs/kompas/* Gambaran arsitektur impian dari aplikasi ini
+9. STATUS.md → cek kondisi per-file (sudah/belum di-refactor)
 
-# AI Rules
+# Untuk AI Agent
 
-Sebelum bekerja:
+## Baca urutan ini sebelum kerja:
+1. INDEX.md (ini) — orientasi
+2. PATCHLOG.md — perubahan terakhir
+3. REPORT.md — kondisi & temuan aktif
+4. FILE_INDEX.md — cari file spesifik (mungkin stale, verify dulu)
+5. Baru sentuh source code
 
-1. Baca INDEX.md
-2. Baca PATCHLOG.md
-3. Baca REPORT.md
-4. Cari file di FILE_INDEX.md
-5. Baru ubah source code
+## Setelah selesai kerja:
+1. Append PATCHLOG.md (jangan edit entri lama)
+2. Update FILE_INDEX.md kalau ada file yang berubah fungsi
+3. Update status temuan di REPORT.md kalau ada yang resolved
 
-Setelah selesai:
+## ⚠️ Danger Zones — hati-hati ekstra:
+| File | Kenapa Berbahaya | Instruksi |
+|------|-----------------|-----------|
+| `engine/playback/controller.py` | Closure kompleks, referensi silang | Jangan refactor tanpa sprint plan |
+| `server/handlers/websocket.py` | Monolith 317 baris, F-01 belum dipecah | Jangan pecah tanpa MIGRATION_GUIDE Tahap 3 |
+| `cache/admin_password.txt` | Berisi hash password admin | JANGAN pernah commit file ini |
+| `data/artists_enriched.json` | 185KB JSON statis | Jangan modifikasi — jadwalkan migrasi ke DB |
+| `cache/db.py` | God class 388 baris | Refactor hanya sesuai MIGRATION_GUIDE Tahap 2 |
 
-1. Update FILE_INDEX.md jika fungsi file berubah
-2. Tambahkan PATCHLOG.md
-3. Update REPORT.md
+## ❌ Yang TIDAK BOLEH dilakukan AI:
+- Jangan ganti aiohttp ke framework lain (FastAPI, dll)
+- Jangan tambah JS framework apapun di frontend
+- Jangan ganti SQLite ke database lain
+- Jangan refactor 2 tahap sekaligus dalam 1 commit
 
 
 
@@ -28,7 +51,7 @@ Setelah selesai:
 # LunaWave — Project Knowledge Base Index
 
 > **Last Scan:** 2026-07-09
-> **Source:** Source code + `PROJECT_STRUCTURE_AUDIT.md` + `docs/LOG/PATCHLOG_REBRANDING.md`
+> **Source:** Source code + `PROJECT_STRUCTURE_AUDIT.md`
 > **Status:** Sprint 3.2 selesai. Sprint berikutnya: refactor `cache/`, `engine/adapters/`, pisah `ConnectionManager`.
 
 ---
@@ -133,12 +156,7 @@ docs/
 ├── FILE_INDEX.md         ← Inventaris setiap file .py penting
 ├── PATCHLOG.md           ← Riwayat semua perubahan (append-only)
 ├── REPORT.md             ← Ringkasan analisis & rekomendasi
-├── LOG/
-│   └── PATCHLOG_REBRANDING.md   ← Detail patch Sprint 2.1 & 3.2
-├── REPORT/
-│   ├── REBRANDING_REPORT.md     ← Laporan Sprint 2.1
-│   └── REFACTOR_REPORT.md       ← Laporan Sprint 3.2
-└── PROJECT_STRUCTURE_AUDIT.md   ← Roadmap refactoring aktif
+
 ```
 ## Current Status
 
@@ -147,6 +165,3 @@ Sprint : 3.2 (Refactoring Launcher)
 Branch : main
 Architecture : Hexagonal (Ports & Adapters)
 Last Patch : 2026-07-09 (Optimasi Storage Unduhan)
-
-
-**Alur kerja AI agent:** Baca `INDEX.md` → `STRUCTURE.md` → `FILE_INDEX.md` → cek `PATCHLOG.md` → baru sentuh source code. Setiap perubahan wajib append ke `PATCHLOG.md`.
