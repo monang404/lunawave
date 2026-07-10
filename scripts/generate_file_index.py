@@ -51,13 +51,44 @@ SCAN_GROUPS = [
 # AST Extraction
 # ---------------------------------------------------------------------------
 
+# "Purpose: ..." bisa disambung ke baris berikutnya (indented continuation)
+# sampai ketemu label lain (Subscribes to:/Publishes:) atau baris kosong,
+# misal di plugins/notifications.py yang Purpose-nya 4 baris.
+PURPOSE_RE = re.compile(
+    r"^\s*Purpose\s*:\s*(.+(?:\n(?!\s*(?:Subscribes to|Publishes)\s*:)(?!\s*$).+)*)",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+NO_DOCSTRING_LABEL = "⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_"
+
+
+def extract_purpose(tree: ast.AST) -> tuple[str | None, bool]:
+    """Ambil `Purpose: ...` dari docstring modul (kalau ada), termasuk baris
+    lanjutan yang di-indent. Return (teks_purpose_atau_None, punya_docstring_terstruktur)."""
+    doc = ast.get_docstring(tree)
+    if not doc:
+        return None, False
+    m = PURPOSE_RE.search(doc)
+    if not m:
+        return None, False
+    # Gabungkan baris lanjutan jadi satu paragraf rapi (hilangkan indentasi
+    # berlebih & newline internal supaya tidak merusak baris tabel/markdown).
+    joined = " ".join(line.strip() for line in m.group(1).splitlines())
+    return joined.strip(), True
+
+
 def extract_module_info(path: Path) -> dict:
-    """Parse satu file .py dan kembalikan: classes, functions, imports."""
+    """Parse satu file .py dan kembalikan: classes, functions, imports, fungsi (purpose)."""
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
         tree = ast.parse(source, filename=str(path))
     except SyntaxError:
-        return {"classes": [], "functions": [], "imports": []}
+        return {
+            "classes": [], "functions": [], "imports": [],
+            "purpose": None, "has_docstring": False,
+        }
+
+    purpose, has_docstring = extract_purpose(tree)
 
     classes = []
     functions = []
@@ -109,6 +140,8 @@ def extract_module_info(path: Path) -> dict:
         "classes": classes,
         "functions": functions,
         "imports": uniq_imports,
+        "purpose": purpose,
+        "has_docstring": has_docstring,
     }
 
 
@@ -162,6 +195,8 @@ def format_file_entry(
     info: dict,
     rev_index: dict[str, list[str]],
 ) -> str:
+    fungsi_str = info["purpose"] if info["purpose"] else NO_DOCSTRING_LABEL
+
     classes_str = ", ".join(f"`{c}`" for c in info["classes"]) if info["classes"] else "—"
     
     # Ambil max 6 fungsi publik paling relevan (skip dunder)
@@ -196,8 +231,9 @@ def format_file_entry(
 
     return (
         f"**File:** `{rel_path}`  \n"
+        f"**Fungsi:** {fungsi_str}  \n"
         f"**Class:** {classes_str}  \n"
-        f"**Fungsi publik:** {functions_str}  \n"
+        f"**Function utama:** {functions_str}  \n"
         f"**Digunakan oleh:** {used_by_str}  \n"
         f"**Menggunakan:** {using_str}\n"
     )
@@ -263,6 +299,26 @@ def build_generated_block(project_root: Path) -> str:
         for rel, n in big_files:
             note = "Perlu dipecah" if n > 350 else "Perhatikan"
             lines.append(f"| `{rel}` | {n} | {note} |\n")
+
+    # Checklist actionable: file mana yang belum punya docstring modul
+    # terstruktur (Purpose/Subscribes to/Publishes), supaya kelihatan jelas
+    # apa yang perlu ditambah dokumentasinya dev/AI berikutnya.
+    missing_doc = sorted(
+        rel for rel, info in file_info.items()
+        if not info["has_docstring"] and not rel.endswith("__init__.py")
+    )
+    total_py = sum(1 for rel in file_info if not rel.endswith("__init__.py"))
+    documented = total_py - len(missing_doc)
+    lines.append(
+        f"\n## 📋 Checklist Dokumentasi Docstring\n\n"
+        f"**{documented}/{total_py}** file `.py` sudah punya docstring modul terstruktur "
+        f"(`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:\n\n"
+    )
+    if missing_doc:
+        for rel in missing_doc:
+            lines.append(f"- [ ] `{rel}`\n")
+    else:
+        lines.append("_(semua file sudah terdokumentasi 🎉)_\n")
 
     return "\n".join(lines)
 
