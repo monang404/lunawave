@@ -75,6 +75,35 @@ PREVIEW_COUNT = 3             # item ditampilkan sebelum "(+N more)"
 # Dokumen yang di-skip dari cek frontmatter (dicek terpisah atau memang historis)
 SKIP_FRONTMATTER = frozenset({"PATCHLOG.md"})
 
+# __init__.py hanya dianggap "signifikan" (ikut divalidasi) kalau isinya lebih
+# dari sekadar re-export/import kosong. Mengurangi false positive pada paket
+# yang __init__.py-nya memang sengaja tipis.
+INIT_FILENAME = "__init__.py"
+
+# Bobot tiap cek terhadap skor akhir (total = 100). Cek yang berpengaruh
+# langsung terhadap kebenaran/kelengkapan dokumentasi (Documentation
+# Structure, PATCHLOG, FILE_INDEX, Documentation Coverage) diberi bobot jauh
+# lebih besar dibanding cek kosmetik (Large Files, Empty Packages).
+CHECK_WEIGHTS: dict[str, int] = {
+    "Documentation Structure": 20,
+    "PATCHLOG": 15,
+    "FILE_INDEX": 15,
+    "Documentation Coverage": 15,
+    "Module Docstring": 12,
+    "REPORT": 8,
+    "Frontmatter": 8,
+    "Generated Sections": 4,
+    "Large Files": 2,
+    "Empty Packages": 1,
+}
+
+# Untuk cek yang punya mode CLI khusus, warning selalu menyertakan hint
+# perintah yang bisa langsung dijalankan developer.
+CHECK_HINTS: dict[str, str] = {
+    "Module Docstring": "python scripts/verify_docs.py --show-docstring",
+    "Large Files": "python scripts/verify_docs.py --show-large-files",
+}
+
 
 # ---------------------------------------------------------------------------
 # Model data
@@ -86,10 +115,18 @@ class CheckResult:
     status: str          # "PASS" | "WARN" | "FAIL"
     message: str = ""    # satu baris keterangan
     items: list[str] = field(default_factory=list)
+    current: int | None = None   # untuk cek bertipe "coverage": jumlah yang OK
+    total: int | None = None     # untuk cek bertipe "coverage": jumlah total
 
     @property
     def count(self) -> int:
         return len(self.items)
+
+    @property
+    def percentage(self) -> int | None:
+        if not self.total:
+            return None
+        return round(100 * (self.current or 0) / self.total)
 
 
 # ---------------------------------------------------------------------------
@@ -143,14 +180,54 @@ def get_module_docstring(abs_path: Path) -> str | None:
 
 
 def fmt_items(items: list[str], verbose: bool, indent: str = "  ") -> list[str]:
-    """Format daftar item dengan truncation opsional."""
+    """Format daftar item (dengan bullet) dan truncation opsional."""
     if not items:
         return []
     if verbose or len(items) <= PREVIEW_COUNT:
-        return [f"{indent}{it}" for it in items]
+        return [f"{indent}• {it}" for it in items]
     shown = items[:PREVIEW_COUNT]
     rest = len(items) - PREVIEW_COUNT
-    return [f"{indent}{it}" for it in shown] + [f"{indent}(+{rest} more)"]
+    return [f"{indent}• {it}" for it in shown] + [f"{indent}(+{rest} more)"]
+
+
+def is_significant_init(abs_path: Path) -> bool:
+    """True jika __init__.py berisi implementasi nyata (bukan cuma re-export
+    kosong/`__all__`/import), sehingga layak ikut divalidasi seperti modul
+    biasa. Ini mengurangi false positive dari paket yang sengaja punya
+    __init__.py tipis."""
+    try:
+        source = abs_path.read_text(encoding="utf-8", errors="replace")
+        tree = ast.parse(source)
+    except (SyntaxError, OSError):
+        return True  # gagal dibaca/parse -> aman diperlakukan sebagai signifikan
+
+    body = tree.body
+    if body and isinstance(body[0], ast.Expr) and isinstance(
+        getattr(body[0], "value", None), ast.Constant
+    ):
+        body = body[1:]  # lewati module docstring
+
+    for node in body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name) and target.id == "__all__":
+                continue
+        return True  # ada statement lain (fungsi, class, logic, dst.)
+    return False
+
+
+def filter_ignorable_inits(
+    py_files: list[Path], project_root: Path
+) -> list[Path]:
+    """Buang __init__.py yang tidak signifikan dari daftar file yang dicek.
+    Dipakai oleh Module Docstring, Documentation Coverage, dan FILE_INDEX
+    supaya __init__.py kosong/re-export tidak jadi false positive."""
+    return [
+        p for p in py_files
+        if not (p.name == INIT_FILENAME and not is_significant_init(project_root / p))
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -320,11 +397,13 @@ def check_file_index(docs_dir: Path, project_root: Path) -> CheckResult:
 
     fi_text = read_text(fi_path)
     actual_py = collect_py_files(project_root)
+    checked_py = filter_ignorable_inits(actual_py, project_root)
     issues: list[str] = []
 
-    # Semua .py aktual harus muncul di FILE_INDEX (nama file cukup, tidak harus path penuh)
+    # Semua .py aktual (di luar __init__.py yang tidak signifikan) harus
+    # muncul di FILE_INDEX (nama file cukup, tidak harus path penuh)
     missing_from_index: list[str] = []
-    for py_path in actual_py:
+    for py_path in checked_py:
         py_str = str(py_path).replace("\\", "/")
         py_name = py_path.name
         if py_str not in fi_text and py_name not in fi_text:
@@ -345,11 +424,19 @@ def check_file_index(docs_dir: Path, project_root: Path) -> CheckResult:
         if not ref_path.exists() and Path(ref).name not in actual_names:
             issues.append(f"Entry di FILE_INDEX tidak ada di disk: {ref}")
 
+    total = len(checked_py)
+    current = total - len(missing_from_index)
+
     if issues:
         has_stale = any("tidak ada di disk" in i for i in issues)
         status = "FAIL" if has_stale else "WARN"
-        return CheckResult("FILE_INDEX", status, f"{len(issues)} issue(s)", issues)
-    return CheckResult("FILE_INDEX", "PASS", f"{len(actual_py)} file Python terdaftar")
+        result = CheckResult("FILE_INDEX", status, f"{len(issues)} issue(s)", issues)
+    else:
+        result = CheckResult("FILE_INDEX", "PASS", f"{total} file Python terdaftar")
+
+    result.current = current
+    result.total = total
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -386,26 +473,34 @@ def check_report(docs_dir: Path) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 def check_module_docstrings(project_root: Path) -> CheckResult:
-    py_files = collect_py_files(project_root)
+    py_files = filter_ignorable_inits(collect_py_files(project_root), project_root)
     missing: list[str] = []
 
     for py_rel in py_files:
         docstring = get_module_docstring(project_root / py_rel)
-        if not docstring:
-            missing.append(str(py_rel).replace("\\", "/"))
-            continue
-        # Cek field wajib
-        for req_field in DOCSTRING_REQUIRED_FIELDS:
-            if req_field not in docstring:
-                missing.append(str(py_rel).replace("\\", "/"))
-                break
+        rel_str = str(py_rel).replace("\\", "/")
 
-    if missing:
-        return CheckResult(
-            "Module Docstring", "WARN",
-            f"{len(missing)} file tanpa docstring lengkap", missing,
-        )
-    return CheckResult("Module Docstring", "PASS", f"{len(py_files)} file OK")
+        if not docstring:
+            missing.append(f"{rel_str} (no module docstring)")
+            continue
+
+        # Cek field wajib — laporkan field mana saja yang hilang, bukan
+        # sekadar "docstring tidak lengkap".
+        missing_fields = [f for f in DOCSTRING_REQUIRED_FIELDS if f not in docstring]
+        if missing_fields:
+            missing.append(f"{rel_str} (missing: {', '.join(missing_fields)})")
+
+    total = len(py_files)
+    current = total - len(missing)
+    result = CheckResult(
+        "Module Docstring",
+        "WARN" if missing else "PASS",
+        f"{current}/{total} file OK" if missing else f"{total} file OK",
+        missing,
+    )
+    result.current = current
+    result.total = total
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -422,7 +517,7 @@ def check_documentation_coverage(docs_dir: Path, project_root: Path) -> CheckRes
     fi_text = read_text(fi_path) if fi_path.exists() else ""
     report_text = read_text(report_path) if report_path.exists() else ""
 
-    py_files = collect_py_files(project_root)
+    py_files = filter_ignorable_inits(collect_py_files(project_root), project_root)
     missing: list[str] = []
 
     for py_rel in py_files:
@@ -433,12 +528,18 @@ def check_documentation_coverage(docs_dir: Path, project_root: Path) -> CheckRes
         if not in_index and not in_report:
             missing.append(py_str)
 
-    if missing:
-        return CheckResult(
-            "Documentation Coverage", "WARN",
-            f"{len(missing)} file belum disebut di FILE_INDEX maupun REPORT", missing,
-        )
-    return CheckResult("Documentation Coverage", "PASS", f"{len(py_files)} file terdokumentasi")
+    total = len(py_files)
+    current = total - len(missing)
+    result = CheckResult(
+        "Documentation Coverage",
+        "WARN" if missing else "PASS",
+        f"{len(missing)} file belum disebut di FILE_INDEX maupun REPORT"
+        if missing else f"{total} file terdokumentasi",
+        missing,
+    )
+    result.current = current
+    result.total = total
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -456,7 +557,7 @@ def check_large_files(project_root: Path) -> CheckResult:
 
     if large:
         large.sort(key=lambda x: -x[1])
-        items = [f"{path} ({loc})" for path, loc in large]
+        items = [f"{path} ({loc} LOC)" for path, loc in large]
         return CheckResult(
             "Large Files", "WARN",
             f"{len(large)} file >{LARGE_FILE_THRESHOLD} LOC", items,
@@ -530,45 +631,93 @@ def check_empty_packages(project_root: Path) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 def _score(results: list[CheckResult]) -> int:
-    warn_count = sum(1 for r in results if r.status == "WARN")
-    fail_count = sum(1 for r in results if r.status == "FAIL")
-    return max(0, 100 - warn_count - fail_count * 10)
+    """Skor berbobot: cek kritikal (Documentation Structure, PATCHLOG,
+    FILE_INDEX, Documentation Coverage, ...) menentukan skor jauh lebih besar
+    dibanding cek kosmetik (Large Files, Empty Packages). Untuk cek bertipe
+    coverage (punya current/total), WARN diberi kredit parsial proporsional
+    terhadap persentase yang sudah OK, bukan hukuman flat."""
+    total_weight = sum(CHECK_WEIGHTS.get(r.name, 0) for r in results) or 1
+    earned = 0.0
+
+    for r in results:
+        weight = CHECK_WEIGHTS.get(r.name, 0)
+        if r.status == "PASS":
+            earned += weight
+        elif r.status == "FAIL":
+            earned += 0.0
+        else:  # WARN
+            if r.total:
+                ratio = (r.current or 0) / r.total
+            else:
+                ratio = 0.5
+            earned += weight * ratio
+
+    return round(100 * earned / total_weight)
+
+
+def _overall_status(results: list[CheckResult]) -> str:
+    if any(r.status == "FAIL" for r in results):
+        return "FAIL"
+    if any(r.status == "WARN" for r in results):
+        return "WARN"
+    return "PASS"
 
 
 def render_summary(results: list[CheckResult], verbose: bool) -> None:
-    print("=" * 50)
-    print("Documentation Health")
-    print()
-
     pass_results = [r for r in results if r.status == "PASS"]
     non_pass = [r for r in results if r.status != "PASS"]
-
-    # PASS ditampilkan berurutan tanpa spasi
-    for r in pass_results:
-        print(f"PASS {r.name}")
-
-    # WARN / FAIL masing-masing dipisah baris kosong, tampilkan item
-    for r in non_pass:
-        print()
-        suffix = f" ({r.count})" if r.count > 0 else ""
-        print(f"{r.status} {r.name}{suffix}")
-        for line in fmt_items(r.items, verbose):
-            print(line)
-
-    # Overall
-    warn_count = sum(1 for r in results if r.status == "WARN")
-    fail_count = sum(1 for r in results if r.status == "FAIL")
-    pass_count = len(pass_results)
+    coverage_results = [r for r in results if r.total]
+    status = _overall_status(results)
     score = _score(results)
 
+    bar = "=" * 50
+
+    print(bar)
+    print("Documentation Health")
+    print(bar)
     print()
-    print("-" * 50)
-    print("Overall")
+    print("Repository")
+    print(status)
+
     print()
-    print(f"Score : {score}/100")
-    print(f"PASS  : {pass_count}")
-    print(f"WARN  : {warn_count}")
-    print(f"FAIL  : {fail_count}")
+    print("Score")
+    print(f"{score} / 100")
+
+    if coverage_results:
+        print()
+        print("Coverage")
+        for r in coverage_results:
+            print()
+            print(r.name)
+            print(f"{r.current} / {r.total} ({r.percentage}%)")
+
+    if non_pass:
+        print()
+        print("Warnings")
+        for r in non_pass:
+            print()
+            print(f"{r.name} ({r.count})" if r.count else f"{r.name}")
+            if r.items:
+                for line in fmt_items(r.items, verbose):
+                    print(line)
+            elif r.message:
+                print(f"  • {r.message}")
+            hint = CHECK_HINTS.get(r.name)
+            if hint and r.count:
+                print("Hint:")
+                print(f"  {hint}")
+
+    if pass_results:
+        print()
+        print("Passed")
+        print()
+        for r in pass_results:
+            print(f"\u2714 {r.name}")
+
+    print()
+    print(bar)
+    print(f"Status: {status}")
+    print(bar)
 
 
 def render_json(results: list[CheckResult]) -> None:
@@ -576,6 +725,7 @@ def render_json(results: list[CheckResult]) -> None:
     fail_count = sum(1 for r in results if r.status == "FAIL")
     pass_count = sum(1 for r in results if r.status == "PASS")
     data = {
+        "repository_status": _overall_status(results),
         "score": _score(results),
         "pass": pass_count,
         "warn": warn_count,
@@ -587,6 +737,10 @@ def render_json(results: list[CheckResult]) -> None:
                 "message": r.message,
                 "count": r.count,
                 "items": r.items,
+                "current": r.current,
+                "total": r.total,
+                "percentage": r.percentage,
+                "weight": CHECK_WEIGHTS.get(r.name),
             }
             for r in results
         ],
