@@ -1,3 +1,9 @@
+---
+last_verified: 2026-07-10
+sprint: 3.2
+warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
+---
+
 # REPORT.md — LunaWave Analysis Report
 
 > **Tanggal Scan:** 2026-07-09
@@ -59,18 +65,18 @@
 
 ### ⚠️ Temuan Masalah (dari `PROJECT_STRUCTURE_AUDIT.md`)
 
-| ID | Severity | Masalah | Lokasi |
-|----|----------|---------|--------|
-| F-01 | 🔴 Tinggi | `ConnectionManager` tercampur dalam `websocket.py` bersama routing & auth | `server/handlers/websocket.py` (317 baris) |
-| F-02 | 🟡 Menengah | `mpv_controller.py` & `ytdlp_client.py` sebaiknya di `adapters/`, bukan `engine/` | `engine/` |
-| F-03 | 🟡 Menengah | `cache/db.py` God Class — 5 domain query dalam 1 class (389 baris) | `cache/db.py` |
-| F-04 | 🟡 Menengah | `cache/` campur: runtime code + DB files + credentials + misplaced util | `cache/` |
-| F-05 | 🟡 Menengah | `data/artists_enriched.json` 185 KB sebaiknya di-import ke DB | `data/` |
-| F-06 | 🟡 Menengah | `config.py` mengimport `core/security` (leaf module tidak seharusnya punya dep internal) | `config.py:L47,L64` |
-| F-07 | 🟡 Menengah | `web/static/index.html` SPA monolitik 36 KB | `web/static/index.html` |
-| F-08 | 🟢 Rendah | `data/export_to_sqlite.py` seharusnya di `scripts/` | `data/` |
-| F-09 | 🟢 Rendah | `cache/inject_svgs.py` tersesat — sudah ada di `scripts/inject_svgs.py` | `cache/` (tidak ditemukan di RAR → sudah pindah ✅) |
-| F-10 | 🔴 Penting | `cache/admin_password.txt` harus dipastikan ada di `.gitignore` | `cache/admin_password.txt` |
+| ID | Severity | Masalah | Lokasi | Status |
+|----|----------|---------|--------|--------|
+| F-01 | 🔴 Tinggi | `ConnectionManager` tercampur dalam `websocket.py` bersama routing & auth | `server/handlers/websocket.py` (317 baris) | ⏳ Backlog — target Sprint 4 (lihat `STATUS.md`) |
+| F-02 | 🟡 Menengah | `mpv_controller.py` & `ytdlp_client.py` sebaiknya di `adapters/`, bukan `engine/` | `engine/` | ⏳ Backlog — target Sprint 4 |
+| F-03 | 🟡 Menengah | `cache/db.py` God Class — 5 domain query dalam 1 class (389 baris) | `cache/db.py` | ⏳ Backlog — target Sprint 4 |
+| F-04 | 🟡 Menengah | `cache/` campur: runtime code + DB files + credentials + misplaced util | `cache/` | 🔄 Sebagian — F-09 (misplaced util) sudah beres, F-10 (credentials) sedang dicek, split ke `persistence/` masih Sprint 5 |
+| F-05 | 🟡 Menengah | `data/artists_enriched.json` 185 KB sebaiknya di-import ke DB | `data/` | ⏳ Backlog — target Sprint 5 |
+| F-06 | 🟡 Menengah | `config.py` mengimport `core/security` (leaf module tidak seharusnya punya dep internal) | `config.py:L47,L64` | ⏳ Backlog — target Sprint 4 |
+| F-07 | 🟡 Menengah | `web/static/index.html` SPA monolitik 36 KB | `web/static/index.html` | ✅ Ditutup — keputusan final: **tidak dipecah** (lihat `AI_CONTEXT.md` & `STATUS.md`). ⚠️ Temuan ini kontradiktif dengan keputusan tsb; dibiarkan di sini sebagai riwayat analisis, jangan dieksekusi ulang. |
+| F-08 | 🟢 Rendah | `data/export_to_sqlite.py` seharusnya di `scripts/` | `data/` | ⏳ Backlog — target Sprint 4 |
+| F-09 | 🟢 Rendah | `cache/inject_svgs.py` tersesat — sudah ada di `scripts/inject_svgs.py` | `cache/` (tidak ditemukan di RAR → sudah pindah ✅) | ✅ Resolved |
+| F-10 | 🔴 Penting | `cache/admin_password.txt` harus dipastikan ada di `.gitignore` | `cache/admin_password.txt` | 🔄 In-progress — cek `.gitignore` (lihat `STATUS.md`, prioritas ASAP) |
 
 ---
 

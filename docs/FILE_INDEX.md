@@ -1,3 +1,10 @@
+---
+last_verified: 2026-07-10
+last_synced_with_source: 2026-07-09
+warning: file ini manual — mungkin stale. re-verify sebelum dipakai.
+
+---
+
 # FILE_INDEX.md — LunaWave File Inventory
 
 > **Last Updated:** 2026-07-09 | Sprint 3.2

@@ -1,3 +1,8 @@
+---
+last_verified: 2026-07-10
+sprint: 3.2
+---
+
 # PROJECT STRUCTURE AUDIT — LunaWave
 > **Tujuan:** Roadmap refactoring berbasis analisis struktur aktual.
 > **Tanggal Audit:** 2026-07-09 (Diperbarui setelah Sprint 3.2)

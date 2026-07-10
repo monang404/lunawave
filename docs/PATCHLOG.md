@@ -1,9 +1,26 @@
+---
+last_verified: 2026-07-10
+format: append-only
+---
 # PATCHLOG.md â€” LunaWave
 
 > **Format:** Append-only. Jangan hapus entri sebelumnya.
 > **Detail lengkap per sprint:** lihat `docs/LOG/`
 
 ---
+
+## PATCH-2026-07-09-002 Â· Sprint 3.2 â€” Extract `start.py` â†’ `launcher/`
+**Tanggal:** 2026-07-09
+**Ringkasan:** Pecah monolith `start.py` menjadi package `launcher/`.
+**files_affected:**
+- `start.py` (hollow â€” hanya re-export)
+- `launcher/__init__.py` (baru)
+- `launcher/__main__.py` (baru)
+- `launcher/gui.py` (baru)
+- `launcher/process.py` (baru)
+- `launcher/network.py` (baru)
+- `launcher/updater.py` (baru)
+**Status:** âœ… SELESAI
 
 ## [2026-07-09] Sprint 2.1 â€” LunaWave Rebranding
 
@@ -69,15 +86,15 @@ File baru:
 **Status:** âœ… SELESAI
 ---
 
-## [2026-07-09] Patch — Offline CDN Fix
+## [2026-07-09] Patch ï¿½ Offline CDN Fix
 
 **Tanggal:** 2026-07-09
 **Ringkasan:** Self-host Tabler Icons & hapus Google Fonts CDN. UI kini berfungsi penuh tanpa internet.
 **File berubah:**
-- `web/static/index.html` — hapus 4 baris Google Fonts, ganti 1 baris Tabler CDN ? lokal
-- `web/static/css/tokens.css` — pastikan font fallback stack
-- `web/static/css/vendor/tabler-icons.min.css` — [NEW] self-hosted
-- `web/static/css/vendor/fonts/*` — [NEW] font files
-- `web/static/sw.js` — bump CACHE_VERSION, tambah vendor ke PRECACHE_ASSETS
+- `web/static/index.html` ï¿½ hapus 4 baris Google Fonts, ganti 1 baris Tabler CDN ? lokal
+- `web/static/css/tokens.css` ï¿½ pastikan font fallback stack
+- `web/static/css/vendor/tabler-icons.min.css` ï¿½ [NEW] self-hosted
+- `web/static/css/vendor/fonts/*` ï¿½ [NEW] font files
+- `web/static/sw.js` ï¿½ bump CACHE_VERSION, tambah vendor ke PRECACHE_ASSETS
 **Alasan:** Aplikasi rusak tanpa internet karena icon hilang. Lagu lokal tidak bisa diputar dengan UX yang baik.
 **Status:** ? SELESAI
