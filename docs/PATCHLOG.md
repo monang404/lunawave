@@ -1,4 +1,5 @@
 ---
+title: LunaWave Patch Log
 last_verified: 2026-07-10
 latest_patch_id: PATCH-2026-07-10-008
 total_entries: 6

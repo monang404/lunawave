@@ -1,4 +1,5 @@
 ---
+title : LunaWave Documentation Index
 last_verified: 2026-07-10
 sprint: 3.2
 status: current

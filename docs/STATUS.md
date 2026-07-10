@@ -1,4 +1,5 @@
 ---
+title : LunaWave Project Status
 last_verified: 2026-07-10
 sprint: 3.2
 ---

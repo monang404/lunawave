@@ -1,5 +1,6 @@
 ---
-last_verified: 2026-07-10
+title: LunaWave File Index
+last_verified: 2026-07-11
 generated: true
 note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — JANGAN edit manual.
 ---
@@ -13,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-10 oleh `scripts/generate_file_index.py`  
+> **Auto-generated:** 2026-07-11 oleh `scripts/generate_file_index.py`  
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -479,7 +480,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **File:** `scripts/architecture_lint.py`  
 **Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
 **Class:** `Violation`  
-**Function utama:** `path_to_layer()`, `module_to_layer()`, `check_file()`, `scan_project()`, `is_known()`, `main()`  
+**Function utama:** `path_to_layer()`, `module_to_layer()`, `to_dict()`, `check_file()`, `scan_project()`, `is_known()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -489,7 +490,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **File:** `scripts/doctor.py`  
 **Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
 **Class:** —  
-**Function utama:** `section()`, `run_script()`, `check_docs()`, `check_architecture()`, `check_big_files()`, `check_pending_docs()`  
+**Function utama:** `section()`, `run_checker_json()`, `run_all_checkers()`, `render_checker()`, `print_summary()`, `main()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -537,9 +538,29 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/verify_docs.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
-**Class:** —  
-**Function utama:** `read_text()`, `parse_frontmatter()`, `looks_like_path()`, `check_patchlog()`, `check_frontmatter_freshness()`, `build_basename_index()`  
+**Fungsi:** Memeriksa kualitas dokumentasi project, bukan memvalidasi semua path yang tertulis di file Markdown. Fokus pada kondisi repository saat ini, bukan histori, roadmap, atau proposal refactor.  
+**Class:** `CheckResult`  
+**Function utama:** `count()`, `percentage()`, `read_text()`, `parse_frontmatter()`, `collect_py_files()`, `count_lines()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_security.py`  
+**Fungsi:** Memvalidasi bahwa berkas sensitif (credential, database cache) tidak berisiko ter-commit ke repo, dengan memeriksa isi .gitignore.  
+**Class:** `CheckResult`  
+**Function utama:** `count()`, `percentage()`, `check_credential_ignore()`, `check_db_files_ignore()`, `render_summary()`, `render_json()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_structure.py`  
+**Fungsi:** Memvalidasi kesehatan struktur repo yang bukan domain dokumentasi maupun arsitektur: ukuran file Python, dan dokumen/berkas yang masih "pending" (disebut di STATUS.md tapi belum dibuat/diselesaikan).  
+**Class:** `CheckResult`  
+**Function utama:** `count()`, `percentage()`, `check_big_files()`, `check_pending_items()`, `render_summary()`, `render_json()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -553,9 +574,11 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 | File | Baris | Catatan |
 |---|---|---|
 
+| `scripts/verify_docs.py` | 850 | Perlu dipecah |
+
 | `launcher/gui.py` | 756 | Perlu dipecah |
 
-| `scripts/verify_docs.py` | 422 | Perlu dipecah |
+| `scripts/architecture_lint.py` | 402 | Perlu dipecah |
 
 | `scripts/generate_file_index.py` | 391 | Perlu dipecah |
 
@@ -573,16 +596,18 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 | `scripts/find_owner.py` | 272 | Perhatikan |
 
-| `scripts/architecture_lint.py` | 251 | Perhatikan |
+| `scripts/verify_structure.py` | 266 | Perhatikan |
 
-| `scripts/doctor.py` | 249 | Perhatikan |
+| `scripts/doctor.py` | 230 | Perhatikan |
+
+| `scripts/verify_security.py` | 213 | Perhatikan |
 
 | `main.py` | 208 | Perhatikan |
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**10/53** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**13/55** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 - [ ] `cache/db.py`
@@ -648,8 +673,6 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 - [ ] `scripts/generate_report.py`
 
 - [ ] `scripts/run_all.py`
-
-- [ ] `scripts/verify_docs.py`
 
 - [ ] `server/app.py`
 

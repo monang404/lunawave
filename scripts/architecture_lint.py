@@ -7,6 +7,7 @@ Cara pakai:
     python scripts/architecture_lint.py              # cek seluruh project
     python scripts/architecture_lint.py --file config.py   # cek 1 file saja
     python scripts/architecture_lint.py --strict     # exit 1 jika ada violation (default untuk pre-commit)
+    python scripts/architecture_lint.py --json       # output JSON
 
 Exit code:
     0  — tidak ada violation
@@ -17,6 +18,7 @@ Cocok dipasang sebagai pre-commit hook (lihat .pre-commit-config.yaml).
 
 import argparse
 import ast
+import json
 import os
 import sys
 
@@ -87,6 +89,15 @@ class Violation:
             f"    ↳ `{self.importer_layer}/` tidak boleh import dari `{self.imported_layer}/`\n"
             f"      import: {self.imported_module}"
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "file": self.file,
+            "line": self.line,
+            "importer_layer": self.importer_layer,
+            "imported_module": self.imported_module,
+            "imported_layer": self.imported_layer,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +197,151 @@ def is_known(v: Violation) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Pure data — tidak melakukan print, hanya mengembalikan struktur hasil scan
+# ---------------------------------------------------------------------------
+
+def collect_results(
+    project_root: Path,
+    target_file: str | None = None,
+) -> dict:
+    """Jalankan scan dan kembalikan data mentah sebagai dict.
+
+    Tidak melakukan print apapun. Semua informasi ada di return value.
+    Dipakai oleh render_text(), render_json(), dan aggregator eksternal
+    (misalnya doctor.py --json).
+    """
+    violations = scan_project(project_root, target_file)
+    new_violations = [v for v in violations if not is_known(v)]
+    known_violations = [v for v in violations if is_known(v)]
+
+    # Hitung files_scanned dan imports_checked
+    files_scanned = 0
+    imports_checked = 0
+    if target_file:
+        path = (project_root / target_file).resolve()
+        if path.exists():
+            files_scanned = 1
+            try:
+                source = path.read_text(encoding="utf-8", errors="replace")
+                tree = ast.parse(source)
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.Import, ast.ImportFrom)):
+                        imports_checked += 1
+            except SyntaxError:
+                pass
+    else:
+        for dirpath, dirnames, filenames in os.walk(project_root):
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+            for fn in filenames:
+                if fn.endswith(".py"):
+                    files_scanned += 1
+                    fp = Path(dirpath) / fn
+                    try:
+                        source = fp.read_text(encoding="utf-8", errors="replace")
+                        tree = ast.parse(source)
+                        for node in ast.walk(tree):
+                            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                                imports_checked += 1
+                    except SyntaxError:
+                        pass
+
+    has_new = len(new_violations) > 0
+    if not violations:
+        repository_status = "PASS"
+    elif has_new:
+        repository_status = "FAIL"
+    else:
+        repository_status = "WARN"  # hanya known violations
+
+    check_status = "FAIL" if has_new else ("WARN" if known_violations else "PASS")
+    if check_status == "PASS":
+        score = 100
+        message = "Tidak ada violation import boundary"
+    elif check_status == "WARN":
+        score = 80
+        message = f"{len(known_violations)} known violation belum di-fix (lihat REPORT.md)"
+    else:
+        score = max(0, 100 - 20 * len(new_violations))
+        message = f"{len(new_violations)} violation baru ditemukan"
+
+    checks = [
+        {
+            "name": "Import Boundaries",
+            "status": check_status,
+            "message": message,
+            "count": len(new_violations),
+            "items": [
+                f"{v['file']}:{v['line']} — {v['importer_layer']}/ → {v['imported_layer']}/"
+                for v in [v.to_dict() for v in new_violations]
+            ],
+            "current": None,
+            "total": None,
+            "percentage": None,
+            "weight": 100,
+        }
+    ]
+
+    return {
+        "checker": "architecture_lint",
+        "repository_status": repository_status,
+        "score": score,
+        "pass": 1 if check_status == "PASS" else 0,
+        "warn": 1 if check_status == "WARN" else 0,
+        "fail": 1 if check_status == "FAIL" else 0,
+        "checks": checks,
+        # Field lama dipertahankan untuk backward compatibility (dipakai
+        # render_text/CLI lama dan konsumen eksternal yang sudah ada).
+        "files_scanned": files_scanned,
+        "imports_checked": imports_checked,
+        "new_violations": len(new_violations),
+        "known_violations": len(known_violations),
+        "violations": [v.to_dict() for v in new_violations],
+        "known_violation_list": [v.to_dict() for v in known_violations],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Render — text (perilaku lama dipertahankan) dan JSON
+# ---------------------------------------------------------------------------
+
+def render_text(
+    data: dict,
+    violations: list[Violation],
+    known_violations: list[Violation],
+    show_known: bool,
+) -> None:
+    """Cetak output teks — identik dengan perilaku sebelumnya."""
+    if not violations and not known_violations:
+        print("✅ architecture_lint: tidak ada violation.")
+        return
+
+    new_violations = [v for v in violations if not is_known(v)]
+    has_new = len(new_violations) > 0
+
+    if new_violations:
+        print(f"\n❌ architecture_lint: {len(new_violations)} VIOLATION BARU ditemukan!\n")
+        for v in new_violations:
+            print(str(v))
+        print()
+
+    if known_violations and show_known:
+        print(f"\n⚠️  {len(known_violations)} known violation (sudah terdokumentasi di REPORT.md, belum di-fix):\n")
+        for v in known_violations:
+            print(str(v))
+        print()
+    elif known_violations and not show_known:
+        print(
+            f"ℹ️  {len(known_violations)} known violation diabaikan "
+            f"(tambah --show-known untuk lihat). Lihat REPORT.md §F-06."
+        )
+
+
+def render_json(data: dict) -> None:
+    """Cetak output JSON — format konsisten dengan verify_docs.py."""
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -203,45 +359,40 @@ def main():
         help="Tampilkan juga known/documented violations (default: suppress)",
     )
     parser.add_argument("--project-root", default=str(PROJECT_ROOT))
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output JSON (cocok untuk CI atau integrasi tool lain seperti doctor.py)",
+    )
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
-    violations = scan_project(root, args.file)
 
-    new_violations = [v for v in violations if not is_known(v)]
-    known_violations = [v for v in violations if is_known(v)]
+    # Kumpulkan data mentah
+    data = collect_results(root, args.file)
 
-    if not violations:
-        print("✅ architecture_lint: tidak ada violation.")
-        sys.exit(0)
+    if args.json_output:
+        render_json(data)
+    else:
+        # Untuk render_text kita perlu objek Violation asli
+        violations = scan_project(root, args.file)
+        new_v = [v for v in violations if not is_known(v)]
+        known_v = [v for v in violations if is_known(v)]
+        render_text(data, violations, known_v, args.show_known)
 
-    has_new = len(new_violations) > 0
+        if new_v and not args.warn_only:
+            print(
+                "💡 Tips: Jika violation ini disengaja (temporary), tambahkan ke KNOWN_VIOLATIONS\n"
+                "   di scripts/architecture_lint.py dan dokumentasikan di REPORT.md.\n"
+                "   Untuk skip pre-commit sementara: git commit --no-verify"
+            )
 
-    if new_violations:
-        print(f"\n❌ architecture_lint: {len(new_violations)} VIOLATION BARU ditemukan!\n")
-        for v in new_violations:
-            print(str(v))
-        print()
-
-    if known_violations and args.show_known:
-        print(f"\n⚠️  {len(known_violations)} known violation (sudah terdokumentasi di REPORT.md, belum di-fix):\n")
-        for v in known_violations:
-            print(str(v))
-        print()
-    elif known_violations and not args.show_known:
-        print(
-            f"ℹ️  {len(known_violations)} known violation diabaikan "
-            f"(tambah --show-known untuk lihat). Lihat REPORT.md §F-06."
-        )
-
+    # Exit code — sama persis dengan sebelumnya
+    has_new = data["new_violations"] > 0
     if args.warn_only:
         sys.exit(0)
     elif has_new:
-        print(
-            "💡 Tips: Jika violation ini disengaja (temporary), tambahkan ke KNOWN_VIOLATIONS\n"
-            "   di scripts/architecture_lint.py dan dokumentasikan di REPORT.md.\n"
-            "   Untuk skip pre-commit sementara: git commit --no-verify"
-        )
         sys.exit(1)
     else:
         sys.exit(0)

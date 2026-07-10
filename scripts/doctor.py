@@ -2,18 +2,46 @@
 """
 doctor.py — Laporan kesehatan project LunaWave secara menyeluruh.
 
+Peran doctor.py HANYA sebagai orchestrator/dashboard:
+    1. Menjalankan setiap checker terdaftar dengan flag --json
+    2. Membaca & mem-parse output JSON tiap checker
+    3. Menggabungkan hasil menjadi satu ringkasan
+    4. Menampilkan dashboard di terminal
+    5. Menentukan exit code akhir
+
+doctor.py TIDAK mengandung logika validasi apapun. Semua business logic
+(dokumentasi, arsitektur, struktur file, keamanan, dst.) menjadi tanggung
+jawab tunggal (single owner) dari masing-masing checker script.
+
+Menambah checker baru = tambahkan satu entri ke daftar CHECKERS di bawah.
+Tidak perlu mengubah kode lain di file ini.
+
 Cara pakai:
     python scripts/doctor.py
-    python scripts/doctor.py --strict    # exit 1 jika ada masalah ❌
+    python scripts/doctor.py --strict    # exit 1 jika ada masalah (WARN atau FAIL)
 
-Cek yang dijalankan:
-    1. verify_docs.py    — PATCHLOG, frontmatter, referensi path
-    2. architecture_lint — import boundary violations
-    3. Big file check    — file Python >200 baris
-    4. Empty/pending     — rfc/ kosong, CONSTRAINTS.md belum ada
-    5. Security          — admin_password.txt ada di .gitignore?
+Kontrak checker (wajib dipatuhi setiap checker yang didaftarkan):
+    - Mendukung flag `--json` yang mencetak SATU objek JSON ke stdout dengan
+      schema standar:
+        {
+          "checker": str,
+          "repository_status": "PASS" | "WARN" | "FAIL",
+          "score": int (0-100),
+          "pass": int, "warn": int, "fail": int,
+          "checks": [
+            {
+              "name": str, "status": "PASS"|"WARN"|"FAIL", "message": str,
+              "count": int, "items": [str, ...],
+              "current": int|None, "total": int|None, "percentage": int|None,
+              "weight": int|None
+            }, ...
+          ]
+        }
+    - Exit code 0 jika tidak ada FAIL, 1 jika ada FAIL (perilaku internal
+      checker tetap otoritatif untuk exit code checker itu sendiri).
 """
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -24,12 +52,39 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 OK    = "✅"
 WARN  = "⚠️ "
 ERROR = "❌"
-INFO  = "ℹ️ "
 
-SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
+# ---------------------------------------------------------------------------
+# Daftar checker — SATU-SATUNYA tempat yang perlu diubah untuk menambah,
+# menghapus, atau mengubah urutan checker. Tidak ada logika lain di file ini
+# yang perlu disentuh saat menambah checker baru (Open/Closed Principle).
+# ---------------------------------------------------------------------------
+CHECKERS: list[dict] = [
+    {
+        "script": "verify_docs.py",
+        "title": "Dokumentasi (PATCHLOG, frontmatter, referensi path, coverage)",
+        "args": [],
+    },
+    {
+        "script": "architecture_lint.py",
+        "title": "Arsitektur (import boundary)",
+        "args": ["--show-known"],
+    },
+    {
+        "script": "verify_structure.py",
+        "title": "Struktur Project (file besar, item pending)",
+        "args": [],
+    },
+    {
+        "script": "verify_security.py",
+        "title": "Keamanan (.gitignore, credential exposure)",
+        "args": [],
+    },
+]
 
-results: list[tuple[str, str]] = []  # (level, message)
 
+# ---------------------------------------------------------------------------
+# Eksekusi checker
+# ---------------------------------------------------------------------------
 
 def section(title: str) -> None:
     print(f"\n{'='*60}")
@@ -37,167 +92,93 @@ def section(title: str) -> None:
     print(f"{'='*60}")
 
 
-def run_script(script: str, extra_args: list[str] = []) -> tuple[int, str]:
-    """Jalankan script lain dan kembalikan (returncode, combined output)."""
-    cmd = [sys.executable, str(SCRIPT_DIR / script)] + extra_args
+def run_checker_json(script: str, extra_args: list[str]) -> tuple[int, dict | None, str]:
+    """Jalankan satu checker dengan --json dan parse output-nya.
+
+    Mengembalikan (returncode, parsed_dict_or_None, raw_stdout_for_fallback).
+    """
+    cmd = [sys.executable, str(SCRIPT_DIR / script), "--json"] + extra_args
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, cwd=str(PROJECT_ROOT))
-        output = (proc.stdout + proc.stderr).strip()
-        return proc.returncode, output
     except Exception as e:
-        return 1, str(e)
+        return 1, None, str(e)
+
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        data = None
+
+    return proc.returncode, data, (proc.stdout + proc.stderr).strip()
+
+
+def run_all_checkers() -> list[dict]:
+    """Jalankan semua checker terdaftar. Mengembalikan list of dict, satu
+    per checker, berisi metadata eksekusi + data JSON (atau None jika gagal
+    parse)."""
+    outcomes = []
+    for entry in CHECKERS:
+        rc, data, raw = run_checker_json(entry["script"], entry["args"])
+        outcomes.append({
+            "script": entry["script"],
+            "title": entry["title"],
+            "returncode": rc,
+            "data": data,
+            "raw": raw,
+        })
+    return outcomes
 
 
 # ---------------------------------------------------------------------------
-# Check 1: verify_docs.py
+# Dashboard rendering — murni presentasi, tidak ada keputusan validasi
 # ---------------------------------------------------------------------------
 
-def check_docs() -> None:
-    section("1. Dokumentasi (PATCHLOG, frontmatter, referensi path)")
-    rc, output = run_script("verify_docs.py")
-    print(output)
-    if rc != 0:
-        results.append((ERROR, "verify_docs: ada error fatal di dokumentasi"))
-    elif "⚠️" in output:
-        results.append((WARN, "verify_docs: ada peringatan dokumentasi"))
+def render_checker(outcome: dict, index: int) -> tuple[str, str]:
+    """Cetak satu bagian dashboard untuk satu checker.
+
+    Mengembalikan (level, ringkasan_satu_baris) untuk dipakai di summary akhir.
+    level adalah salah satu dari OK, WARN, ERROR.
+    """
+    section(f"{index}. {outcome['title']}")
+    data = outcome["data"]
+    script = outcome["script"]
+
+    if data is None:
+        # Checker gagal menghasilkan JSON valid — tampilkan output mentah
+        # apa adanya. doctor.py tidak menebak alasan kegagalan (itu urusan
+        # checker), hanya melaporkan bahwa integrasi gagal.
+        if outcome["raw"]:
+            print(outcome["raw"])
+        return ERROR, f"{script}: gagal parse JSON output"
+
+    status = data.get("repository_status", "FAIL")
+    score  = data.get("score", "?")
+    checks = data.get("checks", [])
+
+    fail_checks = [c for c in checks if c.get("status") == "FAIL"]
+    warn_checks = [c for c in checks if c.get("status") == "WARN"]
+
+    print(f"  Status  : {status}")
+    print(f"  Score   : {score} / 100")
+
+    for c in fail_checks:
+        print(f"  {ERROR}  {c['name']}: {c['message']}")
+        for item in (c.get("items") or [])[:3]:
+            print(f"       • {item}")
+
+    for c in warn_checks:
+        print(f"  {WARN}  {c['name']}: {c['message']}")
+
+    checker_name = data.get("checker", script)
+
+    if outcome["returncode"] != 0 or status == "FAIL":
+        return ERROR, f"{checker_name}: {len(fail_checks)} FAIL check(s) — score {score}/100"
+    elif warn_checks:
+        return WARN, f"{checker_name}: {len(warn_checks)} peringatan — score {score}/100"
     else:
-        results.append((OK, "verify_docs: semua bersih"))
+        return OK, f"{checker_name}: semua bersih (score {score}/100)"
 
 
-# ---------------------------------------------------------------------------
-# Check 2: architecture_lint.py
-# ---------------------------------------------------------------------------
-
-def check_architecture() -> None:
-    section("2. Arsitektur (import boundary)")
-    rc, output = run_script("architecture_lint.py", ["--show-known"])
-    print(output)
-    if rc != 0:
-        results.append((ERROR, "architecture_lint: ada violation baru"))
-    elif "known violation" in output:
-        results.append((WARN, "architecture_lint: ada known violation belum di-fix (lihat REPORT.md)"))
-    else:
-        results.append((OK, "architecture_lint: boundaries bersih"))
-
-
-# ---------------------------------------------------------------------------
-# Check 3: file besar
-# ---------------------------------------------------------------------------
-
-def check_big_files() -> None:
-    section("3. File Python Besar (>200 baris)")
-    import os
-
-    big = []
-    for dirpath, dirnames, filenames in os.walk(PROJECT_ROOT):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        for fn in filenames:
-            if fn.endswith(".py"):
-                path = Path(dirpath) / fn
-                try:
-                    n = sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
-                    if n > 200:
-                        rel = str(path.relative_to(PROJECT_ROOT)).replace("\\", "/")
-                        big.append((rel, n))
-                except Exception:
-                    pass
-
-    big.sort(key=lambda x: -x[1])
-
-    if not big:
-        print("  Semua file Python di bawah 200 baris.")
-        results.append((OK, "big-files: semua file di bawah 200 baris"))
-    else:
-        critical = [(r, n) for r, n in big if n > 350]
-        for rel, n in big:
-            flag = "❌" if n > 350 else "⚠️ "
-            print(f"  {flag}  {rel} ({n} baris)")
-        if critical:
-            results.append((ERROR, f"big-files: {len(critical)} file kritis (>350 baris) perlu dipecah"))
-        else:
-            results.append((WARN, f"big-files: {len(big)} file antara 200–350 baris — perhatikan"))
-
-
-# ---------------------------------------------------------------------------
-# Check 4: pending docs
-# ---------------------------------------------------------------------------
-
-def check_pending_docs() -> None:
-    section("4. Dokumen Pending")
-
-    issues = []
-
-    # CONSTRAINTS.md disebut di STATUS.md tapi belum ada
-    constraints = PROJECT_ROOT / "docs" / "CONSTRAINTS.md"
-    if not constraints.exists():
-        print(f"  {WARN}  docs/CONSTRAINTS.md belum dibuat (disebut di STATUS.md §Sprint 3.3)")
-        issues.append("CONSTRAINTS.md belum ada")
-    else:
-        print(f"  {OK}  docs/CONSTRAINTS.md ada")
-
-    # rfc/ — folder kosong
-    rfc_dir = PROJECT_ROOT / "docs" / "kompas" / "rfc"
-    if rfc_dir.exists():
-        rfc_files = list(rfc_dir.glob("*.md"))
-        if not rfc_files:
-            print(f"  {WARN}  docs/kompas/rfc/ kosong — isi atau hapus (disebut di STATUS.md)")
-            issues.append("rfc/ kosong")
-        else:
-            print(f"  {OK}  docs/kompas/rfc/ ada {len(rfc_files)} dokumen")
-    else:
-        print(f"  {INFO}  docs/kompas/rfc/ tidak ditemukan")
-
-    # launcher/updater.py masih stub?
-    updater = PROJECT_ROOT / "launcher" / "updater.py"
-    if updater.exists():
-        content = updater.read_text(encoding="utf-8", errors="replace")
-        if "pass" in content and len(content) < 500:
-            print(f"  {WARN}  launcher/updater.py masih stub — belum diimplementasi")
-            issues.append("updater.py masih stub")
-        else:
-            print(f"  {OK}  launcher/updater.py ada implementasi")
-
-    if issues:
-        results.append((WARN, f"pending-docs: {len(issues)} item pending — " + ", ".join(issues)))
-    else:
-        results.append((OK, "pending-docs: semua item terpenuhi"))
-
-
-# ---------------------------------------------------------------------------
-# Check 5: security
-# ---------------------------------------------------------------------------
-
-def check_security() -> None:
-    section("5. Keamanan")
-
-    gitignore = PROJECT_ROOT / ".gitignore"
-    admin_pw = "cache/admin_password.txt"
-
-    if not gitignore.exists():
-        print(f"  {ERROR}  .gitignore tidak ditemukan!")
-        results.append((ERROR, "security: .gitignore tidak ada"))
-        return
-
-    content = gitignore.read_text(encoding="utf-8", errors="replace")
-    if admin_pw in content or "admin_password.txt" in content:
-        print(f"  {OK}  cache/admin_password.txt ada di .gitignore")
-        results.append((OK, "security: admin_password.txt terlindungi di .gitignore"))
-    else:
-        print(f"  {ERROR}  cache/admin_password.txt TIDAK ada di .gitignore — risiko commit credential!")
-        results.append((ERROR, "security: admin_password.txt tidak ada di .gitignore"))
-
-    # Cek apakah ada *.db di .gitignore (bukan library.db yang perlu di-ignore)
-    if "*.db" in content or "cache/library.db" in content:
-        print(f"  {OK}  File .db di-ignore")
-    else:
-        print(f"  {WARN}  File .db mungkin tidak di-ignore — cek .gitignore")
-
-
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
-
-def print_summary() -> int:
+def print_summary(results: list[tuple[str, str]]) -> int:
     section("RINGKASAN")
     errors = [m for lvl, m in results if lvl == ERROR]
     warns  = [m for lvl, m in results if lvl == WARN]
@@ -232,13 +213,13 @@ def main():
     print("🩺 LunaWave Doctor — Project Health Check")
     print(f"   Project root: {PROJECT_ROOT}")
 
-    check_docs()
-    check_architecture()
-    check_big_files()
-    check_pending_docs()
-    check_security()
+    outcomes = run_all_checkers()
 
-    rc = print_summary()
+    results: list[tuple[str, str]] = []
+    for i, outcome in enumerate(outcomes, start=1):
+        results.append(render_checker(outcome, i))
+
+    rc = print_summary(results)
 
     if args.strict and any(lvl in (WARN, ERROR) for lvl, _ in results):
         sys.exit(1)
