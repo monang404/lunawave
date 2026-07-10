@@ -13,393 +13,662 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
+> **Auto-generated:** 2026-07-10 oleh `scripts/generate_file_index.py`  
+> **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
----
 
 ## Root
 
-**File:** `main.py`
-**Fungsi:** Entry point utama — inisialisasi semua komponen, jalankan web server
-**Class:** —
-**Function utama:** `main()` (async), `check_connectivity()`, `mpv_reconnect_checker()`
-**Digunakan oleh:** `asyncio.run()` langsung
-**Menggunakan:** Semua modul (`config`, `core/*`, `engine/*`, `cache/*`, `server/*`, `plugins/*`)
+**File:** `config.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** —  
+**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/log_config`, `engine/mpv_controller`, `engine/ytdlp_client`, _8 lainnya_  
+**Menggunakan:** —
+
 
 ---
 
-**File:** `config.py`
-**Fungsi:** Konfigurasi global: path, env vars, konstanta playback, auth
-**Class:** —
-**Function utama:** — (module-level constants: `BASE_DIR`, `DB_PATH`, `MPV_SOCKET`, `WEB_HOST`, `WEB_PORT`, `ADMIN_PASSWORD`)
-**Digunakan oleh:** Semua modul
-**Menggunakan:** `core/security.py` (hash_password saat generate password)
+**File:** `main.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `main()`  
+**Digunakan oleh:** —  
+**Menggunakan:** `core/log_config`, `core/state`, `core/event_bus`, `engine/ytdlp_client`, `engine/mpv_controller`, `cache/db`, _7 lainnya_
+
 
 ---
 
-**File:** `start.py`
-**Fungsi:** Bootstrap launcher — memanggil `launcher.__main__.main()`
-**Class:** —
-**Function utama:** — (3 baris: import + `main()`)
-**Digunakan oleh:** User langsung (`python start.py`)
-**Menggunakan:** `launcher/__main__.py`
+**File:** `start.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** —  
+**Digunakan oleh:** —  
+**Menggunakan:** `launcher/__main__`
+
 
 ---
+
 
 ## core/
 
-**File:** `core/state.py`
-**Fungsi:** Data model & enums global aplikasi
-**Class:** `PlayerStatus(Enum)`, `AudioOutput(Enum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`
-**Function utama:** — (dataclass fields saja)
-**Digunakan oleh:** Hampir semua modul
+**File:** `core/command_bus.py`  
+**Fungsi:** CommandBus untuk single-writer pattern (1-to-1). Berbeda dengan EventBus (pub/sub 1-to-many), CommandBus menjamin hanya ada SATU handler untuk setiap command.  
+**Class:** `CommandBus`  
+**Function utama:** `register()`, `unregister()`  
+**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/volume_service`, `plugins/notifications`, `server/handlers/websocket`  
+**Menggunakan:** `core/observability`
+
+
+---
+
+**File:** `core/event_bus.py`  
+**Fungsi:** EventBus untuk komunikasi antar modul secara decoupled dan asinkron.  
+**Class:** `EventBus`  
+**Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`  
+**Digunakan oleh:** `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/volume_service`, `main`, _3 lainnya_  
+**Menggunakan:** `core/task_utils`, `core/events`, `core/observability`
+
+
+---
+
+**File:** `core/events.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`  
+**Function utama:** —  
+**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/queue_manager`, _7 lainnya_  
+**Menggunakan:** `core/state`
+
+
+---
+
+**File:** `core/exceptions.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `YtPlayerError(Exception)`, `MpvConnectionError(YtPlayerError)`, `TrackResolutionError(YtPlayerError)`, `DownloadError(YtPlayerError)`  
+**Function utama:** —  
+**Digunakan oleh:** `engine/mpv_controller`  
 **Menggunakan:** —
 
----
-
-**File:** `core/event_bus.py`
-**Fungsi:** Pub/sub EventBus — satu arah, type-safe, singleton `bus`
-**Class:** `EventBus`
-**Function utama:** `subscribe()`, `publish()`, `unsubscribe()`
-**Digunakan oleh:** `engine/*`, `server/*`, `plugins/*`, `main.py`
-**Menggunakan:** `core/observability.py`
 
 ---
 
-**File:** `core/command_bus.py`
-**Fungsi:** Single-writer CommandBus + konstanta `CMD.*`
-**Class:** `CommandBus`
-**Function utama:** `register()`, `dispatch()`, `CMD.*` constants
-**Digunakan oleh:** `engine/command_router.py`, `server/handlers/websocket.py`, `plugins/*`
-**Menggunakan:** `core/observability.py`
+**File:** `core/log_config.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `simple_renderer()`, `setup_logging()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `config`
+
 
 ---
 
-**File:** `core/events.py`
-**Fungsi:** Domain event dataclasses (immutable payloads)
-**Class:** `DomainEvent`, `TrackStartedEvent`, `TrackEndedEvent`, `TrackProgressEvent`, `TrackDurationEvent`, `QueueUpdatedEvent`, `LyricsUpdatedEvent`, `DownloadCompleteEvent`, `DownloadProgressEvent`, `LogMessageEvent`, `TrackPauseChangedEvent`
-**Function utama:** —
-**Digunakan oleh:** `engine/*`, `server/handlers/*`, `plugins/*`
-**Menggunakan:** `core/state.py`
-
----
-
-**File:** `core/ports.py`
-**Fungsi:** Protocol interfaces (Ports & Adapters pattern)
-**Class:** `AudioPlayerPort`, `MediaExtractorPort`, `TrackRepositoryPort`, `SessionRepositoryPort`, `DatabasePort`, `LyricsProvider`, `SponsorBlockProvider`
-**Function utama:** — (Protocol method signatures)
-**Digunakan oleh:** `engine/*`, `cache/*`, `server/*`
-**Menggunakan:** `core/state.py`
-
----
-
-**File:** `core/security.py`
-**Fungsi:** Password hashing & verification (PBKDF2-SHA256)
-**Class:** —
-**Function utama:** `hash_password(password)`, `verify_password(password, hashed)`
-**Digunakan oleh:** `config.py`, `server/handlers/auth.py`
-**Menggunakan:** `werkzeug.security` atau `hashlib`
-
----
-
-**File:** `core/task_utils.py`
-**Fungsi:** Safe asyncio task wrapper dengan error logging
-**Class:** —
-**Function utama:** `safe_create_task(coro, name, on_error)`
-**Digunakan oleh:** `engine/*`, `server/*`, `main.py`
-**Menggunakan:** `asyncio`, `structlog`
-
----
-
-**File:** `core/observability.py`
-**Fungsi:** Prometheus metrics + OpenTelemetry tracer setup
-**Class:** —
-**Function utama:** `setup_tracing()`, `get_metrics_content()`
-**Digunakan oleh:** `core/event_bus.py`, `core/command_bus.py`, `server/handlers/http.py`
-**Menggunakan:** `prometheus_client`, `opentelemetry`
-
----
-
-**File:** `core/exceptions.py`
-**Fungsi:** Custom exception hierarchy
-**Class:** `YtPlayerError`, `MpvConnectionError`, `TrackResolutionError`, `DownloadError`
-**Function utama:** —
-**Digunakan oleh:** `engine/mpv_controller.py`, `cache/resolver.py`
+**File:** `core/observability.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `setup_tracing()`, `get_metrics_content()`  
+**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `server/handlers/http`, `server/handlers/websocket`, `server/middleware`  
 **Menggunakan:** —
 
+
 ---
+
+**File:** `core/ports.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`  
+**Function utama:** `cancel_download()`  
+**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/track_loader`, `engine/radio_engine`, _4 lainnya_  
+**Menggunakan:** `core/state`
+
+
+---
+
+**File:** `core/security.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `hash_password()`, `verify_password()`  
+**Digunakan oleh:** `server/handlers/auth`  
+**Menggunakan:** —
+
+
+---
+
+**File:** `core/state.py`  
+**Fungsi:** Menyimpan state aplikasi LunaWave, termasuk status pemutar, mode pemutaran, lagu saat ini, antrean, riwayat, status download, lirik, dan tab aktif.  
+**Class:** `PlayerStatus(Enum)`, `AudioOutput(str, Enum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`  
+**Function utama:** —  
+**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _16 lainnya_  
+**Menggunakan:** —
+
+
+---
+
+**File:** `core/task_utils.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `safe_create_task()`  
+**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/playback/track_loader`, _5 lainnya_  
+**Menggunakan:** —
+
+
+---
+
 
 ## engine/
 
-**File:** `engine/mpv_controller.py`
-**Fungsi:** IPC ke MPV via Unix socket / Windows named pipe
-**Class:** `MpvController`
-**Function utama:** `connect()`, `play(url)`, `pause()`, `resume()`, `seek(s)`, `set_volume(v)`, `close()`, `_observe_events()`
-**Digunakan oleh:** `main.py`, `engine/playback/controller.py`
-**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`, `core/task_utils`, `core/exceptions`
-
----
-
-**File:** `engine/ytdlp_client.py`
-**Fungsi:** Wrapper yt-dlp: search, stream URL resolve, MP3 download
-**Class:** `YtDlpClient`
-**Function utama:** `search(query, max_results)`, `get_stream_url(video_id)`, `download_mp3(video_id)`, `cancel_download()`
-**Digunakan oleh:** `main.py`, `engine/radio_engine.py`, `cache/resolver.py`, `server/services/stream_prefetch.py`
-**Menggunakan:** `yt_dlp`, `core/state`, `config`
-
----
-
-**File:** `engine/radio_engine.py`
-**Fungsi:** Radio Mode — autonomous playback dari artist seed dengan prefetch & deduplication (365 baris)
-**Class:** `RadioMode`
-**Function utama:** `on_activated()`, `on_deactivated()`, `next()`, `_build_standby()`, `_prefetch_next()`, `check_prefetch()`
-**Digunakan oleh:** `main.py`, `engine/playback/controller.py`
-**Menggunakan:** `core/events`, `core/state`, `core/ports`, `core/task_utils`, `cache/db` (via db param)
-
----
-
-**File:** `engine/playback/controller.py`
-**Fungsi:** Orkestrator utama playback — semua command play/pause/next/prev/seek/queue (351 baris)
-**Class:** `PlaybackController`
-**Function utama:** `play_track(track)`, `_on_cmd_toggle_pause()`, `_on_next()`, `_on_stop()`, `_on_seek()`, `_on_set_mode()`, semua queue ops
-**Digunakan oleh:** `main.py`, `server/app.py`, `server/handlers/websocket.py`
-**Menggunakan:** `core/*`, `cache/resolver`, `engine/queue_manager`, `engine/radio_engine`, `engine/playback/track_loader`
-
----
-
-**File:** `engine/playback/track_loader.py`
-**Fungsi:** Resolve stream URL + inject plugin (SponsorBlock, Lyrics) sebelum play
-**Class:** `TrackLoader`
-**Function utama:** `load_track(track) → str`
-**Digunakan oleh:** `engine/playback/controller.py`
-**Menggunakan:** `cache/resolver`, `core/ports`
-
----
-
-**File:** `engine/command_router.py`
-**Fungsi:** Dispatch CommandBus action → PlaybackController atau VolumeService
-**Class:** `CommandRouter`
-**Function utama:** `_route(action)`, `_route_volume(action)`
-**Digunakan oleh:** `main.py`
+**File:** `engine/command_router.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `CommandRouter`  
+**Function utama:** `_route()`, `_route_volume()`  
+**Digunakan oleh:** `main`  
 **Menggunakan:** `core/command_bus`
 
----
-
-**File:** `engine/download_manager.py`
-**Fungsi:** Orkestrasi download MP3 + emit progress events
-**Class:** `DownloadManager`
-**Function utama:** `_on_download(track)`, `_do_download(track)`, `_update_progress(pct)`
-**Digunakan oleh:** `main.py`
-**Menggunakan:** `core/event_bus`, `core/state`, `engine/ytdlp_client`
 
 ---
 
-**File:** `engine/queue_manager.py`
-**Fungsi:** Queue Mode — advance ke track berikutnya (1 KB, minimal)
-**Class:** `QueueMode`
-**Function utama:** `next(controller)`
-**Digunakan oleh:** `engine/playback/controller.py`
-**Menggunakan:** —
+**File:** `engine/download_manager.py`  
+**Fungsi:** Mengelola download lagu dari YouTube.  
+**Class:** `DownloadManager`  
+**Function utama:** `_update_progress()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `core/event_bus`, `core/events`, `core/command_bus`, `core/state`, `core/ports`, `core/task_utils`
+
 
 ---
 
-**File:** `engine/volume_service.py`
-**Fungsi:** Handle volume_up / volume_down / volume_set via EventBus
-**Class:** `VolumeService`
-**Function utama:** `_on_volume_up()`, `_on_volume_down()`, `_on_volume_set()`, `_apply_volume()`
-**Digunakan oleh:** `main.py`
-**Menggunakan:** `core/event_bus`, `core/state`, `engine/mpv_controller`
+**File:** `engine/mpv_controller.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `MpvController`  
+**Function utama:** —  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`, `core/task_utils`, `core/exceptions`
+
 
 ---
+
+**File:** `engine/playback/controller.py`  
+**Fungsi:** Central controller for playback orchestration.  
+**Class:** `PlaybackController`  
+**Function utama:** —  
+**Digunakan oleh:** `engine/playback/__init__`, `server/app`  
+**Menggunakan:** `core/event_bus`, `core/events`, `core/state`, `core/ports`, `cache/resolver`, `engine/queue_manager`, _3 lainnya_
+
+
+---
+
+**File:** `engine/playback/track_loader.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `TrackLoader`  
+**Function utama:** —  
+**Digunakan oleh:** `engine/playback/controller`  
+**Menggunakan:** `core/state`, `core/ports`, `cache/resolver`, `core/task_utils`
+
+
+---
+
+**File:** `engine/queue_manager.py`  
+**Fungsi:** Mengelola playback dari user queue.  
+**Class:** `QueueMode`  
+**Function utama:** —  
+**Digunakan oleh:** `engine/playback/controller`  
+**Menggunakan:** `core/events`, `core/state`
+
+
+---
+
+**File:** `engine/radio_engine.py`  
+**Fungsi:** Mengelola pemutaran lagu secara otomatis dan berkelanjutan (Radio Mode). Radio Mode adalah fitur independen: ia memiliki list lagu sendiri (state.radio_queue) dan TIDAK PERNAH membaca atau menulis state.queue (milik Queue Mode). Lihat Constitution: "Radio must work independently from queue" dan "Radio must NEVER depend on Queue Empty events."  
+**Class:** `RadioMode`  
+**Function utama:** `check_prefetch()`  
+**Digunakan oleh:** `engine/playback/controller`  
+**Menggunakan:** `core/events`, `core/state`, `core/ports`, `core/task_utils`
+
+
+---
+
+**File:** `engine/volume_service.py`  
+**Fungsi:** Mengelola kontrol volume MPV.  
+**Class:** `VolumeService`  
+**Function utama:** —  
+**Digunakan oleh:** —  
+**Menggunakan:** `core/event_bus`, `core/events`, `core/command_bus`, `core/ports`, `core/state`
+
+
+---
+
+**File:** `engine/ytdlp_client.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `YtDlpClient`  
+**Function utama:** `cancel_download()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `core/state`, `config`
+
+
+---
+
 
 ## cache/
 
-**File:** `cache/db.py`
-**Fungsi:** SQLite database layer via aiosqlite — semua query (389 baris, God Class)
-**Class:** `Database`
-**Function utama:** `init()`, `get_track()`, `upsert_track()`, `increment_play_count()`, `create_session()`, `get_recent_tracks()`, `get_favorites()`, `get_genre_artists()`, `increment_artist_click()`
-**Digunakan oleh:** `main.py`, `services/discover_service.py`, `server/handlers/*`, `cache/resolver.py`
-**Menggunakan:** `aiosqlite`, `core/state`, `config`
+**File:** `cache/db.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `Database`  
+**Function utama:** `conn()`  
+**Digunakan oleh:** `cache/resolver`, `main`, `scratch/check_db`, `services/discover_service`  
+**Menggunakan:** `core/state`, `config`
+
 
 ---
 
-**File:** `cache/resolver.py`
-**Fungsi:** Waterfall resolve stream URL: local path → DB cache → yt-dlp live
-**Class:** `CacheResolver`
-**Function utama:** `resolve(track) → str`
-**Digunakan oleh:** `engine/playback/controller.py`, `engine/playback/track_loader.py`
-**Menggunakan:** `cache/db`, `engine/ytdlp_client`, `core/ports`, `config`
+**File:** `cache/resolver.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `CacheResolver`  
+**Function utama:** —  
+**Digunakan oleh:** `engine/playback/controller`, `engine/playback/track_loader`  
+**Menggunakan:** `cache/db`, `config`, `core/state`, `core/ports`
+
 
 ---
+
 
 ## server/
 
-**File:** `server/app.py`
-**Fungsi:** aiohttp app factory + runner
-**Class:** —
-**Function utama:** `create_app(playback_controller, ytdlp, db)`, `run_server(app, host, port)`
-**Digunakan oleh:** `main.py`
-**Menggunakan:** `core/*`, `server/handlers/*`, `server/services/*`, `engine/playback/controller`
+**File:** `server/app.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `create_app()`, `run_server()`  
+**Digunakan oleh:** —  
+**Menggunakan:** `core/events`, `core/task_utils`, `server/serializers`, `server/handlers/http`, `server/handlers/websocket`, `config`, _2 lainnya_
+
 
 ---
 
-**File:** `server/handlers/websocket.py`
-**Fungsi:** ConnectionManager + WS routing + command dispatch (317 baris)
-**Class:** `ConnectionManager`
-**Function utama:** `connect(ws)`, `disconnect(ws)`, `broadcast(msg)`, `ws_handler(request)`, `handle_ws_message()`
-**Digunakan oleh:** `server/app.py`, `server/services/broadcast_service.py`
-**Menggunakan:** `core/command_bus`, `core/state`, `server/serializers`, `server/middleware`, `server/handlers/auth`, `services/discover_service`
+**File:** `server/handlers/auth.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `handle_auth()`, `require_auth()`  
+**Digunakan oleh:** `server/handlers/websocket`  
+**Menggunakan:** `config`, `core/security`
+
 
 ---
 
-**File:** `server/handlers/http.py`
-**Fungsi:** REST handlers: index SPA, health, stream proxy, metrics
-**Class:** —
-**Function utama:** `serve_index()`, `health_check()`, `serve_stream()`, `serve_metrics()`
-**Digunakan oleh:** `server/app.py`
+**File:** `server/handlers/event_listeners.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `setup_event_listeners()`  
+**Digunakan oleh:** —  
+**Menggunakan:** `core/events`, `core/task_utils`, `server/services/stream_prefetch`, `server/services/broadcast_service`
+
+
+---
+
+**File:** `server/handlers/http.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `serve_index()`, `health_check()`, `serve_stream()`, `serve_metrics()`  
+**Digunakan oleh:** `server/app`  
 **Menggunakan:** `config`, `core/observability`
 
----
-
-**File:** `server/handlers/auth.py`
-**Fungsi:** Session auth via WebSocket — login, token validation, rate limit
-**Class:** —
-**Function utama:** `handle_auth(ws, data, manager, client_ip, db, now)`, `require_auth(manager, ws)`, `_prune_stale_ips()`
-**Digunakan oleh:** `server/handlers/websocket.py`
-**Menggunakan:** `core/security`
 
 ---
 
-**File:** `server/handlers/event_listeners.py`
-**Fungsi:** Bridge EventBus → broadcast ke semua WS clients
-**Class:** —
-**Function utama:** `setup_event_listeners(state, manager, broadcast_service, stream_prefetch)`
-**Digunakan oleh:** `server/app.py`
-**Menggunakan:** `core/events`, `core/task_utils`, `server/services/*`
+**File:** `server/handlers/websocket.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `ConnectionManager`  
+**Function utama:** `disconnect()`, `ws_handler()`, `handle_ws_message()`  
+**Digunakan oleh:** `server/app`, `server/services/broadcast_service`  
+**Menggunakan:** `core/observability`, `core/command_bus`, `core/state`, `server/serializers`, `server/middleware`, `server/handlers/auth`, _1 lainnya_
+
 
 ---
 
-**File:** `server/services/broadcast_service.py`
-**Fungsi:** Push state, progress, lyrics, log, download progress ke WS clients
-**Class:** `BroadcastService`
-**Function utama:** `broadcast_state()`, `broadcast_progress()`, `broadcast_lyrics()`, `broadcast_log()`, `broadcast_download_progress()`
-**Digunakan oleh:** `server/handlers/event_listeners.py`
-**Menggunakan:** `server/handlers/websocket.py` (ConnectionManager), `server/serializers`
+**File:** `server/middleware.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `check_rate_limit_sync()`, `check_rate_limit()`  
+**Digunakan oleh:** `server/handlers/websocket`  
+**Menggunakan:** `core/observability`
+
 
 ---
 
-**File:** `server/services/stream_prefetch.py`
-**Fungsi:** Pre-fetch & cache stream URL untuk lagu berikutnya
-**Class:** `StreamPrefetchService`
-**Function utama:** `prefetch_stream_url(video_id)`
-**Digunakan oleh:** `server/handlers/event_listeners.py`
-**Menggunakan:** `cache/db`, `engine/ytdlp_client`, `core/ports`, `config`
-
----
-
-**File:** `server/middleware.py`
-**Fungsi:** Rate limiting middleware (IP-based)
-**Class:** —
-**Function utama:** `check_rate_limit(manager, client_ip, now)`, `check_rate_limit_sync()`
-**Digunakan oleh:** `server/handlers/websocket.py`
-**Menggunakan:** —
-
----
-
-**File:** `server/serializers.py`
-**Fungsi:** Konversi AppState ↔ JSON dict
-**Class:** —
-**Function utama:** `state_to_dict(state)`, `track_to_dict(track)`, `dict_to_track(data)`
-**Digunakan oleh:** `server/handlers/websocket.py`, `server/services/broadcast_service.py`
+**File:** `server/serializers.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `track_to_dict()`, `state_to_dict()`, `dict_to_track()`  
+**Digunakan oleh:** `server/app`, `server/handlers/websocket`, `server/services/broadcast_service`  
 **Menggunakan:** `core/state`
 
+
 ---
+
+**File:** `server/services/broadcast_service.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `BroadcastService`  
+**Function utama:** —  
+**Digunakan oleh:** `server/handlers/event_listeners`  
+**Menggunakan:** `server/serializers`, `server/handlers/websocket`, `core/state`
+
+
+---
+
+**File:** `server/services/stream_prefetch.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `StreamPrefetchService`  
+**Function utama:** —  
+**Digunakan oleh:** `server/handlers/event_listeners`  
+**Menggunakan:** `config`, `core/ports`
+
+
+---
+
 
 ## services/
 
-**File:** `services/discover_service.py`
-**Fungsi:** Query layer discovery: recent, favorites, cached, artists, genres
-**Class:** `DiscoverService`
-**Function utama:** `get_recent(n)`, `get_favorites(n)`, `get_cached(n)`, `get_featured_artists(n)`, `get_featured_genres(n)`
-**Digunakan oleh:** `server/handlers/websocket.py`
-**Menggunakan:** `cache/db`, `core/state`
+**File:** `services/discover_service.py`  
+**Fungsi:** Menyediakan data discover (recent dan favorites).  
+**Class:** `DiscoverService`  
+**Function utama:** —  
+**Digunakan oleh:** `server/handlers/websocket`  
+**Menggunakan:** `core/state`, `cache/db`
+
 
 ---
+
 
 ## plugins/
 
-**File:** `plugins/lyrics.py`
-**Fungsi:** Fetch LRC dari lrclib.net, sync posisi lirik via progress event
-**Class:** `LyricsFetcher`
-**Function utama:** `fetch(track)`, `_parse_lrc(lrc_text)`, `_on_progress(event)`, `cleanup()`
-**Digunakan oleh:** `main.py` (inject ke PlaybackController)
-**Menggunakan:** `core/event_bus`, `core/events`, `core/state`, `config`, `aiohttp`
+**File:** `plugins/lyrics.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `LyricsFetcher`  
+**Function utama:** `cleanup()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`
+
 
 ---
 
-**File:** `plugins/notifications.py`
-**Fungsi:** Termux MediaStyle notification + media button listener (no-op di non-Termux)
-**Class:** `TermuxNowPlaying`
-**Function utama:** `start()`, `cleanup()`, `_on_track_started()`, `_on_pause_changed()`, `_render()`
-**Digunakan oleh:** `main.py`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/command_bus`, `core/state`
+**File:** `plugins/notifications.py`  
+**Fungsi:** Mirrors current playback state to an Android notification via termux-notification (MediaStyle), and relays button presses back into the EventBus through a FIFO. No-op automatically on any platform where the termux-notification binary is not present.  
+**Class:** `TermuxNowPlaying`  
+**Function utama:** `_blocking_read_loop()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `core/event_bus`, `core/events`, `core/command_bus`, `core/state`, `config`
+
 
 ---
 
-**File:** `plugins/sponsorblock.py`
-**Fungsi:** Fetch & auto-skip sponsor segments via SponsorBlock API
-**Class:** `SponsorBlockHandler`
-**Function utama:** `fetch_segments(video_id)`, `_on_progress(event)`, `cleanup()`
-**Digunakan oleh:** `main.py` (inject ke PlaybackController)
-**Menggunakan:** `core/event_bus`, `core/events`, `core/state`, `config`, `aiohttp`
+**File:** `plugins/sponsorblock.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `SponsorBlockHandler`  
+**Function utama:** `cleanup()`  
+**Digunakan oleh:** `main`  
+**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`, `core/ports`, `core/task_utils`
+
 
 ---
+
 
 ## launcher/
 
-**File:** `launcher/gui.py`
-**Fungsi:** `ServerManager` Tkinter UI — start/stop server, log viewer, dependency check (29 KB)
-**Class:** `ServerManager(tk.Tk)`
-**Function utama:** `_check_dependencies()`, `_is_running()`, `_refresh_status()`, `_build_ui()`, `server_port`
-**Digunakan oleh:** `launcher/__main__.py`
-**Menggunakan:** `launcher/network`, `launcher/process`, `launcher/updater`, `tkinter`
-
----
-
-**File:** `launcher/process.py`
-**Fungsi:** Subprocess lifecycle: start/stop server, pipe stdout, kill process tree
-**Class:** `ServerProcess`
-**Function utama:** `start()`, `stop()`, `is_running()`, `kill_process_tree(pid)`, `kill_mpv()`
-**Digunakan oleh:** `launcher/gui.py`
-**Menggunakan:** `subprocess`, `psutil` (opsional), `signal`
-
----
-
-**File:** `launcher/network.py`
-**Fungsi:** Deteksi port availability dan PID yang mengokupasi port
-**Class:** —
-**Function utama:** `check_port_in_use(port)`, `get_pid_occupying_port(port)`
-**Digunakan oleh:** `launcher/gui.py`
-**Menggunakan:** `socket`, `psutil`
-
----
-
-**File:** `launcher/updater.py`
-**Fungsi:** Cek versi & update OTA (stub — belum diimplementasi)
-**Class:** —
-**Function utama:** `check_for_updates()`, `get_release_info()`
-**Digunakan oleh:** `launcher/gui.py`
+**File:** `launcher/__main__.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `main()`  
+**Digunakan oleh:** `start`  
 **Menggunakan:** —
 
+
 ---
 
-## data/ (scripts)
+**File:** `launcher/gui.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `ServerManager(Tk)`  
+**Function utama:** `server_port()`, `destroy()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
 
-**File:** `data/export_to_sqlite.py`
-**Fungsi:** One-time migration script — import data ke `lunawave.db`
-**Class:** —
-**Function utama:** (migration logic)
-**Digunakan oleh:** Developer manual saja
-**Menggunakan:** `sqlite3`
-**⚠️ Seharusnya dipindah ke `scripts/`**
+
+---
+
+**File:** `launcher/network.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `check_port_in_use()`, `get_pid_occupying_port()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `launcher/process.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `ServerProcess`  
+**Function utama:** `kill_process_tree()`, `kill_mpv()`, `start()`, `is_running()`, `stop()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `launcher/updater.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `check_for_updates()`, `get_release_info()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+
+## data/
+
+**File:** `data/export_to_sqlite.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `create_tables()`, `main()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+
+## scripts/
+
+**File:** `scripts/architecture_lint.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** `Violation`  
+**Function utama:** `path_to_layer()`, `module_to_layer()`, `check_file()`, `scan_project()`, `is_known()`, `main()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/doctor.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `section()`, `run_script()`, `check_docs()`, `check_architecture()`, `check_big_files()`, `check_pending_docs()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/find_owner.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `collect_py_files()`, `extract_info()`, `find_all_classes_and_functions()`, `build_reverse_index()`, `read_status_for_file()`, `resolve_target()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/generate_file_index.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `extract_purpose()`, `extract_module_info()`, `collect_py_files()`, `build_reverse_index()`, `format_file_entry()`, `build_generated_block()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/generate_report.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `count_files_by_ext()`, `count_py_files()`, `count_folders()`, `count_classes_and_functions()`, `count_lines()`, `count_js_files()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/run_all.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `run()`, `main()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_docs.py`  
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Class:** —  
+**Function utama:** `read_text()`, `parse_frontmatter()`, `looks_like_path()`, `check_patchlog()`, `check_frontmatter_freshness()`, `build_basename_index()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+
+## ⚠️ File Besar (>200 baris)
+
+
+| File | Baris | Catatan |
+|---|---|---|
+
+| `launcher/gui.py` | 756 | Perlu dipecah |
+
+| `scripts/verify_docs.py` | 422 | Perlu dipecah |
+
+| `scripts/generate_file_index.py` | 391 | Perlu dipecah |
+
+| `cache/db.py` | 388 | Perlu dipecah |
+
+| `engine/playback/controller.py` | 377 | Perlu dipecah |
+
+| `engine/radio_engine.py` | 365 | Perlu dipecah |
+
+| `server/handlers/websocket.py` | 316 | Perhatikan |
+
+| `engine/mpv_controller.py` | 306 | Perhatikan |
+
+| `scripts/generate_report.py` | 277 | Perhatikan |
+
+| `scripts/find_owner.py` | 272 | Perhatikan |
+
+| `scripts/architecture_lint.py` | 251 | Perhatikan |
+
+| `scripts/doctor.py` | 249 | Perhatikan |
+
+| `main.py` | 208 | Perhatikan |
+
+
+## 📋 Checklist Dokumentasi Docstring
+
+**10/53** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+
+
+- [ ] `cache/db.py`
+
+- [ ] `cache/resolver.py`
+
+- [ ] `config.py`
+
+- [ ] `core/events.py`
+
+- [ ] `core/exceptions.py`
+
+- [ ] `core/log_config.py`
+
+- [ ] `core/observability.py`
+
+- [ ] `core/ports.py`
+
+- [ ] `core/security.py`
+
+- [ ] `core/task_utils.py`
+
+- [ ] `data/export_to_sqlite.py`
+
+- [ ] `engine/command_router.py`
+
+- [ ] `engine/mpv_controller.py`
+
+- [ ] `engine/playback/track_loader.py`
+
+- [ ] `engine/ytdlp_client.py`
+
+- [ ] `launcher/__main__.py`
+
+- [ ] `launcher/gui.py`
+
+- [ ] `launcher/network.py`
+
+- [ ] `launcher/process.py`
+
+- [ ] `launcher/updater.py`
+
+- [ ] `main.py`
+
+- [ ] `plugins/lyrics.py`
+
+- [ ] `plugins/sponsorblock.py`
+
+- [ ] `scratch/check_db.py`
+
+- [ ] `scripts/architecture_lint.py`
+
+- [ ] `scripts/archive/generate_icons.py`
+
+- [ ] `scripts/archive/inject_svgs.py`
+
+- [ ] `scripts/doctor.py`
+
+- [ ] `scripts/find_owner.py`
+
+- [ ] `scripts/generate_file_index.py`
+
+- [ ] `scripts/generate_report.py`
+
+- [ ] `scripts/run_all.py`
+
+- [ ] `scripts/verify_docs.py`
+
+- [ ] `server/app.py`
+
+- [ ] `server/handlers/auth.py`
+
+- [ ] `server/handlers/event_listeners.py`
+
+- [ ] `server/handlers/http.py`
+
+- [ ] `server/handlers/websocket.py`
+
+- [ ] `server/middleware.py`
+
+- [ ] `server/serializers.py`
+
+- [ ] `server/services/broadcast_service.py`
+
+- [ ] `server/services/stream_prefetch.py`
+
+- [ ] `start.py`
 
 <!-- END:GENERATED -->
