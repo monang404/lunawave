@@ -45,6 +45,7 @@ class PlaybackController:
         self._lock = asyncio.Lock()
         self._play_lock = asyncio.Lock()  # A-05: proteksi race condition di play_track
         self._retry_count = 0
+        self._loading = False  # RC-TERMUX-01: flag bahwa loadfile sedang dalam proses
 
         # Subscribe events
         self.bus.subscribe(TrackEndedEvent, self._on_track_ended)
@@ -78,8 +79,17 @@ class PlaybackController:
                 # Load track (resolve URI, fetch lyrics/sponsorblock, increment play count)
                 uri = await self.track_loader.load_track(track)
 
+                # RC-TERMUX-01: Set flag sebelum loadfile agar end-file "stop" yang
+                # dipancarkan mpv saat replace tidak ditafsirkan sebagai user stop.
+                self._loading = True
                 # Play
                 await self.mpv.play(uri)
+
+                # RC-TERMUX-02: Beri jeda singkat agar mpv selesai memproses loadfile
+                # sebelum set_volume/resume dikirim. Di Termux, socket IPC lebih lambat
+                # sehingga perintah yang langsung dikirim setelah loadfile bisa diabaikan
+                # mpv karena file belum fully loaded.
+                await asyncio.sleep(0.15)
 
                 if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
                     # BACKEND-FIX-01: Pastikan mpv silent di browser mode.
@@ -88,10 +98,13 @@ class PlaybackController:
                 else:
                     await self.mpv.set_volume(self.state.volume)
 
+                # RC-TERMUX-02: Pastikan mpv tidak dalam state pause setelah loadfile.
+                # mpv kadang mempertahankan pause state dari track sebelumnya di Termux.
                 await self.mpv.resume()
 
                 self.state.status = PlayerStatus.PLAYING
                 self._retry_count = 0  # Reset retry count on success
+                self._loading = False  # RC-TERMUX-01: clear flag setelah play berhasil
                 await self.bus.publish(TrackStartedEvent(track=track))
 
                 # Fetch duration actively if not available
@@ -99,6 +112,7 @@ class PlaybackController:
                     safe_create_task(self._poll_duration(track), name="poll_duration")
 
             except Exception as e:
+                self._loading = False  # RC-TERMUX-01: clear flag jika error
                 logger.error(f"Failed to play track {track.title}: {e}", exc_info=True)
                 self.state.status = PlayerStatus.ERROR
                 self.state.error_msg = f"Error: {e}"
@@ -158,6 +172,12 @@ class PlaybackController:
             await asyncio.sleep(0.35)
             await self._on_next(next_data)
         elif reason == "stop":
+            # RC-TERMUX-01: mpv mengeluarkan end-file "stop" saat loadfile replace
+            # (next/restart track). Abaikan jika sedang dalam proses loading lagu baru,
+            # karena ini bukan "user stop" — melainkan peralihan antar track.
+            if self._loading:
+                logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition (loadfile replace)")
+                return
             # Intentional stop — sync server state ke IDLE
             if self.state.status not in (PlayerStatus.IDLE,):
                 self.state.status = PlayerStatus.IDLE
@@ -321,6 +341,13 @@ class PlaybackController:
             )
 
     async def _on_pause_changed(self, event: TrackPauseChangedEvent):
+        # RC-TERMUX-03: Abaikan perubahan pause dari mpv saat loadfile sedang berlangsung.
+        # mpv mengeluarkan property-change pause=true saat memuat file baru (sebelum
+        # audio benar-benar dimulai), yang dapat meng-override status PLAYING yang baru
+        # di-set oleh play_track() dan menyebabkan UI stuck di PAUSED.
+        if self._loading:
+            logger.info(f"[PAUSE] Ignoring pause-changed (is_paused={event.is_paused}) during track load")
+            return
         if event.is_paused:
             if self.state.status == PlayerStatus.PLAYING:
                 self.state.status = PlayerStatus.PAUSED
