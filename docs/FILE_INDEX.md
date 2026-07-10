@@ -1,14 +1,18 @@
 ---
 last_verified: 2026-07-10
-last_synced_with_source: 2026-07-09
-warning: file ini manual — mungkin stale. re-verify sebelum dipakai.
-
+generated: true
+note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — JANGAN edit manual.
 ---
 
 # FILE_INDEX.md — LunaWave File Inventory
 
-> **Last Updated:** 2026-07-09 | Sprint 3.2
+> ⚙️ File ini di-generate otomatis oleh `scripts/generate_file_index.py`.
+> **Jangan edit manual** — perubahan akan ditimpa saat script dijalankan berikutnya.
+> Jalankan `python scripts/generate_file_index.py` setelah ada file/class/fungsi yang berubah.
+>
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
+
+<!-- BEGIN:GENERATED -->
 
 ---
 
@@ -397,3 +401,5 @@ warning: file ini manual — mungkin stale. re-verify sebelum dipakai.
 **Digunakan oleh:** Developer manual saja
 **Menggunakan:** `sqlite3`
 **⚠️ Seharusnya dipindah ke `scripts/`**
+
+<!-- END:GENERATED -->

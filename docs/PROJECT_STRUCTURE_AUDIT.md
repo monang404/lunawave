@@ -12,131 +12,7 @@ sprint: 3.2
 
 ## 1. Struktur Folder Saat Ini
 
-```
-lunawave/                          ← Root proyek
-│
-├── main.py                        ← Entry point utama (asyncio runner)
-├── config.py                      ← Konfigurasi global & env vars
-├── start.py                       ← Bootstrap launcher (memanggil launcher/)
-├── launcher/                      ← Modul internal GUI launcher
-│   ├── __main__.py                ← Coordinator startup
-│   ├── __init__.py
-│   ├── gui.py                     ← Tkinter UI
-│   ├── process.py                 ← Manajemen subprocess & log
-│   ├── network.py                 ← Deteksi port & konektivitas
-│   └── updater.py                 ← Cek versi & update (stub)
-├── start.bat / start.sh           ← Shell launcher (Windows & Linux/Termux)
-├── requirements.txt               ← Python dependencies
-├── lunawave.log                   ← Log file runtime
-│
-├── core/                          ← Lapisan fondasi — shared primitives
-│   ├── __init__.py
-│   ├── state.py                   ← AppState, TrackInfo, enums
-│   ├── event_bus.py               ← Pub/sub EventBus
-│   ├── command_bus.py             ← Single-writer CommandBus + CMD constants
-│   ├── events.py                  ← DomainEvent dataclasses
-│   ├── ports.py                   ← Protocol interfaces (ports/adapters)
-│   ├── exceptions.py              ← Custom exceptions
-│   ├── log_config.py              ← Logging setup (structlog)
-│   ├── observability.py           ← Prometheus metrics & OpenTelemetry tracer
-│   ├── security.py                ← Password hashing
-│   ├── task_utils.py              ← safe_create_task() helper
-│   └── __pycache__/
-│
-├── engine/                        ← Domain logic — audio & playback
-│   ├── __init__.py
-│   ├── mpv_controller.py          ← IPC ke MPV via socket/named pipe (307 baris)
-│   ├── ytdlp_client.py            ← Wrapper yt-dlp (171 baris)
-│   ├── radio_engine.py            ← Radio Mode — autonomous playback (365 baris)
-│   ├── command_router.py          ← CommandBus → PlaybackController dispatcher
-│   ├── download_manager.py        ← Manajemen download MP3
-│   ├── queue_manager.py           ← Queue Mode state (sangat kecil, 1006 bytes)
-│   ├── volume_service.py          ← Volume control service
-│   └── playback/
-│       ├── __init__.py
-│       ├── controller.py          ← PlaybackController utama (351 baris)
-│       └── track_loader.py        ← Track loading & plugin injection (kecil)
-│
-├── server/                        ← HTTP & WebSocket layer
-│   ├── __init__.py
-│   ├── app.py                     ← aiohttp app factory & runner
-│   ├── middleware.py              ← Rate limiting
-│   ├── serializers.py             ← State → JSON & JSON → Track
-│   ├── handlers/
-│   │   ├── __init__.py
-│   │   ├── auth.py                ← Session auth handlers
-│   │   ├── event_listeners.py     ← EventBus → broadcast bridge
-│   │   ├── http.py                ← REST routes (stream, health, metrics)
-│   │   └── websocket.py           ← WS handler & ConnectionManager (317 baris)
-│   └── services/
-│       ├── broadcast_service.py   ← Push events ke semua WS clients
-│       └── stream_prefetch.py     ← Pre-fetch stream URL untuk lagu berikutnya
-│
-├── cache/                         ← Persistence & resolusi stream URL
-│   ├── __init__.py
-│   ├── db.py                      ← SQLite database via aiosqlite (389 baris)
-│   ├── resolver.py                ← Strategi resolve: local → cache → yt-dlp
-│   ├── schema.sql                 ← DDL schema database
-│   ├── inject_svgs.py             ← Utilitas inject SVG (tersesat di sini?)
-│   ├── admin_password.txt         ← ⚠️ Kredensial tersimpan di sini
-│   ├── library.db                 ← SQLite library (69 KB)
-│   ├── library.db-shm/wal         ← SQLite WAL files
-│   └── mp3/                       ← MP3 download cache (runtime-generated)
-│
-├── data/                          ← Data semi-permanen proyek
-│   ├── lunawave.db                ← SQLite DB utama (135 KB)
-│   ├── lunawave.db-shm/wal        ← SQLite WAL files
-│   ├── artists_enriched.json      ← ⚠️ 185 KB — data artis enrichment
-│   ├── ytgui.db                   ← ⚠️ DB warisan (212 KB) — masih ada?
-│   └── export_to_sqlite.py        ← Script migrasi data
-│
-├── services/                      ← High-level application services
-│   └── discover_service.py        ← Recent & Favorites query ke DB
-│
-├── plugins/                       ← Fitur opsional/platform-specific
-│   ├── __init__.py
-│   ├── lyrics.py                  ← LyricsFetcher via lrclib.net (179 baris)
-│   ├── notifications.py           ← Termux MediaStyle notifications (171 baris)
-│   └── sponsorblock.py            ← SponsorBlock segment skipping (3 KB)
-│
-├── web/                           ← Frontend aset
-│   ├── asset/
-│   │   └── logos/
-│   └── static/
-│       ├── index.html             ← ⚠️ SPA HTML monolitik (36 KB!)
-│       ├── manifest.json          ← PWA manifest
-│       ├── sw.js                  ← Service Worker
-│       ├── css/
-│       │   ├── tokens.css         ← Design tokens (variabel CSS)
-│       │   ├── portal.css         ← Styles khusus admin portal
-│       │   ├── base/              ← reset, animations, typography
-│       │   ├── components/        ← cards, player-bar, queue, dll (8 file)
-│       │   ├── layout/            ← app-shell, grid, nav
-│       │   └── platform/          ← desktop, tablet, mobile, landscape
-│       └── js/
-│           ├── main.js            ← Bootstrap & inisialisasi
-│           ├── audio.js           ← Browser Audio Engine (13 KB)
-│           ├── ws.js              ← WebSocket client (9 KB)
-│           ├── utils.js           ← Utility functions (7 KB)
-│           ├── dom.js             ← DOM helpers
-│           ├── store.js           ← State store sederhana
-│           ├── config.js          ← Config (sangat kecil, 55 bytes)
-│           ├── portal.js          ← Admin portal entry
-│           ├── events/            ← Event handlers (player, queue, lyrics, dll)
-│           ├── render/            ← View renderers (discover, queue, search, dll)
-│           ├── platform/          ← Keyboard, touch, viewport handlers
-│           └── services/          ← auth.js (hanya 1 file)
-│
-├── docs/                          ← Dokumentasi
-├── scripts/                       ← Utility scripts
-│   ├── generate_icons.py
-│   └── shortcuts/
-├── scratch/                       ← Scratch files (runtime/dev)
-├── .github/                       ← CI/CD workflows
-└── .git/
-```
-
----
+'Lihat STRUCTURE.md untuk struktur folder detail. Dokumen ini fokus ke roadmap refactoring saja'
 
 ## 2. Folder yang Terlalu Besar
 
@@ -320,7 +196,7 @@ server/
 
 ---
 
-### F. `web/static/index.html` → Komponen HTML Terpisah
+### F. `web/static/index.html` → Komponen HTML Terpisah > ⚠️ **Superseded:** Keputusan final ada di `AI_CONTEXT.md` & `STATUS.md` — index.html TIDAK dipecah. Section ini dibiarkan sebagai riwayat analisis, jangan dieksekusi ulang.
 **Masalah:** 36 KB HTML monolitik — semua modal, panel, player bar dalam satu file.
 
 **Rekomendasi jangka panjang:**
