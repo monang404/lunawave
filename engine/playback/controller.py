@@ -1,7 +1,28 @@
 """
-Purpose: Central controller for playback orchestration.
-Subscribes to: TRACK_ENDED, TRACK_PROGRESS, CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE, CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, CMD_SET_MODE, CMD_QUEUE_SELECT, CMD_QUEUE_REMOVE, "track.pause.changed"
-Publishes: TRACK_STARTED, LOG_MESSAGE, QUEUE_UPDATED
+Module: engine.playback.controller
+
+Purpose:
+    Orchestrate all playback logic: track loading, queue/radio advancement,
+    pause/seek, and mode switching via CommandBus commands.
+
+Responsibilities:
+    - Handle CMD_PLAY_TRACK, CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, and
+      mode/queue/lyrics commands.
+    - Delegate queue advancement to QueueMode or RadioMode.
+
+Depends on:
+    - core.event_bus, core.events, core.state, core.ports, cache.resolver,
+      engine.queue_manager, engine.radio_engine, engine.playback.track_loader
+
+Subscribes to:
+    TrackEndedEvent, TrackProgressEvent, TrackPauseChangedEvent,
+    TrackDurationEvent
+
+Publishes:
+    TrackStartedEvent, QueueUpdatedEvent, LogMessageEvent
+
+Thread Safety:
+    Worker thread (async; _lock and _play_lock guard concurrent access).
 """
 
 import asyncio

@@ -1,3 +1,27 @@
+"""
+Module: core.observability
+
+Purpose:
+    Expose Prometheus metric singletons and an OpenTelemetry tracer for
+    application-wide instrumentation.
+
+Responsibilities:
+    - Define Counter/Histogram/Gauge for commands, events, and WebSockets.
+    - Initialize a TracerProvider and return the application tracer.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Thread-safe (prometheus_client handles concurrent metric updates).
+"""
+
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider

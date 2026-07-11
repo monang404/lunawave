@@ -21,7 +21,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## Root
 
 **File:** `config.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.  
 **Class:** —  
 **Function utama:** —  
 **Digunakan oleh:** `cache/db`, `cache/resolver`, `core/log_config`, `engine/mpv_controller`, `engine/ytdlp_client`, _8 lainnya_  
@@ -31,7 +31,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `main.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Bootstrap all LunaWave subsystems and start the async aiohttp web server.  
 **Class:** —  
 **Function utama:** `main()`  
 **Digunakan oleh:** —  
@@ -41,7 +41,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `start.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** GUI entry point that opens the LunaWave Server Manager desktop window.  
 **Class:** —  
 **Function utama:** —  
 **Digunakan oleh:** —  
@@ -54,7 +54,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## core/
 
 **File:** `core/command_bus.py`  
-**Fungsi:** CommandBus untuk single-writer pattern (1-to-1). Berbeda dengan EventBus (pub/sub 1-to-many), CommandBus menjamin hanya ada SATU handler untuk setiap command.  
+**Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.  
 **Class:** `CommandBus`  
 **Function utama:** `register()`, `unregister()`  
 **Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/volume_service`, `plugins/notifications`, `server/handlers/websocket`  
@@ -64,7 +64,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/event_bus.py`  
-**Fungsi:** EventBus untuk komunikasi antar modul secara decoupled dan asinkron.  
+**Fungsi:** Implement a lightweight async pub/sub EventBus that decouples modules via typed DomainEvents, using weak references for method handlers.  
 **Class:** `EventBus`  
 **Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`  
 **Digunakan oleh:** `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/volume_service`, `main`, _3 lainnya_  
@@ -74,7 +74,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/events.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.  
 **Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`  
 **Function utama:** —  
 **Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/queue_manager`, _7 lainnya_  
@@ -84,7 +84,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/exceptions.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Define the custom exception hierarchy for LunaWave error conditions.  
 **Class:** `YtPlayerError(Exception)`, `MpvConnectionError(YtPlayerError)`, `TrackResolutionError(YtPlayerError)`, `DownloadError(YtPlayerError)`  
 **Function utama:** —  
 **Digunakan oleh:** `engine/mpv_controller`  
@@ -94,7 +94,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/log_config.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Configure structlog and stdlib logging with an async queue handler, rotating file output, and a compact single-line renderer.  
 **Class:** —  
 **Function utama:** `simple_renderer()`, `setup_logging()`  
 **Digunakan oleh:** `main`  
@@ -104,7 +104,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/observability.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.  
 **Class:** —  
 **Function utama:** `setup_tracing()`, `get_metrics_content()`  
 **Digunakan oleh:** `core/command_bus`, `core/event_bus`, `server/handlers/http`, `server/handlers/websocket`, `server/middleware`  
@@ -114,7 +114,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/ports.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.  
 **Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`  
 **Function utama:** `cancel_download()`  
 **Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/track_loader`, `engine/radio_engine`, _4 lainnya_  
@@ -124,7 +124,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/security.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Provide PBKDF2-SHA256 password hashing and constant-time verification.  
 **Class:** —  
 **Function utama:** `hash_password()`, `verify_password()`  
 **Digunakan oleh:** `server/handlers/auth`  
@@ -134,7 +134,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/state.py`  
-**Fungsi:** Menyimpan state aplikasi LunaWave, termasuk status pemutar, mode pemutaran, lagu saat ini, antrean, riwayat, status download, lirik, dan tab aktif.  
+**Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.  
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(str, Enum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`  
 **Function utama:** —  
 **Digunakan oleh:** `cache/db`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _16 lainnya_  
@@ -144,7 +144,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `core/task_utils.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Wrap asyncio.create_task with centralized exception handling to prevent silent background-task crashes.  
 **Class:** —  
 **Function utama:** `safe_create_task()`  
 **Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/playback/track_loader`, _5 lainnya_  
@@ -157,7 +157,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## engine/
 
 **File:** `engine/command_router.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Register all CMD_* CommandBus handlers, routing each command to the appropriate method on PlaybackController or VolumeService.  
 **Class:** `CommandRouter`  
 **Function utama:** `_route()`, `_route_volume()`  
 **Digunakan oleh:** `main`  
@@ -167,7 +167,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/download_manager.py`  
-**Fungsi:** Mengelola download lagu dari YouTube.  
+**Fungsi:** Handle the CMD_DOWNLOAD command by downloading the current or specified track via yt-dlp and moving it to the downloads/ folder.  
 **Class:** `DownloadManager`  
 **Function utama:** `_update_progress()`  
 **Digunakan oleh:** `main`  
@@ -177,7 +177,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/mpv_controller.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Control the mpv audio player via JSON IPC over a Unix socket or TCP, publishing playback events to the EventBus.  
 **Class:** `MpvController`  
 **Function utama:** —  
 **Digunakan oleh:** `main`  
@@ -187,7 +187,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/playback/controller.py`  
-**Fungsi:** Central controller for playback orchestration.  
+**Fungsi:** Orchestrate all playback logic: track loading, queue/radio advancement, pause/seek, and mode switching via CommandBus commands.  
 **Class:** `PlaybackController`  
 **Function utama:** —  
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`  
@@ -197,7 +197,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/playback/track_loader.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Resolve a track URI and trigger background side-effects (sponsorblock, lyrics fetch, play-count increment) before playback begins.  
 **Class:** `TrackLoader`  
 **Function utama:** —  
 **Digunakan oleh:** `engine/playback/controller`  
@@ -207,7 +207,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/queue_manager.py`  
-**Fungsi:** Mengelola playback dari user queue.  
+**Fungsi:** Advance playback to the next track in the user queue when called by PlaybackController at track end.  
 **Class:** `QueueMode`  
 **Function utama:** —  
 **Digunakan oleh:** `engine/playback/controller`  
@@ -217,7 +217,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/radio_engine.py`  
-**Fungsi:** Mengelola pemutaran lagu secara otomatis dan berkelanjutan (Radio Mode). Radio Mode adalah fitur independen: ia memiliki list lagu sendiri (state.radio_queue) dan TIDAK PERNAH membaca atau menulis state.queue (milik Queue Mode). Lihat Constitution: "Radio must work independently from queue" dan "Radio must NEVER depend on Queue Empty events."  
+**Fungsi:** Drive autonomous, self-sustaining Radio Mode playback using pre-fetched track batches from the database.  
 **Class:** `RadioMode`  
 **Function utama:** `check_prefetch()`  
 **Digunakan oleh:** `engine/playback/controller`  
@@ -227,7 +227,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/volume_service.py`  
-**Fungsi:** Mengelola kontrol volume MPV.  
+**Fungsi:** Handle volume-related commands and apply the correct volume to mpv based on the active audio output mode.  
 **Class:** `VolumeService`  
 **Function utama:** —  
 **Digunakan oleh:** —  
@@ -237,7 +237,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `engine/ytdlp_client.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Wrap yt-dlp in a thread executor to provide async search, stream URL extraction, and MP3 download without blocking the event loop.  
 **Class:** `YtDlpClient`  
 **Function utama:** `cancel_download()`  
 **Digunakan oleh:** `main`  
@@ -250,7 +250,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## cache/
 
 **File:** `cache/db.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Persistent SQLite cache for track metadata, session tokens, and artist/genre interaction counts.  
 **Class:** `Database`  
 **Function utama:** `conn()`  
 **Digunakan oleh:** `cache/resolver`, `main`, `scratch/check_db`, `services/discover_service`  
@@ -260,7 +260,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `cache/resolver.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Resolve the playback URI for a track using a priority-based cache strategy: local file > cached stream URL > fresh yt-dlp extraction.  
 **Class:** `CacheResolver`  
 **Function utama:** —  
 **Digunakan oleh:** `engine/playback/controller`, `engine/playback/track_loader`  
@@ -273,7 +273,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## server/
 
 **File:** `server/app.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Create and configure the aiohttp web application with all routes, services, and EventBus listeners wired together.  
 **Class:** —  
 **Function utama:** `create_app()`, `run_server()`  
 **Digunakan oleh:** —  
@@ -283,7 +283,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/handlers/auth.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Handle WebSocket authentication, session token verification, and per-IP login rate limiting.  
 **Class:** —  
 **Function utama:** `handle_auth()`, `require_auth()`  
 **Digunakan oleh:** `server/handlers/websocket`  
@@ -293,7 +293,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/handlers/event_listeners.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Subscribe to domain events from the EventBus and forward them as WebSocket broadcasts via BroadcastService.  
 **Class:** —  
 **Function utama:** `setup_event_listeners()`  
 **Digunakan oleh:** —  
@@ -303,7 +303,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/handlers/http.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Serve the SPA index, audio stream proxy, health check, and Prometheus metrics endpoints over HTTP.  
 **Class:** —  
 **Function utama:** `serve_index()`, `health_check()`, `serve_stream()`, `serve_metrics()`  
 **Digunakan oleh:** `server/app`  
@@ -313,7 +313,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/handlers/websocket.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Handle WebSocket connections, authenticate clients, and dispatch incoming commands to the CommandBus after rate-limit enforcement.  
 **Class:** `ConnectionManager`  
 **Function utama:** `disconnect()`, `ws_handler()`, `handle_ws_message()`  
 **Digunakan oleh:** `server/app`, `server/services/broadcast_service`  
@@ -323,7 +323,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/middleware.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Enforce per-IP command rate limiting for WebSocket clients.  
 **Class:** —  
 **Function utama:** `check_rate_limit_sync()`, `check_rate_limit()`  
 **Digunakan oleh:** `server/handlers/websocket`  
@@ -333,7 +333,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/serializers.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Convert between AppState/TrackInfo domain objects and JSON-serializable dicts for WebSocket message payloads.  
 **Class:** —  
 **Function utama:** `track_to_dict()`, `state_to_dict()`, `dict_to_track()`  
 **Digunakan oleh:** `server/app`, `server/handlers/websocket`, `server/services/broadcast_service`  
@@ -343,7 +343,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/services/broadcast_service.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Provide typed broadcast helpers that wrap ConnectionManager to push specific message types to all connected WebSocket clients.  
 **Class:** `BroadcastService`  
 **Function utama:** —  
 **Digunakan oleh:** `server/handlers/event_listeners`  
@@ -353,7 +353,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `server/services/stream_prefetch.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Pre-fetch and cache the stream URL for the next track in the background to reduce playback latency at track transitions.  
 **Class:** `StreamPrefetchService`  
 **Function utama:** —  
 **Digunakan oleh:** `server/handlers/event_listeners`  
@@ -366,7 +366,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## services/
 
 **File:** `services/discover_service.py`  
-**Fungsi:** Menyediakan data discover (recent dan favorites).  
+**Fungsi:** Query the SQLite database to provide discover-page data: recently played tracks, favorites, cached tracks, and featured artists/genres.  
 **Class:** `DiscoverService`  
 **Function utama:** —  
 **Digunakan oleh:** `server/handlers/websocket`  
@@ -379,7 +379,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## plugins/
 
 **File:** `plugins/lyrics.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Fetch synchronized lyrics from lrclib.net and syncedlyrics, then update the active lyric index on each playback progress event.  
 **Class:** `LyricsFetcher`  
 **Function utama:** `cleanup()`  
 **Digunakan oleh:** `main`  
@@ -389,7 +389,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `plugins/notifications.py`  
-**Fungsi:** Mirrors current playback state to an Android notification via termux-notification (MediaStyle), and relays button presses back into the EventBus through a FIFO. No-op automatically on any platform where the termux-notification binary is not present.  
+**Fungsi:** Mirror current playback state to an Android MediaStyle notification via termux-notification and relay button presses back via CommandBus.  
 **Class:** `TermuxNowPlaying`  
 **Function utama:** `_blocking_read_loop()`  
 **Digunakan oleh:** `main`  
@@ -399,7 +399,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `plugins/sponsorblock.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Fetch SponsorBlock skip segments for the current video and auto-seek past them during playback.  
 **Class:** `SponsorBlockHandler`  
 **Function utama:** `cleanup()`  
 **Digunakan oleh:** `main`  
@@ -412,7 +412,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## launcher/
 
 **File:** `launcher/__main__.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Entry point for the LunaWave launcher when executed as a package.  
 **Class:** —  
 **Function utama:** `main()`  
 **Digunakan oleh:** `start`  
@@ -422,7 +422,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `launcher/gui.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Provide the Tkinter-based ServerManager GUI for starting, stopping, and monitoring the LunaWave backend server.  
 **Class:** `ServerManager(Tk)`  
 **Function utama:** `server_port()`, `destroy()`  
 **Digunakan oleh:** —  
@@ -432,7 +432,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `launcher/network.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Provide cross-platform utilities to detect TCP port availability and identify the PID currently occupying a port.  
 **Class:** —  
 **Function utama:** `check_port_in_use()`, `get_pid_occupying_port()`  
 **Digunakan oleh:** —  
@@ -442,7 +442,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `launcher/process.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Manage OS-level lifecycle for the LunaWave server and mpv processes from the desktop launcher.  
 **Class:** `ServerProcess`  
 **Function utama:** `kill_process_tree()`, `kill_mpv()`, `start()`, `is_running()`, `stop()`  
 **Digunakan oleh:** —  
@@ -452,7 +452,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `launcher/updater.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Stub module reserved for future OTA update checking and release info retrieval in the LunaWave launcher.  
 **Class:** —  
 **Function utama:** `check_for_updates()`, `get_release_info()`  
 **Digunakan oleh:** —  
@@ -465,7 +465,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## data/
 
 **File:** `data/export_to_sqlite.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Export artist, genre, and song data from a JSON file into a SQLite DB.  
 **Class:** —  
 **Function utama:** `create_tables()`, `main()`  
 **Digunakan oleh:** —  
@@ -478,7 +478,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ## scripts/
 
 **File:** `scripts/architecture_lint.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Validate inter-layer import boundaries against the architecture rules defined in docs/kompas/architecture/dependency_rules.md.  
 **Class:** `Violation`  
 **Function utama:** `path_to_layer()`, `module_to_layer()`, `to_dict()`, `check_file()`, `scan_project()`, `is_known()`  
 **Digunakan oleh:** —  
@@ -488,7 +488,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/doctor.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Orchestrate all registered health checkers and display a consolidated project health dashboard with aggregate scores.  
 **Class:** —  
 **Function utama:** `section()`, `run_checker_json()`, `run_all_checkers()`, `render_checker()`, `print_summary()`, `main()`  
 **Digunakan oleh:** —  
@@ -498,7 +498,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/find_owner.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Display ownership, dependencies, and impact radius of a given module, class, or function name.  
 **Class:** —  
 **Function utama:** `collect_py_files()`, `extract_info()`, `find_all_classes_and_functions()`, `build_reverse_index()`, `read_status_for_file()`, `resolve_target()`  
 **Digunakan oleh:** —  
@@ -508,7 +508,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/generate_file_index.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Generate and inject an auto-produced file index section into docs/FILE_INDEX.md based on AST analysis of all Python source files.  
 **Class:** —  
 **Function utama:** `extract_purpose()`, `extract_module_info()`, `collect_py_files()`, `build_reverse_index()`, `format_file_entry()`, `build_generated_block()`  
 **Digunakan oleh:** —  
@@ -518,7 +518,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/generate_report.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Generate and inject project statistics into the <!-- BEGIN:GENERATED --> block of docs/REPORT.md.  
 **Class:** —  
 **Function utama:** `count_files_by_ext()`, `count_py_files()`, `count_folders()`, `count_classes_and_functions()`, `count_lines()`, `count_js_files()`  
 **Digunakan oleh:** —  
@@ -528,7 +528,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/run_all.py`  
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_  
+**Fungsi:** Run all documentation generators and the project health check in a single command.  
 **Class:** —  
 **Function utama:** `run()`, `main()`  
 **Digunakan oleh:** —  
@@ -538,7 +538,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/verify_docs.py`  
-**Fungsi:** Memeriksa kualitas dokumentasi project, bukan memvalidasi semua path yang tertulis di file Markdown. Fokus pada kondisi repository saat ini, bukan histori, roadmap, atau proposal refactor.  
+**Fungsi:** Orchestrate all documentation health checks and report results as a human-readable summary or a structured JSON payload.  
 **Class:** —  
 **Function utama:** `main()`  
 **Digunakan oleh:** —  
@@ -548,7 +548,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/verify_security.py`  
-**Fungsi:** Memvalidasi bahwa berkas sensitif (credential, database cache) tidak berisiko ter-commit ke repo, dengan memeriksa isi .gitignore.  
+**Fungsi:** Verify that sensitive files are listed in .gitignore to prevent accidental credential or database commits.  
 **Class:** —  
 **Function utama:** `check_credential_ignore()`, `check_db_files_ignore()`, `render_summary()`, `render_json()`, `main()`  
 **Digunakan oleh:** —  
@@ -558,9 +558,95 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 **File:** `scripts/verify_structure.py`  
-**Fungsi:** Memvalidasi kesehatan struktur repo yang bukan domain dokumentasi maupun arsitektur: ukuran file Python, dan dokumen/berkas yang masih "pending" (disebut di STATUS.md tapi belum dibuat/diselesaikan).  
+**Fungsi:** Validate project structure health: oversized Python files and unimplemented stub items tracked in STATUS.md.  
 **Class:** —  
 **Function utama:** `check_big_files()`, `check_pending_items()`, `render_summary()`, `render_json()`, `main()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+
+## scripts/shared
+
+**File:** `scripts/shared/check_result.py`  
+**Fungsi:** Define the CheckResult dataclass and generic weighted-scoring helpers shared by all LunaWave health checker scripts.  
+**Class:** `CheckResult`  
+**Function utama:** `count()`, `percentage()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/shared/generated_block.py`  
+**Fungsi:** Provide replace_marker_block() to update <!-- BEGIN/END:GENERATED --> sections in Markdown files.  
+**Class:** —  
+**Function utama:** `replace_marker_block()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/shared/skip_dirs.py`  
+**Fungsi:** Define SKIP_DIRS and walk_py_files() used by all scanner scripts to exclude non-source directories from file system traversal.  
+**Class:** —  
+**Function utama:** `walk_py_files()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+
+## scripts/verify_docs
+
+**File:** `scripts/verify_docs/checks_coverage.py`  
+**Fungsi:** Implement FILE_INDEX sync, REPORT validation, module docstring coverage, and overall documentation coverage checks for verify_docs.  
+**Class:** —  
+**Function utama:** `check_file_index()`, `check_report()`, `check_module_docstrings()`, `check_documentation_coverage()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_docs/checks_docs.py`  
+**Fungsi:** Implement documentation structure, PATCHLOG integrity, frontmatter validity, and generated-marker pair checks for verify_docs.  
+**Class:** —  
+**Function utama:** `check_docs_structure()`, `check_patchlog()`, `check_frontmatter()`, `check_generated_blocks()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_docs/checks_files.py`  
+**Fungsi:** Implement large-file and empty-package checks for verify_docs.  
+**Class:** —  
+**Function utama:** `check_large_files()`, `check_empty_packages()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_docs/helpers.py`  
+**Fungsi:** Provide shared constants, regex patterns, and I/O/filesystem utilities for all verify_docs sub-modules.  
+**Class:** —  
+**Function utama:** `read_text()`, `parse_frontmatter()`, `collect_py_files()`, `count_lines()`, `get_module_docstring()`, `fmt_items()`  
+**Digunakan oleh:** —  
+**Menggunakan:** —
+
+
+---
+
+**File:** `scripts/verify_docs/render.py`  
+**Fungsi:** Render verify_docs check results as a human-readable terminal summary or a structured JSON report matching the checker contract.  
+**Class:** —  
+**Function utama:** `render_summary()`, `render_json()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -574,120 +660,40 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 | File | Baris | Catatan |
 |---|---|---|
 
-| `launcher/gui.py` | 756 | Perlu dipecah |
+| `launcher/gui.py` | 780 | Perlu dipecah |
 
-| `cache/db.py` | 388 | Perlu dipecah |
+| `cache/db.py` | 414 | Perlu dipecah |
 
-| `scripts/architecture_lint.py` | 388 | Perlu dipecah |
+| `engine/playback/controller.py` | 398 | Perlu dipecah |
 
-| `engine/playback/controller.py` | 377 | Perlu dipecah |
+| `scripts/architecture_lint.py` | 391 | Perlu dipecah |
 
-| `engine/radio_engine.py` | 365 | Perlu dipecah |
+| `engine/radio_engine.py` | 380 | Perlu dipecah |
 
-| `scripts/generate_file_index.py` | 351 | Perlu dipecah |
+| `scripts/generate_file_index.py` | 359 | Perlu dipecah |
 
-| `server/handlers/websocket.py` | 316 | Perhatikan |
+| `server/handlers/websocket.py` | 341 | Perhatikan |
 
-| `engine/mpv_controller.py` | 306 | Perhatikan |
+| `engine/mpv_controller.py` | 332 | Perhatikan |
 
-| `scripts/find_owner.py` | 272 | Perhatikan |
+| `scripts/generate_report.py` | 277 | Perhatikan |
 
-| `scripts/generate_report.py` | 271 | Perhatikan |
+| `scripts/find_owner.py` | 274 | Perhatikan |
 
-| `scripts/doctor.py` | 230 | Perhatikan |
+| `main.py` | 228 | Perhatikan |
 
-| `scripts/verify_structure.py` | 223 | Perhatikan |
+| `scripts/verify_structure.py` | 217 | Perhatikan |
 
-| `main.py` | 208 | Perhatikan |
+| `scripts/doctor.py` | 208 | Perhatikan |
+
+| `plugins/lyrics.py` | 202 | Perhatikan |
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**21/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**63/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-- [ ] `cache/db.py`
-
-- [ ] `cache/resolver.py`
-
-- [ ] `config.py`
-
-- [ ] `core/events.py`
-
-- [ ] `core/exceptions.py`
-
-- [ ] `core/log_config.py`
-
-- [ ] `core/observability.py`
-
-- [ ] `core/ports.py`
-
-- [ ] `core/security.py`
-
-- [ ] `core/task_utils.py`
-
-- [ ] `data/export_to_sqlite.py`
-
-- [ ] `engine/command_router.py`
-
-- [ ] `engine/mpv_controller.py`
-
-- [ ] `engine/playback/track_loader.py`
-
-- [ ] `engine/ytdlp_client.py`
-
-- [ ] `launcher/__main__.py`
-
-- [ ] `launcher/gui.py`
-
-- [ ] `launcher/network.py`
-
-- [ ] `launcher/process.py`
-
-- [ ] `launcher/updater.py`
-
-- [ ] `main.py`
-
-- [ ] `plugins/lyrics.py`
-
-- [ ] `plugins/sponsorblock.py`
-
-- [ ] `scratch/check_db.py`
-
-- [ ] `scripts/architecture_lint.py`
-
-- [ ] `scripts/archive/generate_icons.py`
-
-- [ ] `scripts/archive/inject_svgs.py`
-
-- [ ] `scripts/doctor.py`
-
-- [ ] `scripts/find_owner.py`
-
-- [ ] `scripts/generate_file_index.py`
-
-- [ ] `scripts/generate_report.py`
-
-- [ ] `scripts/run_all.py`
-
-- [ ] `server/app.py`
-
-- [ ] `server/handlers/auth.py`
-
-- [ ] `server/handlers/event_listeners.py`
-
-- [ ] `server/handlers/http.py`
-
-- [ ] `server/handlers/websocket.py`
-
-- [ ] `server/middleware.py`
-
-- [ ] `server/serializers.py`
-
-- [ ] `server/services/broadcast_service.py`
-
-- [ ] `server/services/stream_prefetch.py`
-
-- [ ] `start.py`
+_(semua file sudah terdokumentasi 🎉)_
 
 <!-- END:GENERATED -->

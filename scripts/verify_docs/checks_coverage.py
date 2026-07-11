@@ -1,16 +1,26 @@
 """
-verify_docs/checks_coverage.py — Cek cakupan dokumentasi dan docstring.
+Module: scripts.verify_docs.checks_coverage
 
 Purpose:
-    Mengimplementasikan check_file_index, check_report, check_module_docstrings,
-    dan check_documentation_coverage untuk verify_docs.
+    Implement FILE_INDEX sync, REPORT validation, module docstring coverage,
+    and overall documentation coverage checks for verify_docs.
+
+Responsibilities:
+    - Detect .py files absent from FILE_INDEX.md or REPORT.md.
+    - Verify module docstrings contain all required fields.
+
+Depends on:
+    - shared.check_result
+    - scripts.verify_docs.helpers
 
 Subscribes to:
-    docs/FILE_INDEX.md, docs/REPORT.md, file .py di project
+    None
 
 Publishes:
-    check_file_index, check_report, check_module_docstrings,
-    check_documentation_coverage
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

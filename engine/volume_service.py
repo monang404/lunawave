@@ -1,7 +1,25 @@
 """
-Purpose: Mengelola kontrol volume MPV.
-Subscribes to: CMD_VOLUME_UP, CMD_VOLUME_DOWN
-Publishes: LOG_MESSAGE
+Module: engine.volume_service
+
+Purpose:
+    Handle volume-related commands and apply the correct volume to mpv
+    based on the active audio output mode.
+
+Responsibilities:
+    - Respond to CMD_VOLUME_UP, CMD_VOLUME_DOWN, and CMD_VOLUME_SET.
+    - Suppress audio to mpv when audio_output is BROWSER.
+
+Depends on:
+    - core.event_bus, core.events, core.command_bus, core.ports, core.state
+
+Subscribes to:
+    CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET
+
+Publishes:
+    LogMessageEvent
+
+Thread Safety:
+    Worker thread (async).
 """
 
 import asyncio

@@ -1,3 +1,29 @@
+"""
+Module: cache.resolver
+
+Purpose:
+    Resolve the playback URI for a track using a priority-based cache
+    strategy: local file > cached stream URL > fresh yt-dlp extraction.
+
+Responsibilities:
+    - Check DB for a valid local path or a non-stale stream URL.
+    - Fetch a fresh stream URL via yt-dlp on cache miss and persist it.
+
+Depends on:
+    - cache.db (TrackRepositoryPort)
+    - core.ports (MediaExtractorPort)
+    - config (STREAM_URL_TTL_SEC)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async).
+"""
+
 import os
 import time
 import structlog

@@ -1,3 +1,29 @@
+"""
+Module: engine.ytdlp_client
+
+Purpose:
+    Wrap yt-dlp in a thread executor to provide async search, stream URL
+    extraction, and MP3 download without blocking the event loop.
+
+Responsibilities:
+    - Run synchronous yt-dlp operations in a ThreadPoolExecutor (4 workers).
+    - Filter out compilations and long videos during search.
+    - Enforce a configurable timeout on stream URL resolution.
+
+Depends on:
+    - core.state (TrackInfo)
+    - config (CACHE_DIR, YTDLP_RESOLVE_TIMEOUT_SEC)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (ThreadPoolExecutor; cancellation via is_cancelled flag).
+"""
+
 import asyncio
 import yt_dlp
 import re

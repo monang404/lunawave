@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """
-architecture_lint.py — Validasi batas arsitektur berdasarkan aturan di
-docs/kompas/architecture/dependency_rules.md.
+Module: scripts.architecture_lint
 
-Cara pakai:
-    python scripts/architecture_lint.py              # cek seluruh project
-    python scripts/architecture_lint.py --file config.py   # cek 1 file saja
-    python scripts/architecture_lint.py --strict     # exit 1 jika ada violation (default untuk pre-commit)
-    python scripts/architecture_lint.py --json       # output JSON
+Purpose:
+    Validate inter-layer import boundaries against the architecture rules
+    defined in docs/kompas/architecture/dependency_rules.md.
 
-Exit code:
-    0  — tidak ada violation
-    1  — ada violation
+Inputs:
+    Python source files in project root (or --file for a single file).
 
-Cocok dipasang sebagai pre-commit hook (lihat .pre-commit-config.yaml).
+Outputs:
+    Console violation report or JSON (--json) with pass/warn/fail status.
+
+Side Effects:
+    None (read-only static analysis).
+
+CLI:
+    python scripts/architecture_lint.py [--file PATH] [--strict] [--json]
 """
 
 import argparse

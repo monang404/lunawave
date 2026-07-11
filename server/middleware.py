@@ -1,3 +1,26 @@
+"""
+Module: server.middleware
+
+Purpose:
+    Enforce per-IP command rate limiting for WebSocket clients.
+
+Responsibilities:
+    - Track command timestamps per IP in a sliding 60-second window.
+    - Reject requests when a client exceeds 30 commands per minute.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; caller must hold manager.rl_lock).
+"""
+
 import time
 from core.observability import ACTIVE_WEBSOCKETS
 

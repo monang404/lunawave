@@ -1,7 +1,25 @@
 """
-Purpose: CommandBus untuk single-writer pattern (1-to-1).
-Berbeda dengan EventBus (pub/sub 1-to-many), CommandBus menjamin
-hanya ada SATU handler untuk setiap command.
+Module: core.command_bus
+
+Purpose:
+    Implement a single-writer CommandBus that enforces exactly one handler
+    per command name and records Prometheus metrics for every execution.
+
+Responsibilities:
+    - Register/unregister command handlers (1-to-1, raises on duplicate).
+    - Dispatch commands with OpenTelemetry span and latency/count metrics.
+
+Depends on:
+    - core.observability (COMMAND_COUNT, COMMAND_LATENCY, tracer)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async execute).
 """
 
 import asyncio

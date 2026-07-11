@@ -1,16 +1,25 @@
 """
-shared/skip_dirs.py — Set direktori yang diabaikan saat scan file system.
+Module: scripts.shared.skip_dirs
 
 Purpose:
-    Menyatukan semua versi SKIP_DIRS dari berbagai script menjadi satu set
-    paling lengkap, plus menyediakan generator walk_py_files() yang sudah
-    handle skip secara konsisten.
+    Define SKIP_DIRS and walk_py_files() used by all scanner scripts to
+    exclude non-source directories from file system traversal.
+
+Responsibilities:
+    - Expose a unified frozenset of directories to skip during os.walk.
+    - Provide a generator that yields .py paths while respecting SKIP_DIRS.
+
+Depends on:
+    None
 
 Subscribes to:
-    —
+    None
 
 Publishes:
-    SKIP_DIRS, walk_py_files
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

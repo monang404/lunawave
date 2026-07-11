@@ -1,10 +1,28 @@
 """
-Purpose: Mirrors current playback state to an Android notification via
-         termux-notification (MediaStyle), and relays button presses back
-         into the EventBus through a FIFO. No-op automatically on any
-         platform where the termux-notification binary is not present.
-Subscribes to: TRACK_STARTED, "track.pause.changed"
-Publishes: CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
+Module: plugins.notifications
+
+Purpose:
+    Mirror current playback state to an Android MediaStyle notification via
+    termux-notification and relay button presses back via CommandBus.
+
+Responsibilities:
+    - Write action shell scripts and open a named FIFO for button callbacks.
+    - Update or remove the notification on track start/pause/cleanup.
+
+Depends on:
+    - core.event_bus, core.events, core.command_bus, core.state, config
+
+Subscribes to:
+    TrackStartedEvent, TrackPauseChangedEvent
+
+Publishes:
+    CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
+
+Thread Safety:
+    Worker thread (FIFO read loop runs in a daemon thread; renders async).
+
+Notes:
+    No-op automatically when termux-notification binary is not present.
 """
 
 import asyncio

@@ -1,3 +1,27 @@
+"""
+Module: core.task_utils
+
+Purpose:
+    Wrap asyncio.create_task with centralized exception handling to prevent
+    silent background-task crashes.
+
+Responsibilities:
+    - Catch and log any unhandled exceptions in background coroutines.
+    - Invoke an optional on_error callback and handle CancelledError cleanly.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Thread-safe (safe to call from any asyncio context).
+"""
+
 import asyncio
 import structlog
 from typing import Coroutine, Optional, Callable, Any

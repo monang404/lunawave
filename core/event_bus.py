@@ -1,7 +1,27 @@
 """
-Purpose: EventBus untuk komunikasi antar modul secara decoupled dan asinkron.
-Subscribes to: (tidak ada)
-Publishes: (tidak ada)
+Module: core.event_bus
+
+Purpose:
+    Implement a lightweight async pub/sub EventBus that decouples modules
+    via typed DomainEvents, using weak references for method handlers.
+
+Responsibilities:
+    - Subscribe/unsubscribe handlers using WeakMethod to avoid memory leaks.
+    - Dispatch events concurrently with per-handler error isolation.
+
+Depends on:
+    - core.task_utils (safe_create_task)
+    - core.events (DomainEvent)
+    - core.observability (EVENT_COUNT)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async publish).
 """
 
 from typing import Callable, Type, TypeVar, Any

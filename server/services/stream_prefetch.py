@@ -1,3 +1,28 @@
+"""
+Module: server.services.stream_prefetch
+
+Purpose:
+    Pre-fetch and cache the stream URL for the next track in the background
+    to reduce playback latency at track transitions.
+
+Responsibilities:
+    - Skip pre-fetch when a valid cached URL is already available.
+    - Resolve a fresh URL via yt-dlp and persist it to the database.
+
+Depends on:
+    - config (STREAM_URL_TTL_SEC)
+    - core.ports (DatabasePort, MediaExtractorPort)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; spawned as background task).
+"""
+
 import time
 import structlog
 from config import STREAM_URL_TTL_SEC

@@ -1,3 +1,27 @@
+"""
+Module: launcher.gui
+
+Purpose:
+    Provide the Tkinter-based ServerManager GUI for starting, stopping,
+    and monitoring the LunaWave backend server.
+
+Responsibilities:
+    - Render server status, port picker, quick links, and dependency checks.
+    - Manage server process lifecycle and stream stdout to the log panel.
+
+Depends on:
+    - launcher.network, launcher.process
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (all Tkinter calls must stay on the main thread).
+"""
+
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 import threading

@@ -1,3 +1,27 @@
+"""
+Module: server.serializers
+
+Purpose:
+    Convert between AppState/TrackInfo domain objects and JSON-serializable
+    dicts for WebSocket message payloads.
+
+Responsibilities:
+    - Serialize a TrackInfo or full AppState to a plain dict.
+    - Deserialize an incoming dict payload into a TrackInfo instance.
+
+Depends on:
+    - core.state (AppState, TrackInfo, AudioOutput)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless.
+"""
+
 from typing import Optional
 from core.state import AppState, TrackInfo, AudioOutput
 

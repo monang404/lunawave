@@ -1,3 +1,27 @@
+"""
+Module: launcher.process
+
+Purpose:
+    Manage OS-level lifecycle for the LunaWave server and mpv processes
+    from the desktop launcher.
+
+Responsibilities:
+    - Kill process trees cross-platform (SIGKILL / taskkill).
+    - Start main.py as a subprocess and pipe its stdout to the GUI log.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (stdout piped in a daemon thread; Popen is thread-safe).
+"""
+
 import subprocess
 import os
 import sys

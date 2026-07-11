@@ -1,11 +1,26 @@
 """
-Purpose: Mengelola pemutaran lagu secara otomatis dan berkelanjutan (Radio Mode).
-Radio Mode adalah fitur independen: ia memiliki list lagu sendiri
-(state.radio_queue) dan TIDAK PERNAH membaca atau menulis state.queue
-(milik Queue Mode). Lihat Constitution: "Radio must work independently
-from queue" dan "Radio must NEVER depend on Queue Empty events."
-Subscribes to: (tidak ada)
-Publishes: QUEUE_UPDATED, LOG_MESSAGE
+Module: engine.radio_engine
+
+Purpose:
+    Drive autonomous, self-sustaining Radio Mode playback using pre-fetched
+    track batches from the database.
+
+Responsibilities:
+    - Maintain a standby playlist built in the background for instant start.
+    - Refill the radio queue when it falls below 5 tracks.
+    - Prefetch stream URLs for the next track within 30 seconds of end.
+
+Depends on:
+    - core.events, core.state, core.ports, core.task_utils
+
+Subscribes to:
+    None
+
+Publishes:
+    QueueUpdatedEvent, LogMessageEvent
+
+Thread Safety:
+    Worker thread (async; guarded by _fetch_lock and _standby_lock).
 """
 
 import asyncio

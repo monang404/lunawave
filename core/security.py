@@ -1,3 +1,26 @@
+"""
+Module: core.security
+
+Purpose:
+    Provide PBKDF2-SHA256 password hashing and constant-time verification.
+
+Responsibilities:
+    - Hash a plaintext password with a random 16-byte salt.
+    - Verify a plaintext password against a stored pbkdf2 hash string.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless.
+"""
+
 import hashlib
 import secrets
 import base64

@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 """
-verify_structure.py — Project Structure Health Checker untuk LunaWave.
+Module: scripts.verify_structure
 
 Purpose:
-    Memvalidasi kesehatan struktur repo yang bukan domain dokumentasi
-    maupun arsitektur: ukuran file Python, dan dokumen/berkas yang masih
-    "pending" (disebut di STATUS.md tapi belum dibuat/diselesaikan).
+    Validate project structure health: oversized Python files and
+    unimplemented stub items tracked in STATUS.md.
 
-    Cek yang dijalankan:
-      - Big Files       : file .py > BIG_FILE_THRESHOLD baris (kritis > CRITICAL_FILE_THRESHOLD)
-      - Pending Items    : docs/CONSTRAINTS.md, docs/kompas/rfc/, launcher/updater.py
+Inputs:
+    Python source files, docs/CONSTRAINTS.md, launcher/updater.py.
 
-Subscribes to:
-    seluruh file .py di project, docs/CONSTRAINTS.md, docs/kompas/rfc/,
-    launcher/updater.py
+Outputs:
+    Console summary or JSON (--json); exit code 1 on any FAIL.
 
-Publishes:
-    stdout (ringkasan atau JSON)
+Side Effects:
+    None (read-only analysis).
 
-Cara pakai:
-    python scripts/verify_structure.py            # ringkasan
-    python scripts/verify_structure.py --json      # output JSON
-
-Exit code: 0 = PASS / WARN,  1 = ada FAIL
+CLI:
+    python scripts/verify_structure.py [--json]
 """
 
 import argparse

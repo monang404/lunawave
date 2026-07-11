@@ -1,15 +1,26 @@
 """
-verify_docs/checks_docs.py — Cek kualitas file dokumentasi inti.
+Module: scripts.verify_docs.checks_docs
 
 Purpose:
-    Mengimplementasikan check_docs_structure, check_patchlog, check_frontmatter,
-    dan check_generated_blocks untuk verify_docs.
+    Implement documentation structure, PATCHLOG integrity, frontmatter
+    validity, and generated-marker pair checks for verify_docs.
+
+Responsibilities:
+    - Verify required docs exist and PATCHLOG IDs are unique and ordered.
+    - Check frontmatter fields and BEGIN/END:GENERATED marker integrity.
+
+Depends on:
+    - shared.check_result
+    - scripts.verify_docs.helpers
 
 Subscribes to:
-    docs/ filesystem
+    None
 
 Publishes:
-    check_docs_structure, check_patchlog, check_frontmatter, check_generated_blocks
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

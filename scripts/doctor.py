@@ -1,44 +1,22 @@
 #!/usr/bin/env python3
 """
-doctor.py — Laporan kesehatan project LunaWave secara menyeluruh.
+Module: scripts.doctor
 
-Peran doctor.py HANYA sebagai orchestrator/dashboard:
-    1. Menjalankan setiap checker terdaftar dengan flag --json
-    2. Membaca & mem-parse output JSON tiap checker
-    3. Menggabungkan hasil menjadi satu ringkasan
-    4. Menampilkan dashboard di terminal
-    5. Menentukan exit code akhir
+Purpose:
+    Orchestrate all registered health checkers and display a consolidated
+    project health dashboard with aggregate scores.
 
-doctor.py TIDAK mengandung logika validasi apapun. Semua business logic
-(dokumentasi, arsitektur, struktur file, keamanan, dst.) menjadi tanggung
-jawab tunggal (single owner) dari masing-masing checker script.
+Inputs:
+    JSON output from each checker script listed in CHECKERS.
 
-Menambah checker baru = tambahkan satu entri ke daftar CHECKERS di bawah.
-Tidak perlu mengubah kode lain di file ini.
+Outputs:
+    Terminal dashboard with per-checker status and a final summary.
 
-Cara pakai:
-    python scripts/doctor.py
-    python scripts/doctor.py --strict    # exit 1 jika ada masalah (WARN atau FAIL)
+Side Effects:
+    Spawns a subprocess for each checker script.
 
-Kontrak checker (wajib dipatuhi setiap checker yang didaftarkan):
-    - Mendukung flag `--json` yang mencetak SATU objek JSON ke stdout dengan
-      schema standar:
-        {
-          "checker": str,
-          "repository_status": "PASS" | "WARN" | "FAIL",
-          "score": int (0-100),
-          "pass": int, "warn": int, "fail": int,
-          "checks": [
-            {
-              "name": str, "status": "PASS"|"WARN"|"FAIL", "message": str,
-              "count": int, "items": [str, ...],
-              "current": int|None, "total": int|None, "percentage": int|None,
-              "weight": int|None
-            }, ...
-          ]
-        }
-    - Exit code 0 jika tidak ada FAIL, 1 jika ada FAIL (perilaku internal
-      checker tetap otoritatif untuk exit code checker itu sendiri).
+CLI:
+    python scripts/doctor.py [--strict]
 """
 
 import json

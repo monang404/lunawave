@@ -1,3 +1,22 @@
+"""
+Module: launcher.__main__
+
+Purpose:
+    Entry point for the LunaWave launcher when executed as a package.
+
+Inputs:
+    None (no CLI arguments).
+
+Outputs:
+    Tkinter ServerManager GUI window.
+
+Side Effects:
+    Opens the desktop GUI; exits with code 1 if tkinter is unavailable.
+
+CLI:
+    python -m launcher
+"""
+
 import sys
 
 def main():

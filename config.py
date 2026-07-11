@@ -1,3 +1,31 @@
+"""
+Module: config
+
+Purpose:
+    Load and expose all environment-based runtime configuration constants
+    for LunaWave, including paths, ports, and the admin password.
+
+Responsibilities:
+    - Resolve BASE_DIR, cache paths, and the mpv socket path from env vars.
+    - Auto-generate a secure admin password on first run if none is set.
+    - Validate the socket path stays within BASE_DIR on Unix.
+
+Depends on:
+    - core.security (hash_password, imported lazily)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (module-level initialization at import time).
+
+Notes:
+    Changing env vars after this module is imported has no effect.
+"""
+
 import os
 from pathlib import Path
 

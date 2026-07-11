@@ -1,3 +1,26 @@
+"""
+Module: core.events
+
+Purpose:
+    Define all typed DomainEvent dataclasses for the LunaWave event bus.
+
+Responsibilities:
+    - Provide a common DomainEvent base class for type-safe pub/sub.
+    - Declare event contracts for track, queue, lyrics, and download flows.
+
+Depends on:
+    - core.state (TrackInfo)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless.
+"""
+
 from dataclasses import dataclass
 from typing import Any, Optional
 

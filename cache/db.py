@@ -1,3 +1,29 @@
+"""
+Module: cache.db
+
+Purpose:
+    Persistent SQLite cache for track metadata, session tokens, and
+    artist/genre interaction counts.
+
+Responsibilities:
+    - Manage track upsert, retrieval, and stale-eviction logic.
+    - Handle user session lifecycle (create, verify, delete).
+    - Apply incremental schema migrations on init.
+
+Depends on:
+    - core.state (TrackInfo)
+    - config (DB_PATH)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (single persistent aiosqlite connection, WAL mode).
+"""
+
 import aiosqlite
 import time
 import structlog

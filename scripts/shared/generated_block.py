@@ -1,17 +1,25 @@
 """
-shared/generated_block.py — Utilitas penggantian blok <!-- BEGIN/END:GENERATED -->.
+Module: scripts.shared.generated_block
 
 Purpose:
-    Menyediakan fungsi replace_marker_block() yang mengganti isi di antara
-    pasangan marker BEGIN:GENERATED / END:GENERATED menggunakan regex.
-    Hanya berisi logika substitusi — fallback "kalau marker belum ada" bersifat
-    spesifik tiap file dan tetap ada di masing-masing script secara lokal.
+    Provide replace_marker_block() to update <!-- BEGIN/END:GENERATED -->
+    sections in Markdown files.
+
+Responsibilities:
+    - Regex-replace content between paired BEGIN/END markers in a string.
+    - Return the original string unchanged if markers are absent.
+
+Depends on:
+    None
 
 Subscribes to:
-    —
+    None
 
 Publishes:
-    replace_marker_block
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

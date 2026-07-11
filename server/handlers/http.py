@@ -1,3 +1,28 @@
+"""
+Module: server.handlers.http
+
+Purpose:
+    Serve the SPA index, audio stream proxy, health check, and Prometheus
+    metrics endpoints over HTTP.
+
+Responsibilities:
+    - Serve index.html with no-cache headers for SPA routing.
+    - Proxy cached MP3 files from CACHE_DIR with range-request support.
+
+Depends on:
+    - config (CACHE_DIR, STREAM_URL_TTL_SEC)
+    - core.observability (get_metrics_content)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async aiohttp request handlers).
+"""
+
 import re
 import time
 import structlog

@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 """
-verify_security.py — Security Health Checker untuk LunaWave.
+Module: scripts.verify_security
 
 Purpose:
-    Memvalidasi bahwa berkas sensitif (credential, database cache) tidak
-    berisiko ter-commit ke repo, dengan memeriksa isi .gitignore.
+    Verify that sensitive files are listed in .gitignore to prevent
+    accidental credential or database commits.
 
-    Cek yang dijalankan:
-      - Credential Ignore : cache/admin_password.txt ada di .gitignore
-      - DB Files Ignore   : *.db / cache/library.db ada di .gitignore
+Inputs:
+    .gitignore in project root.
 
-Subscribes to:
-    .gitignore di project root
+Outputs:
+    Console summary or JSON (--json); exit code 1 on any FAIL.
 
-Publishes:
-    stdout (ringkasan atau JSON)
+Side Effects:
+    None (read-only analysis).
 
-Cara pakai:
-    python scripts/verify_security.py            # ringkasan
-    python scripts/verify_security.py --json      # output JSON
-
-Exit code: 0 = PASS / WARN,  1 = ada FAIL
+CLI:
+    python scripts/verify_security.py [--json]
 """
 
 import argparse

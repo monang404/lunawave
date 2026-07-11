@@ -1,9 +1,27 @@
 """
-Purpose: Mengelola playback dari user queue.
-Subscribes to: (tidak ada — dipanggil oleh PlaybackController)
-Publishes: QUEUE_UPDATED
-"""
+Module: engine.queue_manager
 
+Purpose:
+    Advance playback to the next track in the user queue when called by
+    PlaybackController at track end.
+
+Responsibilities:
+    - Pop the next track from state.queue and delegate to play_track().
+    - Set status to IDLE and broadcast QueueUpdatedEvent when the queue
+      is empty.
+
+Depends on:
+    - core.events, core.state
+
+Subscribes to:
+    None
+
+Publishes:
+    QueueUpdatedEvent
+
+Thread Safety:
+    Worker thread (async; called from PlaybackController._lock).
+"""
 
 from core.events import QueueUpdatedEvent
 from core.state import PlayerStatus

@@ -1,3 +1,28 @@
+"""
+Module: server.services.broadcast_service
+
+Purpose:
+    Provide typed broadcast helpers that wrap ConnectionManager to push
+    specific message types to all connected WebSocket clients.
+
+Responsibilities:
+    - Broadcast state, progress, lyrics, log, and download-progress messages.
+
+Depends on:
+    - server.serializers
+    - server.handlers.websocket (ConnectionManager)
+    - core.state
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; delegates to ConnectionManager.broadcast).
+"""
+
 import time
 from server.serializers import state_to_dict
 from server.handlers.websocket import ConnectionManager

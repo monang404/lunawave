@@ -1,3 +1,29 @@
+"""
+Module: engine.mpv_controller
+
+Purpose:
+    Control the mpv audio player via JSON IPC over a Unix socket or TCP,
+    publishing playback events to the EventBus.
+
+Responsibilities:
+    - Auto-spawn mpv, connect via socket/TCP, and observe property changes.
+    - Translate mpv events (time-pos, pause, end-file) into DomainEvents.
+    - Attempt reconnection on unexpected disconnect.
+
+Depends on:
+    - core.event_bus, core.events, core.state, core.task_utils, config
+
+Subscribes to:
+    None
+
+Publishes:
+    TrackProgressEvent, TrackEndedEvent, TrackPauseChangedEvent,
+    TrackDurationEvent
+
+Thread Safety:
+    Worker thread (async observer loop; reconnect attempts run as tasks).
+"""
+
 import asyncio
 import json
 import structlog

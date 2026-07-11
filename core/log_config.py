@@ -1,3 +1,27 @@
+"""
+Module: core.log_config
+
+Purpose:
+    Configure structlog and stdlib logging with an async queue handler,
+    rotating file output, and a compact single-line renderer.
+
+Responsibilities:
+    - Wire QueueHandler + QueueListener to decouple log I/O from hot paths.
+    - Set up RotatingFileHandler (1 MB, 2 backups) and a console handler.
+
+Depends on:
+    - config (BASE_DIR)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (called once during startup).
+"""
+
 import sys
 import logging
 from logging.handlers import RotatingFileHandler

@@ -31,7 +31,7 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | Total file `.css` (ekskl. `.min.css`) | 21 |
 | Total class (Python) | 51 |
 | Total function/method (Python) | 366 |
-| Total baris Python | 8,426 |
+| Total baris Python | 9,562 |
 | Total baris JS (web/) | 2,957 |
 | Total baris CSS (web/) | 3,277 |
 | Ukuran DB utama (`data/lunawave.db`) | 244 KB |
@@ -41,11 +41,11 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | File | Baris |
 |------|-------|
-| `launcher/gui.py` | 756 ⚠️ |
-| `cache/db.py` | 388 ⚠️ |
-| `scripts/architecture_lint.py` | 388 ⚠️ |
-| `engine/playback/controller.py` | 377 ⚠️ |
-| `engine/radio_engine.py` | 365 ⚠️ |
+| `launcher/gui.py` | 780 ⚠️ |
+| `cache/db.py` | 414 ⚠️ |
+| `engine/playback/controller.py` | 398 ⚠️ |
+| `scripts/architecture_lint.py` | 391 ⚠️ |
+| `engine/radio_engine.py` | 380 ⚠️ |
 <!-- END:GENERATED -->
 
 ---

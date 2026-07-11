@@ -1,7 +1,26 @@
 """
-Purpose: Mengelola download lagu dari YouTube.
-Subscribes to: CMD_DOWNLOAD
-Publishes: LOG_MESSAGE, DOWNLOAD_COMPLETE
+Module: engine.download_manager
+
+Purpose:
+    Handle the CMD_DOWNLOAD command by downloading the current or specified
+    track via yt-dlp and moving it to the downloads/ folder.
+
+Responsibilities:
+    - Guard against concurrent downloads with an asyncio.Lock.
+    - Report progress via DownloadProgressEvent and completion via
+      DownloadCompleteEvent.
+
+Depends on:
+    - core.event_bus, core.events, core.command_bus, core.state, core.ports
+
+Subscribes to:
+    CMD_DOWNLOAD
+
+Publishes:
+    LogMessageEvent, DownloadCompleteEvent, DownloadProgressEvent
+
+Thread Safety:
+    Worker thread (async with lock; progress hook runs in thread executor).
 """
 
 import asyncio

@@ -1,3 +1,28 @@
+"""
+Module: server.app
+
+Purpose:
+    Create and configure the aiohttp web application with all routes,
+    services, and EventBus listeners wired together.
+
+Responsibilities:
+    - Register HTTP and WebSocket routes and the static file directory.
+    - Initialize BroadcastService, StreamPrefetchService, and event listeners.
+
+Depends on:
+    - server.handlers, server.services, server.serializers, core.ports,
+      engine.playback.controller
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (startup); handlers run in the async event loop.
+"""
+
 import asyncio
 import time
 import structlog

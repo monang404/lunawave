@@ -1,3 +1,27 @@
+"""
+Module: plugins.lyrics
+
+Purpose:
+    Fetch synchronized lyrics from lrclib.net and syncedlyrics, then
+    update the active lyric index on each playback progress event.
+
+Responsibilities:
+    - Try lrclib /get, lrclib /search, and syncedlyrics as fallback sources.
+    - Parse LRC timestamps and expose clean text lines via AppState.
+
+Depends on:
+    - config (LYRICS_API_BASE), core.event_bus, core.events, core.state
+
+Subscribes to:
+    TrackProgressEvent
+
+Publishes:
+    LyricsUpdatedEvent
+
+Thread Safety:
+    Worker thread (async; _current_generation guards stale fetch results).
+"""
+
 import re
 import structlog
 import aiohttp
