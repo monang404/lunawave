@@ -201,13 +201,17 @@ sprint: 3.2
 **Folder:** `scripts/`
 **Fungsi:** Developer tooling — documentation generation, architecture validation, project health
 **Isi:**
+- `doctor.py` — health check menyeluruh: orchestrator semua checker
+- `run_all.py` — entry point tunggal: jalankan semua generator + health check
+- `find_owner.py` — lookup cepat ownership modul/class/fungsi
+- `architecture_lint.py` — validasi import boundary antar layer; exit 1 jika ada violation baru
 - `generate_file_index.py` — generate `docs/FILE_INDEX.md` dari AST source code
 - `generate_report.py` — update blok statistik di `docs/REPORT.md`
-- `architecture_lint.py` — validasi import boundary antar layer; exit 1 jika ada violation baru
-- `doctor.py` — health check menyeluruh: docs, architecture, big files
-- `find_owner.py` — lookup cepat ownership modul/class/fungsi
-- `run_all.py` — entry point tunggal: jalankan semua generator + health check
-- `verify_docs.py` — validasi frontmatter, path referensi, PATCHLOG ID
+- `verify_docs.py` — thin CLI; logika ada di `verify_docs/`
+- `verify_security.py` — cek credential & DB files di .gitignore
+- `verify_structure.py` — cek file besar & pending items
+- `verify_docs/` — **package** pecahan verify_docs.py: `helpers.py`, `checks_docs.py`, `checks_coverage.py`, `checks_files.py`, `render.py`
+- `shared/` — **package** utilitas bersama: `check_result.py` (dataclass CheckResult + scoring), `skip_dirs.py` (SKIP_DIRS + walk_py_files), `generated_block.py` (replace_marker_block)
 - `archive/` — scripts lama (generate_icons.py, inject_svgs.py, dll)
 
 > Lihat `docs/AI_CONTEXT.md §Developer Scripts` untuk cara pakai lengkap.

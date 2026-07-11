@@ -539,8 +539,8 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 **File:** `scripts/verify_docs.py`  
 **Fungsi:** Memeriksa kualitas dokumentasi project, bukan memvalidasi semua path yang tertulis di file Markdown. Fokus pada kondisi repository saat ini, bukan histori, roadmap, atau proposal refactor.  
-**Class:** `CheckResult`  
-**Function utama:** `count()`, `percentage()`, `read_text()`, `parse_frontmatter()`, `collect_py_files()`, `count_lines()`  
+**Class:** —  
+**Function utama:** `main()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -549,8 +549,8 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 **File:** `scripts/verify_security.py`  
 **Fungsi:** Memvalidasi bahwa berkas sensitif (credential, database cache) tidak berisiko ter-commit ke repo, dengan memeriksa isi .gitignore.  
-**Class:** `CheckResult`  
-**Function utama:** `count()`, `percentage()`, `check_credential_ignore()`, `check_db_files_ignore()`, `render_summary()`, `render_json()`  
+**Class:** —  
+**Function utama:** `check_credential_ignore()`, `check_db_files_ignore()`, `render_summary()`, `render_json()`, `main()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -559,8 +559,8 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 **File:** `scripts/verify_structure.py`  
 **Fungsi:** Memvalidasi kesehatan struktur repo yang bukan domain dokumentasi maupun arsitektur: ukuran file Python, dan dokumen/berkas yang masih "pending" (disebut di STATUS.md tapi belum dibuat/diselesaikan).  
-**Class:** `CheckResult`  
-**Function utama:** `count()`, `percentage()`, `check_big_files()`, `check_pending_items()`, `render_summary()`, `render_json()`  
+**Class:** —  
+**Function utama:** `check_big_files()`, `check_pending_items()`, `render_summary()`, `render_json()`, `main()`  
 **Digunakan oleh:** —  
 **Menggunakan:** —
 
@@ -574,40 +574,36 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 | File | Baris | Catatan |
 |---|---|---|
 
-| `scripts/verify_docs.py` | 850 | Perlu dipecah |
-
 | `launcher/gui.py` | 756 | Perlu dipecah |
 
-| `scripts/architecture_lint.py` | 402 | Perlu dipecah |
-
-| `scripts/generate_file_index.py` | 391 | Perlu dipecah |
-
 | `cache/db.py` | 388 | Perlu dipecah |
+
+| `scripts/architecture_lint.py` | 388 | Perlu dipecah |
 
 | `engine/playback/controller.py` | 377 | Perlu dipecah |
 
 | `engine/radio_engine.py` | 365 | Perlu dipecah |
 
+| `scripts/generate_file_index.py` | 351 | Perlu dipecah |
+
 | `server/handlers/websocket.py` | 316 | Perhatikan |
 
 | `engine/mpv_controller.py` | 306 | Perhatikan |
 
-| `scripts/generate_report.py` | 277 | Perhatikan |
-
 | `scripts/find_owner.py` | 272 | Perhatikan |
 
-| `scripts/verify_structure.py` | 266 | Perhatikan |
+| `scripts/generate_report.py` | 271 | Perhatikan |
 
 | `scripts/doctor.py` | 230 | Perhatikan |
 
-| `scripts/verify_security.py` | 213 | Perhatikan |
+| `scripts/verify_structure.py` | 223 | Perhatikan |
 
 | `main.py` | 208 | Perhatikan |
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**13/55** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**21/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 - [ ] `cache/db.py`

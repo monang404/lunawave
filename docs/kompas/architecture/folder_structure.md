@@ -118,10 +118,18 @@ lunawave/
 │       └── __init__.py
 │
 ├── scripts/
-│   ├── export_to_sqlite.py              pindah dari data/
-│   ├── generate_icons.py                ✅
-│   ├── inject_svgs.py                   ✅
-│   └── shortcuts/                       ✅
+│   ├── doctor.py                        orchestrator health check
+│   ├── run_all.py                       entry point semua generator + checks
+│   ├── find_owner.py                    lookup ownership modul/class/fungsi
+│   ├── architecture_lint.py             validasi import boundary
+│   ├── generate_file_index.py           generate FILE_INDEX.md
+│   ├── generate_report.py               update statistik REPORT.md
+│   ├── verify_docs.py                   thin CLI → verify_docs/
+│   ├── verify_security.py               cek .gitignore credential & DB
+│   ├── verify_structure.py              cek file besar & pending items
+│   ├── verify_docs/                     package: helpers, checks_*, render
+│   ├── shared/                          package: check_result, skip_dirs, generated_block
+│   └── archive/                         scripts lama (tidak aktif)
 │
 ├── data/
 │   ├── artists_enriched.json            ✅  data statis, source of truth artis

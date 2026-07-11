@@ -26,39 +26,23 @@ Exit code: 0 = PASS / WARN,  1 = ada FAIL
 import argparse
 import json
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR           = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
 
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shared.check_result import CheckResult, _score, _overall_status
+
 ADMIN_PW_PATTERNS = ("cache/admin_password.txt", "admin_password.txt")
-DB_PATTERNS = ("*.db", "cache/library.db")
+DB_PATTERNS       = ("*.db", "cache/library.db")
 
 CHECK_WEIGHTS: dict[str, int] = {
     "Credential Ignore": 70,
-    "DB Files Ignore": 30,
+    "DB Files Ignore":   30,
 }
-
-
-@dataclass
-class CheckResult:
-    name: str
-    status: str          # "PASS" | "WARN" | "FAIL"
-    message: str = ""
-    items: list[str] = field(default_factory=list)
-    current: int | None = None
-    total: int | None = None
-
-    @property
-    def count(self) -> int:
-        return len(self.items)
-
-    @property
-    def percentage(self) -> int | None:
-        if not self.total:
-            return None
-        return round(100 * (self.current or 0) / self.total)
 
 
 def _read_gitignore(project_root: Path) -> str | None:
@@ -101,28 +85,6 @@ def check_db_files_ignore(project_root: Path) -> CheckResult:
     )
 
 
-def _score(results: list[CheckResult]) -> int:
-    total_weight = sum(CHECK_WEIGHTS.get(r.name, 0) for r in results) or 1
-    earned = 0.0
-    for r in results:
-        weight = CHECK_WEIGHTS.get(r.name, 0)
-        if r.status == "PASS":
-            earned += weight
-        elif r.status == "FAIL":
-            earned += 0.0
-        else:  # WARN
-            earned += weight * 0.5
-    return round(100 * earned / total_weight)
-
-
-def _overall_status(results: list[CheckResult]) -> str:
-    if any(r.status == "FAIL" for r in results):
-        return "FAIL"
-    if any(r.status == "WARN" for r in results):
-        return "WARN"
-    return "PASS"
-
-
 def _run_all_checks(project_root: Path) -> list[CheckResult]:
     return [
         check_credential_ignore(project_root),
@@ -140,7 +102,7 @@ def render_summary(results: list[CheckResult]) -> None:
     print(_overall_status(results))
     print()
     print("Score")
-    print(f"{_score(results)} / 100")
+    print(f"{_score(results, CHECK_WEIGHTS)} / 100")
 
     for r in results:
         print()
@@ -159,7 +121,7 @@ def render_json(results: list[CheckResult]) -> None:
     data = {
         "checker": "verify_security",
         "repository_status": _overall_status(results),
-        "score": _score(results),
+        "score": _score(results, CHECK_WEIGHTS),
         "pass": pass_count,
         "warn": warn_count,
         "fail": fail_count,
@@ -198,7 +160,7 @@ def main() -> None:
     args = parser.parse_args()
 
     project_root = Path(args.project_root).resolve()
-    results = _run_all_checks(project_root)
+    results      = _run_all_checks(project_root)
 
     if args.json_output:
         render_json(results)

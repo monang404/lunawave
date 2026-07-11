@@ -31,17 +31,21 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 from dataclasses import dataclass, field
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR   = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv", ".mypy_cache"}
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shared.check_result import CheckResult as SharedCheckResult
+from shared.skip_dirs import SKIP_DIRS
 
 # ---------------------------------------------------------------------------
 # Aturan dependency — direpresentasikan dari dependency_rules.md
 # Kunci: layer yang mengimport. Nilai: set layer yang BOLEH diimport.
 # ---------------------------------------------------------------------------
 ALLOWED: dict[str, set[str]] = {
-    "core":        set(),                                               # tidak boleh import siapapun
+    "core":        set(),
     "adapters":    {"core"},
     "persistence": {"core"},
     "plugins":     {"core"},
@@ -49,15 +53,13 @@ ALLOWED: dict[str, set[str]] = {
     "services":    {"core", "persistence"},
     "server":      {"core", "engine", "services", "persistence"},
     "launcher":    {"core", "server"},
-    # Folder ini tidak dalam aturan hexagonal — diberi kebebasan penuh
     "data":        None,
     "scripts":     None,
-    "cache":       {"core"},  # cache/ ekuivalen persistence/ sebelum pindah
+    "cache":       {"core"},
 }
 
-# Mapping path -> layer
+
 def path_to_layer(rel_path: str) -> str | None:
-    """Ambil layer dari path relatif project (misal 'core/state.py' -> 'core')."""
     parts = rel_path.replace("\\", "/").split("/")
     if not parts:
         return None
@@ -66,13 +68,12 @@ def path_to_layer(rel_path: str) -> str | None:
 
 
 def module_to_layer(module: str) -> str | None:
-    """Ambil layer dari nama module (misal 'core.state' -> 'core')."""
     top = module.split(".")[0]
     return top if top in ALLOWED else None
 
 
 # ---------------------------------------------------------------------------
-# Violation dataclass
+# Violation dataclass — TETAP ADA, tidak dihapus/diganti
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -105,19 +106,19 @@ class Violation:
 # ---------------------------------------------------------------------------
 
 def check_file(path: Path, project_root: Path) -> list[Violation]:
-    rel = str(path.relative_to(project_root)).replace("\\", "/")
+    rel            = str(path.relative_to(project_root)).replace("\\", "/")
     importer_layer = path_to_layer(rel)
 
     if importer_layer is None:
-        return []  # File di root atau layer tidak dikenal — skip
+        return []
 
     allowed_for_layer = ALLOWED.get(importer_layer)
     if allowed_for_layer is None:
-        return []  # Layer tanpa aturan (data/, scripts/) — bebas
+        return []
 
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
-        tree = ast.parse(source, filename=str(path))
+        tree   = ast.parse(source, filename=str(path))
     except SyntaxError:
         return []
 
@@ -130,8 +131,7 @@ def check_file(path: Path, project_root: Path) -> list[Violation]:
                 if imported_layer and imported_layer != importer_layer:
                     if imported_layer not in allowed_for_layer:
                         violations.append(Violation(
-                            file=rel,
-                            line=node.lineno,
+                            file=rel, line=node.lineno,
                             importer_layer=importer_layer,
                             imported_module=alias.name,
                             imported_layer=imported_layer,
@@ -143,8 +143,7 @@ def check_file(path: Path, project_root: Path) -> list[Violation]:
                 if imported_layer and imported_layer != importer_layer:
                     if imported_layer not in allowed_for_layer:
                         violations.append(Violation(
-                            file=rel,
-                            line=node.lineno,
+                            file=rel, line=node.lineno,
                             importer_layer=importer_layer,
                             imported_module=node.module,
                             imported_layer=imported_layer,
@@ -177,16 +176,8 @@ def scan_project(project_root: Path, target_file: str | None = None) -> list[Vio
     return all_violations
 
 
-# ---------------------------------------------------------------------------
-# Report known violations (dari REPORT.md) — untuk suppress di pre-commit
-# jika user memilih --warn-only
-# ---------------------------------------------------------------------------
-
 KNOWN_VIOLATIONS = {
-    # F-06 dari REPORT.md — sudah terdokumentasi, belum di-fix (target Sprint 4)
     ("config.py", "core"),
-    # cache/ belum dipindah ke persistence/ — engine & services boleh import cache/
-    # selama migrasi belum selesai (target Sprint 4-5, lihat STATUS.md & MIGRATION_GUIDE.md)
     ("engine/playback/track_loader.py", "cache"),
     ("engine/playback/controller.py",   "cache"),
     ("services/discover_service.py",    "cache"),
@@ -197,7 +188,7 @@ def is_known(v: Violation) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Pure data — tidak melakukan print, hanya mengembalikan struktur hasil scan
+# collect_results — bungkus hasil akhir jadi shared.CheckResult
 # ---------------------------------------------------------------------------
 
 def collect_results(
@@ -207,23 +198,20 @@ def collect_results(
     """Jalankan scan dan kembalikan data mentah sebagai dict.
 
     Tidak melakukan print apapun. Semua informasi ada di return value.
-    Dipakai oleh render_text(), render_json(), dan aggregator eksternal
-    (misalnya doctor.py --json).
     """
-    violations = scan_project(project_root, target_file)
+    violations     = scan_project(project_root, target_file)
     new_violations = [v for v in violations if not is_known(v)]
     known_violations = [v for v in violations if is_known(v)]
 
-    # Hitung files_scanned dan imports_checked
-    files_scanned = 0
-    imports_checked = 0
+    files_scanned    = 0
+    imports_checked  = 0
     if target_file:
         path = (project_root / target_file).resolve()
         if path.exists():
             files_scanned = 1
             try:
                 source = path.read_text(encoding="utf-8", errors="replace")
-                tree = ast.parse(source)
+                tree   = ast.parse(source)
                 for node in ast.walk(tree):
                     if isinstance(node, (ast.Import, ast.ImportFrom)):
                         imports_checked += 1
@@ -238,7 +226,7 @@ def collect_results(
                     fp = Path(dirpath) / fn
                     try:
                         source = fp.read_text(encoding="utf-8", errors="replace")
-                        tree = ast.parse(source)
+                        tree   = ast.parse(source)
                         for node in ast.walk(tree):
                             if isinstance(node, (ast.Import, ast.ImportFrom)):
                                 imports_checked += 1
@@ -251,32 +239,40 @@ def collect_results(
     elif has_new:
         repository_status = "FAIL"
     else:
-        repository_status = "WARN"  # hanya known violations
+        repository_status = "WARN"
 
     check_status = "FAIL" if has_new else ("WARN" if known_violations else "PASS")
     if check_status == "PASS":
-        score = 100
+        score   = 100
         message = "Tidak ada violation import boundary"
     elif check_status == "WARN":
-        score = 80
+        score   = 80
         message = f"{len(known_violations)} known violation belum di-fix (lihat REPORT.md)"
     else:
-        score = max(0, 100 - 20 * len(new_violations))
+        score   = max(0, 100 - 20 * len(new_violations))
         message = f"{len(new_violations)} violation baru ditemukan"
+
+    # Bungkus hasil cek sebagai shared.CheckResult
+    cr = SharedCheckResult(
+        name="Import Boundaries",
+        status=check_status,
+        message=message,
+        items=[
+            f"{v['file']}:{v['line']} — {v['importer_layer']}/ → {v['imported_layer']}/"
+            for v in [v.to_dict() for v in new_violations]
+        ],
+    )
 
     checks = [
         {
-            "name": "Import Boundaries",
-            "status": check_status,
-            "message": message,
-            "count": len(new_violations),
-            "items": [
-                f"{v['file']}:{v['line']} — {v['importer_layer']}/ → {v['imported_layer']}/"
-                for v in [v.to_dict() for v in new_violations]
-            ],
-            "current": None,
-            "total": None,
-            "percentage": None,
+            "name": cr.name,
+            "status": cr.status,
+            "message": cr.message,
+            "count": cr.count,
+            "items": cr.items,
+            "current": cr.current,
+            "total": cr.total,
+            "percentage": cr.percentage,
             "weight": 100,
         }
     ]
@@ -289,8 +285,6 @@ def collect_results(
         "warn": 1 if check_status == "WARN" else 0,
         "fail": 1 if check_status == "FAIL" else 0,
         "checks": checks,
-        # Field lama dipertahankan untuk backward compatibility (dipakai
-        # render_text/CLI lama dan konsumen eksternal yang sudah ada).
         "files_scanned": files_scanned,
         "imports_checked": imports_checked,
         "new_violations": len(new_violations),
@@ -301,7 +295,7 @@ def collect_results(
 
 
 # ---------------------------------------------------------------------------
-# Render — text (perilaku lama dipertahankan) dan JSON
+# Render
 # ---------------------------------------------------------------------------
 
 def render_text(
@@ -316,7 +310,6 @@ def render_text(
         return
 
     new_violations = [v for v in violations if not is_known(v)]
-    has_new = len(new_violations) > 0
 
     if new_violations:
         print(f"\n❌ architecture_lint: {len(new_violations)} VIOLATION BARU ditemukan!\n")
@@ -349,36 +342,30 @@ def main():
     parser = argparse.ArgumentParser(description="Validasi batas arsitektur LunaWave.")
     parser.add_argument("--file", help="Cek hanya 1 file (path relatif dari project root)")
     parser.add_argument(
-        "--warn-only",
-        action="store_true",
+        "--warn-only", action="store_true",
         help="Print violations tapi exit 0 (untuk mode informational, bukan blocking)",
     )
     parser.add_argument(
-        "--show-known",
-        action="store_true",
+        "--show-known", action="store_true",
         help="Tampilkan juga known/documented violations (default: suppress)",
     )
     parser.add_argument("--project-root", default=str(PROJECT_ROOT))
     parser.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
+        "--json", action="store_true", dest="json_output",
         help="Output JSON (cocok untuk CI atau integrasi tool lain seperti doctor.py)",
     )
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
 
-    # Kumpulkan data mentah
     data = collect_results(root, args.file)
 
     if args.json_output:
         render_json(data)
     else:
-        # Untuk render_text kita perlu objek Violation asli
         violations = scan_project(root, args.file)
-        new_v = [v for v in violations if not is_known(v)]
-        known_v = [v for v in violations if is_known(v)]
+        new_v      = [v for v in violations if not is_known(v)]
+        known_v    = [v for v in violations if is_known(v)]
         render_text(data, violations, known_v, args.show_known)
 
         if new_v and not args.warn_only:
@@ -388,7 +375,6 @@ def main():
                 "   Untuk skip pre-commit sementara: git commit --no-verify"
             )
 
-    # Exit code — sama persis dengan sebelumnya
     has_new = data["new_violations"] > 0
     if args.warn_only:
         sys.exit(0)

@@ -1,8 +1,8 @@
 ---
 title: LunaWave Patch Log
-last_verified: 2026-07-10
-latest_patch_id: PATCH-2026-07-10-008
-total_entries: 6
+last_verified: 2026-07-11
+latest_patch_id: PATCH-2026-07-11-009
+total_entries: 7
 ---
 
 # PATCHLOG.md — LunaWave
@@ -155,3 +155,29 @@ File baru:
 - `docs/kompas/devops/tooling.md` — update status dari ❌ ke ✅
 **Setup:** `pip install pre-commit && pre-commit install`
 **Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Refactor scripts/ → shared/ + verify_docs/
+
+**ID:** `PATCH-2026-07-11-009`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Pecah `verify_docs.py` (850 baris) menjadi package `verify_docs/`, ekstrak utilitas bersama ke package `shared/`. CLI semua script identik — tidak ada breaking change.
+**File Terdampak:**
+- `scripts/shared/` — [NEW package] `__init__.py`, `check_result.py`, `skip_dirs.py`, `generated_block.py`
+- `scripts/verify_docs/` — [NEW package] `__init__.py`, `helpers.py`, `checks_docs.py`, `checks_coverage.py`, `checks_files.py`, `render.py`
+- `scripts/verify_docs.py` — refactor jadi thin CLI (~60 baris)
+- `scripts/verify_security.py` — hapus local `CheckResult`, pakai `shared.check_result`
+- `scripts/verify_structure.py` — hapus local `CheckResult`, pakai `shared.check_result`; pakai `shared.skip_dirs`
+- `scripts/architecture_lint.py` — pakai `shared.skip_dirs`; bungkus hasil sebagai `shared.CheckResult`
+- `scripts/generate_report.py` — pakai `shared.skip_dirs`, `shared.generated_block`
+- `scripts/generate_file_index.py` — pakai `shared.skip_dirs`, `shared.generated_block`
+- `docs/STRUCTURE.md` — update deskripsi `scripts/`
+- `docs/kompas/architecture/folder_structure.md` — update tree `scripts/`
+- `AI_CONTEXT.md` — tambah seksi "Struktur internal scripts/"
+- `docs/AI_CONTEXT.md` — idem
+- `docs/FILE_INDEX.md` — regenerate (file baru masuk index)
+- `docs/REPORT.md` — regenerate (statistik file .py bertambah)
+
+**Alasan:** `verify_docs.py` 850 baris terlalu besar, duplikasi `CheckResult`/`SKIP_DIRS` di banyak file, logika `replace_marker_block` duplikat di dua generator.
+**Status:** ✅ SELESAI — semua script ditest, output/exit code identik dengan sebelum refactor
