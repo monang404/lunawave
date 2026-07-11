@@ -1,3 +1,26 @@
+"""
+Module: core.exceptions
+
+Purpose:
+    Define the custom exception hierarchy for LunaWave error conditions.
+
+Responsibilities:
+    - Provide typed exceptions for mpv connection, track resolution, and
+      download failures that callers can catch independently.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless.
+"""
+
 class YtPlayerError(Exception):
     """Base exception for LunaWave."""
     pass

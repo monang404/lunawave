@@ -1,18 +1,26 @@
 """
-verify_docs/helpers.py — Fungsi utilitas dan konstanta untuk verify_docs.
+Module: scripts.verify_docs.helpers
 
 Purpose:
-    Menyediakan helper I/O (read_text, parse_frontmatter), scanner file .py
-    (collect_py_files, filter_ignorable_inits), dan helper formatting (fmt_items)
-    yang dipakai bersama oleh semua sub-modul verify_docs.
+    Provide shared constants, regex patterns, and I/O/filesystem utilities
+    for all verify_docs sub-modules.
+
+Responsibilities:
+    - Expose DOCSTRING_REQUIRED_FIELDS, CHECK_WEIGHTS, and SKIP_FRONTMATTER.
+    - Implement collect_py_files, parse_frontmatter, get_module_docstring,
+      and filter_ignorable_inits.
+
+Depends on:
+    - shared.skip_dirs
 
 Subscribes to:
-    filesystem project, shared.skip_dirs
+    None
 
 Publishes:
-    read_text, parse_frontmatter, collect_py_files, count_lines,
-    get_module_docstring, fmt_items, is_significant_init,
-    filter_ignorable_inits, + semua konstanta modul
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

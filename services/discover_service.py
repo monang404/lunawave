@@ -1,7 +1,26 @@
 """
-Purpose: Menyediakan data discover (recent dan favorites).
-Subscribes to: (tidak ada)
-Publishes: (tidak ada)
+Module: services.discover_service
+
+Purpose:
+    Query the SQLite database to provide discover-page data: recently played
+    tracks, favorites, cached tracks, and featured artists/genres.
+
+Responsibilities:
+    - Expose async methods for each discover data category.
+    - Return empty lists gracefully when the DB connection is unavailable.
+
+Depends on:
+    - cache.db (Database)
+    - core.state (TrackInfo)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; read-only queries).
 """
 
 import aiosqlite

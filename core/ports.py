@@ -1,3 +1,26 @@
+"""
+Module: core.ports
+
+Purpose:
+    Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.
+
+Responsibilities:
+    - Define AudioPlayerPort, MediaExtractorPort, and TrackRepositoryPort.
+    - Declare session, lyrics, and sponsorblock provider protocols.
+
+Depends on:
+    - core.state (TrackInfo)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless (interface definitions only).
+"""
+
 from typing import Protocol, List, Optional, Dict, Any, Callable
 from core.state import TrackInfo
 

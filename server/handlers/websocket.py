@@ -1,3 +1,28 @@
+"""
+Module: server.handlers.websocket
+
+Purpose:
+    Handle WebSocket connections, authenticate clients, and dispatch
+    incoming commands to the CommandBus after rate-limit enforcement.
+
+Responsibilities:
+    - Manage ConnectionManager (connect/disconnect/broadcast to all clients).
+    - Route authenticated WS actions to command_bus.execute().
+
+Depends on:
+    - core.command_bus, core.state, server.serializers, server.middleware,
+      server.handlers.auth, services.discover_service
+
+Subscribes to:
+    None
+
+Publishes:
+    CMD_* commands via command_bus.execute
+
+Thread Safety:
+    Worker thread (async; rl_lock guards rate-limit state).
+"""
+
 import json
 import time
 import structlog

@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """
-generate_file_index.py — Generate docs/FILE_INDEX.md dari source code.
+Module: scripts.generate_file_index
 
-Cara pakai:
-    python scripts/generate_file_index.py
-    python scripts/generate_file_index.py --dry-run   # preview ke stdout, tidak tulis file
+Purpose:
+    Generate and inject an auto-produced file index section into
+    docs/FILE_INDEX.md based on AST analysis of all Python source files.
 
-Script ini HANYA mengganti blok di antara marker:
-    <!-- BEGIN:GENERATED -->
-    <!-- END:GENERATED -->
+Inputs:
+    Python source files in project root.
 
-Bagian lain dari FILE_INDEX.md (header, catatan manual) dibiarkan utuh.
+Outputs:
+    Updated docs/FILE_INDEX.md (or stdout with --dry-run).
+
+Side Effects:
+    Overwrites the <!-- BEGIN:GENERATED --> block in FILE_INDEX.md.
+
+CLI:
+    python scripts/generate_file_index.py [--dry-run]
 """
 
 import argparse

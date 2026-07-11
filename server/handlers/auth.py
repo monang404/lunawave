@@ -1,3 +1,29 @@
+"""
+Module: server.handlers.auth
+
+Purpose:
+    Handle WebSocket authentication, session token verification, and
+    per-IP login rate limiting.
+
+Responsibilities:
+    - Verify existing session tokens against the database.
+    - Validate credentials via PBKDF2 and issue new session tokens.
+    - Reject IPs that exceed 5 failed login attempts in a 5-minute window.
+
+Depends on:
+    - config (ADMIN_USERNAME, ADMIN_PASSWORD)
+    - core.security (verify_password)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; protected by manager.rl_lock).
+"""
+
 import json
 import time
 import secrets

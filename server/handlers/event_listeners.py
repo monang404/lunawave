@@ -1,3 +1,30 @@
+"""
+Module: server.handlers.event_listeners
+
+Purpose:
+    Subscribe to domain events from the EventBus and forward them as
+    WebSocket broadcasts via BroadcastService.
+
+Responsibilities:
+    - Bridge all relevant DomainEvents to connected WebSocket clients.
+    - Trigger stream URL pre-fetch on TrackStartedEvent.
+
+Depends on:
+    - core.events, core.task_utils
+    - server.services.stream_prefetch, server.services.broadcast_service
+
+Subscribes to:
+    TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent,
+    LyricsUpdatedEvent, DownloadCompleteEvent, LogMessageEvent,
+    TrackPauseChangedEvent, DownloadProgressEvent
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async closures subscribed at startup).
+"""
+
 import time
 import structlog
 from core.events import (

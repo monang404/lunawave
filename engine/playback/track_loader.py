@@ -1,3 +1,30 @@
+"""
+Module: engine.playback.track_loader
+
+Purpose:
+    Resolve a track URI and trigger background side-effects (sponsorblock,
+    lyrics fetch, play-count increment) before playback begins.
+
+Responsibilities:
+    - Delegate URI resolution to CacheResolver.
+    - Increment play count and launch sponsorblock/lyrics tasks in parallel.
+
+Depends on:
+    - cache.resolver
+    - core.ports (LyricsProvider, SponsorBlockProvider)
+    - core.state (TrackInfo)
+    - core.task_utils
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async).
+"""
+
 import asyncio
 import structlog
 from core.state import TrackInfo

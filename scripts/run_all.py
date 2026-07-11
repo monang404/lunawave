@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 """
-run_all.py — Jalankan semua generator dan doctor sekaligus.
+Module: scripts.run_all
 
-Cara pakai:
-    python scripts/run_all.py           # generate + health check
-    python scripts/run_all.py --check   # hanya health check, tidak generate
-    python scripts/run_all.py --strict  # exit 1 jika ada masalah apapun
+Purpose:
+    Run all documentation generators and the project health check in a
+    single command.
+
+Inputs:
+    None (delegates to child scripts).
+
+Outputs:
+    Updated docs/ files from generators; health check report on stdout.
+
+Side Effects:
+    Invokes generate_file_index.py, generate_report.py, and doctor.py
+    as subprocesses.
+
+CLI:
+    python scripts/run_all.py [--check] [--strict]
 """
 
 import argparse

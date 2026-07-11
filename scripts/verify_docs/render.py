@@ -1,16 +1,26 @@
 """
-verify_docs/render.py — Render output verify_docs ke teks atau JSON.
+Module: scripts.verify_docs.render
 
 Purpose:
-    Menyediakan _score, _overall_status, render_summary, dan render_json
-    untuk verify_docs. Scoring menggunakan fungsi generik dari shared dengan
-    CHECK_WEIGHTS lokal verify_docs.
+    Render verify_docs check results as a human-readable terminal summary
+    or a structured JSON report matching the checker contract.
+
+Responsibilities:
+    - Compute weighted score via shared._score with local CHECK_WEIGHTS.
+    - Format per-check output with truncation and hints; emit JSON for CI.
+
+Depends on:
+    - shared.check_result
+    - scripts.verify_docs.helpers
 
 Subscribes to:
-    shared.check_result
+    None
 
 Publishes:
-    _score, _overall_status, render_summary, render_json
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

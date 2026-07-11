@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """
-generate_report.py — Update bagian "Statistik Project" di docs/REPORT.md.
+Module: scripts.generate_report
 
-Cara pakai:
-    python scripts/generate_report.py
-    python scripts/generate_report.py --dry-run
+Purpose:
+    Generate and inject project statistics into the <!-- BEGIN:GENERATED -->
+    block of docs/REPORT.md.
 
-Hanya blok di antara marker yang diganti:
-    <!-- BEGIN:GENERATED -->
-    <!-- END:GENERATED -->
+Inputs:
+    Python/JS/CSS source files and SQLite databases in project root.
 
-Bagian manual (Temuan Penting, Rekomendasi, Dependency Risk) tidak disentuh.
+Outputs:
+    Updated docs/REPORT.md (or stdout with --dry-run).
+
+Side Effects:
+    Overwrites the generated statistics section in REPORT.md.
+
+CLI:
+    python scripts/generate_report.py [--dry-run]
 """
 
 import argparse

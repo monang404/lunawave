@@ -1,7 +1,25 @@
 """
-Purpose: Menyimpan state aplikasi LunaWave, termasuk status pemutar, mode pemutaran, lagu saat ini, antrean, riwayat, status download, lirik, dan tab aktif.
-Subscribes to: (tidak ada)
-Publishes: (tidak ada)
+Module: core.state
+
+Purpose:
+    Define shared application state dataclasses, enums, and the single
+    mutable AppState object for LunaWave.
+
+Responsibilities:
+    - Provide TrackInfo, AppState, PlayerStatus, PlaybackMode, AudioOutput.
+    - Hold all runtime state (queue, lyrics, download progress, volume).
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (mutated only from the asyncio event loop).
 """
 
 from enum import Enum, auto

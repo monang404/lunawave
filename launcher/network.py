@@ -1,3 +1,27 @@
+"""
+Module: launcher.network
+
+Purpose:
+    Provide cross-platform utilities to detect TCP port availability and
+    identify the PID currently occupying a port.
+
+Responsibilities:
+    - Probe a port with a non-blocking socket connect attempt.
+    - Identify the owning PID via netstat, lsof, fuser, or ss.
+
+Depends on:
+    None
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Stateless.
+"""
+
 import socket
 import sys
 import subprocess

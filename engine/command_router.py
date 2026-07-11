@@ -1,3 +1,29 @@
+"""
+Module: engine.command_router
+
+Purpose:
+    Register all CMD_* CommandBus handlers, routing each command to the
+    appropriate method on PlaybackController or VolumeService.
+
+Responsibilities:
+    - Bind every playback and volume command on instantiation.
+    - Wrap handler calls with async/sync dispatch to support both types.
+
+Depends on:
+    - core.command_bus
+    - engine.playback.controller
+    - engine.volume_service
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Main thread only (registered once at startup).
+"""
+
 import structlog
 from core.command_bus import (
     command_bus,

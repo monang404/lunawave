@@ -1,3 +1,22 @@
+"""
+Module: data.export_to_sqlite
+
+Purpose:
+    Export artist, genre, and song data from a JSON file into a SQLite DB.
+
+Inputs:
+    artists_enriched.json in the current working directory.
+
+Outputs:
+    lunawave.db SQLite database file in the current working directory.
+
+Side Effects:
+    Drops and recreates artists, genres, artist_genres, and songs tables.
+
+CLI:
+    python data/export_to_sqlite.py
+"""
+
 import json
 import sqlite3
 import os

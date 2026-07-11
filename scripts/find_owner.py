@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-find_owner.py — Tampilkan ownership, dependencies, dan impact dari sebuah modul.
+Module: scripts.find_owner
 
-Cara pakai:
-    python scripts/find_owner.py cache/db.py
-    python scripts/find_owner.py core/event_bus
-    python scripts/find_owner.py Database          # cari berdasarkan nama class
-    python scripts/find_owner.py publish            # cari berdasarkan nama fungsi
+Purpose:
+    Display ownership, dependencies, and impact radius of a given module,
+    class, or function name.
 
-Output:
-    - Layer arsitektur dan posisi di hexagonal
-    - Class dan fungsi publik
-    - Siapa yang mengimport modul ini (impact radius)
-    - Modul apa yang di-import oleh modul ini (dependencies)
-    - Status di STATUS.md (jika ada)
-    - ADR terkait (jika ada)
+Inputs:
+    A file path, class name, or function name as a CLI argument.
+
+Outputs:
+    Console report with layer, callers, imports, size, and ADR hints.
+
+Side Effects:
+    None (read-only static analysis).
+
+CLI:
+    python scripts/find_owner.py <file|class|function>
 """
 
 import ast

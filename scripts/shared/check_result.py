@@ -1,17 +1,25 @@
 """
-shared/check_result.py — Shared data model untuk hasil cek health checker.
+Module: scripts.shared.check_result
 
 Purpose:
-    Menyediakan @dataclass CheckResult yang dipakai oleh semua checker
-    (verify_docs, verify_security, verify_structure, architecture_lint) dan
-    fungsi generik _score() / _overall_status() yang menerima bobot sebagai
-    parameter sehingga tiap checker bisa mendefinisikan CHECK_WEIGHTS sendiri.
+    Define the CheckResult dataclass and generic weighted-scoring helpers
+    shared by all LunaWave health checker scripts.
+
+Responsibilities:
+    - Provide a typed result model with status, items, and coverage fields.
+    - Compute a weighted score and aggregate overall status from a result list.
+
+Depends on:
+    None
 
 Subscribes to:
-    —
+    None
 
 Publishes:
-    CheckResult, _score, _overall_status
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

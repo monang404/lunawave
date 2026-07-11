@@ -1,3 +1,28 @@
+"""
+Module: plugins.sponsorblock
+
+Purpose:
+    Fetch SponsorBlock skip segments for the current video and auto-seek
+    past them during playback.
+
+Responsibilities:
+    - Query the SponsorBlock API for configured categories per video.
+    - Monitor TrackProgressEvent and seek past matched segment start times.
+
+Depends on:
+    - config (SPONSORBLOCK_CATS), core.event_bus, core.events, core.state,
+      core.ports, core.task_utils
+
+Subscribes to:
+    TrackProgressEvent
+
+Publishes:
+    LogMessageEvent
+
+Thread Safety:
+    Worker thread (async; stateless per-track segment list).
+"""
+
 import json
 import aiohttp
 import structlog

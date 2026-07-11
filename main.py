@@ -1,3 +1,23 @@
+"""
+Module: main
+
+Purpose:
+    Bootstrap all LunaWave subsystems and start the async aiohttp web server.
+
+Inputs:
+    Environment variables: LUNAWAVE_HOST, LUNAWAVE_PORT, LUNAWAVE_ADMIN_USER,
+    LUNAWAVE_ADMIN_PASS (or LUNAWAVE_BASE for path overrides).
+
+Outputs:
+    Running web server on configured host/port with WebSocket and REST API.
+
+Side Effects:
+    Opens SQLite DB, spawns mpv process, binds TCP port, writes log file.
+
+CLI:
+    python main.py
+"""
+
 import asyncio
 import logging
 import structlog

@@ -1,15 +1,25 @@
 """
-verify_docs/checks_files.py — Cek ukuran file dan empty packages.
+Module: scripts.verify_docs.checks_files
 
 Purpose:
-    Mengimplementasikan check_large_files dan check_empty_packages
-    untuk verify_docs.
+    Implement large-file and empty-package checks for verify_docs.
+
+Responsibilities:
+    - Flag Python files exceeding the LOC threshold as WARN or FAIL.
+    - Detect packages containing only a trivial __init__.py with no modules.
+
+Depends on:
+    - shared.check_result
+    - scripts.verify_docs.helpers
 
 Subscribes to:
-    file .py di project
+    None
 
 Publishes:
-    check_large_files, check_empty_packages
+    None
+
+Thread Safety:
+    Stateless.
 """
 
 from __future__ import annotations

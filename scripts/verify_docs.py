@@ -1,31 +1,22 @@
 #!/usr/bin/env python3
 """
-verify_docs.py — Documentation Health Checker untuk LunaWave.
+Module: scripts.verify_docs
 
 Purpose:
-    Memeriksa kualitas dokumentasi project, bukan memvalidasi semua path
-    yang tertulis di file Markdown. Fokus pada kondisi repository saat ini,
-    bukan histori, roadmap, atau proposal refactor.
+    Orchestrate all documentation health checks and report results as a
+    human-readable summary or a structured JSON payload.
 
-    Cek yang dijalankan: Documentation Structure, PATCHLOG, Frontmatter
-    (termasuk owner opsional), Generated Sections, FILE_INDEX, REPORT,
-    Documentation Coverage (file .py belum tercatat di FILE_INDEX/REPORT),
-    Module Docstring Coverage, Large Files (>300 LOC), Empty Packages.
+Inputs:
+    docs/ filesystem and project .py files.
 
-Subscribes to:
-    docs/ filesystem, project .py files
+Outputs:
+    Console summary or JSON (--json); exit code 1 on any FAIL.
 
-Publishes:
-    stdout (ringkasan, detail verbose, atau JSON)
+Side Effects:
+    None (read-only analysis).
 
-Cara pakai:
-    python scripts/verify_docs.py                # ringkasan
-    python scripts/verify_docs.py --verbose      # detail lengkap
-    python scripts/verify_docs.py --show-docstring   # file tanpa module docstring
-    python scripts/verify_docs.py --show-large-files # file >300 LOC
-    python scripts/verify_docs.py --json         # output JSON
-
-Exit code: 0 = PASS / WARN,  1 = ada FAIL
+CLI:
+    python scripts/verify_docs.py [--verbose] [--show-docstring] [--json]
 """
 
 import argparse
