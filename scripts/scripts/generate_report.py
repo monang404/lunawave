@@ -21,13 +21,17 @@ import sys
 from datetime import date
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR   = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-MARKER_BEGIN = "<!-- BEGIN:GENERATED -->"
-MARKER_END = "<!-- END:GENERATED -->"
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
-SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
+from shared.skip_dirs import SKIP_DIRS
+from shared.generated_block import replace_marker_block
+
+MARKER_BEGIN = "<!-- BEGIN:GENERATED -->"
+MARKER_END   = "<!-- END:GENERATED -->"
 
 
 # ---------------------------------------------------------------------------
@@ -39,7 +43,6 @@ def count_files_by_ext(root: Path, ext: str) -> int:
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         count += sum(1 for f in filenames if f.endswith(ext) and not f.endswith("__init__" + ext))
-    # Sertakan __init__ yang tidak kosong
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for f in filenames:
@@ -51,7 +54,6 @@ def count_files_by_ext(root: Path, ext: str) -> int:
 
 
 def count_py_files(root: Path) -> int:
-    """Hitung semua .py files kecuali __pycache__."""
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
@@ -68,7 +70,7 @@ def count_folders(root: Path) -> int:
 
 
 def count_classes_and_functions(root: Path) -> tuple[int, int]:
-    classes = 0
+    classes   = 0
     functions = 0
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
@@ -78,7 +80,7 @@ def count_classes_and_functions(root: Path) -> tuple[int, int]:
             path = Path(dirpath) / fn
             try:
                 source = path.read_text(encoding="utf-8", errors="replace")
-                tree = ast.parse(source)
+                tree   = ast.parse(source)
             except SyntaxError:
                 continue
             for node in ast.walk(tree):
@@ -121,7 +123,7 @@ def count_css_files(root: Path) -> int:
 def db_size_str(path: Path) -> str:
     if not path.exists():
         return "tidak ditemukan"
-    kb = path.stat().st_size / 1024
+    kb  = path.stat().st_size / 1024
     wal = path.with_suffix(".db-wal")
     if wal.exists():
         wal_kb = wal.stat().st_size / 1024
@@ -138,7 +140,7 @@ def biggest_py_files(root: Path, n: int = 5) -> list[tuple[str, int]]:
                 path = Path(dirpath) / fn
                 try:
                     lines = sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
-                    rel = str(path.relative_to(root)).replace("\\", "/")
+                    rel   = str(path.relative_to(root)).replace("\\", "/")
                     files.append((rel, lines))
                 except Exception:
                     pass
@@ -151,17 +153,17 @@ def biggest_py_files(root: Path, n: int = 5) -> list[tuple[str, int]]:
 # ---------------------------------------------------------------------------
 
 def build_generated_block(root: Path) -> str:
-    py_count = count_py_files(root)
-    js_count = count_js_files(root)
-    css_count = count_css_files(root)
+    py_count     = count_py_files(root)
+    js_count     = count_js_files(root)
+    css_count    = count_css_files(root)
     folder_count = count_folders(root)
     class_count, fn_count = count_classes_and_functions(root)
-    py_lines = count_lines(root, ".py")
-    js_lines = count_lines(root / "web", ".js")
+    py_lines  = count_lines(root, ".py")
+    js_lines  = count_lines(root / "web", ".js")
     css_lines = count_lines(root / "web", ".css")
 
     db_main = db_size_str(root / "data" / "lunawave.db")
-    db_lib = db_size_str(root / "cache" / "library.db")
+    db_lib  = db_size_str(root / "cache" / "library.db")
 
     top_files = biggest_py_files(root)
 
@@ -203,16 +205,13 @@ def inject_into_file(target: Path, generated_block: str, dry_run: bool) -> None:
     original = target.read_text(encoding="utf-8")
 
     if MARKER_BEGIN not in original:
-        # Cari section "## Statistik Project" dan inject setelah baris tabel terakhir
-        # Atau append di akhir header section
+        # Fallback lokal: cari section "## Statistik Project" dan inject
         stats_match = re.search(r"(## Statistik Project\n)", original)
         if stats_match:
             insert_pos = stats_match.end()
-            # Cari akhir tabel yang ada
-            rest = original[insert_pos:]
-            table_end = re.search(r"\n\n---", rest)
+            rest       = original[insert_pos:]
+            table_end  = re.search(r"\n\n---", rest)
             if table_end:
-                # Ganti tabel lama dengan blok baru
                 new_content = (
                     original[:insert_pos]
                     + f"\n{MARKER_BEGIN}\n{generated_block}\n{MARKER_END}\n"
@@ -223,12 +222,7 @@ def inject_into_file(target: Path, generated_block: str, dry_run: bool) -> None:
         else:
             new_content = original.rstrip() + f"\n\n{MARKER_BEGIN}\n{generated_block}\n{MARKER_END}\n"
     else:
-        pattern = re.compile(
-            re.escape(MARKER_BEGIN) + r".*?" + re.escape(MARKER_END),
-            re.DOTALL,
-        )
-        new_block = f"{MARKER_BEGIN}\n{generated_block}\n{MARKER_END}"
-        new_content = pattern.sub(new_block, original)
+        new_content = replace_marker_block(original, generated_block, MARKER_BEGIN, MARKER_END)
 
     # Update frontmatter tanggal scan
     new_content = re.sub(
@@ -261,7 +255,7 @@ def main():
     parser.add_argument("--project-root", default=str(PROJECT_ROOT))
     args = parser.parse_args()
 
-    root = Path(args.project_root).resolve()
+    root   = Path(args.project_root).resolve()
     target = root / "docs" / "REPORT.md"
 
     if not target.exists():

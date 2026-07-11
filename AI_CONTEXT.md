@@ -38,8 +38,9 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 5. Baru kerjakan task
 
 ### Setelah selesai (wajib, jangan skip)
-1. Jalankan `python scripts/architecture_lint.py` — pastikan tidak ada violation baru
-2. Jalankan `python scripts/generate_file_index.py` — jika ada file/class/fungsi yang berubah
+1. Jalankan `python scripts/doctor.py` — satu perintah untuk semua health check (docs + arsitektur + struktur + keamanan)
+   - Atau per-checker jika hanya ingin cek satu aspek (lihat §Developer Scripts)
+2. Jalankan `python scripts/generate_file_index.py` — jika ada file/class/fungsi baru atau berubah
 3. Jalankan `python scripts/generate_report.py` — jika ada penambahan/penghapusan file
 4. Append entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
 5. Update `docs/STATUS.md` jika kondisi file berubah
@@ -62,8 +63,11 @@ dokumen yang sudah ada, hanya di antara marker:
 |--------|------------------------|
 | `generate_file_index.py` | Blok `BEGIN:GENERATED` di `docs/FILE_INDEX.md` |
 | `generate_report.py` | Blok `BEGIN:GENERATED` di `docs/REPORT.md` §Statistik Project |
-| `architecture_lint.py` | Tidak menulis file — hanya print ke stdout + exit code |
-| `doctor.py` | Tidak menulis file — hanya print ke stdout + exit code |
+| `architecture_lint.py` | Tidak menulis file — stdout + exit code |
+| `verify_docs.py` | Tidak menulis file — stdout + exit code |
+| `verify_structure.py` | Tidak menulis file — stdout + exit code |
+| `verify_security.py` | Tidak menulis file — stdout + exit code |
+| `doctor.py` | Tidak menulis file — aggregasi output semua checker di atas ke satu dashboard |
 | `find_owner.py` | Tidak menulis file — hanya print ke stdout |
 
 Bagian dokumen **di luar marker** (narasi, rekomendasi, keputusan) adalah
@@ -92,24 +96,64 @@ python scripts/doctor.py
 ### Setelah edit kode
 
 ```bash
-# Wajib — cek tidak ada import violation baru
-python scripts/architecture_lint.py
+# Cara paling mudah — jalankan semua checker sekaligus
+python scripts/doctor.py
 
-# Wajib jika ada file/class/fungsi baru atau berubah
+# Atau per-aspek jika ingin cek satu hal saja:
+python scripts/architecture_lint.py   # import boundary
+python scripts/verify_docs.py         # frontmatter, PATCHLOG, coverage docstring
+python scripts/verify_structure.py    # file besar, pending items
+python scripts/verify_security.py     # credential & DB files di .gitignore
+
+# Regenerate docs setelah ada perubahan file/fungsi
 python scripts/generate_file_index.py
-
-# Wajib jika ada penambahan/penghapusan file
 python scripts/generate_report.py
 
-# Atau jalankan semuanya sekaligus
+# Atau regenerate + semua check sekaligus
 python scripts/run_all.py
 ```
 
-### Validasi docs saja (tanpa generate ulang)
+### Kapan pakai doctor.py vs checker individual
 
-```bash
-python scripts/verify_docs.py
+| Situasi | Pakai |
+|---------|-------|
+| Orientasi awal / cek kondisi repo | `doctor.py` |
+| Setelah edit kode — validasi menyeluruh | `doctor.py` |
+| Debug satu aspek saja (mis. docs) | `verify_docs.py --verbose` |
+| CI / pre-commit (strict mode) | `doctor.py --strict` atau `architecture_lint.py` |
+| Tambah checker baru ke dashboard | Tambah entri ke `CHECKERS` di `doctor.py` |
+
+### JSON contract antar checker dan doctor.py
+
+Semua checker (`verify_docs`, `architecture_lint`, `verify_structure`, `verify_security`) mengimplementasikan kontrak ini:
+- Flag `--json` → cetak satu objek JSON ke stdout
+- Schema wajib:
+```json
+{
+  "checker": "nama_checker",
+  "repository_status": "PASS|WARN|FAIL",
+  "score": 0,
+  "pass": 0, "warn": 0, "fail": 0,
+  "checks": [
+    {
+      "name": "Nama Cek", "status": "PASS|WARN|FAIL",
+      "message": "...", "count": 0, "items": [],
+      "current": null, "total": null, "percentage": null, "weight": null
+    }
+  ]
+}
 ```
+- Exit code: `0` = tidak ada FAIL, `1` = ada FAIL
+
+`doctor.py` hanya membaca JSON ini — tidak punya logika validasi sendiri. Untuk tambah checker baru, cukup implementasikan kontrak di atas lalu daftarkan di `CHECKERS` list di `doctor.py`.
+
+### Struktur internal scripts/ (untuk AI yang perlu memodifikasi tooling)
+
+`scripts/` kini punya dua sub-package internal:
+- **`shared/`** — utilitas bersama: `check_result.py` (dataclass `CheckResult` + fungsi `_score`/`_overall_status`), `skip_dirs.py` (`SKIP_DIRS` + `walk_py_files`), `generated_block.py` (`replace_marker_block`)
+- **`verify_docs/`** — pecahan dari `verify_docs.py` monolitik: `helpers.py`, `checks_docs.py`, `checks_coverage.py`, `checks_files.py`, `render.py`
+
+Semua checker mengimport `CheckResult` dari `shared.check_result`. CLI dan exit code identik dengan sebelum refactor.
 
 ## Pointer ke detail
 | Butuh info tentang | Cara tercepat |

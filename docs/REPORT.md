@@ -25,13 +25,13 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 46 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 63 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 47 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 73 |
 | Total file `.js` (ekskl. `.min.js`) | 24 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
-| Total class (Python) | 53 |
-| Total function/method (Python) | 371 |
-| Total baris Python | 8,299 |
+| Total class (Python) | 51 |
+| Total function/method (Python) | 366 |
+| Total baris Python | 8,426 |
 | Total baris JS (web/) | 2,957 |
 | Total baris CSS (web/) | 3,277 |
 | Ukuran DB utama (`data/lunawave.db`) | 244 KB |
@@ -41,11 +41,11 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | File | Baris |
 |------|-------|
-| `scripts/verify_docs.py` | 850 ⚠️ |
 | `launcher/gui.py` | 756 ⚠️ |
-| `scripts/architecture_lint.py` | 402 ⚠️ |
-| `scripts/generate_file_index.py` | 391 ⚠️ |
 | `cache/db.py` | 388 ⚠️ |
+| `scripts/architecture_lint.py` | 388 ⚠️ |
+| `engine/playback/controller.py` | 377 ⚠️ |
+| `engine/radio_engine.py` | 365 ⚠️ |
 <!-- END:GENERATED -->
 
 ---

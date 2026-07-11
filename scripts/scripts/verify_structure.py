@@ -29,41 +29,24 @@ import argparse
 import json
 import os
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR           = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
 
-SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
-BIG_FILE_THRESHOLD = 200        # baris — mulai WARN
+from shared.check_result import CheckResult, _score, _overall_status
+from shared.skip_dirs import SKIP_DIRS
+
+BIG_FILE_THRESHOLD      = 200   # baris — mulai WARN
 CRITICAL_FILE_THRESHOLD = 350   # baris — jadi FAIL
 
 CHECK_WEIGHTS: dict[str, int] = {
-    "Big Files": 50,
-    "Pending Items": 50,
+    "Big Files":      50,
+    "Pending Items":  50,
 }
-
-
-@dataclass
-class CheckResult:
-    name: str
-    status: str          # "PASS" | "WARN" | "FAIL"
-    message: str = ""
-    items: list[str] = field(default_factory=list)
-    current: int | None = None
-    total: int | None = None
-
-    @property
-    def count(self) -> int:
-        return len(self.items)
-
-    @property
-    def percentage(self) -> int | None:
-        if not self.total:
-            return None
-        return round(100 * (self.current or 0) / self.total)
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +74,7 @@ def check_big_files(project_root: Path) -> CheckResult:
         return CheckResult("Big Files", "PASS", "Semua file di bawah 200 baris")
 
     critical = [(r, n) for r, n in big if n > CRITICAL_FILE_THRESHOLD]
-    items = [f"{r} ({n} baris)" for r, n in big]
+    items    = [f"{r} ({n} baris)" for r, n in big]
 
     if critical:
         return CheckResult(
@@ -112,7 +95,7 @@ def check_big_files(project_root: Path) -> CheckResult:
 
 def check_pending_items(project_root: Path) -> CheckResult:
     issues = []
-    info = []
+    info   = []
 
     constraints = project_root / "docs" / "CONSTRAINTS.md"
     if not constraints.exists():
@@ -140,32 +123,6 @@ def check_pending_items(project_root: Path) -> CheckResult:
     return CheckResult("Pending Items", "PASS", "Semua item terpenuhi", info)
 
 
-# ---------------------------------------------------------------------------
-# Skor & status keseluruhan
-# ---------------------------------------------------------------------------
-
-def _score(results: list[CheckResult]) -> int:
-    total_weight = sum(CHECK_WEIGHTS.get(r.name, 0) for r in results) or 1
-    earned = 0.0
-    for r in results:
-        weight = CHECK_WEIGHTS.get(r.name, 0)
-        if r.status == "PASS":
-            earned += weight
-        elif r.status == "FAIL":
-            earned += 0.0
-        else:  # WARN
-            earned += weight * 0.5
-    return round(100 * earned / total_weight)
-
-
-def _overall_status(results: list[CheckResult]) -> str:
-    if any(r.status == "FAIL" for r in results):
-        return "FAIL"
-    if any(r.status == "WARN" for r in results):
-        return "WARN"
-    return "PASS"
-
-
 def _run_all_checks(project_root: Path) -> list[CheckResult]:
     return [
         check_big_files(project_root),
@@ -187,7 +144,7 @@ def render_summary(results: list[CheckResult]) -> None:
     print(_overall_status(results))
     print()
     print("Score")
-    print(f"{_score(results)} / 100")
+    print(f"{_score(results, CHECK_WEIGHTS)} / 100")
 
     for r in results:
         print()
@@ -208,7 +165,7 @@ def render_json(results: list[CheckResult]) -> None:
     data = {
         "checker": "verify_structure",
         "repository_status": _overall_status(results),
-        "score": _score(results),
+        "score": _score(results, CHECK_WEIGHTS),
         "pass": pass_count,
         "warn": warn_count,
         "fail": fail_count,
@@ -251,7 +208,7 @@ def main() -> None:
     args = parser.parse_args()
 
     project_root = Path(args.project_root).resolve()
-    results = _run_all_checks(project_root)
+    results      = _run_all_checks(project_root)
 
     if args.json_output:
         render_json(results)

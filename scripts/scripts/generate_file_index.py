@@ -21,29 +21,32 @@ import sys
 from datetime import date
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
-DOCS_DIR = PROJECT_ROOT / "docs"
+SCRIPT_DIR    = Path(__file__).resolve().parent
+PROJECT_ROOT  = SCRIPT_DIR.parent
+DOCS_DIR      = PROJECT_ROOT / "docs"
 FILE_INDEX_PATH = DOCS_DIR / "FILE_INDEX.md"
 
 MARKER_BEGIN = "<!-- BEGIN:GENERATED -->"
-MARKER_END = "<!-- END:GENERATED -->"
+MARKER_END   = "<!-- END:GENERATED -->"
 
-# Folder yang diabaikan saat scan
-SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv", ".mypy_cache"}
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shared.skip_dirs import SKIP_DIRS
+from shared.generated_block import replace_marker_block
 
 # Folder yang di-scan (urut = urut tampil di output)
 SCAN_GROUPS = [
-    ("Root", [""]),
-    ("core/", ["core"]),
-    ("engine/", ["engine", "engine/playback"]),
-    ("cache/", ["cache"]),
-    ("server/", ["server", "server/handlers", "server/services"]),
-    ("services/", ["services"]),
-    ("plugins/", ["plugins"]),
-    ("launcher/", ["launcher"]),
-    ("data/", ["data"]),
-    ("scripts/", ["scripts"]),
+    ("Root",       [""]),
+    ("core/",      ["core"]),
+    ("engine/",    ["engine", "engine/playback"]),
+    ("cache/",     ["cache"]),
+    ("server/",    ["server", "server/handlers", "server/services"]),
+    ("services/",  ["services"]),
+    ("plugins/",   ["plugins"]),
+    ("launcher/",  ["launcher"]),
+    ("data/",      ["data"]),
+    ("scripts/",   ["scripts"]),
 ]
 
 
@@ -51,9 +54,6 @@ SCAN_GROUPS = [
 # AST Extraction
 # ---------------------------------------------------------------------------
 
-# "Purpose: ..." bisa disambung ke baris berikutnya (indented continuation)
-# sampai ketemu label lain (Subscribes to:/Publishes:) atau baris kosong,
-# misal di plugins/notifications.py yang Purpose-nya 4 baris.
 PURPOSE_RE = re.compile(
     r"^\s*Purpose\s*:\s*(.+(?:\n(?!\s*(?:Subscribes to|Publishes)\s*:)(?!\s*$).+)*)",
     re.IGNORECASE | re.MULTILINE,
@@ -63,25 +63,20 @@ NO_DOCSTRING_LABEL = "⚠️ _Belum ada docstring modul terstruktur (Purpose/Sub
 
 
 def extract_purpose(tree: ast.AST) -> tuple[str | None, bool]:
-    """Ambil `Purpose: ...` dari docstring modul (kalau ada), termasuk baris
-    lanjutan yang di-indent. Return (teks_purpose_atau_None, punya_docstring_terstruktur)."""
     doc = ast.get_docstring(tree)
     if not doc:
         return None, False
     m = PURPOSE_RE.search(doc)
     if not m:
         return None, False
-    # Gabungkan baris lanjutan jadi satu paragraf rapi (hilangkan indentasi
-    # berlebih & newline internal supaya tidak merusak baris tabel/markdown).
     joined = " ".join(line.strip() for line in m.group(1).splitlines())
     return joined.strip(), True
 
 
 def extract_module_info(path: Path) -> dict:
-    """Parse satu file .py dan kembalikan: classes, functions, imports, fungsi (purpose)."""
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
-        tree = ast.parse(source, filename=str(path))
+        tree   = ast.parse(source, filename=str(path))
     except SyntaxError:
         return {
             "classes": [], "functions": [], "imports": [],
@@ -90,13 +85,12 @@ def extract_module_info(path: Path) -> dict:
 
     purpose, has_docstring = extract_purpose(tree)
 
-    classes = []
+    classes   = []
     functions = []
-    imports = []
+    imports   = []
 
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.ClassDef):
-            # Ambil parent class names
             bases = []
             for b in node.bases:
                 if isinstance(b, ast.Name):
@@ -108,7 +102,6 @@ def extract_module_info(path: Path) -> dict:
             else:
                 classes.append(node.name)
 
-            # Method publik dalam class
             for child in ast.iter_child_nodes(node):
                 if isinstance(child, ast.FunctionDef) and not child.name.startswith("__"):
                     functions.append(f"{child.name}()")
@@ -122,14 +115,9 @@ def extract_module_info(path: Path) -> dict:
 
         elif isinstance(node, ast.ImportFrom):
             if node.module:
-                # Normalise: "from core.state import X" -> "core/state"
-                mod = node.module.replace(".", "/")
-                # Hanya catat internal imports (tidak mulai dari stdlib/ext)
-                # Kita filter di build_reverse_index
                 imports.append(node.module)
 
-    # Dedupe, preserve order
-    seen = set()
+    seen       = set()
     uniq_imports = []
     for i in imports:
         if i not in seen:
@@ -146,7 +134,6 @@ def extract_module_info(path: Path) -> dict:
 
 
 def collect_py_files(project_root: Path) -> list[Path]:
-    """Kumpulkan semua .py file (bukan __pycache__)."""
     result = []
     for dirpath, dirnames, filenames in os.walk(project_root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
@@ -157,25 +144,17 @@ def collect_py_files(project_root: Path) -> list[Path]:
 
 
 def build_reverse_index(all_files: list[Path], project_root: Path) -> dict[str, list[str]]:
-    """
-    Untuk setiap file, siapa yang mengimport dia?
-    Return: { "core/state" -> ["engine/mpv_controller", "core/events", ...] }
-    """
     rev: dict[str, list[str]] = {}
 
     for path in all_files:
-        rel = path.relative_to(project_root)
+        rel     = path.relative_to(project_root)
         rel_str = str(rel).replace("\\", "/")
-        # "core/state.py" -> "core.state"
-        module_key = rel_str.replace("/", ".").removesuffix(".py")
-
-        info = extract_module_info(path)
-        importer = rel_str.removesuffix(".py")  # "engine/mpv_controller"
+        info    = extract_module_info(path)
+        importer = rel_str.removesuffix(".py")
 
         for imp in info["imports"]:
-            # Cek apakah ini import internal (ada di project)
             imp_as_path = imp.replace(".", "/")
-            candidates = [
+            candidates  = [
                 imp_as_path + ".py",
                 imp_as_path + "/__init__.py",
             ]
@@ -198,30 +177,26 @@ def format_file_entry(
     fungsi_str = info["purpose"] if info["purpose"] else NO_DOCSTRING_LABEL
 
     classes_str = ", ".join(f"`{c}`" for c in info["classes"]) if info["classes"] else "—"
-    
-    # Ambil max 6 fungsi publik paling relevan (skip dunder)
-    pub_fns = [f for f in info["functions"] if not f.startswith("_")]
+
+    pub_fns  = [f for f in info["functions"] if not f.startswith("_")]
     priv_fns = [f for f in info["functions"] if f.startswith("_") and not f.startswith("__")]
     shown_fns = pub_fns[:6]
     if not shown_fns and priv_fns:
         shown_fns = priv_fns[:4]
     functions_str = ", ".join(f"`{f}`" for f in shown_fns) if shown_fns else "—"
 
-    # Internal imports sebagai "Menggunakan"
     internal_imports = []
     for imp in info["imports"]:
-        imp_path = imp.replace(".", "/")
+        imp_path   = imp.replace(".", "/")
         candidates = [imp_path + ".py", imp_path + "/__init__.py"]
-        # Resolve path relatif dari project root
         if any(True for c in candidates if (PROJECT_ROOT / c).exists()):
             internal_imports.append(f"`{imp_path}`")
     using_str = ", ".join(internal_imports[:6]) if internal_imports else "—"
     if len(internal_imports) > 6:
         using_str += f", _{len(internal_imports) - 6} lainnya_"
 
-    # Reverse index — siapa yang menggunakan file ini
-    key = rel_path.removesuffix(".py")
-    users = rev_index.get(key, [])
+    key    = rel_path.removesuffix(".py")
+    users  = rev_index.get(key, [])
     if users:
         used_by_str = ", ".join(f"`{u}`" for u in sorted(users)[:5])
         if len(users) > 5:
@@ -247,7 +222,6 @@ def build_generated_block(project_root: Path) -> str:
     all_files = collect_py_files(project_root)
     rev_index = build_reverse_index(all_files, project_root)
 
-    # Index path -> info
     file_info: dict[str, dict] = {}
     for path in all_files:
         rel = str(path.relative_to(project_root)).replace("\\", "/")
@@ -264,11 +238,9 @@ def build_generated_block(project_root: Path) -> str:
             prefix = folder + "/" if folder else ""
             for rel_path, info in file_info.items():
                 if folder == "":
-                    # Root: hanya file langsung di root (tidak ada subfolder)
                     if "/" not in rel_path and rel_path.endswith(".py"):
                         group_files.append((rel_path, info))
                 else:
-                    # Folder tertentu: hanya file langsung (bukan sub-sub-folder)
                     if rel_path.startswith(prefix):
                         remainder = rel_path[len(prefix):]
                         if "/" not in remainder and rel_path.endswith(".py"):
@@ -280,11 +252,10 @@ def build_generated_block(project_root: Path) -> str:
         lines.append(f"\n## {group_name}\n")
         for rel_path, info in sorted(group_files):
             if rel_path.endswith("__init__.py") and not info["classes"] and not info["functions"]:
-                continue  # Skip empty __init__.py
+                continue
             lines.append(format_file_entry(rel_path, info, rev_index))
             lines.append("\n---\n")
 
-    # Ukuran file terbesar (peringatan)
     big_files = [
         (rel, sum(1 for _ in (project_root / rel).read_text(encoding="utf-8", errors="replace").splitlines()))
         for rel in file_info
@@ -300,14 +271,11 @@ def build_generated_block(project_root: Path) -> str:
             note = "Perlu dipecah" if n > 350 else "Perhatikan"
             lines.append(f"| `{rel}` | {n} | {note} |\n")
 
-    # Checklist actionable: file mana yang belum punya docstring modul
-    # terstruktur (Purpose/Subscribes to/Publishes), supaya kelihatan jelas
-    # apa yang perlu ditambah dokumentasinya dev/AI berikutnya.
     missing_doc = sorted(
         rel for rel, info in file_info.items()
         if not info["has_docstring"] and not rel.endswith("__init__.py")
     )
-    total_py = sum(1 for rel in file_info if not rel.endswith("__init__.py"))
+    total_py   = sum(1 for rel in file_info if not rel.endswith("__init__.py"))
     documented = total_py - len(missing_doc)
     lines.append(
         f"\n## 📋 Checklist Dokumentasi Docstring\n\n"
@@ -330,19 +298,11 @@ def build_generated_block(project_root: Path) -> str:
 def inject_into_file(target: Path, generated_block: str, dry_run: bool) -> None:
     original = target.read_text(encoding="utf-8")
 
-    begin_marker = MARKER_BEGIN
-    end_marker = MARKER_END
-
-    if begin_marker not in original:
-        # Belum ada marker — append di akhir file
-        new_content = original.rstrip() + f"\n\n{begin_marker}\n{generated_block}\n{end_marker}\n"
+    if MARKER_BEGIN not in original:
+        # Fallback lokal: append di akhir file
+        new_content = original.rstrip() + f"\n\n{MARKER_BEGIN}\n{generated_block}\n{MARKER_END}\n"
     else:
-        pattern = re.compile(
-            re.escape(begin_marker) + r".*?" + re.escape(end_marker),
-            re.DOTALL,
-        )
-        new_block = f"{begin_marker}\n{generated_block}\n{end_marker}"
-        new_content = pattern.sub(new_block, original)
+        new_content = replace_marker_block(original, generated_block, MARKER_BEGIN, MARKER_END)
 
     # Update frontmatter last_verified
     new_content = re.sub(
@@ -374,7 +334,7 @@ def main():
     parser.add_argument("--project-root", default=str(PROJECT_ROOT), help="Override project root")
     args = parser.parse_args()
 
-    root = Path(args.project_root).resolve()
+    root   = Path(args.project_root).resolve()
     target = root / "docs" / "FILE_INDEX.md"
 
     if not target.exists():
