@@ -691,9 +691,13 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**63/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**60/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-_(semua file sudah terdokumentasi 🎉)_
+- [ ] `scratch/check_db.py`
+
+- [ ] `scripts/archive/generate_icons.py`
+
+- [ ] `scripts/archive/inject_svgs.py`
 
 <!-- END:GENERATED -->
