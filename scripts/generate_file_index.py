@@ -47,6 +47,8 @@ SCAN_GROUPS = [
     ("launcher/",  ["launcher"]),
     ("data/",      ["data"]),
     ("scripts/",   ["scripts"]),
+    ("scripts/shared",["scripts/shared"]),
+    ("scripts/verify_docs",["scripts/verify_docs"]),
 ]
 
 
