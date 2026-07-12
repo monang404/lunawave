@@ -338,10 +338,55 @@ class RadioMode:
         if self.db and self.db.conn:
             try:
                 tracks = await self.db.get_random_songs(limit=limit, exclude_ids=existing, artist=prioritized_artist)
-                return tracks
+                # FIX-RADIO-ARTIST-CLUSTER-01: get_random_songs() dengan `artist` terisi
+                # mengurutkan SEMUA lagu prioritized_artist di depan (ORDER BY CASE ...
+                # THEN 0 ELSE 1), RANDOM() cuma acak di dalam masing-masing grup — bukan
+                # across grup. Efeknya: sampai 3 lagu artis yang sama selalu numpuk
+                # berurutan di awal tiap batch.
+                # Round-robin interleave di sini menjamin artis itu tetap ikut ke batch
+                # (SQL sudah include dia) TAPI tidak akan pernah ada 2 lagu artis yang
+                # sama berturut-turut (selama ada >=2 artis di batch) — lebih kuat
+                # daripada random.shuffle() polos yang cuma "kebetulan" tidak nabrak.
+                return self._interleave_by_artist(tracks)
             except Exception as e:
                 _log.warning(f"Gagal mengambil lagu acak dari DB: {e}")
         return []
+
+    @staticmethod
+    def _interleave_by_artist(tracks: list) -> list:
+        """Round-robin interleaving: kelompokkan track per artis (urutan asli tiap
+        kelompok tetap dipertahankan), lalu ambil bergiliran satu-satu dari kelompok
+        artis yang berbeda (urutan artis di-shuffle tiap 'putaran' agar tidak selalu
+        artis yang sama duluan). Menjamin tidak ada 2 track artis sama berturut-turut
+        kecuali kalau track dari artis itu memang lebih banyak dari separuh batch.
+        """
+        if len(tracks) <= 1:
+            return tracks
+
+        groups: dict[str, list] = {}
+        for t in tracks:
+            groups.setdefault(t.artist, []).append(t)
+
+        result = []
+        last_artist = None
+        # Tiap putaran: acak urutan artis yang masih punya sisa lagu, lalu ambil 1
+        # lagu dari tiap artis di urutan itu. Kalau artis pertama di putaran baru
+        # kebetulan sama dengan artis terakhir di putaran sebelumnya (bisa terjadi
+        # karena tiap putaran di-shuffle ulang dari nol), tukar posisinya dulu
+        # supaya tidak ada 2 lagu artis sama yang nempel persis di batas putaran.
+        while groups:
+            artists = list(groups.keys())
+            random.shuffle(artists)
+            if len(artists) > 1 and artists[0] == last_artist:
+                swap_idx = random.randint(1, len(artists) - 1)
+                artists[0], artists[swap_idx] = artists[swap_idx], artists[0]
+            for artist in artists:
+                queue = groups[artist]
+                result.append(queue.pop(0))
+                if not queue:
+                    del groups[artist]
+                last_artist = artist
+        return result
 
     def _build_exclusion_set(self) -> set[str]:
         ids = {t.video_id for t in self.state.radio_queue}
@@ -367,14 +412,28 @@ class RadioMode:
         except Exception as e:
             _log.warning(f"Prefetch next track gagal: {e}")
 
+    PREFETCH_LOOKAHEAD = 3  # jumlah lagu ke depan yang di-prefetch sekaligus
+
     async def _do_prefetch(self, controller: "PlaybackController") -> None:
         if not self.state.radio_queue:
             return
-        next_track = self.state.radio_queue[0]
-        if next_track.stream_url:
-            return  # Sudah resolve
-        try:
-            await controller.track_loader.resolver.resolve(next_track)
-            _log.info(f"Berhasil prefetch stream_url untuk: {next_track.title}")
-        except Exception as e:
-            _log.warning(f"Error saat resolve stream_url prefetch: {e}")
+        # FIX-RADIO-PREFETCH-LOOKAHEAD-01: sebelumnya cuma resolve 1 lagu berikutnya.
+        # Kalau lagu ke-2/ke-3 juga sempat timeout/lambat pas gilirannya main
+        # (mis. skip manual berturut-turut, atau lagu pertama ternyata pendek),
+        # user tetap kena nunggu karena belum di-prefetch. Sekarang resolve
+        # beberapa lagu ke depan sekaligus secara paralel.
+        candidates = [
+            t for t in list(self.state.radio_queue)[: self.PREFETCH_LOOKAHEAD]
+            if not t.stream_url
+        ]
+        if not candidates:
+            return
+
+        async def _resolve_one(track):
+            try:
+                await controller.track_loader.resolver.resolve(track)
+                _log.info(f"Berhasil prefetch stream_url untuk: {track.title}")
+            except Exception as e:
+                _log.warning(f"Error saat resolve stream_url prefetch ({track.title}): {e}")
+
+        await asyncio.gather(*[_resolve_one(t) for t in candidates])

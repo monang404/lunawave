@@ -39,8 +39,11 @@ def track_to_dict(track: Optional[TrackInfo]) -> Optional[dict]:
         "is_favorite": bool(getattr(track, "is_favorite", 0)),
     }
 
-def state_to_dict(state: AppState) -> dict:
-    return {
+def state_to_dict(state: AppState, include_lyrics: bool = True) -> dict:
+    """include_lyrics=False dipakai untuk broadcast periodik yang tidak butuh
+    payload lirik penuh — lirik sudah/akan dikirim lewat message "lyrics" terpisah.
+    Default True dipertahankan untuk initial snapshot saat client baru connect."""
+    data = {
         "status": state.status.name,
         "playback_mode": state.playback_mode.name,
         "current_track": track_to_dict(state.current_track),
@@ -52,8 +55,6 @@ def state_to_dict(state: AppState) -> dict:
         "queue": [track_to_dict(t) for t in state.queue],
         "radio_queue": [track_to_dict(t) for t in state.radio_queue],
         "history_count": len(state.history),
-        "lyrics_lines": list(state.lyrics_lines),
-        "lyrics_timestamps": list(state.lyrics_timestamps),
         "lyrics_index": state.lyrics_index,
         "lyrics_offset": state.lyrics_offset,
         "active_tab": state.active_tab,
@@ -61,6 +62,10 @@ def state_to_dict(state: AppState) -> dict:
         "is_online": state.is_online,
         "download_progress": state.download_progress,
     }
+    if include_lyrics:
+        data["lyrics_lines"] = list(state.lyrics_lines)
+        data["lyrics_timestamps"] = list(state.lyrics_timestamps)
+    return data
 
 def dict_to_track(data: dict) -> Optional[TrackInfo]:
     video_id = data.get("video_id")

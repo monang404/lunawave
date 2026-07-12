@@ -44,18 +44,14 @@ echo ""
 # ----------------------------------------------------------
 
 echo -e "${CYAN}[*]${RESET} Initializing Environment Variables..."
-sleep 0.5
 
 echo -e "${CYAN}[*]${RESET} Checking Python Dependencies..."
 MISSING_DEPS=0
-DEPS="aiohttp aiosqlite yt_dlp syncedlyrics structlog prometheus_client opentelemetry"
-for dep in $DEPS; do
-    if ! python -c "import $dep" &> /dev/null; then
-        echo -e "    ${RED}[-]${RESET} Missing module: $dep"
-        MISSING_DEPS=1
-    fi
-done
-
+if ! python -c "import aiohttp, aiosqlite, yt_dlp, syncedlyrics, structlog, prometheus_client, opentelemetry" &> /dev/null 2>&1; then
+    echo -e "    ${RED}[-]${RESET} Ada modul yang belum terinstall."
+    echo -e "        Jalankan: ${BOLD}pip install -r requirements.txt${RESET}"
+    MISSING_DEPS=1
+fi
 if [ $MISSING_DEPS -eq 0 ]; then
     echo -e "    ${GREEN}[+]${RESET} All Python dependencies are satisfied."
 else
@@ -134,7 +130,6 @@ echo -e "       Metrics          : ${BOLD}http://localhost:${LUNAWAVE_PORT}/metr
 echo -e "${CYAN}    =========================================================${RESET}"
 echo ""
 echo -e "${GREEN}[*] Starting Server...${RESET}"
-sleep 1
 
 python main.py
 

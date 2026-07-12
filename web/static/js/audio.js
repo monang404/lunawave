@@ -20,8 +20,14 @@ function getOrInitAudio() {
         localAudio.addEventListener("timeupdate", () => {
             if (store.userRole === "client" || store.audio_output === "browser") {
                 if (!window.isDraggingPb) {
-                    store.position = localAudio.currentTime;
-                    renderProgress();
+                    // Cuma update anchor di sini — penggambaran ke DOM dipegang
+                    // sama rAF clock di render/player.js biar mulus tiap frame,
+                    // bukan cuma tiap "timeupdate" fire (~4x/detik).
+                    if (typeof setPositionAnchor === "function") {
+                        setPositionAnchor(localAudio.currentTime);
+                    } else {
+                        store.position = localAudio.currentTime;
+                    }
                 }
                 if (typeof syncLocalLyrics === "function") syncLocalLyrics();
             }

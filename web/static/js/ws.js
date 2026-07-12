@@ -102,6 +102,13 @@ function handleServerMessage(msg) {
             break;
         case "state":
             Object.assign(store, msg.data);
+            // Object.assign bisa ikut nimpa store.position mentah-mentah (tanpa
+            // lewat setPositionAnchor), jadi anchor rAF clock perlu di-reset ke
+            // nilai baru ini supaya interpolasi lanjut dari titik yang benar,
+            // bukan dari anchor lama yang sudah basi.
+            if (typeof setPositionAnchor === "function") {
+                setPositionAnchor(store.position);
+            }
             renderFullState();
             // BUG-007: jangan sync audio saat user masih di portal screen
             if (store.userRole !== 'portal') {
@@ -109,25 +116,97 @@ function handleServerMessage(msg) {
             }
             break;
         case "progress":
-            store.position = msg.data.position;
+            // FIX-POSITION-DRIFT-02: server-side mpv (yang jadi sumber msg.data.position)
+            // dan <audio> di browser adalah DUA jalur playback yang independen (mpv jalan
+            // "silent" cuma buat tracking, audio browser fetch stream sendiri dari
+            // /api/stream/). Posisi keduanya nyaris tidak pernah persis sama — beda
+            // network/buffering bikin selisih ratusan ms itu wajar & terus ada, bukan
+            // cuma soal throttle. Kalau tiap progress message yang lewat 0.5s diff
+            // langsung dipakai buat seek paksa, maka SETIAP toggle pause/resume bakal
+            // hampir pasti kena koreksi (karena broadcast progress dari toggle_pause
+            // datang duluan/independen dari status audio browser) -> audio browser
+            // mundur/ngulang sesaat. Solusinya: dalam window sesaat setelah user sendiri
+            // yang toggle play/pause, biarkan <audio> browser (yang sudah otomatis
+            // benar posisinya sendiri, tidak di-reload) main tanpa dipaksa re-seek oleh
+            // posisi mpv server yang independen ini.
+            const _inToggleGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1200);
+
             let statusChanged = false;
-            if (!window.lastToggleTime || Date.now() - window.lastToggleTime > 1000) {
+            if (!_inToggleGrace) {
                 if (store.status !== msg.data.status) {
                     store.status = msg.data.status;
                     statusChanged = true;
+                    // FIX-POSITION-DRIFT-06: client lain (bukan yang mengklik play) baru
+                    // tau status berubah jadi PLAYING lewat pesan ini. Reset timestamp
+                    // anchor supaya interpolasi mulai ngitung dari sekarang, bukan dari
+                    // kapan anchor lama di-set (yang bisa jauh sebelum ini kalau lagunya
+                    // lama di-pause) — sama kayak fix di klik tombol play.
+                    if (store.status === "PLAYING" && typeof resetAnchorClock === "function") {
+                        resetAnchorClock();
+                    }
                 }
             }
             if (msg.data.server_ts) {
                 store.server_ts = msg.data.server_ts;
             }
 
+            // FIX-POSITION-DRIFT-05: bug sebelumnya masih ada dalam bentuk lain. Syarat
+            // "jangan pakai angka server" kemarin cuma berlaku SAAT audio browser lagi
+            // actively playing (!audio.paused). Begitu user pause, audio.paused jadi true
+            // -> syarat itu gugur -> baris ini balik nurut ke msg.data.position, padahal
+            // itu posisi mpv di server yang independen & LEBIH LAMBAT beberapa detik dari
+            // audio asli (lihat FIX-POSITION-DRIFT-02/03). Efeknya: pas pause, angka
+            // muncul mundur (mis. 42 -> 38), dan sesaat setelah resume bisa mundur lagi
+            // sebelum audio browser "menang" lagi -> keliatan "bingung" maju-mundur padahal
+            // SUARA-nya sendiri gak kenapa-napa (krn audio.currentTime gak disentuh di sini).
+            //
+            // Fix yang benar: penentu sumber posisi itu bukan "apakah lagi playing", tapi
+            // "apakah outputnya browser". Selama audio_output === "browser", elemen <audio>
+            // browser adalah SATU-SATUNYA sumber kebenaran posisi — baik lagi main maupun
+            // lagi pause — karena mpv di server cuma tracking "bayangan" (silent) di mode
+            // ini, bukan pemutar aslinya. msg.data.position cuma layak dipakai sebagai
+            // sumber utama saat audio_output BUKAN "browser" (mis. "device", mpv beneran
+            // yang mutar).
+            const _browserAudioEl = (store.audio_output === "browser") ? getOrInitAudio() : null;
+            const _browserAudioActive = !!(_browserAudioEl && !_browserAudioEl.paused && _browserAudioEl.src && !_browserAudioEl.src.startsWith("data:"));
+            if (store.audio_output !== "browser") {
+                // mpv server = pemutar asli di mode ini, jadi ini SATU-SATUNYA sumber
+                // posisi (~1x/detik) — anchor-kan supaya rAF clock bisa interpolasi mulus
+                // di antara tick-tick server, bukan cuma loncat tiap detik.
+                if (typeof setPositionAnchor === "function") {
+                    setPositionAnchor(msg.data.position);
+                } else {
+                    store.position = msg.data.position;
+                }
+            }
+            // Kalau audio_output === "browser": JANGAN sentuh anchor di sini sama sekali,
+            // baik lagi playing maupun paused. Anchor sudah/akan di-set oleh audio.js lewat
+            // event "timeupdate" (saat main) dan otomatis diam di posisi terakhir saat
+            // pause (krn tidak ada timeupdate baru) — itu justru perilaku yang benar.
+
             if (store.audio_output === "browser" && store.status === "PLAYING") {
-                const audio = getOrInitAudio();
-                if (!audio.paused && audio.src && !audio.src.startsWith("data:")) {
-                    // Sync posisi
-                    const diff = Math.abs(audio.currentTime - store.position);
-                    if (diff > 0.5 && store.position > 2) {
-                        audio.currentTime = store.position;
+                const audio = _browserAudioEl;
+                if (_browserAudioActive) {
+                    // FIX-POSITION-DRIFT-03: <audio> browser dan mpv server adalah 2 jalur stream
+                    // independen. mpv punya buffer tebal (demuxer-readahead-secs=20) buat tahan
+                    // koneksi flaky, sedangkan <audio> browser tidak — jadi selisih beberapa detik
+                    // ANTARA KEDUANYA itu WAJAR dan terus membesar seiring waktu, bukan tanda error.
+                    // Threshold lama (0.5 detik) terlalu ketat: maksa audio browser "ngejar" tiap kali
+                    // drift alami itu lewat 0.5 detik, bikin lompat/pengulangan yang kedengaran jelas
+                    // (apalagi pas pause/resume). Naikkan ke 5 detik (samakan dengan threshold initial
+                    // load di audio.js) — cuma koreksi kalau beneran desync parah (mis. stream sempat
+                    // putus/reconnect), bukan drift wajar akibat perbedaan buffering. Kalau beneran
+                    // di-seek, samakan store.position ke posisi baru itu juga (sekali ini aja).
+                    if (!_inToggleGrace) {
+                        const diff = Math.abs(audio.currentTime - msg.data.position);
+                        if (diff > 5 && msg.data.position > 2) {
+                            audio.currentTime = msg.data.position;
+                            if (typeof setPositionAnchor === "function") {
+                                setPositionAnchor(msg.data.position);
+                            } else {
+                                store.position = msg.data.position;
+                            }
+                        }
                     }
                 } else if (audio.paused && audio.src && !audio.src.startsWith("data:") && audio.readyState >= 2) {
                     // FIX-RADIO-08: Audio stuck paused padahal status PLAYING.

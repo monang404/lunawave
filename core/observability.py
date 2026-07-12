@@ -23,9 +23,6 @@ Thread Safety:
 """
 
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 # --- Prometheus Metrics ---
 
@@ -51,16 +48,6 @@ ACTIVE_WEBSOCKETS = Gauge(
     "ytplayer_active_websockets",
     "Number of currently active WebSocket connections",
 )
-
-# --- OpenTelemetry Tracing ---
-def setup_tracing():
-    provider = TracerProvider()
-    # processor = BatchSpanProcessor(ConsoleSpanExporter())
-    # provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
-    return trace.get_tracer("ytplayer.core")
-
-tracer = setup_tracing()
 
 def get_metrics_content():
     """Returns the Prometheus metrics in text format."""

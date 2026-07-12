@@ -148,7 +148,15 @@ class PlaybackController:
                     await asyncio.sleep(backoff)
                     # Ensure we don't call _on_next if we are no longer trying to play this track
                     if self.state.current_track == track:
-                        await self._advance_to_next()
+                        # FIX-DEADLOCK-01: jangan await _advance_to_next() di sini — ini masih
+                        # di dalam `async with self._play_lock` (baris 87). _advance_to_next()
+                        # ujung-ujungnya bisa memanggil balik play_track() (mis. radio_mode.next()
+                        # atau queue_mode.next()), yang akan coba acquire self._play_lock lagi.
+                        # asyncio.Lock tidak reentrant dan ini task yang sama, jadi itu deadlock
+                        # permanen: pemegang lock (frame ini) menunggu panggilan yang menunggu
+                        # lock yang sama. Jadikan fire-and-forget agar play_track() langsung
+                        # selesai & melepas lock dulu, baru _advance_to_next() jalan di task lain.
+                        safe_create_task(self._advance_to_next(), name=f"advance_after_failure_{track.video_id}")
 
     async def _poll_duration(self, track: TrackInfo):
         # Tunggu stream loading
@@ -223,8 +231,22 @@ class PlaybackController:
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
             new_status = PlayerStatus.PAUSED if self.state.status == PlayerStatus.PLAYING else PlayerStatus.PLAYING
             self.state.status = new_status
+            # FIX-POSITION-DRIFT-01: self.state.position cuma diupdate lewat
+            # TrackProgressEvent, yang di mpv_controller di-throttle max 1x/detik.
+            # Kalau kita broadcast pause/resume pakai state.position apa adanya,
+            # nilainya bisa telat sampai ~1 detik dari posisi asli mpv. Client
+            # browser (ws.js) auto-koreksi audio.currentTime begitu selisih dengan
+            # posisi server > 0.5 detik — akibatnya audio browser "lompat mundur"
+            # sesaat tiap kali resume. Ambil posisi akurat langsung dari mpv di sini
+            # (bareng toggle_pause, tidak perlu nunggu berurutan) sebelum broadcast,
+            # supaya progress yang dikirim ke client sudah presisi.
+            _, actual_pos = await asyncio.gather(
+                self.mpv.toggle_pause(),
+                self.mpv.get_position(),
+            )
+            if actual_pos:
+                self.state.position = actual_pos
             await self.bus.publish(TrackPauseChangedEvent(is_paused=(new_status == PlayerStatus.PAUSED)))
-            await self.mpv.toggle_pause()
 
     async def _on_next(self, data=None):
         async with self._lock:

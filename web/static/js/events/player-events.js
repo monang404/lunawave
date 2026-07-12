@@ -16,6 +16,7 @@ function initPlayerEvents() {
             const wantsPlay = store.status !== "PLAYING";
             store.status = wantsPlay ? "PLAYING" : "PAUSED";
             window.lastToggleTime = Date.now();
+            if (wantsPlay && typeof resetAnchorClock === "function") resetAnchorClock();
             if (typeof renderPlayBtn === "function") renderPlayBtn();
             if (typeof renderNowPlaying === "function") renderNowPlaying();
             if (typeof renderQueue === "function") renderQueue();
@@ -119,7 +120,11 @@ function initPlayerEvents() {
                     const audio = getOrInitAudio();
                     if (audio && audio.src) {
                         audio.currentTime = targetPos;
-                        store.position = targetPos;
+                        if (typeof setPositionAnchor === "function") {
+                            setPositionAnchor(targetPos);
+                        } else {
+                            store.position = targetPos;
+                        }
                         if (typeof renderProgress === "function") renderProgress();
                     }
                 }
@@ -146,7 +151,11 @@ function initPlayerEvents() {
             store.radio_queue = [];
             store.current_track = null;
             store.status = "LOADING";
-            store.position = 0;
+            if (typeof setPositionAnchor === "function") {
+                setPositionAnchor(0);
+            } else {
+                store.position = 0;
+            }
             if (typeof renderRadio === "function") renderRadio();
             if (typeof renderQueue === "function") renderQueue();
             if (typeof renderNowPlaying === "function") renderNowPlaying();

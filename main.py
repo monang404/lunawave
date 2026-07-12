@@ -52,28 +52,31 @@ from plugins.lyrics import LyricsFetcher
 async def main():
     state = AppState()
     
-    # 1. Initialize DB
-    print("  [1/5] Membuka database perpustakaan...")
+    # 1. Inisialisasi DB dan MPV secara paralel untuk mempersingkat startup
+    print("  [1/5] Membuka database + menghubungkan audio player (paralel)...")
     db = Database()
-    await db.init()
-    
-    # 2. Initialize Core Engine
+    mpv = MpvController()
+
+    async def _init_mpv():
+        try:
+            await mpv.connect()
+            mpv.is_available = True
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"mpv not available: {e}")
+            state.error_msg = (
+                "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
+                "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
+            )
+            state.status = PlayerStatus.ERROR
+            mpv.is_available = False
+
+    await asyncio.gather(db.init(), _init_mpv())
+
+    # 2. Initialize Core Engine (YtDlpClient ringan — hanya buat ThreadPoolExecutor)
     print("  [2/5] Menginisialisasi YT-DLP Engine...")
     ytdlp = YtDlpClient()
-    
-    print("  [3/5] Menghubungkan ke audio player (MPV)...")
-    mpv = MpvController()
-    try:
-        await mpv.connect()
-        mpv.is_available = True
-    except Exception as e:
-        structlog.get_logger(__name__).error(f"mpv not available: {e}")
-        state.error_msg = (
-            "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
-            "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
-        )
-        state.status = PlayerStatus.ERROR
-        mpv.is_available = False
+
+    print("  [3/5] Menyiapkan layanan playback...")
     
     # 3. Shared HTTP session
     http_session = aiohttp.ClientSession()
@@ -125,15 +128,44 @@ async def main():
                 structlog.get_logger(__name__).warning(f"Connectivity check unexpected error: {e}")
                 state.is_online = False
                 
-            await asyncio.sleep(60)
+            await asyncio.sleep(300)  # 60→300 det: cek konektivitas cukup sekali per 5 menit
 
     connectivity_task = safe_create_task(check_connectivity(), name="connectivity_checker")
     tasks = [connectivity_task]
-    
+
+    # DB Maintenance: eviction track stale + cleanup session expired.
+    async def db_maintenance():
+        # Jalankan sekali di awal, baru masuk loop periodik
+        try:
+            deleted = await db.evict_stale_tracks()
+            if deleted:
+                structlog.get_logger(__name__).info(f"DB maintenance (awal): {deleted} track stale dihapus")
+        except Exception as e:
+            structlog.get_logger(__name__).warning(f"DB maintenance awal (evict_stale_tracks) gagal: {e}")
+        try:
+            await db.cleanup_sessions()
+        except Exception as e:
+            structlog.get_logger(__name__).warning(f"DB maintenance awal (cleanup_sessions) gagal: {e}")
+
+        while True:
+            await asyncio.sleep(6 * 3600)  # tiap 6 jam
+            try:
+                deleted = await db.evict_stale_tracks()
+                if deleted:
+                    structlog.get_logger(__name__).info(f"DB maintenance: {deleted} track stale dihapus")
+            except Exception as e:
+                structlog.get_logger(__name__).warning(f"DB maintenance (evict_stale_tracks) gagal: {e}")
+            try:
+                await db.cleanup_sessions()
+            except Exception as e:
+                structlog.get_logger(__name__).warning(f"DB maintenance (cleanup_sessions) gagal: {e}")
+
+    tasks.append(safe_create_task(db_maintenance(), name="db_maintenance"))
+
     # 7.5 MPV auto-reconnect checker
     async def mpv_reconnect_checker():
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(30)  # 5→30 det: reconnect check cukup sekali per 30 detik
             if getattr(mpv, "is_available", True) and not getattr(mpv, "is_connected", False) and state.status != PlayerStatus.ERROR:
                 structlog.get_logger(__name__).warning(f"MPV terputus! Mencoba reconnect...")
                 try:
