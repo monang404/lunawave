@@ -54,8 +54,8 @@ class TrackLoader:
         # Resolve URI
         uri = await self.resolver.resolve(track)
 
-        # C-02: Increment play count for favorites
-        await self.resolver.db.increment_play_count(track.video_id)
+        # C-02: Increment play count — fire-and-forget, tidak boleh menunda mpv.play(uri)
+        safe_create_task(self.resolver.db.increment_play_count(track.video_id), name=f"incr_play_count_{track.video_id}")
 
         # Fetch sponsorblock and lyrics
         safe_create_task(self.sponsorblock.fetch_segments(track.video_id), name=f"fetch_sponsorblock_{track.video_id}")

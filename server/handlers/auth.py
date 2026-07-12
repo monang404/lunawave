@@ -24,6 +24,7 @@ Thread Safety:
     Worker thread (async; protected by manager.rl_lock).
 """
 
+import asyncio
 import json
 import time
 import secrets
@@ -78,7 +79,17 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
 
         username = data.get("username", "")
         password = data.get("password", "")
-        if username == ADMIN_USERNAME and verify_password(password, ADMIN_PASSWORD):
+        # PBKDF2 100k iterasi adalah kerja CPU berat (~60-180ms tergantung
+        # device) — kalau dijalankan sinkron di sini, seluruh event loop
+        # (termasuk broadcast progress ke client lain & observer mpv) ikut
+        # berhenti selama itu. Jalankan di thread executor agar event loop
+        # tetap responsif untuk client lain selagi verifikasi berjalan.
+        loop = asyncio.get_running_loop()
+        password_ok = (
+            username == ADMIN_USERNAME
+            and await loop.run_in_executor(None, verify_password, password, ADMIN_PASSWORD)
+        )
+        if password_ok:
             new_token = secrets.token_hex(16)
             if db:
                 await db.create_session(new_token, int(now) + 86400)

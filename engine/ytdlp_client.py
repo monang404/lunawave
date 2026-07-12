@@ -25,7 +25,6 @@ Thread Safety:
 """
 
 import asyncio
-import yt_dlp
 import re
 from concurrent.futures import ThreadPoolExecutor
 from core.state import TrackInfo
@@ -47,6 +46,8 @@ class YtDlpClient:
         "extract_flat": False,
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "format_sort": ["abr", "asr"],
+        "socket_timeout": 10,        # paksa yt-dlp menyerah di level network
+        "extractor_retries": 1,      # batasi retry internal yt-dlp
     }
 
     def __init__(self):
@@ -159,10 +160,12 @@ class YtDlpClient:
         return str(CACHE_DIR / f"{safe_id}.mp3")
 
     def _extract_sync(self, url, opts):
+        import yt_dlp  # lazy import — hanya saat dibutuhkan, bukan saat startup
         with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(url, download=False)
 
     def _download_sync(self, video_id, opts):
+        import yt_dlp  # lazy import
         url = f"https://www.youtube.com/watch?v={video_id}"
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])

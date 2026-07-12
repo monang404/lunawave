@@ -25,7 +25,7 @@ Thread Safety:
     Worker thread (async closures subscribed at startup).
 """
 
-import time
+import asyncio
 import structlog
 from core.events import (
     TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent, LyricsUpdatedEvent,
@@ -43,8 +43,6 @@ def setup_event_listeners(
     prefetch_service: StreamPrefetchService, 
     broadcast_service: BroadcastService
 ):
-    last_progress = 0.0
-
     async def _on_track_started(event: TrackStartedEvent):
         state = playback_controller.state
         _next = None
@@ -58,13 +56,10 @@ def setup_event_listeners(
         await broadcast_service.broadcast_state(state)
 
     async def _on_track_progress(event: TrackProgressEvent):
-        nonlocal last_progress
-        position = event.position
-        now = time.monotonic()
-        if now - last_progress < 0.33:
-            return
-        last_progress = now
-        await broadcast_service.broadcast_progress(position, playback_controller.state.status.name)
+        # Throttle sudah ditangani di sumber (mpv_controller, 1 Hz).
+        await broadcast_service.broadcast_progress(
+            event.position, playback_controller.state.status.name
+        )
 
     async def _on_queue_updated(event: QueueUpdatedEvent):
         await broadcast_service.broadcast_state(playback_controller.state)
@@ -80,10 +75,13 @@ def setup_event_listeners(
             from services.discover_service import DiscoverService
             from server.serializers import track_to_dict
             ds = DiscoverService(playback_controller.resolver.db)
-            recent = await ds.get_recent(15)
-            cached = await ds.get_cached(15)
-            featured_artists = await ds.get_featured_artists(100)
-            featured_genres = await ds.get_featured_genres(100)
+            # 4 query independent — jalankan bersamaan, bukan berurutan
+            recent, cached, featured_artists, featured_genres = await asyncio.gather(
+                ds.get_recent(15),
+                ds.get_cached(15),
+                ds.get_featured_artists(100),
+                ds.get_featured_genres(100),
+            )
             await broadcast_service.manager.broadcast({
                 "type": "discover_data",
                 "data": {

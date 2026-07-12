@@ -23,6 +23,10 @@
         initPortal();
         initAudio();
         initEvents();
+        // Loop rAF yang gambar progress bar tiap frame lewat interpolasi
+        // (lihat render/player.js) — bikin gerakannya mulus terus, gak cuma
+        // pas ada event timeupdate/progress baru.
+        if (typeof startProgressClock === "function") startProgressClock();
         wsConnect();
     }
 
@@ -71,3 +75,6 @@
 //     });
 // }
     
+
+
+

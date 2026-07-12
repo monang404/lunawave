@@ -71,21 +71,81 @@ function renderPlayBtn() {
     }
 }
 
-let _rafProgressPending = false;
+// ─────────────────────────────────────────────────────────────────────────────
+// SMOOTH PROGRESS CLOCK (biar semulus Spotify/YouTube Music)
+//
+// Sebelumnya progress bar cuma digambar ulang PAS ada event baru: "timeupdate"
+// dari <audio> browser (~4x/detik, gak selalu rapi jaraknya) atau pesan
+// "progress" dari server (~1x/detik). Karena dua sumber ini gak pernah
+// nge-tick bebarengan & gak sama presisinya, tampilannya "patah-patah" dan
+// kadang kerasa balapan/gontai — sebentar diem, sebentar loncat — beda jauh
+// dari Spotify/YouTube Music yang progress bar-nya gerak mulus tiap frame.
+//
+// Fix: bar gak lagi digambar langsung dari event. Event2 itu (timeupdate,
+// progress server, seek) sekarang cuma nge-update SATU "anchor" (posisi
+// diketahui + kapan itu diketahui, pakai performance.now()). Lalu ada satu
+// loop requestAnimationFrame yang jalan terus (~60fps) yang GAMBAR posisi
+// hasil interpolasi dari anchor itu: anchor.value + waktu yang berlalu sejak
+// anchor di-set. Hasilnya gerakan progress bar mulus terus-menerus, gak
+// peduli event sumbernya jarang/gak rata — sama seperti cara Spotify bikin
+// progress bar mulus walau posisi asli cuma di-refresh sesekali dari server.
+// ─────────────────────────────────────────────────────────────────────────────
+let _posAnchorValue = 0;
+let _posAnchorTime = 0;
+let _progressRafId = null;
 
-function renderProgress() {
-    if (_rafProgressPending) return;
-    _rafProgressPending = true;
-    requestAnimationFrame(() => {
-        _rafProgressPending = false;
-        _renderProgressCore();
-    });
+function setPositionAnchor(value) {
+    _posAnchorValue = Math.max(0, value || 0);
+    _posAnchorTime = performance.now();
+    store.position = _posAnchorValue;
 }
 
-function _renderProgressCore() {
+// FIX-POSITION-DRIFT-06: dipanggil setiap kali status BERUBAH jadi "PLAYING"
+// (klik play, atau notifikasi dari client lain kalau admin lain yang resume).
+// Cuma reset _posAnchorTime ke "sekarang" — nilai posisinya TETAP yang
+// terakhir diketahui. Kalau ini gak dipanggil, interpolasi rAF ikut
+// menghitung elapsed dari kapan anchor terakhir di-set (yaitu SAAT PAUSE
+// tadi), sehingga durasi jeda nunggu sebelum nekan play ikut ke-hitung
+// sebagai "waktu berjalan" -> angka loncat maju jauh (mis. 41+jeda=45),
+// baru ketarik balik begitu timeupdate asli dari audio browser masuk.
+// Reset ini bikin interpolasi mulai dari 0 elapsed persis saat play beneran
+// ditekan/diketahui, jadi gak ada lompatan maju-mundur itu lagi.
+function resetAnchorClock() {
+    _posAnchorTime = performance.now();
+}
+
+function getInterpolatedPosition() {
+    if (store.status !== "PLAYING") return _posAnchorValue;
+    const dur = store.current_track ? store.current_track.duration : 0;
+    const elapsed = (performance.now() - _posAnchorTime) / 1000;
+    const pos = _posAnchorValue + elapsed;
+    return dur > 0 ? Math.min(pos, dur) : pos;
+}
+
+function startProgressClock() {
+    if (_progressRafId) return;
+    function tick() {
+        _progressRafId = requestAnimationFrame(tick);
+        if (window.isDraggingPb) return;
+        _renderProgressCore(getInterpolatedPosition());
+    }
+    _progressRafId = requestAnimationFrame(tick);
+}
+
+function renderProgress() {
+    // Dipanggil dari event (timeupdate, progress, seek, dll) yang sudah
+    // mengupdate anchor lewat setPositionAnchor(). Loop rAF di atas yang
+    // pegang penggambaran tiap frame; ini cuma jaga-jaga gambar sekali
+    // langsung (misal pas status bukan PLAYING, di mana loop tetap jalan
+    // tapi nilainya statis) supaya gak nunggu frame berikutnya.
+    if (window.isDraggingPb) return;
+    _renderProgressCore(getInterpolatedPosition());
+}
+
+function _renderProgressCore(posOverride) {
     if (window.isDraggingPb) return;
     const dur = store.current_track ? store.current_track.duration : 0;
-    const pos = store.position || 0;
+    const pos = posOverride != null ? posOverride : (store.position || 0);
     const pct = dur > 0 ? Math.min(100, (pos / dur) * 100) : 0;
 
     dom.pbProgressFill.style.width = pct + "%";

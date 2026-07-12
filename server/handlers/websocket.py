@@ -23,6 +23,7 @@ Thread Safety:
     Worker thread (async; rl_lock guards rate-limit state).
 """
 
+import asyncio
 import json
 import time
 import structlog
@@ -68,13 +69,17 @@ class ConnectionManager:
         logger.info(f"WebSocket disconnected. Total clients: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
+        if not self.active_connections:
+            return
         data = json.dumps(message, ensure_ascii=False)
-        dead = []
-        for ws in self.active_connections:
-            try:
-                await ws.send_str(data)
-            except Exception:
-                dead.append(ws)
+        results = await asyncio.gather(
+            *[ws.send_str(data) for ws in list(self.active_connections)],
+            return_exceptions=True,
+        )
+        dead = [
+            ws for ws, result in zip(list(self.active_connections), results)
+            if isinstance(result, Exception)
+        ]
         for ws in dead:
             self.disconnect(ws)
 
@@ -90,9 +95,12 @@ async def ws_handler(request):
     await manager.connect(ws)
 
     try:
+        # include_lyrics=True: initial snapshot butuh lirik penuh karena
+        # client yang baru connect (mis. refresh halaman mid-lagu) tidak
+        # akan dapat lirik lagi sampai lyrics_index berubah berikutnya.
         await ws.send_str(json.dumps({
             "type": "state",
-            "data": state_to_dict(state),
+            "data": state_to_dict(state, include_lyrics=True),
         }, ensure_ascii=False))
     except Exception:
         manager.disconnect(ws)
@@ -154,11 +162,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
         elif action == "discover":
             ds = DiscoverService(db)
-            recent = await ds.get_recent(15)
-            favorites = await ds.get_favorites(15)
-            cached = await ds.get_cached(15)
-            featured_artists = await ds.get_featured_artists(100)
-            featured_genres = await ds.get_featured_genres(100)
+            # 5 query independent — jalankan bersamaan, bukan berurutan
+            recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
+                ds.get_recent(15),
+                ds.get_favorites(15),
+                ds.get_cached(15),
+                ds.get_featured_artists(100),
+                ds.get_featured_genres(100),
+            )
             await ws.send_str(json.dumps({
                 "type": "discover_data",
                 "data": {
@@ -255,10 +266,12 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
                         
                     # Update discover
                     ds = DiscoverService(db)
-                    recent = await ds.get_recent(15)
-                    cached = await ds.get_cached(15)
-                    featured_artists = await ds.get_featured_artists(100)
-                    featured_genres = await ds.get_featured_genres(100)
+                    recent, cached, featured_artists, featured_genres = await asyncio.gather(
+                        ds.get_recent(15),
+                        ds.get_cached(15),
+                        ds.get_featured_artists(100),
+                        ds.get_featured_genres(100),
+                    )
                     await manager.broadcast({
                         "type": "discover_data",
                         "data": {

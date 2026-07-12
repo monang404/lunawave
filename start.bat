@@ -30,16 +30,14 @@ if defined YTGUI_ADMIN_PASS set "LUNAWAVE_ADMIN_PASS=%YTGUI_ADMIN_PASS%"
 :: ----------------------------------------------------------
 
 echo  [*] Initializing Environment Variables...
-ping 127.0.0.1 -n 2 > nul
 
 echo  [*] Checking Python Dependencies...
 set "DEPS_OK=1"
-for %%m in (aiohttp aiosqlite yt_dlp syncedlyrics structlog prometheus_client opentelemetry) do (
-    python -c "import %%m" > nul 2>&1
-    if errorlevel 1 (
-        echo      [-] Missing module: %%m
-        set "DEPS_OK=0"
-    )
+python -c "import aiohttp, aiosqlite, yt_dlp, syncedlyrics, structlog, prometheus_client, opentelemetry" > nul 2>&1
+if errorlevel 1 (
+    echo      [-] Ada modul yang belum terinstall.
+    echo          Jalankan: pip install -r requirements.txt
+    set "DEPS_OK=0"
 )
 
 if "%DEPS_OK%"=="1" (
@@ -102,7 +100,6 @@ echo       Metrics          : http://localhost:%LUNAWAVE_PORT%/metrics
 echo    ================================================================
 echo.
 echo  [*] Starting Server...
-ping 127.0.0.1 -n 2 > nul
 
 python main.py
 echo.

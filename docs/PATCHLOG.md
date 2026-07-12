@@ -181,3 +181,151 @@ File baru:
 
 **Alasan:** `verify_docs.py` 850 baris terlalu besar, duplikasi `CheckResult`/`SKIP_DIRS` di banyak file, logika `replace_marker_block` duplikat di dua generator.
 **Status:** ✅ SELESAI — semua script ditest, output/exit code identik dengan sebelum refactor
+
+---
+
+## [2026-07-11] Patch — Batch 1: yt-dlp Client
+
+**ID:** `PATCH-2026-07-11-010`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Lazy import `yt_dlp` di `_extract_sync` & `_download_sync`; tambah `socket_timeout` dan `extractor_retries` ke `_YDL_OPTS_INFO` untuk mencegah thread zombie saat jaringan buruk.
+**File Terdampak:**
+- `engine/ytdlp_client.py` — lazy import yt_dlp, socket_timeout=10, extractor_retries=1
+**Alasan:** Startup lebih cepat; thread executor tidak habis oleh yt-dlp zombie di jaringan flaky.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 2: Auth Non-Blocking
+
+**ID:** `PATCH-2026-07-11-011`
+**Tanggal:** 2026-07-11
+**Ringkasan:** `verify_password()` (PBKDF2 100k iter) dipindah ke `run_in_executor` agar tidak memblokir event loop seluruh client selama proses login.
+**File Terdampak:**
+- `server/handlers/auth.py` — tambah asyncio import, ganti verify_password ke run_in_executor
+**Alasan:** Login blocking ~60-180ms membekukan semua client; sekarang hanya auth yang menunggu.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 3: main.py Housekeeping
+
+**ID:** `PATCH-2026-07-11-012`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Parallelkan `db.init()` + `mpv.connect()` via `asyncio.gather`; naikkan interval poller (mpv reconnect 5→30s, connectivity 60→300s); tambah `db_maintenance()` task tiap 6 jam.
+**File Terdampak:**
+- `main.py` — parallel init, interval poller, db_maintenance task
+**Alasan:** Startup lebih cepat; kurangi wake-up loop idle; cegah DB bengkak tanpa batas.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 4: mpv Controller
+
+**ID:** `PATCH-2026-07-11-013`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Throttle publish `TrackProgressEvent` ke 1×/detik; parallelkan 3× `observe_property` saat connect.
+**File Terdampak:**
+- `engine/mpv_controller.py` — throttle TrackProgressEvent, parallel observe_property
+**Alasan:** Kurangi beban event loop dari ~12 Task/detik menjadi ~4 Task/detik; hemat baterai.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 5: Lyrics Plugin
+
+**ID:** `PATCH-2026-07-11-014`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Throttle `LyricsUpdatedEvent` (min 0.5s antar broadcast); lazy import `syncedlyrics`.
+**File Terdampak:**
+- `plugins/lyrics.py` — throttle LyricsUpdatedEvent, lazy import syncedlyrics
+**Alasan:** Kurangi JSON serialize 200+ baris lirik berulang; startup lebih cepat.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 6: Track Loader
+
+**ID:** `PATCH-2026-07-11-015`
+**Tanggal:** 2026-07-11
+**Ringkasan:** `increment_play_count` dijadikan `safe_create_task` (fire-and-forget) agar tidak menunda playback.
+**File Terdampak:**
+- `engine/playback/track_loader.py` — increment_play_count non-blocking
+**Alasan:** Hilangkan 1 DB write round-trip dari jalur kritis ganti lagu.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 7: Event Listeners
+
+**ID:** `PATCH-2026-07-11-016`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Hapus throttle redundant `_on_track_progress` (sudah ditangani di mpv_controller); parallelkan query Discover di `_on_download_complete`.
+**File Terdampak:**
+- `server/handlers/event_listeners.py` — hapus throttle, asyncio.gather discover queries
+**Alasan:** Kode lebih bersih; discover data refresh lebih efisien.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 8: DB Index
+
+**ID:** `PATCH-2026-07-11-017`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Tambah `idx_songs_artist_id` pada tabel `songs` untuk JOIN query di Discover/Radio.
+**File Terdampak:**
+- `cache/schema.sql` — tambah index idx_songs_artist_id
+**Alasan:** Pencegahan full-scan saat data songs bertambah besar.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 9: websocket.py + controller.py (Restricted, gabungan)
+
+**ID:** `PATCH-2026-07-11-018`
+**Tanggal:** 2026-07-11
+**Ringkasan:** `toggle_pause()` fire-and-forget; broadcast paralel ke semua WS client; parallelkan query Discover di action `discover` & `delete_download`.
+**File Terdampak:**
+- `server/handlers/websocket.py` — asyncio import, parallel broadcast, parallel discover queries, include_lyrics=True initial snapshot
+- `engine/playback/controller.py` — safe_create_task mpv_toggle_pause
+**Alasan:** Pause instan tanpa jeda; multi-client broadcast simultan; Discover lebih responsif.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 10: Serializers Lirik (Variant A)
+
+**ID:** `PATCH-2026-07-11-019`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Tambah parameter `include_lyrics` di `state_to_dict()` dan `broadcast_state()`; default False untuk broadcast periodik, True untuk initial snapshot.
+**File Terdampak:**
+- `server/serializers.py` — tambah include_lyrics param
+- `server/services/broadcast_service.py` — default include_lyrics=False
+**Alasan:** Kurangi payload WS state broadcast yang tidak perlu membawa 200+ baris lirik.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 11: OTel Tracing Dead Weight (Opsi A)
+
+**ID:** `PATCH-2026-07-11-020`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Hapus OTel span dari `command_bus.py` (tidak ada exporter aktif, 100% sia-sia); hapus setup_tracing dan import OTel dari `observability.py`.
+**File Terdampak:**
+- `core/command_bus.py` — hapus tracer import dan span context manager
+- `core/observability.py` — hapus OTel imports, setup_tracing, tracer
+**Alasan:** Zero-benefit CPU work di jalur paling sering dieksekusi; bersihkan dead code.
+**Status:** ✅ SELESAI
+
+---
+
+## [2026-07-11] Patch — Batch 12: Startup Script Cleanup
+
+**ID:** `PATCH-2026-07-11-021`
+**Tanggal:** 2026-07-11
+**Ringkasan:** Gabung 7× subprocess dep-check Python menjadi 1×; hapus `sleep`/`ping` artifisial di `start.sh` dan `start.bat`.
+**File Terdampak:**
+- `start.sh` — single-import dep check, hapus sleep 0.5 dan sleep 1
+- `start.bat` — single-import dep check, hapus ping delays
+**Alasan:** Kurangi overhead startup script secara signifikan.
+**Status:** ✅ SELESAI

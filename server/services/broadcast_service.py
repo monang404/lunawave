@@ -32,10 +32,13 @@ class BroadcastService:
     def __init__(self, manager: ConnectionManager):
         self.manager = manager
 
-    async def broadcast_state(self, state: AppState):
+    async def broadcast_state(self, state: AppState, include_lyrics: bool = False):
+        # Default False: broadcast periodik tidak perlu menyeret ulang payload lirik penuh
+        # — sudah ditangani broadcast_lyrics(). Panggil dengan include_lyrics=True
+        # khusus untuk initial snapshot saat client baru connect.
         await self.manager.broadcast({
             "type": "state",
-            "data": state_to_dict(state),
+            "data": state_to_dict(state, include_lyrics=include_lyrics),
         })
 
     async def broadcast_progress(self, position: float, status_name: str):

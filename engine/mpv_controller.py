@@ -63,6 +63,7 @@ class MpvController:
         self._mpv_process = None
         self.socket_path = socket_path or MPV_SOCKET
         self.tcp_port = tcp_port or os.environ.get("YT_PLAYER_MPV_PORT", "12345")
+        self._last_progress_ts: float = 0.0  # throttle TrackProgressEvent publish
         # TASK-3.3: Injected per-room bus (fallback ke global jika belum direfactor)
         if event_bus is None:
             from core.event_bus import bus as _global_bus
@@ -82,10 +83,35 @@ class MpvController:
         ytdl_arg = f"--script-opts=ytdl_hook-ytdl_path={ytdl_path}" if ytdl_path else ""
         
         # Auto-spawn mpv in background
+        # FIX-STREAM-BUFFER-01: sebelumnya mpv jalan dengan setting cache/buffer
+        # default bawaan, yang tidak dioptimalkan untuk streaming lewat koneksi
+        # standar/flaky (Termux/mobile). Hasilnya: sedikit saja hiccup jaringan
+        # bisa langsung kedengaran putus-putus (audio stutter) karena buffer
+        # terlalu tipis. Args di bawah bikin mpv:
+        # - nge-buffer sampai ~20 detik ke depan (demuxer-readahead-secs)
+        # - alokasikan buffer cukup besar untuk audio (demuxer-max-bytes) —
+        #   30MiB jauh lebih dari cukup untuk berjam-jam audio bitrate rendah,
+        #   jadi bukan soal media, ini cuma headroom aman
+        # - kalau buffer sempat habis (network stall), PAUSE sebentar untuk
+        #   re-buffer alih-alih stutter/skip (cache-pause) — ini cuma berlaku
+        #   DI TENGAH lagu, tidak menunda start pertama kali
+        # - SENGAJA TIDAK pakai cache-pause-initial: itu bikin mpv nunggu
+        #   buffer ~20 detik penuh dulu sebelum audio pertama kali kedengeran,
+        #   dan di koneksi lambat (skenario yang mau kita lindungi) ngisi buffer
+        #   segitu bisa beneran makan waktu nyata — jeda awal yang mengganggu,
+        #   bukan cuma teori. Trade-off ini tidak sepadan untuk "radio ON"
+        #   atau abis skip, yang user harapkan langsung kedengeran.
+        # - fail lebih cepat & jelas kalau network-nya benar-benar macet
+        #   (network-timeout), daripada hang tanpa batas
         common_args = [
             "--no-video", "--idle",
             "--ytdl-format=bestaudio/best",
-            "--audio-pitch-correction=yes"
+            "--audio-pitch-correction=yes",
+            "--cache=yes",
+            "--demuxer-readahead-secs=20",
+            "--demuxer-max-bytes=30MiB",
+            "--cache-pause=yes",
+            "--network-timeout=15",
         ]
         
         if os.name == 'nt':
@@ -211,9 +237,11 @@ class MpvController:
     async def _observe_events(self):
         """Event loop listener for mpv events (end-file, time-pos, etc)."""
         try:
-            await self._command(["observe_property", 1, "time-pos"])
-            await self._command(["observe_property", 2, "pause"])
-            await self._command(["observe_property", 3, "duration"])
+            await asyncio.gather(
+                self._command(["observe_property", 1, "time-pos"]),
+                self._command(["observe_property", 2, "pause"]),
+                self._command(["observe_property", 3, "duration"]),
+            )
 
             while self.is_connected:
                 try:
@@ -284,7 +312,12 @@ class MpvController:
             name = msg.get("name")
             data = msg.get("data")
             if name == "time-pos" and isinstance(data, (int, float)):
-                await self._bus.publish(TrackProgressEvent(position=float(data)))
+                import time as _time
+                _now = _time.monotonic()
+                # Throttle: publish maksimal 1× per detik untuk hemat CPU/baterai.
+                if _now - self._last_progress_ts >= 1.0:
+                    self._last_progress_ts = _now
+                    await self._bus.publish(TrackProgressEvent(position=float(data)))
             elif name == "pause":
                 await self._bus.publish(TrackPauseChangedEvent(is_paused=bool(data)))
             elif name == "duration" and isinstance(data, (int, float)):

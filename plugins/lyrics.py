@@ -27,7 +27,6 @@ import structlog
 import aiohttp
 import bisect
 import asyncio
-import syncedlyrics
 from contextlib import asynccontextmanager
 from config import LYRICS_API_BASE
 from core.event_bus import EventBus
@@ -48,6 +47,7 @@ class LyricsFetcher:
         self._session = session
         self._owns_session = False  # True jika kita yang buat, kita yang harus tutup
         self._current_generation = 0
+        self._last_lyrics_broadcast_ts: float = 0.0  # throttle LyricsUpdatedEvent
         # TASK-3.4: Injected per-room bus (fallback ke global jika belum direfactor)
         if event_bus is None:
             from core.event_bus import bus as _global_bus
@@ -136,6 +136,7 @@ class LyricsFetcher:
             if not lrc:
                 logger.info("lrclib failed. Falling back to syncedlyrics (Musixmatch/NetEase/etc)...")
                 logger.info(f"syncedlyrics query: {search_query}")
+                import syncedlyrics  # lazy import — modul besar, hanya dipakai di fallback terakhir ini
                 loop = asyncio.get_running_loop()
                 try:
                     lrc = await asyncio.wait_for(loop.run_in_executor(None, syncedlyrics.search, search_query), timeout=5.0)
@@ -189,14 +190,20 @@ class LyricsFetcher:
         if not self.lyrics_data or not isinstance(position, (int, float)):
             return
 
-        timestamps = getattr(self.state, "lyrics_timestamps", [])
+        timestamps = self.state.lyrics_timestamps
         if not timestamps:
             timestamps = [t for t, _ in self.lyrics_data]
             self.state.lyrics_timestamps = timestamps
+
         adjusted_position = position + self.state.lyrics_offset
         active_idx = bisect.bisect_right(timestamps, adjusted_position) - 1
         active_idx = max(0, active_idx)
-                
+
         if self.state.lyrics_index != active_idx:
             self.state.lyrics_index = active_idx
-            await self._bus.publish(LyricsUpdatedEvent())
+            import time as _time
+            _now = _time.monotonic()
+            # Throttle: jangan broadcast lirik lebih dari 1× per 0.5 detik
+            if _now - self._last_lyrics_broadcast_ts >= 0.5:
+                self._last_lyrics_broadcast_ts = _now
+                await self._bus.publish(LyricsUpdatedEvent())
