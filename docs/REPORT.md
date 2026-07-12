@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-11
+last_verified: 2026-07-12
 sprint: 3.2
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-11
+> **Tanggal Scan:** 2026-07-12
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,22 +19,22 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python scripts/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-11 oleh `scripts/generate_report.py`  
+> **Auto-generated:** 2026-07-12 oleh `scripts/generate_report.py`  
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 48 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 73 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 56 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 106 |
 | Total file `.js` (ekskl. `.min.js`) | 24 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
-| Total class (Python) | 51 |
-| Total function/method (Python) | 366 |
-| Total baris Python | 9,504 |
-| Total baris JS (web/) | 2,957 |
+| Total class (Python) | 91 |
+| Total function/method (Python) | 749 |
+| Total baris Python | 13,111 |
+| Total baris JS (web/) | 3,118 |
 | Total baris CSS (web/) | 3,277 |
-| Ukuran DB utama (`data/lunawave.db`) | 244 KB |
+| Ukuran DB utama (`data/lunawave.db`) | 444 KB |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
@@ -42,10 +42,10 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | File | Baris |
 |------|-------|
 | `launcher/gui.py` | 780 ⚠️ |
+| `engine/radio_engine.py` | 439 ⚠️ |
+| `engine/playback/controller.py` | 420 ⚠️ |
 | `cache/db.py` | 414 ⚠️ |
-| `engine/playback/controller.py` | 398 ⚠️ |
-| `scripts/architecture_lint.py` | 391 ⚠️ |
-| `engine/radio_engine.py` | 380 ⚠️ |
+| `tests/unit/engine/test_playback_controller.py` | 411 ⚠️ |
 <!-- END:GENERATED -->
 
 ---
