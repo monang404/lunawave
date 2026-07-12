@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-11
+last_verified: 2026-07-12
 generated: true
 note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-11 oleh `scripts/generate_file_index.py`  
+> **Auto-generated:** 2026-07-12 oleh `scripts/generate_file_index.py`  
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.  
 **Class:** —  
 **Function utama:** —  
-**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/log_config`, `engine/mpv_controller`, `engine/ytdlp_client`, _8 lainnya_  
+**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/log_config`, `engine/mpv_controller`, `engine/ytdlp_client`, _9 lainnya_  
 **Menggunakan:** —
 
 
@@ -57,7 +57,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.  
 **Class:** `CommandBus`  
 **Function utama:** `register()`, `unregister()`  
-**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/volume_service`, `plugins/notifications`, `server/handlers/websocket`  
+**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/volume_service`, `plugins/notifications`, `server/handlers/websocket`, _3 lainnya_  
 **Menggunakan:** `core/observability`
 
 
@@ -67,7 +67,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Implement a lightweight async pub/sub EventBus that decouples modules via typed DomainEvents, using weak references for method handlers.  
 **Class:** `EventBus`  
 **Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`  
-**Digunakan oleh:** `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/volume_service`, `main`, _3 lainnya_  
+**Digunakan oleh:** `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/volume_service`, `main`, _8 lainnya_  
 **Menggunakan:** `core/task_utils`, `core/events`, `core/observability`
 
 
@@ -77,7 +77,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.  
 **Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`  
 **Function utama:** —  
-**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/queue_manager`, _7 lainnya_  
+**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/queue_manager`, _13 lainnya_  
 **Menggunakan:** `core/state`
 
 
@@ -87,7 +87,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Define the custom exception hierarchy for LunaWave error conditions.  
 **Class:** `YtPlayerError(Exception)`, `MpvConnectionError(YtPlayerError)`, `TrackResolutionError(YtPlayerError)`, `DownloadError(YtPlayerError)`  
 **Function utama:** —  
-**Digunakan oleh:** `engine/mpv_controller`  
+**Digunakan oleh:** `engine/mpv_controller`, `tests/unit/core/test_exceptions`  
 **Menggunakan:** —
 
 
@@ -106,8 +106,8 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **File:** `core/observability.py`  
 **Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.  
 **Class:** —  
-**Function utama:** `setup_tracing()`, `get_metrics_content()`  
-**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `server/handlers/http`, `server/handlers/websocket`, `server/middleware`  
+**Function utama:** `get_metrics_content()`  
+**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `server/handlers/http`, `server/handlers/websocket`, `server/middleware`, _1 lainnya_  
 **Menggunakan:** —
 
 
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.  
 **Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`  
 **Function utama:** `cancel_download()`  
-**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/track_loader`, `engine/radio_engine`, _4 lainnya_  
+**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/track_loader`, `engine/radio_engine`, _5 lainnya_  
 **Menggunakan:** `core/state`
 
 
@@ -127,7 +127,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Provide PBKDF2-SHA256 password hashing and constant-time verification.  
 **Class:** —  
 **Function utama:** `hash_password()`, `verify_password()`  
-**Digunakan oleh:** `server/handlers/auth`  
+**Digunakan oleh:** `server/handlers/auth`, `tests/unit/core/test_security`  
 **Menggunakan:** —
 
 
@@ -137,7 +137,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.  
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(str, Enum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`  
 **Function utama:** —  
-**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _16 lainnya_  
+**Digunakan oleh:** `cache/db`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _29 lainnya_  
 **Menggunakan:** —
 
 
@@ -147,7 +147,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Wrap asyncio.create_task with centralized exception handling to prevent silent background-task crashes.  
 **Class:** —  
 **Function utama:** `safe_create_task()`  
-**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/playback/track_loader`, _5 lainnya_  
+**Digunakan oleh:** `core/event_bus`, `engine/download_manager`, `engine/mpv_controller`, `engine/playback/controller`, `engine/playback/track_loader`, _6 lainnya_  
 **Menggunakan:** —
 
 
@@ -160,7 +160,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Register all CMD_* CommandBus handlers, routing each command to the appropriate method on PlaybackController or VolumeService.  
 **Class:** `CommandRouter`  
 **Function utama:** `_route()`, `_route_volume()`  
-**Digunakan oleh:** `main`  
+**Digunakan oleh:** `main`, `tests/unit/engine/test_command_router`  
 **Menggunakan:** `core/command_bus`
 
 
@@ -200,7 +200,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Resolve a track URI and trigger background side-effects (sponsorblock, lyrics fetch, play-count increment) before playback begins.  
 **Class:** `TrackLoader`  
 **Function utama:** —  
-**Digunakan oleh:** `engine/playback/controller`  
+**Digunakan oleh:** `engine/playback/controller`, `tests/unit/engine/test_track_loader`  
 **Menggunakan:** `core/state`, `core/ports`, `cache/resolver`, `core/task_utils`
 
 
@@ -210,7 +210,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Advance playback to the next track in the user queue when called by PlaybackController at track end.  
 **Class:** `QueueMode`  
 **Function utama:** —  
-**Digunakan oleh:** `engine/playback/controller`  
+**Digunakan oleh:** `engine/playback/controller`, `tests/unit/engine/test_queue_manager`  
 **Menggunakan:** `core/events`, `core/state`
 
 
@@ -230,7 +230,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Handle volume-related commands and apply the correct volume to mpv based on the active audio output mode.  
 **Class:** `VolumeService`  
 **Function utama:** —  
-**Digunakan oleh:** —  
+**Digunakan oleh:** `tests/unit/engine/test_volume_service`  
 **Menggunakan:** `core/event_bus`, `core/events`, `core/command_bus`, `core/ports`, `core/state`
 
 
@@ -240,7 +240,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Wrap yt-dlp in a thread executor to provide async search, stream URL extraction, and MP3 download without blocking the event loop.  
 **Class:** `YtDlpClient`  
 **Function utama:** `cancel_download()`  
-**Digunakan oleh:** `main`  
+**Digunakan oleh:** `main`, `tests/unit/engine/test_ytdlp_client`  
 **Menggunakan:** `core/state`, `config`
 
 
@@ -263,7 +263,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Resolve the playback URI for a track using a priority-based cache strategy: local file > cached stream URL > fresh yt-dlp extraction.  
 **Class:** `CacheResolver`  
 **Function utama:** —  
-**Digunakan oleh:** `engine/playback/controller`, `engine/playback/track_loader`  
+**Digunakan oleh:** `engine/playback/controller`, `engine/playback/track_loader`, `tests/unit/cache/test_resolver`  
 **Menggunakan:** `cache/db`, `config`, `core/state`, `core/ports`
 
 
@@ -369,7 +369,7 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Fungsi:** Query the SQLite database to provide discover-page data: recently played tracks, favorites, cached tracks, and featured artists/genres.  
 **Class:** `DiscoverService`  
 **Function utama:** —  
-**Digunakan oleh:** `server/handlers/websocket`  
+**Digunakan oleh:** `server/handlers/websocket`, `tests/unit/services/test_discover_service`  
 **Menggunakan:** `core/state`, `cache/db`
 
 
@@ -662,36 +662,48 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 | `launcher/gui.py` | 780 | Perlu dipecah |
 
+| `engine/radio_engine.py` | 439 | Perlu dipecah |
+
+| `engine/playback/controller.py` | 420 | Perlu dipecah |
+
 | `cache/db.py` | 414 | Perlu dipecah |
 
-| `engine/playback/controller.py` | 398 | Perlu dipecah |
+| `tests/unit/engine/test_playback_controller.py` | 411 | Perlu dipecah |
 
 | `scripts/architecture_lint.py` | 391 | Perlu dipecah |
 
-| `engine/radio_engine.py` | 380 | Perlu dipecah |
+| `engine/mpv_controller.py` | 365 | Perlu dipecah |
 
 | `scripts/generate_file_index.py` | 359 | Perlu dipecah |
 
-| `server/handlers/websocket.py` | 341 | Perhatikan |
+| `server/handlers/websocket.py` | 354 | Perlu dipecah |
 
-| `engine/mpv_controller.py` | 332 | Perhatikan |
+| `tests/unit/engine/test_ytdlp_client.py` | 313 | Perhatikan |
+
+| `tests/unit/engine/test_download_manager.py` | 281 | Perhatikan |
 
 | `scripts/generate_report.py` | 277 | Perhatikan |
 
 | `scripts/find_owner.py` | 274 | Perhatikan |
 
-| `main.py` | 228 | Perhatikan |
+| `main.py` | 260 | Perhatikan |
+
+| `tests/unit/test_config.py` | 257 | Perhatikan |
+
+| `tests/unit/cache/test_db.py` | 218 | Perhatikan |
 
 | `scripts/verify_structure.py` | 217 | Perhatikan |
 
+| `plugins/lyrics.py` | 209 | Perhatikan |
+
 | `scripts/doctor.py` | 208 | Perhatikan |
 
-| `plugins/lyrics.py` | 202 | Perhatikan |
+| `tests/unit/services/test_discover_service.py` | 206 | Perhatikan |
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**60/63** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**61/89** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 - [ ] `scratch/check_db.py`
@@ -699,5 +711,55 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 - [ ] `scripts/archive/generate_icons.py`
 
 - [ ] `scripts/archive/inject_svgs.py`
+
+- [ ] `tests/conftest.py`
+
+- [ ] `tests/fakes/fake_audio_player.py`
+
+- [ ] `tests/fakes/fake_media_extractor.py`
+
+- [ ] `tests/fakes/fake_track_repository.py`
+
+- [ ] `tests/unit/cache/test_db.py`
+
+- [ ] `tests/unit/cache/test_resolver.py`
+
+- [ ] `tests/unit/core/test_command_bus.py`
+
+- [ ] `tests/unit/core/test_event_bus.py`
+
+- [ ] `tests/unit/core/test_events.py`
+
+- [ ] `tests/unit/core/test_exceptions.py`
+
+- [ ] `tests/unit/core/test_log_config.py`
+
+- [ ] `tests/unit/core/test_observability.py`
+
+- [ ] `tests/unit/core/test_ports.py`
+
+- [ ] `tests/unit/core/test_security.py`
+
+- [ ] `tests/unit/core/test_state.py`
+
+- [ ] `tests/unit/core/test_task_utils.py`
+
+- [ ] `tests/unit/engine/test_command_router.py`
+
+- [ ] `tests/unit/engine/test_download_manager.py`
+
+- [ ] `tests/unit/engine/test_playback_controller.py`
+
+- [ ] `tests/unit/engine/test_queue_manager.py`
+
+- [ ] `tests/unit/engine/test_track_loader.py`
+
+- [ ] `tests/unit/engine/test_volume_service.py`
+
+- [ ] `tests/unit/engine/test_ytdlp_client.py`
+
+- [ ] `tests/unit/services/test_discover_service.py`
+
+- [ ] `tests/unit/test_config.py`
 
 <!-- END:GENERATED -->
