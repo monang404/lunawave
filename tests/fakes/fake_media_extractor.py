@@ -1,4 +1,13 @@
-"""Fake implementation of core.ports.MediaExtractorPort for tests."""
+"""Fake implementation of core.ports.MediaExtractorPort for tests.
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from core.state import TrackInfo
 

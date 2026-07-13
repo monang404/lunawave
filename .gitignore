@@ -11,6 +11,7 @@ __pycache__/
 env/
 venv/
 ENV/
+node_modules/
 
 # App runtime — dibuat otomatis saat pertama run, jangan didistribusikan
 cache/mp3/

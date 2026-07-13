@@ -1,6 +1,6 @@
 ---
-last_verified: 2026-07-10
-sprint: 3.2
+last_verified: 2026-07-13
+sprint: 3.2 (selesai) — Batch 8–12 sudah jalan pasca-3.2, belum diberi nomor sprint resmi
 ---
 
 # AI_CONTEXT.md — Baca ini sebelum menyentuh kode apapun
@@ -11,13 +11,16 @@ LunaWave adalah music player berbasis YouTube yang jalan sebagai server lokal
 Platform utama: Termux (Android) + Windows.
 Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 
-## Sprint Aktif: 3.2 (selesai) → 3.3 (berikutnya)
+## Sprint Aktif: 3.2 (selesai) — beberapa batch sudah jalan pasca-3.2
 - Sprint 3.2 selesai: refactor `start.py` → `launcher/` ✅
-- Sprint 3.3 target: lihat `docs/STATUS.md` untuk daftar lengkap
+- Sprint 3.2 lanjutan (pasca): Batch 8–12 (2026-07-11) — DB Index, websocket improvements, lyric serializer, OTel cleanup, startup script.
+- Sprint 3.2 lanjutan (2026-07-13): refactor `cache/db.py` → `persistence/`, `engine/mpv_controller.py` + `engine/ytdlp_client.py` → `adapters/`, docs cleanup.
+- Sprint 3.3 target: lihat `docs/STATUS.md` — sumber kebenaran kondisi per-file.
+- Lihat `docs/PATCHLOG.md` untuk detail patch terbaru.
 
 ## File yang TIDAK BOLEH disentuh tanpa izin eksplisit
 - `engine/playback/controller.py` — risiko tinggi, closure kompleks
-- `server/handlers/websocket.py` — jangan pecah dulu, ikuti MIGRATION_GUIDE Tahap 3
+- `server/handlers/websocket.py` — jangan pecah dulu tanpa persetujuan eksplisit atau sprint plan yang jelas
 - `cache/admin_password.txt` — JANGAN commit
 - `web/static/index.html` — tidak dipecah, ini keputusan final
 
@@ -67,8 +70,10 @@ dokumen yang sudah ada, hanya di antara marker:
 | `verify_docs.py` | Tidak menulis file — stdout + exit code |
 | `verify_structure.py` | Tidak menulis file — stdout + exit code |
 | `verify_security.py` | Tidak menulis file — stdout + exit code |
-| `doctor.py` | Tidak menulis file — aggregasi output semua checker di atas ke satu dashboard |
+| `doctor.py` | Tidak menulis file — aggregasi output semua checker ke satu dashboard |
+| `run_all.py` | Jalankan semua generator + doctor.py sekaligus |
 | `find_owner.py` | Tidak menulis file — hanya print ke stdout |
+| `fix_docs.py` | Utility inject/perbaiki docstring modul (jalankan manual jika perlu) |
 
 Bagian dokumen **di luar marker** (narasi, rekomendasi, keputusan) adalah
 wilayah manual — AI boleh edit, tapi harus append ke `PATCHLOG.md` setelahnya.
@@ -159,11 +164,89 @@ Semua checker mengimport `CheckResult` dari `shared.check_result`. CLI dan exit 
 | Butuh info tentang | Cara tercepat |
 |--------------------|---------------|
 | File mana yang relevan untuk task ini | `python scripts/find_owner.py <nama_class_atau_file>` |
-| Semua file & fungsinya | `docs/FILE_INDEX.md` ← sebagian sudah auto-generated, lebih akurat |
+| Semua file & fungsinya | `docs/FILE_INDEX.md` ← auto-generated, selalu akurat |
 | Kondisi per-file & sprint target | `docs/STATUS.md` |
-| Struktur folder | `docs/STRUCTURE.md` |
-| Roadmap refactoring | `docs/MIGRATION_GUIDE.md` |
-| Arsitektur ideal | `docs/kompas/Blueprint.md` |
-| Keputusan arsitektur | `docs/kompas/adr/` |
+| Struktur folder detail | `docs/architecture/folder_structure.md` |
+| Arsitektur ideal & Blueprint | `docs/architecture/overview.md` |
+| Layer diagram & data flow | `docs/architecture/layer_diagram.md`, `docs/architecture/data_flow.md` |
+| Aturan dependency antar layer | `docs/architecture/dependency_rules.md` |
+| Detail backend (engine, persistence) | `docs/backend/services.md`, `docs/backend/persistence.md` |
+| Detail frontend (JS, CSS) | `docs/frontend/ui_architecture.md` |
+| Strategi & target testing | `docs/testing/testing_strategy.md` |
+| Keputusan arsitektur | `docs/adr/` |
+| Constraints teknis & lingkungan | `docs/CONSTRAINTS.md` |
 | Temuan & status bug | `docs/REPORT.md` |
 | Kesehatan project | `python scripts/doctor.py` |
+
+## Navigasi docs/ untuk AI
+
+Struktur `docs/` menggunakan hierarki folder — tiap topik punya foldernya sendiri:
+
+```
+docs/
+├── AI_CONTEXT.md            ← [BACA INI DULU] entry point wajib
+├── INDEX.md                 ← orientasi proyek, modul, entry point, navigasi
+├── STATUS.md                ← kondisi per-file, done/pending, sprint target
+├── PATCHLOG.md              ← riwayat semua perubahan (append-only)
+├── FILE_INDEX.md            ← inventaris lengkap semua file & fungsi [AUTO-GENERATED]
+├── REPORT.md                ← statistik & analisis [AUTO-GENERATED]
+├── CONSTRAINTS.md           ← batasan teknis & lingkungan (Termux, MPV, dll.)
+│
+├── architecture/            ← ARSITEKTUR — baca ini untuk memahami sistem
+│   ├── overview.md          ← visi, filosofi, prinsip desain
+│   ├── folder_structure.md  ← peta folder lengkap + fungsi tiap folder
+│   ├── backend.md           ← peta modul Python layer per layer
+│   ├── frontend.md          ← peta modul JS & CSS
+│   ├── domain.md            ← domain model hexagonal (core, ports, events)
+│   ├── data_flow.md         ← alur data dari UI → backend → MPV
+│   ├── layer_diagram.md     ← diagram layer + dependency rules visual
+│   ├── dependency_rules.md  ← aturan import antar layer (ditegakkan CI)
+│   └── technology_stack.md  ← stack & alasan pilihan teknologi
+│
+├── backend/                 ← IMPLEMENTASI BACKEND
+│   ├── services.md          ← engine, services, plugins
+│   ├── persistence.md       ← SQLite, repositories, data layer
+│   ├── api.md               ← HTTP & WebSocket API
+│   ├── background_jobs.md   ← download manager, radio prefetch
+│   └── caching.md           ← cache resolver & MP3 cache
+│
+├── frontend/                ← IMPLEMENTASI FRONTEND
+│   ├── ui_architecture.md   ← peta modul JS & strategi CSS
+│   ├── pwa.md               ← PWA, manifest, service worker
+│   ├── state_management.md  ← store.js & state sync
+│   └── routing.md           ← event routing & WS message routing
+│
+├── testing/                 ← TESTING
+│   ├── README.md            ← quick start
+│   ├── testing_strategy.md  ← filosofi & coverage target
+│   ├── unit_testing.md      ← panduan & tabel unit test
+│   └── integration_testing.md ← integration test scenarios
+│
+├── devops/                  ← CI/CD & TOOLING
+│   ├── ci_cd.md             ← pipeline CI/CD
+│   ├── tooling.md           ← config file & pre-commit
+│   ├── deployment.md        ← cara deploy & run
+│   └── release.md           ← release workflow & SemVer
+│
+├── security/                ← KEAMANAN
+│   ├── security.md          ← vulnerability reporting
+│   └── threat_model.md      ← threat model & secret management
+│
+├── development/             ← ONBOARDING & STANDAR
+│   ├── coding_standard.md   ← standar kode & type checking
+│   ├── onboarding.md        ← setup dari nol
+│   └── project_structure.md ← peta risiko perubahan
+│
+├── opensource/              ← OPEN SOURCE
+│   ├── contributing.md      ← cara berkontribusi
+│   ├── CHANGELOG.md         ← changelog versi
+│   └── readiness.md         ← open source checklist
+│
+└── adr/                     ← ARCHITECTURE DECISION RECORDS
+    ├── 0001-mpv-ipc-over-subprocess.md
+    ├── 0002-sqlite-over-json-cache.md
+    ├── 0003-hexagonal-ports-protocol.md
+    ├── 0004-command-bus-single-writer.md
+    ├── 0005-websocket-single-channel.md
+    └── 0006-vanilla-js-over-framework.md
+```

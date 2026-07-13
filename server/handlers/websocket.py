@@ -42,46 +42,19 @@ from server.serializers import state_to_dict, dict_to_track, track_to_dict
 from server.middleware import check_rate_limit
 from server.handlers.auth import handle_auth, require_auth
 from services.discover_service import DiscoverService
+from server.connection_manager import ConnectionManager
+from server.handlers.ws_playback import handle_playback_command
+from server.handlers.ws_queue import handle_queue_command
+from server.handlers.ws_discovery import handle_discovery_command
+from server.handlers.ws_download import handle_download_command
+
+PLAYBACK_CMDS = {"play_track", "toggle_pause", "next", "prev", "seek", "set_mode", "set_output", "lyrics_offset", "set_sponsorblock", "radio_randomize", "volume_up", "volume_down", "volume_set"}
+QUEUE_CMDS = {"queue_select", "queue_remove", "queue_add", "queue_reorder", "enqueue_artist_songs", "enqueue_genre_songs"}
+DISCOVERY_CMDS = {"search", "discover"}
+DOWNLOAD_CMDS = {"download", "delete_download"}
+
 
 logger = structlog.get_logger(__name__)
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections = []
-        self.authenticated_connections = set()
-        self.session_tokens = {}
-        self.login_attempts = {}
-        self.command_history = {}
-        import asyncio
-        self.rl_lock = asyncio.Lock()
-
-    async def connect(self, ws):
-        self.active_connections.append(ws)
-        ACTIVE_WEBSOCKETS.inc()
-        logger.info(f"WebSocket connected. Total clients: {len(self.active_connections)}")
-
-    def disconnect(self, ws):
-        if ws in self.active_connections:
-            self.active_connections.remove(ws)
-            ACTIVE_WEBSOCKETS.dec()
-        if ws in self.authenticated_connections:
-            self.authenticated_connections.remove(ws)
-        logger.info(f"WebSocket disconnected. Total clients: {len(self.active_connections)}")
-
-    async def broadcast(self, message: dict):
-        if not self.active_connections:
-            return
-        data = json.dumps(message, ensure_ascii=False)
-        results = await asyncio.gather(
-            *[ws.send_str(data) for ws in list(self.active_connections)],
-            return_exceptions=True,
-        )
-        dead = [
-            ws for ws, result in zip(list(self.active_connections), results)
-            if isinstance(result, Exception)
-        ]
-        for ws in dead:
-            self.disconnect(ws)
 
 async def ws_handler(request):
     playback_controller = request.app["playback_controller"]
@@ -89,7 +62,7 @@ async def ws_handler(request):
     manager = request.app["manager"]
     db = request.app["db"]
     ytdlp = request.app["ytdlp"]
-    
+
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     await manager.connect(ws)
@@ -151,198 +124,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         return
 
     try:
-        if action == "search":
-            query = data.get("query", "").strip()
-            if query:
-                results = await ytdlp.search(query, max_results=10)
-                await ws.send_str(json.dumps({
-                    "type": "search_results",
-                    "data": [track_to_dict(t) for t in results],
-                }, ensure_ascii=False))
-
-        elif action == "discover":
-            ds = DiscoverService(db)
-            # 5 query independent — jalankan bersamaan, bukan berurutan
-            recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
-                ds.get_recent(15),
-                ds.get_favorites(15),
-                ds.get_cached(15),
-                ds.get_featured_artists(100),
-                ds.get_featured_genres(100),
-            )
-            await ws.send_str(json.dumps({
-                "type": "discover_data",
-                "data": {
-                    "recent": [track_to_dict(t) for t in recent],
-                    "cached_tracks": [track_to_dict(t) for t in cached],
-                    "featured_artists": featured_artists,
-                    "featured_genres": featured_genres
-                }
-            }, ensure_ascii=False))
-
-        elif action == "enqueue_genre_songs":
-            genre_name = data.get("genre")
-            if genre_name:
-                await db.increment_genre_click(genre_name)
-                songs = await db.get_genre_songs(genre_name, total_limit=12, max_per_artist=3)
-                
-                if songs:
-                    await command_bus.execute(CMD_SET_MODE, PlaybackMode.QUEUE)
-                    await command_bus.execute(CMD_QUEUE_REPLACE, songs)
-                    await command_bus.execute(CMD_QUEUE_SELECT, 0)
-
-        elif action == "play_track":
-            track = dict_to_track(data)
-            if track:
-                await command_bus.execute(CMD_PLAY_TRACK, track)
-
-        elif action == "toggle_pause":
-            await command_bus.execute(CMD_TOGGLE_PAUSE)
-
-        elif action == "next":
-            await command_bus.execute(CMD_NEXT, data)
-
-        elif action == "prev":
-            await command_bus.execute(CMD_PREV)
-
-        elif action == "stop":
-            await command_bus.execute(CMD_STOP)
-
-        elif action == "seek":
-            position = data.get("position", 0)
-            await command_bus.execute(CMD_SEEK, float(position))
-
-        elif action == "volume_up":
-            await command_bus.execute(CMD_VOLUME_UP)
-
-        elif action == "volume_down":
-            await command_bus.execute(CMD_VOLUME_DOWN)
-
-        elif action == "volume_set":
-            vol = data.get("volume", 80)
-            await command_bus.execute(CMD_VOLUME_SET, {"volume": int(vol)})
-
-        elif action == "download":
-            track = dict_to_track(data) if data else None
-            await command_bus.execute(CMD_DOWNLOAD, track)
-
-        elif action == "delete_download":
-            track = dict_to_track(data) if data else None
-            if track and track.video_id:
-                db_track = await db.get_track(track.video_id)
-                if db_track and db_track.local_path:
-                    import os
-                    from pathlib import Path
-                    import re
-                    
-                    # Hapus file utama yang terdaftar di DB (bisa berupa downloads/ atau cache/mp3/ lama)
-                    if os.path.exists(db_track.local_path):
-                        try:
-                            os.remove(db_track.local_path)
-                        except Exception as e:
-                            logger.error(f"Gagal menghapus file lokal {db_track.local_path}: {e}")
-                            
-                    # Fallback legacy: hapus juga dari folder downloads jika dulu file tersimpan ganda
-                    safe_artist = re.sub(r'[\\/*?:"<>|]', "", db_track.artist)
-                    safe_title = re.sub(r'[\\/*?:"<>|]', "", db_track.title)
-                    user_path = Path("downloads") / f"{safe_artist} - {safe_title}.mp3"
-                    if user_path.exists() and str(user_path) != db_track.local_path:
-                        try:
-                            os.remove(str(user_path))
-                        except:
-                            pass
-                            
-                    # Update DB
-                    db_track.local_path = None
-                    await db.set_local_path(db_track.video_id, None)
-                    
-                    # Update current state if playing this track
-                    if state.current_track and state.current_track.video_id == db_track.video_id:
-                        state.current_track.local_path = None
-                        await manager.broadcast({
-                            "type": "state",
-                            "data": state_to_dict(state)
-                        })
-                        
-                    # Update discover
-                    ds = DiscoverService(db)
-                    recent, cached, featured_artists, featured_genres = await asyncio.gather(
-                        ds.get_recent(15),
-                        ds.get_cached(15),
-                        ds.get_featured_artists(100),
-                        ds.get_featured_genres(100),
-                    )
-                    await manager.broadcast({
-                        "type": "discover_data",
-                        "data": {
-                            "recent": [track_to_dict(t) for t in recent],
-                            "cached_tracks": [track_to_dict(t) for t in cached],
-                            "featured_artists": featured_artists,
-                            "featured_genres": featured_genres
-                        }
-                    })
-                    await manager.broadcast({
-                        "type": "log",
-                        "data": f"Unduhan dihapus: {db_track.title}"
-                    })
-
-        elif action == "set_mode":
-            mode_str = data.get("mode", "queue").upper()
-            mode = PlaybackMode.RADIO if mode_str == "RADIO" else PlaybackMode.QUEUE
-            await command_bus.execute(CMD_SET_MODE, mode)
-
-        elif action == "queue_select":
-            index = data.get("index", 0)
-            await command_bus.execute(CMD_QUEUE_SELECT, int(index))
-
-        elif action == "queue_remove":
-            index = data.get("index", 0)
-            await command_bus.execute(CMD_QUEUE_REMOVE, int(index))
-
-        elif action == "queue_add":
-            track = dict_to_track(data)
-            if track:
-                await command_bus.execute(CMD_QUEUE_ADD, track)
-
-        elif action == "queue_reorder":
-            from_idx = int(data.get("from_index", 0))
-            to_idx = int(data.get("to_index", 0))
-            await command_bus.execute(CMD_QUEUE_REORDER, {"from_index": from_idx, "to_index": to_idx})
-
-        elif action == "enqueue_artist_songs":
-            # PATCH-ANDROID-AUDIO-01: jangan CMD_SET_MODE dulu (itu nge-null current_track
-            # + set IDLE secara instan -> flash "Belum ada lagu" sebelum
-            # track baru siap, kerasa banget di device lambat spt Termux).
-            # Pakai CMD_PLAY_TRACK utk lagu pertama: path yg sama dgn klik
-            # search result, sudah handle keluar dari RADIO tanpa nge-null
-            # track lama. Sisanya masuk antrean seperti biasa.
-            artist_name = data.get("artist")
-            if artist_name:
-                songs = await db.get_artist_songs_strict(artist=artist_name, limit=10)
-                if songs:
-                    await db.increment_artist_click(artist_name)
-
-                    first_track, rest_tracks = songs[0], songs[1:]
-                    await command_bus.execute(CMD_QUEUE_REPLACE, rest_tracks)
-                    await command_bus.execute(CMD_PLAY_TRACK, first_track)
-
-        elif action == "radio_randomize":
-            seed_artist = data.get("seed_artist")
-            await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
-
-        elif action == "set_output":
-            output_str = data.get("output", "device")
-            output_val = AudioOutput.BROWSER if output_str == "browser" else AudioOutput.DEVICE
-            await command_bus.execute(CMD_SET_OUTPUT, output_val)
-
-        elif action == "set_sponsorblock":
-            enabled = data.get("enabled", True)
-            await command_bus.execute(CMD_SET_SPONSORBLOCK, bool(enabled))
-
-        elif action == "lyrics_offset":
-            offset = data.get("offset", 0.0)
-            await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})
-
+        if action in PLAYBACK_CMDS:
+            await handle_playback_command(action, data)
+        elif action in QUEUE_CMDS:
+            await handle_queue_command(action, data, db)
+        elif action in DISCOVERY_CMDS:
+            await handle_discovery_command(action, data, ytdlp, db, ws)
+        elif action in DOWNLOAD_CMDS:
+            await handle_download_command(action, data, db, manager, state)
     except Exception as e:
         logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
         try:

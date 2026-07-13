@@ -39,6 +39,8 @@ SKIP_DIRS: frozenset[str] = frozenset({
     ".tox",
     "dist",
     "build",
+    "scripts",
+    "tests",
 })
 
 

@@ -66,7 +66,12 @@ function initEvents() {
     });
 
     // Initialize sub-modules
-    if (typeof initPlayerEvents === "function") initPlayerEvents();
+    if (typeof initTransportEvents === "function") initTransportEvents();
+    if (typeof initProgressEvents === "function") initProgressEvents();
+    if (typeof initSearchInputEvents === "function") initSearchInputEvents();
+    if (typeof initActionModalEvents === "function") initActionModalEvents();
+    if (typeof initClickDelegationEvents === "function") initClickDelegationEvents();
+    if (typeof initKeyboardShortcutEvents === "function") initKeyboardShortcutEvents();
     if (typeof initQueueEvents === "function") initQueueEvents();
     if (typeof initQueueDragDrop === "function") initQueueDragDrop();
     if (typeof initLyricsEvents === "function") initLyricsEvents();

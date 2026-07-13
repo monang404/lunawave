@@ -3,6 +3,15 @@
 Priority: Rendah — these are structural Protocols with no runtime
 behaviour of their own. We just make sure our test fakes (and the real
 in-repo implementations) actually satisfy the ports they claim to.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 from core.ports import AudioPlayerPort, MediaExtractorPort

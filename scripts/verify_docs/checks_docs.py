@@ -45,7 +45,15 @@ from .helpers import (
 # ---------------------------------------------------------------------------
 
 def check_docs_structure(docs_dir: Path) -> CheckResult:
-    missing = [f"docs/{doc}" for doc in REQUIRED_DOCS if not (docs_dir / doc).exists()]
+    project_root = docs_dir.parent
+    missing = []
+    for doc in REQUIRED_DOCS:
+        if doc == "AI_CONTEXT.md":
+            if not (project_root / doc).exists():
+                missing.append(doc)
+        else:
+            if not (docs_dir / doc).exists():
+                missing.append(f"docs/{doc}")
     if missing:
         return CheckResult(
             "Documentation Structure", "FAIL",

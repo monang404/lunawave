@@ -3,6 +3,15 @@
 Priority: Rendah (wiring). We cover the pure `simple_renderer` function
 thoroughly, and treat `setup_logging()` as a smoke test with logging state
 restored afterwards so it doesn't leak into other tests.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import logging

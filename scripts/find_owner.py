@@ -220,7 +220,7 @@ def show_owner(query: str, root: Path) -> None:
 
     if info["classes"]:
         print(f"\n  Classes        : {', '.join(info['classes'])}")
-    
+
     pub_fns = [f for f in info["functions"] if not f.startswith("_")]
     if pub_fns:
         shown = pub_fns[:8]
@@ -246,7 +246,7 @@ def show_owner(query: str, root: Path) -> None:
 
     if adrs:
         print(f"\n  ADR terkait    : {', '.join(adrs)}")
-        print(f"  (lihat docs/kompas/adr/)")
+        print(f"  (lihat docs/adr/)")
 
     if status_line:
         print(f"\n  STATUS.md      :")

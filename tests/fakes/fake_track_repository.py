@@ -1,4 +1,13 @@
-"""Fake implementation of core.ports.TrackRepositoryPort for tests."""
+"""Fake implementation of core.ports.TrackRepositoryPort for tests.
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from core.state import TrackInfo
 

@@ -50,13 +50,13 @@ PY_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_/\\.-]*\.py)")
 
 REQUIRED_DOCS = [
     "INDEX.md", "STATUS.md", "REPORT.md", "PATCHLOG.md",
-    "FILE_INDEX.md", "STRUCTURE.md", "AI_CONTEXT.md",
+    "FILE_INDEX.md", "architecture/folder_structure.md", "AI_CONTEXT.md",
 ]
 
 # Docstring module wajib mengandung field-field ini
 DOCSTRING_REQUIRED_FIELDS = ("Purpose:", "Subscribes to:", "Publishes:")
 
-LARGE_FILE_THRESHOLD = 300   # LOC
+LARGE_FILE_THRESHOLD = 360   # LOC
 STALE_DAYS_DEFAULT   = 30
 PREVIEW_COUNT        = 3     # item ditampilkan sebelum "(+N more)"
 

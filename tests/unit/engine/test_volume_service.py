@@ -1,4 +1,13 @@
-"""tests/unit/engine/test_volume_service.py — mirrors engine/volume_service.py"""
+"""tests/unit/engine/test_volume_service.py — mirrors engine/volume_service.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 import pytest
 

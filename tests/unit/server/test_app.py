@@ -1,0 +1,96 @@
+"""
+Module: server.app
+
+Purpose:
+    Unit tests for server.app.
+
+Responsibilities:
+    - Test functionality and edge cases.
+
+Depends on:
+    - server.app
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+import pytest
+import asyncio
+from unittest.mock import MagicMock, AsyncMock, patch
+from aiohttp import web
+
+from server.app import create_app, run_server
+
+@pytest.fixture
+def mock_playback_controller():
+    controller = MagicMock()
+    controller.state = MagicMock()
+    return controller
+
+@pytest.fixture
+def mock_ytdlp():
+    return MagicMock()
+
+@pytest.fixture
+def mock_db():
+    return MagicMock()
+
+def test_create_app_registers_routes_and_services(mock_playback_controller, mock_ytdlp, mock_db):
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+
+    assert isinstance(app, web.Application)
+
+    # Check that services are in app
+    assert app["playback_controller"] == mock_playback_controller
+    assert app["state"] == mock_playback_controller.state
+    assert app["ytdlp"] == mock_ytdlp
+    assert app["db"] == mock_db
+    assert "manager" in app
+
+    # Check that routes are registered
+    routes = [route.resource.canonical for route in app.router.routes() if hasattr(route.resource, "canonical")]
+
+    assert "/" in routes
+    assert "/admin" in routes
+    assert "/ws" in routes
+    assert "/api/stream/{video_id}" in routes
+    assert "/health" in routes
+    assert "/metrics" in routes
+
+@pytest.mark.asyncio
+async def test_run_server_starts_and_cleans_up():
+    app = web.Application()
+
+    with patch("server.app.web.AppRunner") as MockAppRunner, patch("server.app.web.TCPSite") as MockTCPSite:
+        mock_runner = MockAppRunner.return_value
+        mock_runner.setup = AsyncMock()
+        mock_runner.cleanup = AsyncMock()
+
+        mock_site = MockTCPSite.return_value
+        mock_site.start = AsyncMock()
+
+        # We need to run run_server in a task and then cancel it to simulate shutdown
+        task = asyncio.create_task(run_server(app, "127.0.0.1", 8080))
+
+        # Yield to let run_server execute up to the sleep
+        await asyncio.sleep(0.01)
+
+        MockAppRunner.assert_called_once_with(app)
+        mock_runner.setup.assert_called_once()
+        MockTCPSite.assert_called_once_with(mock_runner, "127.0.0.1", 8080)
+        mock_site.start.assert_called_once()
+
+        # Cancel the task
+        task.cancel()
+
+        # Wait for it to finish cancelling
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        # Ensure cleanup was called
+        mock_runner.cleanup.assert_called_once()

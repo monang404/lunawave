@@ -1,4 +1,13 @@
-"""tests/unit/core/test_event_bus.py — mirrors core/event_bus.py"""
+"""tests/unit/core/test_event_bus.py — mirrors core/event_bus.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 import gc
 

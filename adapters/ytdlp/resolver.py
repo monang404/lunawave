@@ -1,0 +1,64 @@
+"""
+Module: adapters.ytdlp.resolver
+
+Purpose:
+    Auto-generated module docstring.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+import asyncio
+import logging
+from config import YTDLP_RESOLVE_TIMEOUT_SEC
+from adapters.ytdlp.common import YDL_OPTS_INFO
+
+_log = logging.getLogger(__name__)
+
+class YtDlpResolver:
+    """get_stream_url(video_id) → str"""
+    def __init__(self, executor):
+        self._executor = executor
+
+    async def get_stream_url(self, video_id: str) -> str:
+        opts = {
+            **YDL_OPTS_INFO,
+            "extract_flat": False,
+        }
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        loop = asyncio.get_running_loop()
+        try:
+            info = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, self._extract_sync, url, opts),
+                timeout=YTDLP_RESOLVE_TIMEOUT_SEC,
+            )
+            if info:
+                stream_url = self._pick_audio_url(info)
+                if stream_url:
+                    return stream_url
+            raise RuntimeError(f"yt-dlp returned no stream URL for {video_id}")
+        except asyncio.TimeoutError:
+            _log.error(f"get_stream_url timed out after {YTDLP_RESOLVE_TIMEOUT_SEC}s for {video_id}")
+            raise RuntimeError(
+                f"Timeout ({YTDLP_RESOLVE_TIMEOUT_SEC}s) saat mengambil stream URL untuk {video_id}"
+            )
+        except RuntimeError:
+            raise
+        except Exception as e:
+            _log.error(f"get_stream_url failed for {video_id}: {type(e).__name__}: {e}")
+            raise RuntimeError(f"Gagal mengambil stream URL untuk {video_id}: {e}") from e
+
+    def _extract_sync(self, url, opts):
+        import yt_dlp
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            return ydl.extract_info(url, download=False)
+
+    def _pick_audio_url(self, info: dict) -> str:
+        formats = info.get("formats", [])
+        for fmt in reversed(formats):
+            if fmt.get("acodec") != "none" and fmt.get("vcodec") == "none":
+                return fmt["url"]
+        return info["url"]

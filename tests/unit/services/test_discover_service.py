@@ -2,6 +2,15 @@
 
 Menggunakan in-memory Database dari fixture `db` (conftest.py) sehingga
 semua query SQL benar-benar dieksekusi tanpa mock.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import pytest
@@ -61,7 +70,7 @@ class TestGetRecent:
     async def test_returns_empty_when_db_has_no_conn(self):
         """Service must not crash when DB connection is absent."""
         class NoConnDB:
-            pass  # no _conn attribute
+            pass  # no conn attribute
 
         svc = DiscoverService(db=NoConnDB())
         result = await svc.get_recent(5)

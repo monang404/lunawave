@@ -29,7 +29,7 @@ import asyncio
 import structlog
 from core.state import TrackInfo
 from core.ports import LyricsProvider, SponsorBlockProvider
-from cache.resolver import CacheResolver
+from core.ports import StreamResolverPort
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
@@ -37,7 +37,7 @@ logger = structlog.get_logger(__name__)
 class TrackLoader:
     def __init__(
         self,
-        resolver: CacheResolver,
+        resolver: StreamResolverPort,
         sponsorblock: SponsorBlockProvider,
         lyrics_fetcher: LyricsProvider,
     ):
@@ -47,7 +47,7 @@ class TrackLoader:
 
     async def load_track(self, track: TrackInfo) -> str:
         """
-        Resolves the track URI and triggers background tasks 
+        Resolves the track URI and triggers background tasks
         for lyrics and sponsorblock. Also increments play count.
         Returns the playable URI.
         """

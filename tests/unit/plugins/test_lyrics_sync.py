@@ -1,0 +1,44 @@
+"""
+Module: tests.unit.plugins.test_lyrics_sync
+
+Purpose:
+    Auto-generated module docstring.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+import pytest
+import asyncio
+from plugins.lyrics_sync import LyricsSync
+from core.state import AppState
+from core.event_bus import EventBus
+from core.events import TrackProgressEvent, LyricsUpdatedEvent
+
+@pytest.mark.asyncio
+async def test_lyrics_sync():
+    state = AppState()
+    state.lyrics_lines = ["L1", "L2", "L3"]
+    state.lyrics_timestamps = [0.0, 10.0, 20.0]
+
+    bus = EventBus()
+    sync = LyricsSync(state, bus)
+
+    events = []
+    bus.subscribe(LyricsUpdatedEvent, lambda e: events.append(e))
+
+    # Progress at 5.0s -> index should be 0
+    await bus.publish(TrackProgressEvent(position=5.0))
+    assert state.lyrics_index == 0
+
+    # Progress at 15.0s -> index should be 1
+    await bus.publish(TrackProgressEvent(position=15.0))
+    assert state.lyrics_index == 1
+
+    # Since it changed, a LyricsUpdatedEvent should have been emitted
+    assert len(events) >= 1
+
+    sync.cleanup()

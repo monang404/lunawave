@@ -4,6 +4,15 @@ Priority: Sedang (needs fakes, no real I/O). Uses FakeTrackRepository
 (implements TrackRepositoryPort) and FakeMediaExtractor (implements
 MediaExtractorPort) so the resolver's priority logic (local file > cached
 stream URL > fresh yt-dlp fetch) is tested in full isolation.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import time

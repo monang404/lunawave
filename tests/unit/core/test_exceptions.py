@@ -1,4 +1,13 @@
-"""tests/unit/core/test_exceptions.py — mirrors core/exceptions.py"""
+"""tests/unit/core/test_exceptions.py — mirrors core/exceptions.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 import pytest
 

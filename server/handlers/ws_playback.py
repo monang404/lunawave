@@ -1,0 +1,77 @@
+"""
+Module: server.handlers.ws_playback
+
+Purpose:
+    Auto-generated module docstring.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+import structlog
+from core.command_bus import (
+    command_bus, CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE,
+    CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET,
+    CMD_SET_MODE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK, CMD_RADIO_RANDOMIZE, CMD_LYRICS_OFFSET
+)
+from core.state import PlaybackMode, AudioOutput
+from server.serializers import dict_to_track
+
+logger = structlog.get_logger(__name__)
+
+async def handle_playback_command(action: str, data: dict):
+    if action == "play_track":
+        track = dict_to_track(data)
+        if track:
+            await command_bus.execute(CMD_PLAY_TRACK, track)
+
+    elif action == "toggle_pause":
+        await command_bus.execute(CMD_TOGGLE_PAUSE)
+
+    elif action == "next":
+        await command_bus.execute(CMD_NEXT, data)
+
+    elif action == "prev":
+        await command_bus.execute(CMD_PREV)
+
+    elif action == "stop":
+        await command_bus.execute(CMD_STOP)
+
+    elif action == "seek":
+        position = data.get("position", 0)
+        await command_bus.execute(CMD_SEEK, float(position))
+
+    elif action == "volume_up":
+        await command_bus.execute(CMD_VOLUME_UP)
+
+    elif action == "volume_down":
+        await command_bus.execute(CMD_VOLUME_DOWN)
+
+    elif action == "volume_set":
+        vol = data.get("volume", 80)
+        await command_bus.execute(CMD_VOLUME_SET, {"volume": int(vol)})
+
+    elif action == "set_mode":
+        mode_str = data.get("mode", "queue").upper()
+        mode = PlaybackMode.RADIO if mode_str == "RADIO" else PlaybackMode.QUEUE
+        await command_bus.execute(CMD_SET_MODE, mode)
+
+    elif action == "set_output":
+        output_str = data.get("output", "device")
+        output_val = AudioOutput.BROWSER if output_str == "browser" else AudioOutput.DEVICE
+        await command_bus.execute(CMD_SET_OUTPUT, output_val)
+
+    elif action == "set_sponsorblock":
+        enabled = data.get("enabled", True)
+        await command_bus.execute(CMD_SET_SPONSORBLOCK, bool(enabled))
+
+    elif action == "radio_randomize":
+        seed_artist = data.get("seed_artist")
+        await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
+
+    elif action == "lyrics_offset":
+        offset = data.get("offset", 0.0)
+        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})

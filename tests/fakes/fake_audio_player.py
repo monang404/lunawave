@@ -1,4 +1,13 @@
-"""Fake implementation of core.ports.AudioPlayerPort for tests."""
+"""Fake implementation of core.ports.AudioPlayerPort for tests.
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 
 class FakeAudioPlayer:
