@@ -1,4 +1,13 @@
-"""tests/unit/core/test_observability.py — mirrors core/observability.py"""
+"""tests/unit/core/test_observability.py — mirrors core/observability.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from prometheus_client import CONTENT_TYPE_LATEST
 

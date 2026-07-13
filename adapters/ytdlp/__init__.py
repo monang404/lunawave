@@ -1,0 +1,41 @@
+"""
+Module: adapters.ytdlp
+
+Purpose:
+    Auto-generated module docstring.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+from concurrent.futures import ThreadPoolExecutor
+from adapters.ytdlp.searcher import YtDlpSearcher
+from adapters.ytdlp.resolver import YtDlpResolver
+from adapters.ytdlp.downloader import YtDlpDownloader
+
+class YtDlpClient:
+    """Facade — API identik dengan engine/ytdlp_client.py lama."""
+
+    def __init__(self):
+        self._executor = ThreadPoolExecutor(max_workers=4)
+        self._searcher = YtDlpSearcher(self._executor)
+        self._resolver = YtDlpResolver(self._executor)
+        self._downloader = YtDlpDownloader(self._executor)
+
+    async def search(self, *a, **kw):
+        return await self._searcher.search(*a, **kw)
+
+    async def extract_info(self, *a, **kw):
+        return await self._searcher.extract_info(*a, **kw)
+
+    async def get_stream_url(self, *a, **kw):
+        return await self._resolver.get_stream_url(*a, **kw)
+
+    async def download_mp3(self, *a, **kw):
+        return await self._downloader.download_mp3(*a, **kw)
+
+    def cancel_download(self):
+        self._downloader.cancel_download()

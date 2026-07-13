@@ -16,6 +16,12 @@ Side Effects:
 
 CLI:
     python start.py
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 from launcher.__main__ import main

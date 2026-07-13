@@ -29,7 +29,11 @@ Publishes:
 import json
 import subprocess
 import sys
+import io
 from pathlib import Path
+
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent

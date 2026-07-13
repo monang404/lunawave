@@ -136,8 +136,8 @@ Didistribusikan di bawah lisensi MIT. Anda bebas memodifikasi, mendistribusikan,
 ## 🤝 Berkontribusi & Arsitektur
 
 Bagi para *developer* atau agen AI yang ingin berkontribusi, sangat diwajibkan untuk membaca dokumen berikut demi menjaga kualitas dan konsistensi kode:
-- **[Panduan Kontribusi & Hukum Codebase (CONTRIBUTING.md)](docs/CONTRIBUTING.md)**
-- **[Penjelasan Arsitektur (ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
+- **[Panduan Kontribusi & Hukum Codebase (CONTRIBUTING.md)](docs/opensource/contributing.md)**
+- **[Penjelasan Arsitektur (ARCHITECTURE.md)](docs/INDEX.md)**
 
 ---
 Enjoy your web music experience! 🎶

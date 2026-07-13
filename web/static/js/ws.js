@@ -26,7 +26,7 @@ function wsConnect() {
             clearTimeout(wsReconnectTimer);
             wsReconnectTimer = null;
         }
-        
+
         if (store.userRole === "admin") {
             const token = window.safeStorage.get("lunawave_session_token");
             if (token) {
@@ -101,18 +101,8 @@ function handleServerMessage(msg) {
             }
             break;
         case "state":
-            Object.assign(store, msg.data);
-            // Object.assign bisa ikut nimpa store.position mentah-mentah (tanpa
-            // lewat setPositionAnchor), jadi anchor rAF clock perlu di-reset ke
-            // nilai baru ini supaya interpolasi lanjut dari titik yang benar,
-            // bukan dari anchor lama yang sudah basi.
-            if (typeof setPositionAnchor === "function") {
-                setPositionAnchor(store.position);
-            }
-            renderFullState();
-            // BUG-007: jangan sync audio saat user masih di portal screen
-            if (store.userRole !== 'portal') {
-                syncBrowserAudio();
+            if (typeof applyFullState === "function") {
+                applyFullState(msg.data);
             }
             break;
         case "progress":
@@ -293,20 +283,7 @@ function syncLocalLyrics() {
     }
 }
 
-function renderFullState() {
-    renderHeader();
-    renderNowPlaying();
-    renderProgress();
 
-
-    renderPlayerBar();
-    renderRadio();
-    renderQueue();
-    renderLyrics();
-    renderSettingsSheet();
-    if (typeof updateSearchPlayingState === "function") updateSearchPlayingState();
-    if (typeof updateDiscoverPlayingState === "function") updateDiscoverPlayingState();
-}
 
 function renderHeader() {
     if (store.is_online) {
@@ -325,4 +302,8 @@ function renderHeader() {
         dom.outputToggleBtn.textContent = "📱 HP";
         dom.outputToggleBtn.classList.remove("browser");
     }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { wsConnect, wsSend, handleServerMessage };
 }

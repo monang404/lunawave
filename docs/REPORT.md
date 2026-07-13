@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-12
+last_verified: 2026-07-13
 sprint: 3.2
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-12
+> **Tanggal Scan:** 2026-07-13
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,33 +19,33 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python scripts/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-12 oleh `scripts/generate_report.py`  
+> **Auto-generated:** 2026-07-13 oleh `scripts/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 56 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 106 |
-| Total file `.js` (ekskl. `.min.js`) | 24 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 57 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 96 |
+| Total file `.js` (ekskl. `.min.js`) | 34 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
-| Total class (Python) | 91 |
-| Total function/method (Python) | 749 |
-| Total baris Python | 13,111 |
-| Total baris JS (web/) | 3,118 |
+| Total class (Python) | 72 |
+| Total function/method (Python) | 374 |
+| Total baris Python | 7,354 |
+| Total baris JS (web/) | 3,075 |
 | Total baris CSS (web/) | 3,277 |
-| Ukuran DB utama (`data/lunawave.db`) | 444 KB |
-| Ukuran DB library (`cache/library.db`) | tidak ditemukan |
+| Ukuran DB utama (`data/lunawave.db`) | 524 KB (+ WAL 161 KB) |
+| Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `launcher/gui.py` | 780 ⚠️ |
-| `engine/radio_engine.py` | 439 ⚠️ |
-| `engine/playback/controller.py` | 420 ⚠️ |
-| `cache/db.py` | 414 ⚠️ |
-| `tests/unit/engine/test_playback_controller.py` | 411 ⚠️ |
+| `engine/playback/controller.py` | 346 ⚠️ |
+| `main.py` | 266 |
+| `launcher/gui/ui_builder.py` | 266 |
+| `launcher/gui/app.py` | 255 |
+| `engine/radio/engine.py` | 195 |
 <!-- END:GENERATED -->
 
 ---

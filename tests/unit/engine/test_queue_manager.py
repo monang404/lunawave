@@ -5,6 +5,15 @@ aspirational engine/playback/* split in the target docs), so instead of
 wiring a full PlaybackController we use a minimal stand-in that only
 exposes what QueueMode.next() actually touches: `.state`, `.bus`, and an
 async `.play_track()`. This keeps the test scoped to queue_manager.py only.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 from collections import deque

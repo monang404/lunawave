@@ -1,4 +1,13 @@
-"""tests/unit/core/test_task_utils.py — mirrors core/task_utils.py"""
+"""tests/unit/core/test_task_utils.py — mirrors core/task_utils.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 import asyncio
 

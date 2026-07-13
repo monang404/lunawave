@@ -78,10 +78,13 @@ ADMIN_USERNAME = os.environ.get("LUNAWAVE_ADMIN_USER", os.environ.get("YTGUI_ADM
 IS_PASSWORD_AUTO_GENERATED = False
 _password_file = BASE_DIR / "cache" / "admin_password.txt"
 
+_raw_env_pass = None
 if "LUNAWAVE_ADMIN_PASS" in os.environ:
     _raw_env_pass = os.environ["LUNAWAVE_ADMIN_PASS"]
 elif "YTGUI_ADMIN_PASS" in os.environ:
     _raw_env_pass = os.environ["YTGUI_ADMIN_PASS"]
+
+if _raw_env_pass is not None:
     if _raw_env_pass.startswith("pbkdf2:sha256:"):
         # Sudah di-hash sebelumnya (misalnya dari file yang di-backup)
         ADMIN_PASSWORD = _raw_env_pass
@@ -97,11 +100,9 @@ else:
             ADMIN_PASSWORD = f.read().strip()
     else:
         # Generate random password
-        import secrets
-        from core.security import hash_password
-        
-        raw_password = secrets.token_urlsafe(12)
-        ADMIN_PASSWORD = hash_password(raw_password)
+        from config_security import generate_admin_password
+
+        raw_password, ADMIN_PASSWORD = generate_admin_password()
         _password_file.parent.mkdir(parents=True, exist_ok=True)
         with open(_password_file, "w", encoding="utf-8") as f:
             f.write(ADMIN_PASSWORD)
@@ -110,7 +111,7 @@ else:
             _password_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
         except OSError:
             pass
-        
+
         print(f"\\n==========================================")
         print(f"PASSWORD ADMIN GENERATED: {raw_password}")
         print(f"Harap simpan password ini! Tidak akan ditampilkan lagi.")

@@ -4,7 +4,7 @@ Module: scripts.architecture_lint
 
 Purpose:
     Validate inter-layer import boundaries against the architecture rules
-    defined in docs/kompas/architecture/dependency_rules.md.
+    defined in docs/architecture/dependency_rules.md.
 
 Inputs:
     Python source files in project root (or --file for a single file).
@@ -34,9 +34,11 @@ import sys
 
 # Fix Unicode output di Windows (cp1252 tidak support emoji/karakter UTF-8)
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore
 if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -50,24 +52,7 @@ if str(SCRIPT_DIR) not in sys.path:
 from shared.check_result import CheckResult as SharedCheckResult
 from shared.skip_dirs import SKIP_DIRS
 
-# ---------------------------------------------------------------------------
-# Aturan dependency — direpresentasikan dari dependency_rules.md
-# Kunci: layer yang mengimport. Nilai: set layer yang BOLEH diimport.
-# ---------------------------------------------------------------------------
-ALLOWED: dict[str, set[str]] = {
-    "core":        set(),
-    "adapters":    {"core"},
-    "persistence": {"core"},
-    "plugins":     {"core"},
-    "engine":      {"core", "adapters", "persistence"},
-    "services":    {"core", "persistence"},
-    "server":      {"core", "engine", "services", "persistence"},
-    "launcher":    {"core", "server"},
-    "data":        None,
-    "scripts":     None,
-    "cache":       {"core"},
-}
-
+from shared.arch_rules import ALLOWED, KNOWN_VIOLATIONS, Violation, is_known
 
 def path_to_layer(rel_path: str) -> str | None:
     parts = rel_path.replace("\\", "/").split("/")
@@ -76,39 +61,9 @@ def path_to_layer(rel_path: str) -> str | None:
     top = parts[0]
     return top if top in ALLOWED else None
 
-
 def module_to_layer(module: str) -> str | None:
     top = module.split(".")[0]
     return top if top in ALLOWED else None
-
-
-# ---------------------------------------------------------------------------
-# Violation dataclass — TETAP ADA, tidak dihapus/diganti
-# ---------------------------------------------------------------------------
-
-@dataclass
-class Violation:
-    file: str
-    line: int
-    importer_layer: str
-    imported_module: str
-    imported_layer: str
-
-    def __str__(self) -> str:
-        return (
-            f"  {self.file}:{self.line}\n"
-            f"    ↳ `{self.importer_layer}/` tidak boleh import dari `{self.imported_layer}/`\n"
-            f"      import: {self.imported_module}"
-        )
-
-    def to_dict(self) -> dict:
-        return {
-            "file": self.file,
-            "line": self.line,
-            "importer_layer": self.importer_layer,
-            "imported_module": self.imported_module,
-            "imported_layer": self.imported_layer,
-        }
 
 
 # ---------------------------------------------------------------------------
@@ -186,15 +141,7 @@ def scan_project(project_root: Path, target_file: str | None = None) -> list[Vio
     return all_violations
 
 
-KNOWN_VIOLATIONS = {
-    ("config.py", "core"),
-    ("engine/playback/track_loader.py", "cache"),
-    ("engine/playback/controller.py",   "cache"),
-    ("services/discover_service.py",    "cache"),
-}
 
-def is_known(v: Violation) -> bool:
-    return (v.file, v.imported_layer) in KNOWN_VIOLATIONS
 
 
 # ---------------------------------------------------------------------------

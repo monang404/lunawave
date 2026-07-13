@@ -1,4 +1,13 @@
-"""tests/unit/core/test_state.py — mirrors core/state.py"""
+"""tests/unit/core/test_state.py — mirrors core/state.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from collections import deque
 

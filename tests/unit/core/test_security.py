@@ -1,4 +1,13 @@
-"""tests/unit/core/test_security.py — mirrors core/security.py"""
+"""tests/unit/core/test_security.py — mirrors core/security.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from core.security import hash_password, verify_password
 

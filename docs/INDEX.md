@@ -1,6 +1,6 @@
 ---
 title : LunaWave Documentation Index
-last_verified: 2026-07-10
+last_verified: 2026-07-13
 sprint: 3.2
 status: current
 ---
@@ -12,9 +12,9 @@ status: current
 3. `PATCHLOG.md` → perubahan terakhir
 4. `REPORT.md` → analisis, temuan, statistik (auto-generated)
 5. `FILE_INDEX.md` → inventaris file (auto-generated, jangan edit manual)
-6. `STRUCTURE.md` → detail setiap folder
-7. `MIGRATION_GUIDE.md` → panduan refactoring bertahap ke arsitektur target
-8. `kompas/` → arsitektur impian, ADR, blueprint
+6. `architecture/folder_structure.md` → detail struktur setiap folder dan penggunaannya
+7. `architecture/overview.md` → arsitektur impian, target desain, dan blueprint
+8. `adr/` → Architecture Decision Records
 
 # Untuk AI Agent
 
@@ -40,10 +40,10 @@ status: current
 | File | Kenapa Berbahaya | Instruksi |
 |------|-----------------|-----------|
 | `engine/playback/controller.py` | Closure kompleks, referensi silang | Jangan refactor tanpa sprint plan |
-| `server/handlers/websocket.py` | Monolith 317 baris, F-01 belum dipecah | Jangan pecah tanpa MIGRATION_GUIDE Tahap 3 |
+| `server/handlers/websocket.py` | Monolith 354 baris, restricted file | Jangan pecah tanpa persetujuan eksplisit |
 | `cache/admin_password.txt` | Berisi hash password admin | JANGAN pernah commit file ini |
 | `data/artists_enriched.json` | 185KB JSON statis | Jangan modifikasi — jadwalkan migrasi ke DB |
-| `cache/db.py` | God class 388 baris | Refactor hanya sesuai MIGRATION_GUIDE Tahap 2 |
+| `cache/db.py` | God class, refactor bertahap | Refactor hanya sesuai sprint plan — lihat `docs/STATUS.md` |
 
 ## ❌ Yang TIDAK BOLEH dilakukan AI:
 - Jangan ganti aiohttp ke framework lain (FastAPI, dll)
@@ -56,8 +56,8 @@ status: current
 
 # LunaWave — Project Knowledge Base Index
 
-> **Last Scan:** 2026-07-09
-> **Source:** Source code + `PROJECT_STRUCTURE_AUDIT.md`
+> **Last Scan:** 2026-07-13
+> **Source:** Source code + `docs/architecture/folder_structure.md`
 
 ---
 
@@ -87,23 +87,27 @@ lunawave/
 ├── main.py            Entry point backend
 ├── config.py          Konfigurasi global & env vars
 ├── start.py           Bootstrap launcher GUI
-├── core/              Primitives: state, bus, events, ports, security
-├── engine/            Domain logic: MPV, yt-dlp, radio, playback, queue
-│   └── playback/      Sub-package: controller + track_loader
+├── core/              Primitives: state, bus, events, ports, security, commands
+├── adapters/          External system adapters (Hexagonal)
+│   ├── mpv/           IPC adapter ke MPV player
+│   └── ytdlp/         Wrapper yt-dlp client
+├── engine/            Domain logic: radio, playback, queue
+│   └── playback/      Sub-package: controller + queue_ops + mode_ops
+├── persistence/       Data layer: repositories SQLite (track, library, dll.)
 ├── server/            HTTP & WebSocket layer (aiohttp)
 │   ├── handlers/      auth, http, websocket, event_listeners
 │   └── services/      broadcast, stream_prefetch
-├── cache/             Database SQLite + resolver strategy
+├── cache/             resolver.py (belum direlokasi) — DB lama sudah ke persistence/
 ├── data/              DB aktif, artists JSON, migration script
 ├── services/          High-level: DiscoverService
 ├── plugins/           Opsional: lyrics, notifications, sponsorblock
-├── launcher/          GUI launcher (Tkinter) — direfactor Sprint 3.2
+├── launcher/          GUI launcher (Tkinter)
 ├── web/               Frontend (vanilla JS + CSS)
 │   └── static/
-│       ├── index.html SPA monolitik (36 KB)
+│       ├── index.html SPA monolitik
 │       ├── js/        main, audio, ws, store, dom, utils + subdirs
 │       └── css/       tokens, components, layout, platform, base
-├── scripts/           Dev utilities
+├── scripts/           Dev utilities & health checkers
 ├── scratch/           Dev scratch files
 └── docs/              Dokumentasi project ini
 ```
@@ -117,15 +121,15 @@ lunawave/
 | `config.py` | Semua konstanta & env vars (`DB_PATH`, `MPV_SOCKET`, `WEB_PORT`, dll.) |
 | `core/state.py` | `AppState`, `TrackInfo`, enums `PlayerStatus`, `PlaybackMode`, `AudioOutput` |
 | `core/event_bus.py` | Pub/sub `EventBus` singleton (`bus`) |
-| `core/command_bus.py` | Single-writer `CommandBus` + konstanta CMD |
+| `core/command_bus.py` | Single-writer `CommandBus` + `core/commands.py` |
 | `core/events.py` | 10 `DomainEvent` dataclasses (TrackStarted, TrackEnded, dll.) |
 | `core/ports.py` | Protocol interfaces: `AudioPlayerPort`, `MediaExtractorPort`, `DatabasePort`, dll. |
-| `engine/mpv_controller.py` | IPC ke MPV (Unix socket / named pipe): play, pause, seek, volume, reconnect |
-| `engine/ytdlp_client.py` | Wrapper yt-dlp: search, get_stream_url, download_mp3 |
+| `adapters/mpv/` | IPC ke MPV (Unix socket / named pipe): play, pause, seek, volume, reconnect |
+| `adapters/ytdlp/` | Wrapper yt-dlp: search, get_stream_url, download_mp3 |
 | `engine/radio_engine.py` | Autonomous radio: artist seed, prefetch, deduplication, standby queue |
 | `engine/playback/controller.py` | Orkestrator playback: play, pause, next, prev, seek, mode switch, queue ops |
-| `cache/db.py` | SQLite via aiosqlite: tracks, sessions, stream_url, play_count, artists, genres |
-| `cache/resolver.py` | Resolve stream URL: local path → cache DB → yt-dlp (waterfall) |
+| `persistence/` | SQLite via aiosqlite: repositories, resolver strategy |
+| `cache/resolver.py` | Resolve stream URL: local path → cache DB → yt-dlp (waterfall) — *belum direlokasi* |
 | `server/app.py` | aiohttp app factory + runner |
 | `server/handlers/websocket.py` | `ConnectionManager` + WS routing + command dispatch |
 | `server/handlers/http.py` | REST: `/`, `/stream`, `/health`, `/metrics` |
@@ -152,10 +156,9 @@ docs/
 ├── AI_CONTEXT.md         ← Entry point AI — baca ini dulu
 ├── INDEX.md              ← Orientasi & navigasi (ini)
 ├── STATUS.md             ← Kondisi per-file & sprint target
-├── STRUCTURE.md          ← Detail setiap folder & hubungannya
+├── architecture/folder_structure.md ← Detail struktur setiap folder
 ├── FILE_INDEX.md         ← Inventaris file (sebagian auto-generated)
 ├── PATCHLOG.md           ← Riwayat perubahan (append-only)
 ├── REPORT.md             ← Analisis, temuan, statistik (sebagian auto-generated)
-├── MIGRATION_GUIDE.md    ← Panduan refactoring bertahap
-└── kompas/               ← Arsitektur target & ADR
+└── adr/                  ← Architecture Decision Records
 ```

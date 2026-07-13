@@ -5,6 +5,15 @@ CommandRouter registers 19 handlers (16 playback + 3 volume) onto the
 each test isolated we monkeypatch `engine.command_router.command_bus` to
 a fresh `CommandBus()` instance per test, instead of sharing the real
 process-wide singleton.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import pytest

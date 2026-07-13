@@ -15,6 +15,12 @@ Side Effects:
 
 CLI:
     python -m launcher
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import sys

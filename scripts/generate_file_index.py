@@ -31,6 +31,13 @@ import ast
 import os
 import re
 import sys
+import io
+
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from datetime import date
 from pathlib import Path
 
@@ -48,28 +55,8 @@ if str(SCRIPT_DIR) not in sys.path:
 from shared.skip_dirs import SKIP_DIRS
 from shared.generated_block import replace_marker_block
 
-# Folder yang di-scan (urut = urut tampil di output)
-SCAN_GROUPS = [
-    ("Root",       [""]),
-    ("core/",      ["core"]),
-    ("engine/",    ["engine", "engine/playback"]),
-    ("cache/",     ["cache"]),
-    ("server/",    ["server", "server/handlers", "server/services"]),
-    ("services/",  ["services"]),
-    ("plugins/",   ["plugins"]),
-    ("launcher/",  ["launcher"]),
-    ("data/",      ["data"]),
-    ("scripts/",   ["scripts","scripts/archive"]),
-    ("tests/",   ["tests","tests/fakes", "tests/unit", "tests/unit/cache","tests/unit/core","tests/unit/engine","tests/unit/services"]),
-    ("scripts/shared",["scripts/shared"]),
-    ("scripts/verify_docs",["scripts/verify_docs"]),
-    ("scratch/",["scratch"]),
-]
 
 
-# ---------------------------------------------------------------------------
-# AST Extraction
-# ---------------------------------------------------------------------------
 
 PURPOSE_RE = re.compile(
     r"^\s*Purpose\s*:\s*(.+(?:\n(?!\s*(?:Subscribes to|Publishes)\s*:)(?!\s*$).+)*)",
@@ -79,7 +66,7 @@ PURPOSE_RE = re.compile(
 NO_DOCSTRING_LABEL = "⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_"
 
 
-def extract_purpose(tree: ast.AST) -> tuple[str | None, bool]:
+def extract_purpose(tree: ast.Module) -> tuple[str | None, bool]:
     doc = ast.get_docstring(tree)
     if not doc:
         return None, False
@@ -182,10 +169,6 @@ def build_reverse_index(all_files: list[Path], project_root: Path) -> dict[str, 
     return rev
 
 
-# ---------------------------------------------------------------------------
-# Format output per file
-# ---------------------------------------------------------------------------
-
 def format_file_entry(
     rel_path: str,
     info: dict,
@@ -231,10 +214,6 @@ def format_file_entry(
     )
 
 
-# ---------------------------------------------------------------------------
-# Build generated block
-# ---------------------------------------------------------------------------
-
 def build_generated_block(project_root: Path) -> str:
     all_files = collect_py_files(project_root)
     rev_index = build_reverse_index(all_files, project_root)
@@ -249,20 +228,29 @@ def build_generated_block(project_root: Path) -> str:
         f"> **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.\n",
     ]
 
-    for group_name, folders in SCAN_GROUPS:
-        group_files = []
-        for folder in folders:
-            prefix = folder + "/" if folder else ""
-            for rel_path, info in file_info.items():
-                if folder == "":
-                    if "/" not in rel_path and rel_path.endswith(".py"):
-                        group_files.append((rel_path, info))
-                else:
-                    if rel_path.startswith(prefix):
-                        remainder = rel_path[len(prefix):]
-                        if "/" not in remainder and rel_path.endswith(".py"):
-                            group_files.append((rel_path, info))
+    # Group files dynamically by top-level folder
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for rel_path, info in file_info.items():
+        parts = rel_path.split('/')
+        if len(parts) == 1:
+            group_name = "Root"
+        else:
+            group_name = parts[0] + "/"
+        groups[group_name].append((rel_path, info))
 
+    # Predefined sort order for known folders
+    group_keys_sorted = [
+        "Root", "core/", "adapters/", "engine/", "persistence/",
+        "cache/", "server/", "services/", "plugins/", "launcher/",
+        "data/", "scripts/", "tests/", "scratch/"
+    ]
+    # Add any unknown folders alphabetically at the end
+    other_keys = sorted(k for k in groups.keys() if k not in group_keys_sorted)
+    group_keys_sorted.extend(other_keys)
+
+    for group_name in group_keys_sorted:
+        group_files = groups.get(group_name, [])
         if not group_files:
             continue
 
@@ -308,10 +296,6 @@ def build_generated_block(project_root: Path) -> str:
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------------------
-# Inject ke FILE_INDEX.md
-# ---------------------------------------------------------------------------
-
 def inject_into_file(target: Path, generated_block: str, dry_run: bool) -> None:
     original = target.read_text(encoding="utf-8")
 
@@ -340,10 +324,6 @@ def inject_into_file(target: Path, generated_block: str, dry_run: bool) -> None:
         target.write_text(new_content, encoding="utf-8")
         print(f"✅ {target.relative_to(PROJECT_ROOT)} diperbarui ({date.today().isoformat()})")
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Generate FILE_INDEX.md dari AST source code.")

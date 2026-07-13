@@ -2,6 +2,15 @@
 
 Includes the small `commands` constants block that lives in the same file
 (no separate core/commands.py in the actual repo layout).
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import pytest

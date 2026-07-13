@@ -1,0 +1,53 @@
+"""
+Module: adapters.ytdlp.downloader
+
+Purpose:
+    Unit tests for adapters.ytdlp.downloader.
+
+Responsibilities:
+    - Test functionality and edge cases.
+
+Depends on:
+    - adapters.ytdlp.downloader
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
+
+import pytest
+from unittest.mock import MagicMock, AsyncMock, patch
+from adapters.ytdlp.downloader import YtDlpDownloader
+from adapters.ytdlp.downloader import YtDlpDownloader
+import os
+
+@pytest.fixture
+def mock_executor():
+    return MagicMock()
+
+@pytest.mark.asyncio
+async def test_download_mp3_success(mock_executor, tmp_path):
+    downloader = YtDlpDownloader(mock_executor)
+
+    def mock_download_sync(video_id, on_progress):
+        return str(tmp_path / f"{video_id}.mp3")
+
+    with patch.object(downloader, "_download_sync", side_effect=mock_download_sync):
+        with patch("asyncio.get_running_loop", return_value=MagicMock(
+            run_in_executor=AsyncMock(return_value=mock_download_sync("abc123_", None))
+        )):
+            file_path = await downloader.download_mp3("abc123_")
+            assert "abc123_.mp3" in file_path
+
+@pytest.mark.asyncio
+async def test_download_mp3_handles_cancellation(mock_executor):
+    downloader = YtDlpDownloader(mock_executor)
+    downloader.cancel_download()
+
+    assert downloader.is_cancelled is True
+
+class AsyncMock(MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super(AsyncMock, self).__call__(*args, **kwargs)

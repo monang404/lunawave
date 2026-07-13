@@ -1,4 +1,13 @@
-"""tests/unit/core/test_events.py — mirrors core/events.py"""
+"""tests/unit/core/test_events.py — mirrors core/events.py
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+"""
 
 from core.events import (
     DomainEvent,

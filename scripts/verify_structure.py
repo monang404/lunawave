@@ -106,9 +106,9 @@ def check_pending_items(project_root: Path) -> CheckResult:
     if rfc_dir.exists():
         rfc_files = list(rfc_dir.glob("*.md"))
         if not rfc_files:
-            issues.append("docs/kompas/rfc/ kosong — isi atau hapus (disebut di STATUS.md)")
+            issues.append("docs/rfc/ kosong — isi atau hapus (disebut di STATUS.md)")
     else:
-        info.append("docs/kompas/rfc/ tidak ditemukan")
+        info.append("docs/rfc/ tidak ditemukan")
 
     updater = project_root / "launcher" / "updater.py"
     if updater.exists():

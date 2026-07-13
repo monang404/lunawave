@@ -1,0 +1,28 @@
+{
+  "name": "lunawave",
+  "version": "1.0.0",
+  "description": "![Python](https://img.shields.io/badge/Python-3.10+-blue.svg) ![MPV](https://img.shields.io/badge/Powered_by-MPV-purple.svg) ![Termux](https://img.shields.io/badge/Optimized_for-Termux-green.svg)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monang404/lunawave.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/monang404/lunawave/issues"
+  },
+  "homepage": "https://github.com/monang404/lunawave#readme",
+  "devDependencies": {
+    "vitest": "^4.1.10"
+  }
+}

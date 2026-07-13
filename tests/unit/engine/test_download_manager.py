@@ -2,6 +2,15 @@
 
 Semua I/O (shutil.move, Path.mkdir, ytdlp.download_mp3) di-mock agar
 test berjalan tanpa filesystem nyata dan tanpa yt-dlp.
+
+Purpose:
+    Auto-generated purpose.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import asyncio
