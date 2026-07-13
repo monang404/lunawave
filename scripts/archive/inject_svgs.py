@@ -1,3 +1,16 @@
+"""
+Module: scripts.archive.inject_svgs
+
+Purpose:
+    Provide inject_svgs.py functionality.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+"""
 import urllib.request
 import re
 

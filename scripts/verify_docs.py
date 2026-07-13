@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/verify_docs.py [--verbose] [--show-docstring] [--json]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

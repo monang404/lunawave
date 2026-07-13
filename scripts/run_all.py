@@ -18,6 +18,13 @@ Side Effects:
 
 CLI:
     python scripts/run_all.py [--check] [--strict]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

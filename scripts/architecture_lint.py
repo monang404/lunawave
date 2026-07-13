@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/architecture_lint.py [--file PATH] [--strict] [--json]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

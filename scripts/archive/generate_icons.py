@@ -1,3 +1,16 @@
+"""
+Module: scripts.archive.generate_icons
+
+Purpose:
+    Provide generate_icons.py functionality.
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+"""
 import os
 from pathlib import Path
 from PIL import Image
