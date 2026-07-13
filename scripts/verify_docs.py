@@ -30,6 +30,19 @@ import argparse
 import sys
 from pathlib import Path
 
+# Windows terminals often default to a legacy codepage (e.g. cp1252) that
+# can't encode characters like U+2714 (✔) or U+2022 (•) used in the summary
+# output below. Reconfiguring the streams to UTF-8 (with a safe fallback
+# instead of raising) prevents the checker from crashing mid-report on
+# those consoles while keeping the nicer glyphs everywhere else.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        # reconfigure() isn't available on very old Python / non-standard
+        # stream objects; safe to ignore, worst case is a mojibake char.
+        pass
+
 SCRIPT_DIR          = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
 DEFAULT_DOCS_DIR    = DEFAULT_PROJECT_ROOT / "docs"
