@@ -64,3 +64,8 @@ Thumbs.db
 # Windows artifacts
 desktop.ini
 data/lunawave.db
+
+node_modules/
+.ruff_cache/
+.mypy_cache/
+.import_linter_cache/
