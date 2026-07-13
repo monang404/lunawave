@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/verify_structure.py [--json]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

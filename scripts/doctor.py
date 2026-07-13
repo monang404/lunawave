@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/doctor.py [--strict]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import json

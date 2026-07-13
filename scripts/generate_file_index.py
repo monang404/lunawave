@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/generate_file_index.py [--dry-run]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

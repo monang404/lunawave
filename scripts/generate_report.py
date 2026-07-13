@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/generate_report.py [--dry-run]
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import argparse

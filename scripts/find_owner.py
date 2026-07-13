@@ -17,6 +17,13 @@ Side Effects:
 
 CLI:
     python scripts/find_owner.py <file|class|function>
+
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import ast
