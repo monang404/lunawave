@@ -59,9 +59,11 @@ SCAN_GROUPS = [
     ("plugins/",   ["plugins"]),
     ("launcher/",  ["launcher"]),
     ("data/",      ["data"]),
-    ("scripts/",   ["scripts"]),
+    ("scripts/",   ["scripts","scripts/archive"]),
+    ("tests/",   ["tests","tests/fakes", "tests/unit", "tests/unit/cache","tests/unit/core","tests/unit/engine","tests/unit/services"]),
     ("scripts/shared",["scripts/shared"]),
     ("scripts/verify_docs",["scripts/verify_docs"]),
+    ("scratch/",["scratch"]),
 ]
 
 
