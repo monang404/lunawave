@@ -166,7 +166,13 @@ class TestDoDownload:
         # Override download_mp3 to call progress hook with a proper yt-dlp dict
         async def fake_dl(video_id, on_progress=None):
             if on_progress:
-                on_progress({"status": "downloading", "downloaded_bytes": 100, "total_bytes": 100})
+                on_progress(
+                    {
+                        "status": "downloading",
+                        "downloaded_bytes": 100,
+                        "total_bytes": 100,
+                    }
+                )
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
         ytdlp.download_mp3 = fake_dl
@@ -180,6 +186,7 @@ class TestDoDownload:
 
         assert len(received) == 1
         assert received[0].track.video_id == "vid1"
+        await asyncio.sleep(0.05)
 
     async def test_do_download_publishes_start_log(self, tmp_path):
         track = make_track()

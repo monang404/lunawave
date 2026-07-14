@@ -12,7 +12,8 @@ async def test_lyrics_fetcher_success(mock_parser):
     mock_parser.parse_lrc.return_value = [(10.0, "Line 1"), (20.0, "Line 2")]
 
     mock_state = AppState()
-    mock_bus = AsyncMock()
+    mock_bus = MagicMock()
+    mock_bus.publish = AsyncMock()
     mock_session = MagicMock()
 
     # Mocking the session get response for lrclib /get
@@ -29,7 +30,9 @@ async def test_lyrics_fetcher_success(mock_parser):
 
     fetcher = LyricsFetcher(mock_state, session=mock_session, event_bus=mock_bus)
 
-    track = TrackInfo(video_id="123", title="Test Song", artist="Test Artist", duration=200)
+    track = TrackInfo(
+        video_id="123", title="Test Song", artist="Test Artist", duration=200
+    )
     await fetcher.fetch(track)
 
     assert mock_session.get.call_count == 1
@@ -45,7 +48,8 @@ async def test_lyrics_fetcher_success(mock_parser):
 @patch("plugins.lyrics_fetcher.asyncio.get_running_loop")
 async def test_lyrics_fetcher_fallback_syncedlyrics(mock_get_loop, mock_wait_for):
     mock_state = AppState()
-    mock_bus = AsyncMock()
+    mock_bus = MagicMock()
+    mock_bus.publish = AsyncMock()
     mock_session = MagicMock()
 
     # Mock lrclib to fail (404)
@@ -62,7 +66,9 @@ async def test_lyrics_fetcher_fallback_syncedlyrics(mock_get_loop, mock_wait_for
     mock_wait_for.return_value = "[00:15.00]Fallback Line"
 
     fetcher = LyricsFetcher(mock_state, session=mock_session, event_bus=mock_bus)
-    track = TrackInfo(video_id="123", title="Test Song", artist="Test Artist", duration=200)
+    track = TrackInfo(
+        video_id="123", title="Test Song", artist="Test Artist", duration=200
+    )
 
     with patch("plugins.lyrics_parser.LyricsParser") as mock_parser:
         mock_parser.parse_lrc.return_value = [(15.0, "Fallback Line")]
