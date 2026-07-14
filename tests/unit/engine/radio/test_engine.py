@@ -23,6 +23,7 @@ Thread Safety:
 """
 
 import asyncio
+
 import pytest
 
 from core.event_bus import EventBus
@@ -42,9 +43,7 @@ class MockDB:
         return ["A", "B"]
 
     async def get_random_songs(self, limit, exclude_ids, artist):
-        return [
-            TrackInfo(video_id=f"v_{artist}", title="T", artist=artist, duration=100)
-        ]
+        return [TrackInfo(video_id=f"v_{artist}", title="T", artist=artist, duration=100)]
 
 
 class MockController:

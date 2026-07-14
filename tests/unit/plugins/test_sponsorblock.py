@@ -27,9 +27,7 @@ async def test_sponsorblock_fetch_segments():
     mock_request_context.__aexit__ = AsyncMock()
     mock_session.get = MagicMock(return_value=mock_request_context)
 
-    handler = SponsorBlockHandler(
-        mock_mpv, mock_state, session=mock_session, event_bus=mock_bus
-    )
+    handler = SponsorBlockHandler(mock_mpv, mock_state, session=mock_session, event_bus=mock_bus)
     await handler.fetch_segments("test_video_id")
 
     assert len(handler.segments) == 2
@@ -44,9 +42,7 @@ async def test_sponsorblock_on_progress_seeks_past_segment():
     mock_bus = MagicMock()
     mock_bus.publish = AsyncMock()
 
-    handler = SponsorBlockHandler(
-        mock_mpv, mock_state, session=MagicMock(), event_bus=mock_bus
-    )
+    handler = SponsorBlockHandler(mock_mpv, mock_state, session=MagicMock(), event_bus=mock_bus)
     handler.segments = [(15.0, 30.0)]
 
     # Progress is just before the segment, no seek
