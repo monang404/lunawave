@@ -10,8 +10,10 @@ Responsibilities:
     - Monitor TrackProgressEvent and seek past matched segment start times.
 
 Depends on:
-    - config (SPONSORBLOCK_CATS), core.event_bus, core.events, core.state,
-      core.ports, core.task_utils
+    - core.event_bus
+    - core.events
+    - core.ports
+    - core.state
 
 Subscribes to:
     TrackProgressEvent

@@ -10,7 +10,7 @@ Purpose:
     Auto-generated purpose.
 
 Subscribes to:
-    None
+    - QueueUpdatedEvent
 
 Publishes:
     None

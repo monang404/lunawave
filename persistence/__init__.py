@@ -2,13 +2,27 @@
 Module: persistence
 
 Purpose:
-    Auto-generated module docstring.
+    Database facade that aggregates all repositories into a unified data access layer.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - persistence.artist_repo
+    - persistence.db
+    - persistence.genre_repo
+    - persistence.library_repo
+    - persistence.session_repo
+    - persistence.track_repo
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from pathlib import Path

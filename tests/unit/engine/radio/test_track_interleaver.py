@@ -2,13 +2,23 @@
 Module: tests.unit.engine.radio.test_track_interleaver
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for interleaving tracks by artist.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+    - engine.radio.track_interleaver
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from core.state import TrackInfo

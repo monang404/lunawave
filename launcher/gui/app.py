@@ -10,7 +10,11 @@ Responsibilities:
     - Manage server process lifecycle and stream stdout to the log panel.
 
 Depends on:
-    - launcher.network, launcher.process
+    - launcher
+    - launcher.gui.auth_panel
+    - launcher.gui.controller
+    - launcher.gui.dep_checker
+    - launcher.gui.ui_builder
 
 Subscribes to:
     None

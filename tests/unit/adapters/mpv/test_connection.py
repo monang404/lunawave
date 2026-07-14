@@ -9,12 +9,16 @@ Responsibilities:
 
 Depends on:
     - adapters.mpv.connection
+    - core.exceptions
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch

@@ -5,11 +5,20 @@ Purpose:
     Defines all command constants used by the CommandBus.
     Separated to allow importing without pulling in the entire CommandBus.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 CMD_PLAY_TRACK = "cmd.play.track"  # data: TrackInfo

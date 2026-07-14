@@ -2,13 +2,22 @@
 Module: persistence.library_repo
 
 Purpose:
-    Auto-generated module docstring.
+    Repository for global library operations such as fetching random songs.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from core.state import TrackInfo

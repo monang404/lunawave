@@ -2,13 +2,23 @@
 Module: tests.unit.server.test_serializers
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for data serialization and deserialization routines.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+    - server.serializers
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from core.state import AppState, PlaybackMode, PlayerStatus, TrackInfo

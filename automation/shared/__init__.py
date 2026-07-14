@@ -11,4 +11,4 @@ Publishes:
     None
 
 """
-# shared package — utilities bersama untuk scripts/ LunaWave
+# shared package — utilities bersama untuk automation/ LunaWave

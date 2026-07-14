@@ -3,7 +3,7 @@ Purpose:
     Auto-generated purpose.
 
 Subscribes to:
-    None
+    - LogMessageEvent
 
 Publishes:
     None

@@ -10,9 +10,9 @@ Responsibilities:
     - Dispatch events concurrently with per-handler error isolation.
 
 Depends on:
-    - core.task_utils (safe_create_task)
-    - core.events (DomainEvent)
-    - core.observability (EVENT_COUNT)
+    - core.events
+    - core.observability
+    - core.task_utils
 
 Subscribes to:
     None

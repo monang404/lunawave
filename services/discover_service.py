@@ -10,8 +10,8 @@ Responsibilities:
     - Return empty lists gracefully when the DB connection is unavailable.
 
 Depends on:
-    - cache.db (Database)
-    - core.state (TrackInfo)
+    - core.ports
+    - core.state
 
 Subscribes to:
     None

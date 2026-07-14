@@ -2,13 +2,25 @@
 Module: tests.unit.plugins.test_lyrics_sync
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for lyrics synchronization with playback.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.event_bus
+    - core.events
+    - core.state
+    - plugins.lyrics_sync
 
 Subscribes to:
-    None
+    - LyricsUpdatedEvent
 
 Publishes:
-    None
+    - TrackProgressEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

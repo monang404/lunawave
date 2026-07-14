@@ -9,9 +9,9 @@ Responsibilities:
     - Broadcast state, progress, lyrics, log, and download-progress messages.
 
 Depends on:
-    - server.serializers
-    - server.handlers.websocket (ConnectionManager)
     - core.state
+    - server.connection_manager
+    - server.serializers
 
 Subscribes to:
     None

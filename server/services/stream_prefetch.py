@@ -10,8 +10,7 @@ Responsibilities:
     - Resolve a fresh URL via yt-dlp and persist it to the database.
 
 Depends on:
-    - config (STREAM_URL_TTL_SEC)
-    - core.ports (DatabasePort, MediaExtractorPort)
+    - core.ports
 
 Subscribes to:
     None

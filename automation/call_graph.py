@@ -6,6 +6,12 @@ Purpose:
     Cari caller & callee dari 1 nama fungsi, scan AST on-demand (bukan
     disimpan di repo_index — call-graph lengkap semua-fungsi terlalu besar).
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/call_graph.py <function_name> [--json]
 """

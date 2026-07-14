@@ -2,13 +2,22 @@
 Module: launcher.gui.auth_panel
 
 Purpose:
-    Auto-generated module docstring.
+    GUI component for user authentication, password reset, and first-run setup.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.security
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import secrets

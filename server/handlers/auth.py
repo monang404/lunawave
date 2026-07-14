@@ -11,8 +11,7 @@ Responsibilities:
     - Reject IPs that exceed 5 failed login attempts in a 5-minute window.
 
 Depends on:
-    - config (ADMIN_USERNAME, ADMIN_PASSWORD)
-    - core.security (verify_password)
+    - core.security
 
 Subscribes to:
     None

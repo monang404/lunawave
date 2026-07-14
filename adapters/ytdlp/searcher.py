@@ -2,13 +2,23 @@
 Module: adapters.ytdlp.searcher
 
 Purpose:
-    Auto-generated module docstring.
+    Performs metadata extraction and search operations via yt-dlp.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.ytdlp.common
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

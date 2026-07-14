@@ -2,13 +2,25 @@
 Module: adapters.mpv
 
 Purpose:
-    Auto-generated module docstring.
+    High-level MPV controller combining connection, IPC, and event observation.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.mpv.connection
+    - adapters.mpv.ipc
+    - adapters.mpv.observer
+    - core.event_bus
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from adapters.mpv.connection import MpvConnection

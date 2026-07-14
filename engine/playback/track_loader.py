@@ -10,9 +10,8 @@ Responsibilities:
     - Increment play count and launch sponsorblock/lyrics tasks in parallel.
 
 Depends on:
-    - cache.resolver
-    - core.ports (LyricsProvider, SponsorBlockProvider)
-    - core.state (TrackInfo)
+    - core.ports
+    - core.state
     - core.task_utils
 
 Subscribes to:

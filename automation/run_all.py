@@ -17,7 +17,7 @@ Side Effects:
     as subprocesses.
 
 CLI:
-    python scripts/run_all.py [--check] [--strict]
+    python automation/run_all.py [--check] [--strict]
 
 
 Subscribes to:

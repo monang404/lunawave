@@ -2,13 +2,24 @@
 Module: tests.unit.engine.radio.test_engine
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for the radio mode engine lifecycle.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.event_bus
+    - core.state
+    - engine.radio.engine
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

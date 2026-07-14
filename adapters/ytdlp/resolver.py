@@ -2,13 +2,22 @@
 Module: adapters.ytdlp.resolver
 
 Purpose:
-    Auto-generated module docstring.
+    Resolves direct stream URLs for tracks using yt-dlp.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.ytdlp.common
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

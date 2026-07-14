@@ -2,13 +2,22 @@
 Module: launcher.gui.dep_checker
 
 Purpose:
-    Auto-generated module docstring.
+    Utility to verify required system dependencies before launching the application.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Worker thread.
 """
 
 import importlib.util

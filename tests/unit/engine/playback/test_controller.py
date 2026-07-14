@@ -2,13 +2,25 @@
 Module: tests.unit.engine.test_playback_orchestrator
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for the main playback controller logic.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.events
+    - core.state
+    - tests.unit.engine.conftest
 
 Subscribes to:
-    None
+    - LogMessageEvent
+    - TrackStartedEvent
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

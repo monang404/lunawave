@@ -7,6 +7,12 @@ Purpose:
 
 Depends on:
     - automation.shared.skip_dirs (walk_py_files)
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 from __future__ import annotations

@@ -10,7 +10,10 @@ Responsibilities:
     - Suppress audio to mpv when audio_output is BROWSER.
 
 Depends on:
-    - core.event_bus, core.events, core.command_bus, core.ports, core.state
+    - core.event_bus
+    - core.events
+    - core.ports
+    - core.state
 
 Subscribes to:
     CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET

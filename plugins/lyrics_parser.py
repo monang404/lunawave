@@ -2,13 +2,22 @@
 Module: plugins.lyrics_parser
 
 Purpose:
-    Auto-generated module docstring.
+    Parser for extracting timed lyrics from LRC-formatted text.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Worker thread.
 """
 
 import re

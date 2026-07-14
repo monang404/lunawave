@@ -2,13 +2,24 @@
 Module: engine.playback.queue_ops
 
 Purpose:
-    Auto-generated module docstring.
+    Manages queue operations including adding, removing, and reordering tracks.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.events
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
-    None
+    - LogMessageEvent
+    - QueueUpdatedEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

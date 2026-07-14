@@ -2,13 +2,22 @@
 Module: tests.unit.plugins.test_lyrics_parser
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for LRC lyrics parsing logic.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - plugins.lyrics_parser
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from plugins.lyrics_parser import LyricsParser

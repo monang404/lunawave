@@ -16,7 +16,7 @@ Side Effects:
     Spawns a subprocess for each checker script.
 
 CLI:
-    python scripts/doctor.py [--strict]
+    python automation/doctor.py [--strict]
 
 
 Subscribes to:

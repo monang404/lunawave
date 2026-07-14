@@ -2,13 +2,22 @@
 Module: tests.unit.launcher.gui.test_dep_checker
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for the launcher dependency checker.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - launcher.gui.dep_checker
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from launcher.gui.dep_checker import DependencyChecker

@@ -11,8 +11,6 @@ Responsibilities:
 
 Depends on:
     - core.command_bus
-    - engine.playback.controller
-    - engine.volume_service
 
 Subscribes to:
     None

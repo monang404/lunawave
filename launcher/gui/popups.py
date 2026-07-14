@@ -2,13 +2,22 @@
 Module: launcher.gui.popups
 
 Purpose:
-    Auto-generated module docstring.
+    Helper module for displaying generic popup dialogs in the GUI.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import tkinter as tk

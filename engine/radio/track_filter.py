@@ -5,11 +5,20 @@ Purpose:
     Filter candidate tracks for the radio queue to prevent duplicates,
     skip recently played tracks, and limit artist dominance.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Worker thread.
 """
 
 import logging

@@ -6,6 +6,12 @@ Purpose:
     Baca/tulis docs/PATCHLOG.md terstruktur. ID PATCH-YYYY-MM-DD-NNN, NNN = total
     entries berjalan (bukan reset per hari).
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/patchlog.py add "<deskripsi>" --files a.py,b.py
     python automation/patchlog.py latest --n 5 [--json]
@@ -62,7 +68,17 @@ def add_entry(desc: str, files: list[str]) -> str:
         f"**Ringkasan:** {desc}\n\n**File Terdampak:**\n\n{files_block}\n\n---\n"
     )
     marker = "---\n\n"  # tepat setelah blockquote format-notice
-    idx = text.index(marker) + len(marker)
+    # PENTING: file diawali frontmatter YAML yang juga dibuka/ditutup dengan "---".
+    # text.index(marker) tanpa offset akan selalu cocok dengan "---\n\n" di baris
+    # pertama (pembuka frontmatter), bukan garis horizontal setelah blockquote —
+    # ini menyebabkan entry baru disisipkan DI DALAM frontmatter dan merusaknya.
+    # Lewati dulu blok frontmatter (jika ada) sebelum mencari marker sungguhan.
+    search_start = 0
+    if text.startswith("---"):
+        fm_close = text.find("\n---", 3)
+        if fm_close != -1:
+            search_start = fm_close + len("\n---")
+    idx = text.index(marker, search_start) + len(marker)
     new_text = text[:idx] + block + text[idx:]
     new_text = re.sub(r"latest_patch_id:.*", f"latest_patch_id: {new_id}", new_text, count=1)
     new_text = re.sub(r"total_entries:.*", f"total_entries: {len(entries) + 1}", new_text, count=1)

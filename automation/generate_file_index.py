@@ -254,7 +254,7 @@ def build_generated_block(project_root: Path) -> str:
         "plugins/",
         "launcher/",
         "data/",
-        "scripts/",
+        "automation/",
         "tests/",
         "scratch/",
     ]

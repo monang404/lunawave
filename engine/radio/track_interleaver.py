@@ -2,13 +2,22 @@
 Module: engine.radio.track_interleaver
 
 Purpose:
-    Auto-generated module docstring.
+    Interleaves tracks from different artists to create a balanced radio queue.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import random

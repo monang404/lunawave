@@ -6,6 +6,12 @@ Purpose:
     Ranking file paling berisiko: skor = churn (jumlah kemunculan di
     PATCHLOG.md) x sentralitas (reverse-dep 1-hop dari repo_index).
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/hotspot.py [--top N] [--json]
 """

@@ -11,7 +11,12 @@ Responsibilities:
       DownloadCompleteEvent.
 
 Depends on:
-    - core.event_bus, core.events, core.command_bus, core.state, core.ports
+    - core.command_bus
+    - core.event_bus
+    - core.events
+    - core.ports
+    - core.state
+    - core.task_utils
 
 Subscribes to:
     CMD_DOWNLOAD

@@ -42,7 +42,7 @@ GENERATED_BEGIN_RE = re.compile(r"<!--\s*BEGIN:GENERATED\s*-->")
 GENERATED_END_RE = re.compile(r"<!--\s*END:GENERATED\s*-->")
 
 # Pattern untuk mengambil referensi path .py dari teks markdown
-PY_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_/\\.-]*\.py)")
+PY_REF_RE = re.compile(r"`([A-Za-z_][A-Za-z0-9_/\\.-]*\.py)`")
 
 # ---------------------------------------------------------------------------
 # Konstanta konfigurasi
@@ -86,8 +86,8 @@ CHECK_WEIGHTS: dict[str, int] = {
 
 # Hint perintah CLI untuk cek tertentu
 CHECK_HINTS: dict[str, str] = {
-    "Module Docstring": "python scripts/verify_docs.py --show-docstring",
-    "Large Files": "python scripts/verify_docs.py --show-large-files",
+    "Module Docstring": "python automation/verify_docs.py --show-docstring",
+    "Large Files": "python automation/verify_docs.py --show-large-files",
 }
 
 # ---------------------------------------------------------------------------

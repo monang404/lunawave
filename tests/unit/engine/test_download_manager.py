@@ -7,7 +7,9 @@ Purpose:
     Auto-generated purpose.
 
 Subscribes to:
-    None
+    - DownloadCompleteEvent
+    - DownloadProgressEvent
+    - LogMessageEvent
 
 Publishes:
     None

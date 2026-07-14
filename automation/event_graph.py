@@ -6,6 +6,12 @@ Purpose:
     Menganalisis dan memvalidasi event pub/sub. Memastikan tidak ada publisher
     tanpa subscriber (dead event) dan tidak ada subscriber tanpa publisher (ghost event).
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/event_graph.py [--json]
 """

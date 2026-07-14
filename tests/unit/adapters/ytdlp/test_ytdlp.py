@@ -5,11 +5,23 @@ Purpose:
     Unit tests for YtDlpSearcher._to_track and search filtering logic
     without making real network calls. yt-dlp is mocked at the executor level.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.ytdlp.downloader
+    - adapters.ytdlp.resolver
+    - adapters.ytdlp.searcher
+    - core.state
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch

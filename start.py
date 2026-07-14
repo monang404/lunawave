@@ -17,11 +17,20 @@ Side Effects:
 CLI:
     python start.py
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - launcher.__main__
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from launcher.__main__ import main

@@ -2,13 +2,22 @@
 Module: adapters.ytdlp.downloader
 
 Purpose:
-    Auto-generated module docstring.
+    Handles downloading audio streams using yt-dlp.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.ytdlp.common
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

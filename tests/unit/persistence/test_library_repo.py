@@ -2,13 +2,22 @@
 Module: tests.unit.persistence.test_library_repo
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for the LibraryRepository class.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - persistence.library_repo
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

@@ -11,7 +11,9 @@ Responsibilities:
       is empty.
 
 Depends on:
-    - core.events, core.state
+    - core.events
+    - core.state
+    - engine.playback
 
 Subscribes to:
     None

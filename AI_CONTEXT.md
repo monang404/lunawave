@@ -45,7 +45,7 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
    - Atau per-checker jika hanya ingin cek satu aspek (lihat §Developer Scripts)
 2. Jalankan `python automation/generate_file_index.py` — jika ada file/class/fungsi baru atau berubah
 3. Jalankan `python automation/generate_report.py` — jika ada penambahan/penghapusan file
-4. Append entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
+4. Prepend entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
 5. Update `docs/STATUS.md` jika kondisi file berubah
 
 ## Output Generated — Kemana Hasilnya Disimpan
@@ -73,10 +73,15 @@ dokumen yang sudah ada, hanya di antara marker:
 | `doctor.py` | Tidak menulis file — aggregasi output semua checker ke satu dashboard |
 | `run_all.py` | Jalankan semua generator + doctor.py sekaligus |
 | `find_owner.py` | Tidak menulis file — hanya print ke stdout |
-| `fix_docs.py` | Utility inject/perbaiki docstring modul (jalankan manual jika perlu) |
+| `call_graph.py` | Tidak menulis file — hanya print ke stdout |
+| `event_graph.py` | Tidak menulis file — hanya print ke stdout |
+| `hotspot.py` | Tidak menulis file — hanya print ke stdout |
+| `impact.py` | Tidak menulis file — hanya print ke stdout |
+| `patchlog.py` | Tidak menulis file — hanya print ke stdout |
+| `test_locator.py` | Tidak menulis file — hanya print ke stdout |
 
 Bagian dokumen **di luar marker** (narasi, rekomendasi, keputusan) adalah
-wilayah manual — AI boleh edit, tapi harus append ke `PATCHLOG.md` setelahnya.
+wilayah manual — AI boleh edit, tapi harus prepend ke `PATCHLOG.md` setelahnya.
 
 ## Automation Tools
 
