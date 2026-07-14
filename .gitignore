@@ -69,3 +69,7 @@ node_modules/
 .ruff_cache/
 .mypy_cache/
 .import_linter_cache/
+
+# Local test runner scripts
+run_tests.py
+test.bat
