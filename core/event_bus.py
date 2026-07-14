@@ -119,7 +119,7 @@ class EventBus:
         # Concurrent dispatch with error boundary
         tasks = []
         for handler in active_handlers:
-            if asyncio.iscoroutinefunction(handler):
+            if inspect.iscoroutinefunction(handler):
 
                 async def _wrap_handler(h=handler):
                     try:

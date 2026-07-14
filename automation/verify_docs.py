@@ -36,12 +36,8 @@ from pathlib import Path
 # instead of raising) prevents the checker from crashing mid-report on
 # those consoles while keeping the nicer glyphs everywhere else.
 for _stream in (sys.stdout, sys.stderr):
-    try:
+    if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore
-    except AttributeError:
-        # reconfigure() isn't available on very old Python / non-standard
-        # stream objects; safe to ignore, worst case is a mojibake char.
-        pass
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
