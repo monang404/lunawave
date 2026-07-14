@@ -109,8 +109,8 @@ class LyricsFetcher:
 
                 async with session.get(
                     url_get,
-                    params=params_get,
-                    timeout=aiohttp.ClientTimeout(total=5),  # type: ignore
+                    params=params_get,  # type: ignore
+                    timeout=aiohttp.ClientTimeout(total=5),
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
