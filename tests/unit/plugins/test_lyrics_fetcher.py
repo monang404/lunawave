@@ -30,9 +30,7 @@ async def test_lyrics_fetcher_success(mock_parser):
 
     fetcher = LyricsFetcher(mock_state, session=mock_session, event_bus=mock_bus)
 
-    track = TrackInfo(
-        video_id="123", title="Test Song", artist="Test Artist", duration=200
-    )
+    track = TrackInfo(video_id="123", title="Test Song", artist="Test Artist", duration=200)
     await fetcher.fetch(track)
 
     assert mock_session.get.call_count == 1
@@ -66,9 +64,7 @@ async def test_lyrics_fetcher_fallback_syncedlyrics(mock_get_loop, mock_wait_for
     mock_wait_for.return_value = "[00:15.00]Fallback Line"
 
     fetcher = LyricsFetcher(mock_state, session=mock_session, event_bus=mock_bus)
-    track = TrackInfo(
-        video_id="123", title="Test Song", artist="Test Artist", duration=200
-    )
+    track = TrackInfo(video_id="123", title="Test Song", artist="Test Artist", duration=200)
 
     with patch("plugins.lyrics_parser.LyricsParser") as mock_parser:
         mock_parser.parse_lrc.return_value = [(15.0, "Fallback Line")]
