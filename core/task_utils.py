@@ -42,7 +42,11 @@ def safe_create_task(
     yang menyebabkan silent crash.
     """
 
+    coro_started = False
+
     async def _wrap_coro():
+        nonlocal coro_started
+        coro_started = True
         try:
             await coro
         except asyncio.CancelledError:
@@ -62,4 +66,10 @@ def safe_create_task(
                     )
 
     task = asyncio.create_task(_wrap_coro(), name=name)
+
+    def _cleanup_coro(t):
+        if not coro_started and hasattr(coro, "close"):
+            coro.close()
+
+    task.add_done_callback(_cleanup_coro)
     return task

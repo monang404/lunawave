@@ -74,8 +74,10 @@ async def test_observer_start_and_stop(mock_connection, mock_ipc, mock_event_bus
     await asyncio.sleep(0)
 
     await observer.stop()
-    # Give it a tiny sleep to let the task cancel
-    await asyncio.sleep(0.01)
+    try:
+        await observer._task
+    except asyncio.CancelledError:
+        pass
 
     assert observer._task.cancelled() or observer._task.done()
 
