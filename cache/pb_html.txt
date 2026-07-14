@@ -21,7 +21,7 @@
                 <input type="range" min="0" max="100" value="80" class="vol-slider" id="vol-slider">
                 <span class="vol-label" id="pb-vol-label">80%</span>
             </div>
-            
+
             <div class="pb-badges">
                 <span class="pb-badge-sm cached" id="pb-cache-badge" style="display:none">✓ tersimpan</span>
                 <span class="pb-badge-sm sb" id="pb-sb-badge" style="display:none">SB aktif</span>
@@ -37,6 +37,3 @@
             </div>
         </div>
     </div>
-
-    
-    

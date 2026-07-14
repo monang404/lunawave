@@ -15,12 +15,15 @@ import asyncio
 import os
 import re
 from pathlib import Path
+
 import structlog
-from core.command_bus import command_bus, CMD_DOWNLOAD
+
+from core.command_bus import CMD_DOWNLOAD, command_bus
 from server.serializers import dict_to_track, track_to_dict
 from services.discover_service import DiscoverService
 
 logger = structlog.get_logger(__name__)
+
 
 async def handle_download_command(action: str, data: dict, db, manager, state):
     if action == "download":
@@ -57,10 +60,8 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                 if state.current_track and state.current_track.video_id == db_track.video_id:
                     state.current_track.local_path = None
                     from server.serializers import state_to_dict
-                    await manager.broadcast({
-                        "type": "state",
-                        "data": state_to_dict(state)
-                    })
+
+                    await manager.broadcast({"type": "state", "data": state_to_dict(state)})
 
                 # Update discover
                 ds = DiscoverService(db)
@@ -70,16 +71,17 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                     ds.get_featured_artists(100),
                     ds.get_featured_genres(100),
                 )
-                await manager.broadcast({
-                    "type": "discover_data",
-                    "data": {
-                        "recent": [track_to_dict(t) for t in recent],
-                        "cached_tracks": [track_to_dict(t) for t in cached],
-                        "featured_artists": featured_artists,
-                        "featured_genres": featured_genres
+                await manager.broadcast(
+                    {
+                        "type": "discover_data",
+                        "data": {
+                            "recent": [track_to_dict(t) for t in recent],
+                            "cached_tracks": [track_to_dict(t) for t in cached],
+                            "featured_artists": featured_artists,
+                            "featured_genres": featured_genres,
+                        },
                     }
-                })
-                await manager.broadcast({
-                    "type": "log",
-                    "data": f"Unduhan dihapus: {db_track.title}"
-                })
+                )
+                await manager.broadcast(
+                    {"type": "log", "data": f"Unduhan dihapus: {db_track.title}"}
+                )

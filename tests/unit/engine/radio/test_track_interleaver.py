@@ -11,12 +11,13 @@ Publishes:
     None
 """
 
-import pytest
-from engine.radio.track_interleaver import _normalize_title, interleave_by_artist
 from core.state import TrackInfo
+from engine.radio.track_interleaver import _normalize_title, interleave_by_artist
+
 
 def make_track(artist: str, title: str) -> TrackInfo:
     return TrackInfo(video_id="id", title=title, artist=artist, duration=200)
+
 
 def test_normalize_title():
     assert _normalize_title("Song Name (Official Video) [HD]") == "song name"
@@ -24,12 +25,15 @@ def test_normalize_title():
     assert _normalize_title("Real Song (Feat. Artist)") == "real song"
     assert _normalize_title("Hello World (Live Performance)") == "hello world"
 
+
 def test_interleave_by_artist_empty():
     assert interleave_by_artist([]) == []
+
 
 def test_interleave_by_artist_single():
     t1 = make_track("A", "Song 1")
     assert interleave_by_artist([t1]) == [t1]
+
 
 def test_interleave_by_artist_multiple():
     t1 = make_track("A", "Song A1")

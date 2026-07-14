@@ -12,15 +12,29 @@ Publishes:
 """
 
 import structlog
+
 from core.command_bus import (
-    command_bus, CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE,
-    CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET,
-    CMD_SET_MODE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK, CMD_RADIO_RANDOMIZE, CMD_LYRICS_OFFSET
+    CMD_LYRICS_OFFSET,
+    CMD_NEXT,
+    CMD_PLAY_TRACK,
+    CMD_PREV,
+    CMD_RADIO_RANDOMIZE,
+    CMD_SEEK,
+    CMD_SET_MODE,
+    CMD_SET_OUTPUT,
+    CMD_SET_SPONSORBLOCK,
+    CMD_STOP,
+    CMD_TOGGLE_PAUSE,
+    CMD_VOLUME_DOWN,
+    CMD_VOLUME_SET,
+    CMD_VOLUME_UP,
+    command_bus,
 )
-from core.state import PlaybackMode, AudioOutput
+from core.state import AudioOutput, PlaybackMode
 from server.serializers import dict_to_track
 
 logger = structlog.get_logger(__name__)
+
 
 async def handle_playback_command(action: str, data: dict):
     if action == "play_track":

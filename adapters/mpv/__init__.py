@@ -15,18 +15,27 @@ from adapters.mpv.connection import MpvConnection
 from adapters.mpv.ipc import MpvIPC
 from adapters.mpv.observer import MpvObserver
 
+
 class MpvController:
     """
     Facade — API publik identik dengan engine/mpv_controller.py lama.
     Tidak ada kode lain yang perlu berubah.
     """
-    def __init__(self, socket_path: str = None, tcp_port: str = None, event_bus=None, room_id: str = "default"):
+
+    def __init__(
+        self,
+        socket_path: str = None,  # type: ignore
+        tcp_port: str = None,  # type: ignore
+        event_bus=None,
+        room_id: str = "default",
+    ):
         self._conn = MpvConnection(socket_path, tcp_port)
         self._ipc = MpvIPC(self._conn)
 
         # Injected per-room bus (fallback ke global jika belum direfactor)
         if event_bus is None:
             from core.event_bus import bus as _global_bus
+
             event_bus = _global_bus
 
         self._observer = MpvObserver(self._conn, self._ipc, event_bus, room_id)

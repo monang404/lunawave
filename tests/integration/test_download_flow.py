@@ -13,9 +13,9 @@ Publishes:
 """
 
 import asyncio
-import os
-import pytest
 from pathlib import Path
+
+import pytest
 
 from core.command_bus import command_bus
 from core.commands import CMD_DOWNLOAD
@@ -41,12 +41,7 @@ async def test_download_flow(integration_app):
     # We need a track object to download. We can just create one manually.
     # Use a very short video to not hang the test forever.
     # "Me at the zoo" is 19 seconds.
-    track = TrackInfo(
-        video_id="jNQXAC9IVRw",
-        title="Me at the zoo",
-        artist="jawed",
-        duration=19
-    )
+    track = TrackInfo(video_id="jNQXAC9IVRw", title="Me at the zoo", artist="jawed", duration=19)
 
     # Dispatch download command
     await command_bus.dispatch(CMD_DOWNLOAD, track)
@@ -54,7 +49,7 @@ async def test_download_flow(integration_app):
     # Wait for completion event
     # yt-dlp download takes a few seconds
     completed = False
-    for _ in range(200): # max 20 seconds
+    for _ in range(200):  # max 20 seconds
         await asyncio.sleep(0.1)
         if any(isinstance(e, DownloadCompleteEvent) for e in events):
             completed = True

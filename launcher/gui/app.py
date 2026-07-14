@@ -22,37 +22,32 @@ Thread Safety:
     Main thread only (all Tkinter calls must stay on the main thread).
 """
 
-import tkinter as tk
-from tkinter import scrolledtext, messagebox
-import threading
-import sys
 import os
+import sys
+import threading
 import time
-import webbrowser
+import tkinter as tk
 from pathlib import Path
-import importlib.util
-import shutil
-import secrets
 
 from launcher import network
-from launcher import process
 
 # ── Config ────────────────────────────────────────────────
-BASE_DIR   = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
-PYTHON     = sys.executable
+PYTHON = sys.executable
 
 # ── Colors (LunaWave dark theme) ─────────────────────────
-BG         = "#0E0E12"
+BG = "#0E0E12"
 BG_SURFACE = "#151518"
-BG_CARD    = "#1C1C22"
-ACCENT     = "#F2B544"
-TEXT_1     = "#FFFFFF"
-TEXT_2     = "#9AA0AA"
-TEXT_3     = "#60656F"
-GREEN      = "#22C55E"
-RED        = "#EF4444"
-BORDER     = "#2A2A32"
+BG_CARD = "#1C1C22"
+ACCENT = "#F2B544"
+TEXT_1 = "#FFFFFF"
+TEXT_2 = "#9AA0AA"
+TEXT_3 = "#60656F"
+GREEN = "#22C55E"
+RED = "#EF4444"
+BORDER = "#2A2A32"
+
 
 class ServerManager(tk.Tk):
     def __init__(self):
@@ -77,6 +72,7 @@ class ServerManager(tk.Tk):
 
         self._port_var = tk.StringVar(value=str(SERVER_PORT))
         from launcher.gui.controller import ServerController
+
         self.controller = ServerController(self, BASE_DIR)
 
         self._build_window()
@@ -84,7 +80,21 @@ class ServerManager(tk.Tk):
         self._run_dependency_check()
         self._refresh_status()
         from launcher.gui.auth_panel import handle_first_run
-        handle_first_run(self, BASE_DIR, BG, BG_CARD, BG_SURFACE, ACCENT, TEXT_1, TEXT_2, TEXT_3, RED, GREEN, BORDER)
+
+        handle_first_run(
+            self,
+            BASE_DIR,
+            BG,
+            BG_CARD,
+            BG_SURFACE,
+            ACCENT,
+            TEXT_1,
+            TEXT_2,
+            TEXT_3,
+            RED,
+            GREEN,
+            BORDER,
+        )
 
     # ── Window setup ──────────────────────────────────────
     def _build_window(self):
@@ -96,7 +106,7 @@ class ServerManager(tk.Tk):
 
         # Center on screen
         self.update_idletasks()
-        x = (self.winfo_screenwidth()  - 600) // 2
+        x = (self.winfo_screenwidth() - 600) // 2
         y = (self.winfo_screenheight() - 680) // 2
         self.geometry(f"+{x}+{y}")
 
@@ -113,7 +123,10 @@ class ServerManager(tk.Tk):
     # ── UI Layout ──
     def _build_ui(self):
         from launcher.gui.ui_builder import UIBuilder
-        builder = UIBuilder(BG, BG_SURFACE, BG_CARD, ACCENT, TEXT_1, TEXT_2, TEXT_3, GREEN, RED, BORDER, BASE_DIR)
+
+        builder = UIBuilder(
+            BG, BG_SURFACE, BG_CARD, ACCENT, TEXT_1, TEXT_2, TEXT_3, GREEN, RED, BORDER, BASE_DIR
+        )
         builder.build_ui(self)
 
     @property
@@ -127,6 +140,7 @@ class ServerManager(tk.Tk):
     def _run_dependency_check(self):
         def _thread_fn():
             from launcher.gui.dep_checker import DependencyChecker
+
             checker = DependencyChecker()
             missing, mpv_ok = checker.check_dependencies()
             if not missing and mpv_ok:
@@ -186,7 +200,11 @@ class ServerManager(tk.Tk):
                 self._port_entry.config(state="normal")
 
                 self._conflict_pid = conflict_pid
-                self._btn_kill_conflict.config(text=f"☠  Kill Process (PID {conflict_pid})" if conflict_pid else "☠  Kill Port Owner")
+                self._btn_kill_conflict.config(
+                    text=f"☠  Kill Process (PID {conflict_pid})"
+                    if conflict_pid
+                    else "☠  Kill Port Owner"
+                )
                 self._btn_kill_conflict.pack(side="right", padx=(5, 0))
             else:
                 status = "STOPPED"
@@ -219,11 +237,22 @@ class ServerManager(tk.Tk):
                 self._log.insert("end", f"[{ts}] ", "dim")
                 _tag = tag
                 if not tag and not is_end:
-                    _tag = "err" if any(w in msg.lower() for w in ("error", "exception", "traceback", "critical")) else \
-                           "ok"  if any(w in msg.lower() for w in ("started", "ready", "listening", "running")) else ""
+                    _tag = (
+                        "err"
+                        if any(
+                            w in msg.lower()
+                            for w in ("error", "exception", "traceback", "critical")
+                        )
+                        else "ok"
+                        if any(
+                            w in msg.lower() for w in ("started", "ready", "listening", "running")
+                        )
+                        else ""
+                    )
                 self._log.insert("end", msg.rstrip() + "\n", _tag or "")
             self._log.see("end")
             self._log.config(state="disabled")
+
         self.after(0, _do)
 
     def _clear_log(self):
@@ -234,14 +263,19 @@ class ServerManager(tk.Tk):
     # ── Button handlers ───────────────────────────────────
     def _on_start(self):
         self.controller.on_start()
+
     def _on_stop(self):
         self.controller.on_stop()
+
     def _on_restart(self):
         self.controller.on_restart()
+
     def _on_open(self):
         self.controller.on_open()
+
     def _on_kill_conflict(self):
         self.controller.on_kill_conflict()
+
     def _wait_for_server_ready(self, port):
         self.controller.wait_for_server_ready(port)
 

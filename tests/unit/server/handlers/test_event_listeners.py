@@ -1,7 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from core.events import TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent
+
+from core.events import QueueUpdatedEvent, TrackProgressEvent
 from server.handlers.event_listeners import setup_event_listeners
+
 
 @pytest.mark.asyncio
 async def test_setup_event_listeners_binds_all_events():
@@ -14,6 +17,7 @@ async def test_setup_event_listeners_binds_all_events():
     # Check that bus.subscribe was called multiple times
     assert mock_pc.bus.subscribe.call_count == 8
 
+
 @pytest.mark.asyncio
 async def test_event_listener_track_progress():
     mock_pc = MagicMock()
@@ -22,6 +26,7 @@ async def test_event_listener_track_progress():
     mock_broadcast = AsyncMock()
 
     callbacks = {}
+
     def mock_subscribe(event_cls, callback):
         callbacks[event_cls] = callback
 
@@ -38,6 +43,7 @@ async def test_event_listener_track_progress():
 
     mock_broadcast.broadcast_progress.assert_called_once_with(10.5, "PLAYING")
 
+
 @pytest.mark.asyncio
 async def test_event_listener_queue_updated():
     mock_pc = MagicMock()
@@ -45,6 +51,7 @@ async def test_event_listener_queue_updated():
     mock_broadcast = AsyncMock()
 
     callbacks = {}
+
     def mock_subscribe(event_cls, callback):
         callbacks[event_cls] = callback
 

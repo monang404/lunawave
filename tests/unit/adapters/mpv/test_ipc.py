@@ -15,14 +15,16 @@ Publishes:
 
 import asyncio
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from adapters.mpv.ipc import MpvIPC
 
+import pytest
+
+from adapters.mpv.ipc import MpvIPC
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_fake_connection(is_connected: bool = True):
     """Return a minimal fake MpvConnection stub."""
@@ -37,6 +39,7 @@ def make_fake_connection(is_connected: bool = True):
 # ---------------------------------------------------------------------------
 # send_command
 # ---------------------------------------------------------------------------
+
 
 class TestSendCommand:
     @pytest.mark.asyncio
@@ -91,6 +94,7 @@ class TestSendCommand:
 # get_property
 # ---------------------------------------------------------------------------
 
+
 class TestGetProperty:
     @pytest.mark.asyncio
     async def test_returns_none_when_not_connected(self):
@@ -128,6 +132,7 @@ class TestGetProperty:
 # set_property
 # ---------------------------------------------------------------------------
 
+
 class TestSetProperty:
     @pytest.mark.asyncio
     async def test_delegates_to_send_command(self):
@@ -143,6 +148,7 @@ class TestSetProperty:
 # ---------------------------------------------------------------------------
 # Pending future management
 # ---------------------------------------------------------------------------
+
 
 class TestPendingFutures:
     @pytest.mark.asyncio

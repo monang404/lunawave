@@ -13,6 +13,7 @@ Publishes:
 
 from core.ports import SponsorBlockProvider
 
+
 class FakeSponsorBlockProvider(SponsorBlockProvider):
     def __init__(self, segments=None):
         self._segments = segments or []

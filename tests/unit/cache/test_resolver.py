@@ -48,7 +48,9 @@ def resolver(repo, extractor):
 async def test_resolve_returns_local_path_when_file_exists_on_disk(resolver, repo, tmp_path):
     local_file = tmp_path / "song.mp3"
     local_file.write_bytes(b"fake audio")
-    repo.seed(TrackInfo(video_id="v1", title="T", artist="A", duration=100, local_path=str(local_file)))
+    repo.seed(
+        TrackInfo(video_id="v1", title="T", artist="A", duration=100, local_path=str(local_file))
+    )
 
     track = make_track("v1")
     result = await resolver.resolve(track)
@@ -57,8 +59,14 @@ async def test_resolve_returns_local_path_when_file_exists_on_disk(resolver, rep
     assert track.local_path == str(local_file)
 
 
-async def test_resolve_falls_through_when_local_path_recorded_but_file_missing(resolver, repo, extractor):
-    repo.seed(TrackInfo(video_id="v1", title="T", artist="A", duration=100, local_path="/no/such/file.mp3"))
+async def test_resolve_falls_through_when_local_path_recorded_but_file_missing(
+    resolver, repo, extractor
+):
+    repo.seed(
+        TrackInfo(
+            video_id="v1", title="T", artist="A", duration=100, local_path="/no/such/file.mp3"
+        )
+    )
     extractor.stream_urls["v1"] = "https://fresh-url"
 
     track = make_track("v1")
@@ -71,10 +79,16 @@ async def test_resolve_falls_through_when_local_path_recorded_but_file_missing(r
 
 async def test_resolve_returns_cached_stream_url_when_fresh(resolver, repo):
     now = int(time.time())
-    repo.seed(TrackInfo(
-        video_id="v1", title="T", artist="A", duration=100,
-        stream_url="https://cached-url", stream_url_ts=now,
-    ))
+    repo.seed(
+        TrackInfo(
+            video_id="v1",
+            title="T",
+            artist="A",
+            duration=100,
+            stream_url="https://cached-url",
+            stream_url_ts=now,
+        )
+    )
 
     track = make_track("v1")
     result = await resolver.resolve(track)
@@ -85,10 +99,16 @@ async def test_resolve_returns_cached_stream_url_when_fresh(resolver, repo):
 
 async def test_resolve_treats_stale_stream_url_as_a_cache_miss(resolver, repo, extractor):
     stale_ts = int(time.time()) - config.STREAM_URL_TTL_SEC - 1
-    repo.seed(TrackInfo(
-        video_id="v1", title="T", artist="A", duration=100,
-        stream_url="https://stale-url", stream_url_ts=stale_ts,
-    ))
+    repo.seed(
+        TrackInfo(
+            video_id="v1",
+            title="T",
+            artist="A",
+            duration=100,
+            stream_url="https://stale-url",
+            stream_url_ts=stale_ts,
+        )
+    )
     extractor.stream_urls["v1"] = "https://brand-new-url"
 
     track = make_track("v1")
@@ -101,10 +121,16 @@ async def test_resolve_boundary_exactly_at_ttl_is_treated_as_stale(resolver, rep
     """`time.time() - ts < TTL` is a strict inequality, so a URL fetched
     exactly TTL seconds ago must already count as stale."""
     boundary_ts = int(time.time()) - config.STREAM_URL_TTL_SEC
-    repo.seed(TrackInfo(
-        video_id="v1", title="T", artist="A", duration=100,
-        stream_url="https://boundary-url", stream_url_ts=boundary_ts,
-    ))
+    repo.seed(
+        TrackInfo(
+            video_id="v1",
+            title="T",
+            artist="A",
+            duration=100,
+            stream_url="https://boundary-url",
+            stream_url_ts=boundary_ts,
+        )
+    )
     extractor.stream_urls["v1"] = "https://refetched-url"
 
     track = make_track("v1")
@@ -127,10 +153,17 @@ async def test_resolve_local_file_takes_priority_over_fresh_stream_url(resolver,
     local_file = tmp_path / "song.mp3"
     local_file.write_bytes(b"fake audio")
     now = int(time.time())
-    repo.seed(TrackInfo(
-        video_id="v1", title="T", artist="A", duration=100,
-        local_path=str(local_file), stream_url="https://should-not-be-used", stream_url_ts=now,
-    ))
+    repo.seed(
+        TrackInfo(
+            video_id="v1",
+            title="T",
+            artist="A",
+            duration=100,
+            local_path=str(local_file),
+            stream_url="https://should-not-be-used",
+            stream_url_ts=now,
+        )
+    )
 
     track = make_track("v1")
     result = await resolver.resolve(track)

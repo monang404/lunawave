@@ -12,13 +12,16 @@ Publishes:
 """
 
 import asyncio
-from core.events import QueueUpdatedEvent, LogMessageEvent
+
+from core.events import LogMessageEvent, QueueUpdatedEvent
 from core.state import AppState, TrackInfo
+
 
 class QueueOps:
     """
     Operasi manipulasi queue. Dipanggil oleh PlaybackController.
     """
+
     def __init__(self, state: AppState, bus, lock: asyncio.Lock):
         self.state = state
         self.bus = bus
@@ -38,7 +41,9 @@ class QueueOps:
         async with self._lock:
             self.state.queue.append(track)
             await self.bus.publish(QueueUpdatedEvent())
-            await self.bus.publish(LogMessageEvent(message=f"Ditambahkan ke antrean: {track.title}"))
+            await self.bus.publish(
+                LogMessageEvent(message=f"Ditambahkan ke antrean: {track.title}")
+            )
 
     async def remove_track(self, index: int):
         async with self._lock:
@@ -46,7 +51,9 @@ class QueueOps:
                 removed = self.state.queue[index]
                 del self.state.queue[index]
                 await self.bus.publish(QueueUpdatedEvent())
-                await self.bus.publish(LogMessageEvent(message=f"Dihapus dari antrean: {removed.title}"))
+                await self.bus.publish(
+                    LogMessageEvent(message=f"Dihapus dari antrean: {removed.title}")
+                )
 
     async def replace_queue(self, tracks: list[TrackInfo]):
         async with self._lock:

@@ -15,7 +15,6 @@ from core.event_bus import EventBus
 from core.events import LogMessageEvent
 from core.state import AppState, AudioOutput
 from engine.volume_service import VolumeService
-
 from tests.fakes.fake_audio_player import FakeAudioPlayer
 
 
@@ -110,7 +109,9 @@ async def test_apply_volume_mutes_mpv_but_keeps_state_volume_when_browser_output
     assert state.volume == 55
 
 
-async def test_apply_volume_falls_back_to_device_behavior_when_state_has_no_audio_output(bus, player):
+async def test_apply_volume_falls_back_to_device_behavior_when_state_has_no_audio_output(
+    bus, player
+):
     class BareState:
         volume = 80
 

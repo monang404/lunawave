@@ -11,10 +11,9 @@ Publishes:
 
 import gc
 
-import pytest
-
-from core.event_bus import EventBus, bus as singleton_bus
-from core.events import DomainEvent, LogMessageEvent, QueueUpdatedEvent
+from core.event_bus import EventBus
+from core.event_bus import bus as singleton_bus
+from core.events import LogMessageEvent, QueueUpdatedEvent
 
 
 class _Listener:

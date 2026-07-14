@@ -54,13 +54,17 @@ async def db():
     yield database
     await database.close()
 
+
 @pytest.fixture
 async def memory_db():
     """SQLite in-memory — murah, cepat, tidak meninggalkan file."""
     import aiosqlite
+
     conn = await aiosqlite.connect(":memory:")
     conn.row_factory = aiosqlite.Row
-    schema = (Path(__file__).parent.parent / "persistence" / "schema.sql").read_text(encoding="utf-8")
+    schema = (Path(__file__).parent.parent / "persistence" / "schema.sql").read_text(
+        encoding="utf-8"
+    )
     await conn.executescript(schema)
     yield conn
     await conn.close()

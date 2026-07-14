@@ -12,29 +12,35 @@ Publishes:
 """
 
 import pytest
-import asyncio
-from engine.radio.engine import RadioMode
-from core.state import AppState, TrackInfo, PlayerStatus
+
 from core.event_bus import EventBus
-from core.events import QueueUpdatedEvent
+from core.state import AppState, PlayerStatus, TrackInfo
+from engine.radio.engine import RadioMode
+
 
 class MockExtractor:
     pass
 
+
 class MockDB:
     def __init__(self):
         self.conn = True
+
     async def get_all_artists(self):
         return ["A", "B"]
+
     async def get_random_songs(self, limit, exclude_ids, artist):
         return [TrackInfo(video_id=f"v_{artist}", title="T", artist=artist, duration=100)]
+
 
 class MockController:
     def __init__(self):
         self.bus = EventBus()
         self.played = []
+
     async def play_track(self, track):
         self.played.append(track)
+
 
 @pytest.mark.asyncio
 async def test_radio_activate_deactivate():
@@ -48,6 +54,7 @@ async def test_radio_activate_deactivate():
 
     await radio.on_deactivated()
     assert len(radio._bg_tasks) == 0
+
 
 @pytest.mark.asyncio
 async def test_radio_next_with_queue():
@@ -63,6 +70,7 @@ async def test_radio_next_with_queue():
     assert len(state.radio_queue) == 0
     assert len(controller.played) == 1
     assert controller.played[0] == t1
+
 
 @pytest.mark.asyncio
 async def test_radio_next_empty_queue():

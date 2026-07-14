@@ -1,7 +1,7 @@
 # PATCH_STARTUP_SPEED.md
 
-**Tujuan:** Startup <5 detik (desktop) / <10 detik (Termux) + pause response instan  
-**Baca dulu:** `AI_CONTEXT.md`  
+**Tujuan:** Startup <5 detik (desktop) / <10 detik (Termux) + pause response instan
+**Baca dulu:** `AI_CONTEXT.md`
 **Scope:** 4 file dimodifikasi, tidak ada perubahan API/arsitektur
 
 ---
@@ -172,11 +172,11 @@ def _download_sync(self, video_id, opts):
     print("  [1/5] Membuka database perpustakaan...")
     db = Database()
     await db.init()
-    
+
     # 2. Initialize Core Engine
     print("  [2/5] Menginisialisasi YT-DLP Engine...")
     ytdlp = YtDlpClient()
-    
+
     print("  [3/5] Menghubungkan ke audio player (MPV)...")
     mpv = MpvController()
     try:

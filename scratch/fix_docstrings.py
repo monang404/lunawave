@@ -12,10 +12,8 @@ Publishes:
 """
 
 import ast
-import os
 import sys
 from pathlib import Path
-import re
 
 # Add scripts directory to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -23,7 +21,10 @@ SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from verify_docs.checks_coverage import check_module_docstrings
-from verify_docs.helpers import DOCSTRING_REQUIRED_FIELDS, collect_py_files, filter_ignorable_inits, get_module_docstring
+from verify_docs.helpers import (
+    DOCSTRING_REQUIRED_FIELDS,
+)
+
 
 def inject_docstring(file_path: Path):
     try:
@@ -33,7 +34,13 @@ def inject_docstring(file_path: Path):
         return
 
     existing_doc = ast.get_docstring(tree)
-    module_name = file_path.relative_to(PROJECT_ROOT).as_posix().replace("/", ".").removesuffix(".py").removesuffix(".__init__")
+    module_name = (
+        file_path.relative_to(PROJECT_ROOT)
+        .as_posix()
+        .replace("/", ".")
+        .removesuffix(".py")
+        .removesuffix(".__init__")
+    )
 
     fields_to_add = []
     if existing_doc:
@@ -62,7 +69,7 @@ def inject_docstring(file_path: Path):
             "",
             "Publishes:",
             "    None",
-            '"""'
+            '"""',
         ]
 
         # Insert docstring at the beginning, but after shebang or encoding if present
@@ -85,7 +92,11 @@ def inject_docstring(file_path: Path):
         # A simple regex to replace the first docstring
         # Let's try to find it via AST node location
         doc_node = None
-        if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant):
+        if (
+            tree.body
+            and isinstance(tree.body[0], ast.Expr)
+            and isinstance(tree.body[0].value, ast.Constant)
+        ):
             doc_node = tree.body[0]
 
         if doc_node:
@@ -141,10 +152,14 @@ def inject_docstring(file_path: Path):
             end_line = lines[end_lineno - 1]
             if '"""' in end_line:
                 idx = end_line.rfind('"""')
-                lines[end_lineno - 1] = end_line[:idx] + "\n".join(lines_to_insert) + "\n" + end_line[idx:]
+                lines[end_lineno - 1] = (
+                    end_line[:idx] + "\n".join(lines_to_insert) + "\n" + end_line[idx:]
+                )
             elif "'''" in end_line:
                 idx = end_line.rfind("'''")
-                lines[end_lineno - 1] = end_line[:idx] + "\n".join(lines_to_insert) + "\n" + end_line[idx:]
+                lines[end_lineno - 1] = (
+                    end_line[:idx] + "\n".join(lines_to_insert) + "\n" + end_line[idx:]
+                )
             else:
                 lines.insert(end_lineno, "\n".join(lines_to_insert))
 
@@ -161,6 +176,7 @@ def main():
         file_path = PROJECT_ROOT / path_str
         if file_path.exists():
             inject_docstring(file_path)
+
 
 if __name__ == "__main__":
     main()

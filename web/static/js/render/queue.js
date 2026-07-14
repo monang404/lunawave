@@ -2,10 +2,10 @@ function renderQueue() {
     if (window.isDraggingQueue) return;
     document.body.dataset.queueEmpty = (store.queue.length === 0) ? "true" : "false";
     const isRadio = store.playback_mode === "RADIO";
-    
+
     // Render the manual queue in Queue Tab
     renderList(dom.queueList, store.queue, false, store.playback_mode === "QUEUE");
-    
+
     // Render the radio queue in Radio Tab
     if (dom.radioQueueList) {
         renderList(dom.radioQueueList, store.radio_queue, true, isRadio);
@@ -22,7 +22,7 @@ function renderQueue() {
 
 function renderList(container, items, isRadioList, isCurrentActiveMode) {
     if (!container) return;
-    
+
     const allItems = [];
     if (isCurrentActiveMode && store.current_track) {
         allItems.push({ track: store.current_track, index: -1, isCurrent: true });
@@ -50,7 +50,7 @@ function renderList(container, items, isRadioList, isCurrentActiveMode) {
         while (container.children.length > allItems.length) {
             container.removeChild(container.lastChild);
         }
-        
+
         if (isRadioList && typeof window.loadLazyCovers === "function") {
             window.loadLazyCovers();
         }
@@ -97,14 +97,14 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
     if (isRadio) {
         div.className = "radio-queue-item" + (isCurrent ? " current" : "") + (isCurrent && store.status === "PLAYING" ? " playing" : "");
         div.dataset.vid = track.video_id || '';
-        
+
         const titleEl = div.querySelector(".radio-queue-title");
         const artistEl = div.querySelector(".radio-queue-artist");
-        
+
         const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
         if (titleEl) titleEl.textContent = title;
         if (artistEl) artistEl.textContent = (track.artist || '') + " · " + formatTime(track.duration);
-        
+
         const img = div.querySelector(".lazy-cover");
         if (img) {
             // Only update datasets and reset cover if track changed to avoid disappear/flicker bug
@@ -125,7 +125,7 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
         } else {
             div.removeAttribute("data-index");
         }
-        
+
         if (isCurrent) {
             if (store.status === "PLAYING") {
                 div.querySelector(".qi-index").innerHTML = `<div class="eq-anim-icon" style="height:12px; width:14px; gap:2px;"><span style="width:3px; background: currentColor;"></span><span style="width:3px; background: currentColor;"></span><span style="width:3px; background: currentColor;"></span></div>`;
@@ -137,7 +137,7 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
         }
         div.querySelector(".qi-title").textContent = track.title;
         div.querySelector(".qi-dur").textContent = track.artist + " · " + formatTime(track.duration);
-        
+
         const rmBtn = div.querySelector(".qi-remove");
         if (isCurrent) {
             rmBtn.style.display = "none";
@@ -147,4 +147,3 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
         }
     }
 }
-

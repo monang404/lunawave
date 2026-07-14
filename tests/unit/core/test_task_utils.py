@@ -11,8 +11,6 @@ Publishes:
 
 import asyncio
 
-import pytest
-
 from core.task_utils import safe_create_task
 
 

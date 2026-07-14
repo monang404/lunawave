@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
+
 from server.services.stream_prefetch import StreamPrefetchService
+
 
 @pytest.mark.asyncio
 async def test_stream_prefetch_service():

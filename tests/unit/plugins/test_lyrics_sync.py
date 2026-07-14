@@ -12,11 +12,12 @@ Publishes:
 """
 
 import pytest
-import asyncio
-from plugins.lyrics_sync import LyricsSync
-from core.state import AppState
+
 from core.event_bus import EventBus
-from core.events import TrackProgressEvent, LyricsUpdatedEvent
+from core.events import LyricsUpdatedEvent, TrackProgressEvent
+from core.state import AppState
+from plugins.lyrics_sync import LyricsSync
+
 
 @pytest.mark.asyncio
 async def test_lyrics_sync():

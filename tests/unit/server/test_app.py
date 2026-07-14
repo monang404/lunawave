@@ -17,12 +17,14 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from aiohttp import web
 
 from server.app import create_app, run_server
+
 
 @pytest.fixture
 def mock_playback_controller():
@@ -30,13 +32,16 @@ def mock_playback_controller():
     controller.state = MagicMock()
     return controller
 
+
 @pytest.fixture
 def mock_ytdlp():
     return MagicMock()
 
+
 @pytest.fixture
 def mock_db():
     return MagicMock()
+
 
 def test_create_app_registers_routes_and_services(mock_playback_controller, mock_ytdlp, mock_db):
     app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
@@ -51,7 +56,11 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert "manager" in app
 
     # Check that routes are registered
-    routes = [route.resource.canonical for route in app.router.routes() if hasattr(route.resource, "canonical")]
+    routes = [
+        route.resource.canonical
+        for route in app.router.routes()
+        if hasattr(route.resource, "canonical")
+    ]
 
     assert "/" in routes
     assert "/admin" in routes
@@ -60,11 +69,15 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert "/health" in routes
     assert "/metrics" in routes
 
+
 @pytest.mark.asyncio
 async def test_run_server_starts_and_cleans_up():
     app = web.Application()
 
-    with patch("server.app.web.AppRunner") as MockAppRunner, patch("server.app.web.TCPSite") as MockTCPSite:
+    with (
+        patch("server.app.web.AppRunner") as MockAppRunner,
+        patch("server.app.web.TCPSite") as MockTCPSite,
+    ):
         mock_runner = MockAppRunner.return_value
         mock_runner.setup = AsyncMock()
         mock_runner.cleanup = AsyncMock()

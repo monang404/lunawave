@@ -25,9 +25,11 @@ Notes:
     Not yet implemented; functions are placeholders only.
 """
 
+
 def check_for_updates():
     """Placeholder for future update checking logic."""
     pass
+
 
 def get_release_info():
     """Placeholder for future release info fetching."""

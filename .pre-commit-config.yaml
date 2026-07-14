@@ -23,7 +23,7 @@ repos:
       # ---------------------------------------------------------------------------
       - id: architecture-lint
         name: "LunaWave — Architecture Boundary Check"
-        entry: python scripts/architecture_lint.py
+        entry: python automation/architecture_lint.py
         language: system
         types: [python]
         pass_filenames: false
@@ -36,7 +36,7 @@ repos:
       # ---------------------------------------------------------------------------
       - id: verify-docs
         name: "LunaWave — Docs Health Check"
-        entry: python scripts/verify_docs.py
+        entry: python automation/verify_docs.py
         language: system
         types: [markdown]
         pass_filenames: false

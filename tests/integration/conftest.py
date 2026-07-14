@@ -14,29 +14,27 @@ Publishes:
     None
 """
 
-import asyncio
 import os
 import shutil
-import pytest
-import aiohttp
 from pathlib import Path
-from aiohttp import web
 
-from core.state import AppState
-from core.event_bus import bus
-from engine.mpv_controller import MpvController
-from engine.ytdlp_client import YtDlpClient
+import aiohttp
+import pytest
+
 from cache.db import Database
 from cache.resolver import CacheResolver
-from plugins.sponsorblock import SponsorBlockHandler
-from plugins.lyrics import LyricsFetcher
+from core.event_bus import bus
+from core.state import AppState
+from engine.command_router import CommandRouter
+from engine.download_manager import DownloadManager
+from engine.mpv_controller import MpvController
+from engine.playback.controller import PlaybackController
 from engine.queue_manager import QueueMode
 from engine.radio_engine import RadioMode
 from engine.volume_service import VolumeService
-from engine.playback.controller import PlaybackController
-from engine.download_manager import DownloadManager
-from engine.command_router import CommandRouter
-
+from engine.ytdlp_client import YtDlpClient
+from plugins.lyrics_fetcher import LyricsFetcher
+from plugins.sponsorblock import SponsorBlockHandler
 from server.app import create_app
 
 
@@ -49,6 +47,7 @@ async def integration_app(tmp_path, monkeypatch):
     # Isolate environment
     monkeypatch.setenv("LUNAWAVE_BASE", str(tmp_path))
     import config
+
     # Ensure CACHE_DIR and other paths from config use tmp_path
     monkeypatch.setattr(config, "BASE_DIR", tmp_path)
     monkeypatch.setattr(config, "CACHE_DIR", tmp_path / "cache")
@@ -92,12 +91,11 @@ async def integration_app(tmp_path, monkeypatch):
 
     volume_service = VolumeService(bus, mpv, state)
     playback_controller = PlaybackController(
-        bus, state, mpv, resolver,
-        sponsorblock, lyrics_fetcher, queue_mode, radio_mode
+        bus, state, mpv, resolver, sponsorblock, lyrics_fetcher, queue_mode, radio_mode
     )
 
-    download_manager = DownloadManager(bus, state, ytdlp)
-    command_router = CommandRouter(playback_controller, volume_service)
+    DownloadManager(bus, state, ytdlp)
+    CommandRouter(playback_controller, volume_service)
 
     app = create_app(playback_controller, ytdlp, db)
 
@@ -109,16 +107,19 @@ async def integration_app(tmp_path, monkeypatch):
     await mpv.close()
 
     import subprocess
+
     # Ensure MPV process is killed if disconnect didn't
-    if os.name != 'nt':
+    if os.name != "nt":
         subprocess.run(["pkill", "-f", "mpv"], capture_output=True)
     else:
         subprocess.run(["taskkill", "/f", "/im", "mpv.exe"], capture_output=True)
+
 
 @pytest.fixture
 def loop(event_loop):
     """Backwards compatibility for pytest-aiohttp which expects 'loop'."""
     return event_loop
+
 
 @pytest.fixture
 async def app_client(aiohttp_client, integration_app):

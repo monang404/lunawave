@@ -12,11 +12,18 @@ Publishes:
 """
 
 from core.command_bus import (
-    command_bus, CMD_QUEUE_SELECT, CMD_QUEUE_REMOVE, CMD_QUEUE_ADD,
-    CMD_QUEUE_REORDER, CMD_PLAY_TRACK, CMD_SET_MODE, CMD_QUEUE_REPLACE
+    CMD_PLAY_TRACK,
+    CMD_QUEUE_ADD,
+    CMD_QUEUE_REMOVE,
+    CMD_QUEUE_REORDER,
+    CMD_QUEUE_REPLACE,
+    CMD_QUEUE_SELECT,
+    CMD_SET_MODE,
+    command_bus,
 )
 from core.state import PlaybackMode
 from server.serializers import dict_to_track
+
 
 async def handle_queue_command(action: str, data: dict, db):
     if action == "queue_select":

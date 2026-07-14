@@ -149,7 +149,7 @@ function _renderProgressCore(posOverride) {
     const pct = dur > 0 ? Math.min(100, (pos / dur) * 100) : 0;
 
     dom.pbProgressFill.style.width = pct + "%";
-    
+
     // update thumb
     const thumb = dom.pbProgressTrack.querySelector('.pb-thumb');
     if(thumb) thumb.style.left = pct + "%";

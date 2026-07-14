@@ -21,7 +21,9 @@ class FakeTrackRepository:
         """Test helper: directly place a TrackInfo row into the fake DB."""
         self._tracks[track.video_id] = track
 
-    async def upsert_track(self, track: TrackInfo, stream_url: str = None, local_path: str = None) -> None:
+    async def upsert_track(
+        self, track: TrackInfo, stream_url: str = None, local_path: str = None
+    ) -> None:
         self.call_log.append(("upsert_track", track.video_id, stream_url, local_path))
         existing = self._tracks.get(track.video_id)
         stored = TrackInfo(
@@ -30,8 +32,12 @@ class FakeTrackRepository:
             artist=track.artist,
             duration=track.duration,
             thumbnail=track.thumbnail,
-            local_path=local_path if local_path is not None else (existing.local_path if existing else None),
-            stream_url=stream_url if stream_url is not None else (existing.stream_url if existing else None),
+            local_path=local_path
+            if local_path is not None
+            else (existing.local_path if existing else None),
+            stream_url=stream_url
+            if stream_url is not None
+            else (existing.stream_url if existing else None),
             view_count=track.view_count,
             stream_url_ts=None,
             play_count=existing.play_count if existing else 0,
@@ -40,6 +46,7 @@ class FakeTrackRepository:
         )
         if stream_url is not None:
             import time
+
             stored.stream_url_ts = int(time.time())
         self._tracks[track.video_id] = stored
 

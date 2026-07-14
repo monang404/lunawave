@@ -10,7 +10,3 @@ Subscribes to:
 Publishes:
     None
 """
-
-from plugins.lyrics_fetcher import LyricsFetcher
-from plugins.lyrics_parser import LyricsParser
-from plugins.lyrics_sync import LyricsSync

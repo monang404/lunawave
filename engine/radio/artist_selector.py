@@ -11,19 +11,20 @@ Publishes:
     None
 """
 
-import random
 import logging
-from typing import Optional
+import random
 
 from core.state import AppState
 from engine.radio.common import ARTISTS_PER_BATCH, TRACKS_PER_ARTIST_TARGET
-from engine.radio.track_interleaver import interleave_by_artist
 from engine.radio.track_filter import TrackFilter
+from engine.radio.track_interleaver import interleave_by_artist
 
 _log = logging.getLogger(__name__)
 
+
 class ArtistSelector:
     """Rotasi artis, seed selection, deduplication pool."""
+
     def __init__(self, db, state: AppState):
         self.db = db
         self.state = state
@@ -57,16 +58,20 @@ class ArtistSelector:
             ids.add(t.video_id)
         return ids
 
-    async def gather_batch(self, prioritized_artist: Optional[str] = None, max_artists: int = ARTISTS_PER_BATCH) -> list:
+    async def gather_batch(
+        self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
+    ) -> list:
         limit = max_artists * TRACKS_PER_ARTIST_TARGET
         existing = self.build_exclusion_set()
 
         if not prioritized_artist and self._seed_artists:
             prioritized_artist = random.choice(self._seed_artists)
 
-        if self.db and getattr(self.db, 'conn', None): # Use getattr for safety
+        if self.db and getattr(self.db, "conn", None):  # Use getattr for safety
             try:
-                tracks = await self.db.get_random_songs(limit=limit, exclude_ids=existing, artist=prioritized_artist)
+                tracks = await self.db.get_random_songs(
+                    limit=limit, exclude_ids=existing, artist=prioritized_artist
+                )
                 track_filter = TrackFilter(self.state)
                 filtered_tracks = track_filter.filter_tracks(tracks)
                 return interleave_by_artist(filtered_tracks)

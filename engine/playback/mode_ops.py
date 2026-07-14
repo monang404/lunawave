@@ -12,17 +12,22 @@ Publishes:
 """
 
 import asyncio
-from core.events import QueueUpdatedEvent, LogMessageEvent
-from core.state import AppState, PlayerStatus, PlaybackMode, AudioOutput
+
+from core.events import LogMessageEvent, QueueUpdatedEvent
 from core.ports import AudioPlayerPort
+from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus
 from engine.radio import RadioMode
+
 
 class ModeOps:
     """
     Operasi konfigurasi mode, output, dan sponsorblock.
     Dipanggil oleh PlaybackController.
     """
-    def __init__(self, state: AppState, bus, lock: asyncio.Lock, mpv: AudioPlayerPort, radio_mode: RadioMode):
+
+    def __init__(
+        self, state: AppState, bus, lock: asyncio.Lock, mpv: AudioPlayerPort, radio_mode: RadioMode
+    ):
         self.state = state
         self.bus = bus
         self._lock = lock
@@ -64,10 +69,10 @@ class ModeOps:
                 self.state.current_track = None
                 self.state.status = PlayerStatus.LOADING
                 self.state.position = 0.0
-                if hasattr(self.radio_mode, 'artist_selector'):
+                if hasattr(self.radio_mode, "artist_selector"):
                     self.radio_mode.artist_selector.reset_rotation()
                 else:
-                    self.radio_mode._artist_rotation = []
+                    self.radio_mode._artist_rotation = []  # type: ignore
                 await self.bus.publish(QueueUpdatedEvent())
                 await self.bus.publish(LogMessageEvent(message="Mengacak ulang stasiun radio..."))
                 should_fetch = True

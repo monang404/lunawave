@@ -23,41 +23,53 @@ Thread Safety:
     Worker thread (async; rl_lock guards rate-limit state).
 """
 
-import asyncio
 import json
 import time
-import structlog
-import re
-from aiohttp import web
+
 import aiohttp
-from core.observability import ACTIVE_WEBSOCKETS
-from core.command_bus import (
-    command_bus, CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE,
-    CMD_NEXT, CMD_PREV, CMD_STOP, CMD_SEEK, CMD_VOLUME_UP, CMD_VOLUME_DOWN, CMD_VOLUME_SET,
-    CMD_DOWNLOAD, CMD_SET_MODE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK, CMD_QUEUE_SELECT,
-    CMD_QUEUE_ADD, CMD_QUEUE_REPLACE, CMD_QUEUE_REMOVE, CMD_QUEUE_REORDER, CMD_RADIO_RANDOMIZE, CMD_LYRICS_OFFSET
-)
-from core.state import PlaybackMode, AudioOutput
-from server.serializers import state_to_dict, dict_to_track, track_to_dict
-from server.middleware import check_rate_limit
+import structlog
+from aiohttp import web
+
 from server.handlers.auth import handle_auth, require_auth
-from services.discover_service import DiscoverService
-from server.connection_manager import ConnectionManager
-from server.handlers.ws_playback import handle_playback_command
-from server.handlers.ws_queue import handle_queue_command
 from server.handlers.ws_discovery import handle_discovery_command
 from server.handlers.ws_download import handle_download_command
+from server.handlers.ws_playback import handle_playback_command
+from server.handlers.ws_queue import handle_queue_command
+from server.middleware import check_rate_limit
+from server.serializers import state_to_dict
 
-PLAYBACK_CMDS = {"play_track", "toggle_pause", "next", "prev", "seek", "set_mode", "set_output", "lyrics_offset", "set_sponsorblock", "radio_randomize", "volume_up", "volume_down", "volume_set"}
-QUEUE_CMDS = {"queue_select", "queue_remove", "queue_add", "queue_reorder", "enqueue_artist_songs", "enqueue_genre_songs"}
+PLAYBACK_CMDS = {
+    "play_track",
+    "toggle_pause",
+    "next",
+    "prev",
+    "seek",
+    "set_mode",
+    "set_output",
+    "lyrics_offset",
+    "set_sponsorblock",
+    "radio_randomize",
+    "volume_up",
+    "volume_down",
+    "volume_set",
+}
+QUEUE_CMDS = {
+    "queue_select",
+    "queue_remove",
+    "queue_add",
+    "queue_reorder",
+    "enqueue_artist_songs",
+    "enqueue_genre_songs",
+}
 DISCOVERY_CMDS = {"search", "discover"}
 DOWNLOAD_CMDS = {"download", "delete_download"}
 
 
 logger = structlog.get_logger(__name__)
 
+
 async def ws_handler(request):
-    playback_controller = request.app["playback_controller"]
+    request.app["playback_controller"]
     state = request.app["state"]
     manager = request.app["manager"]
     db = request.app["db"]
@@ -71,10 +83,15 @@ async def ws_handler(request):
         # include_lyrics=True: initial snapshot butuh lirik penuh karena
         # client yang baru connect (mis. refresh halaman mid-lagu) tidak
         # akan dapat lirik lagi sampai lyrics_index berubah berikutnya.
-        await ws.send_str(json.dumps({
-            "type": "state",
-            "data": state_to_dict(state, include_lyrics=True),
-        }, ensure_ascii=False))
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "state",
+                    "data": state_to_dict(state, include_lyrics=True),
+                },
+                ensure_ascii=False,
+            )
+        )
     except Exception:
         manager.disconnect(ws)
         return ws
@@ -96,6 +113,7 @@ async def ws_handler(request):
 
     return ws
 
+
 async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db):
     msg_type = msg.get("type")
     action = msg.get("action", "")
@@ -110,17 +128,20 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         return
 
     if not require_auth(manager, ws):
-        await ws.send_str(json.dumps({
-            "type": "error",
-            "data": "Akses ditolak. Silakan login sebagai Admin.",
-        }))
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "error",
+                    "data": "Akses ditolak. Silakan login sebagai Admin.",
+                }
+            )
+        )
         return
 
     if not await check_rate_limit(manager, client_ip, now):
-        await ws.send_str(json.dumps({
-            "type": "error",
-            "data": "Terlalu banyak permintaan. Mohon tunggu sesaat."
-        }))
+        await ws.send_str(
+            json.dumps({"type": "error", "data": "Terlalu banyak permintaan. Mohon tunggu sesaat."})
+        )
         return
 
     try:
@@ -135,9 +156,13 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
     except Exception as e:
         logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
         try:
-            await ws.send_str(json.dumps({
-                "type": "error",
-                "data": str(e),
-            }))
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": str(e),
+                    }
+                )
+            )
         except Exception:
             pass

@@ -22,70 +22,74 @@ Thread Safety:
     Main thread only (mutated only from the asyncio event loop).
 """
 
-from enum import Enum, auto
-from dataclasses import dataclass, field
-from typing import Optional
 from collections import deque
+from dataclasses import dataclass, field
+from enum import Enum, StrEnum, auto
+
 
 class PlayerStatus(Enum):
-    IDLE     = auto()
-    LOADING  = auto()
-    PLAYING  = auto()
-    PAUSED   = auto()
-    ERROR    = auto()
+    IDLE = auto()
+    LOADING = auto()
+    PLAYING = auto()
+    PAUSED = auto()
+    ERROR = auto()
 
-class AudioOutput(str, Enum):
+
+class AudioOutput(StrEnum):
     DEVICE = "device"
     BROWSER = "browser"
 
+
 class PlaybackMode(Enum):
-    QUEUE = auto()   # user-directed
-    RADIO = auto()   # autonomous, self-sustaining
+    QUEUE = auto()  # user-directed
+    RADIO = auto()  # autonomous, self-sustaining
+
 
 @dataclass
 class TrackInfo:
-    video_id:   str
-    title:      str
-    artist:     str
-    duration:   int
-    thumbnail:  Optional[str] = None
-    local_path: Optional[str] = None
-    stream_url: Optional[str] = None
-    view_count: Optional[int] = None
-    stream_url_ts: Optional[int] = None
-    play_count: Optional[int] = None
-    last_played: Optional[int] = None
-    is_favorite: Optional[int] = 0
+    video_id: str
+    title: str
+    artist: str
+    duration: int
+    thumbnail: str | None = None
+    local_path: str | None = None
+    stream_url: str | None = None
+    view_count: int | None = None
+    stream_url_ts: int | None = None
+    play_count: int | None = None
+    last_played: int | None = None
+    is_favorite: int | None = 0
+
 
 @dataclass
 class AppState:
     # Playback
-    status:          PlayerStatus  = PlayerStatus.IDLE
-    playback_mode:   PlaybackMode  = PlaybackMode.QUEUE
-    audio_output:    AudioOutput   = AudioOutput.BROWSER
-    current_track:   Optional[TrackInfo] = None
-    position:        float = 0.0
-    duration:        float = 0.0
-    volume:          int   = 80
+    status: PlayerStatus = PlayerStatus.IDLE
+    playback_mode: PlaybackMode = PlaybackMode.QUEUE
+    audio_output: AudioOutput = AudioOutput.BROWSER
+    current_track: TrackInfo | None = None
+    position: float = 0.0
+    duration: float = 0.0
+    volume: int = 80
     sponsorblock_active: bool = True
 
     # Queue (hanya aktif di QUEUE mode)
-    queue:           deque = field(default_factory=deque)
+    queue: deque = field(default_factory=deque)
     # Radio (hanya aktif di RADIO mode) — TIDAK PERNAH dicampur dengan `queue`.
     # Radio harus independen dari Queue Mode (lihat Constitution).
-    radio_queue:     deque = field(default_factory=deque)
-    history:         deque = field(default_factory=lambda: deque(maxlen=50))
+    radio_queue: deque = field(default_factory=deque)
+    history: deque = field(default_factory=lambda: deque(maxlen=50))
 
     # Lyrics
-    lyrics_lines:    list[str] = field(default_factory=list)
+    lyrics_lines: list[str] = field(default_factory=list)
     lyrics_timestamps: list[float] = field(default_factory=list)
-    lyrics_index:    int = 0
-    lyrics_offset:   float = 0.0
+    lyrics_index: int = 0
+    lyrics_offset: float = 0.0
 
     # UI state
-    active_tab:      str  = "home"    # "home"|"search"|"radio"|"queue"
-    error_msg:       Optional[str] = None
-    is_online:       bool = True
+    active_tab: str = "home"  # "home"|"search"|"radio"|"queue"
+    error_msg: str | None = None
+    is_online: bool = True
 
     # Download
-    download_progress: Optional[float] = None  # 0.0–1.0, None = idle
+    download_progress: float | None = None  # 0.0–1.0, None = idle

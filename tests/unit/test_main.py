@@ -17,9 +17,11 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
 
 @pytest.mark.asyncio
 @patch("main.Database")
@@ -54,7 +56,7 @@ async def test_main_smoke(
     mock_controller,
     mock_ytdlp,
     mock_mpv,
-    mock_db
+    mock_db,
 ):
     from main import main
 

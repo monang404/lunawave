@@ -117,7 +117,7 @@ lunawave/
 │       ├── dep_checker.py
 │       └── __init__.py
 │
-├── scripts/
+├── automation/
 │   ├── doctor.py                        orchestrator health check
 │   ├── run_all.py                       entry point semua generator + checks
 │   ├── find_owner.py                    lookup ownership modul/class/fungsi
@@ -186,7 +186,7 @@ tests/
 │   │   ├── test_network.py
 │   │   ├── test_updater.py
 │   │   └── gui/                         (3 file — app.py & ui_builder.py: manual QA)
-│   └── scripts/
+│   └── automation/
 │       └── test_export_to_sqlite.py     (opsional)
 ├── integration/
 │   ├── test_websocket_flow.py

@@ -12,19 +12,23 @@ Publishes:
 """
 
 import structlog
+
 from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
+
 
 class ArtistRepository:
     def __init__(self, conn):
         self._conn = conn
 
     async def increment_artist_click(self, artist_name: str):
-        if not self._conn: return
+        if not self._conn:
+            return
         try:
             await self._conn.execute(
-                "UPDATE artists SET click_count = COALESCE(click_count, 0) + 1 WHERE nama = ?", (artist_name,)
+                "UPDATE artists SET click_count = COALESCE(click_count, 0) + 1 WHERE nama = ?",
+                (artist_name,),
             )
             await self._conn.commit()
         except Exception as e:
@@ -36,7 +40,7 @@ class ArtistRepository:
             params = (kategori,)
         else:
             query = "SELECT nama FROM artists ORDER BY id"
-            params = ()
+            params = ()  # type: ignore
 
         async with self._conn.execute(query, params) as cursor:
             rows = await cursor.fetchall()
@@ -56,11 +60,13 @@ class ArtistRepository:
 
         tracks = []
         for row in rows:
-            tracks.append(TrackInfo(
-                video_id=row["youtube_id"],
-                title=row["judul"],
-                artist=row["nama"],
-                duration=row["duration"],
-                thumbnail=f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg"
-            ))
+            tracks.append(
+                TrackInfo(
+                    video_id=row["youtube_id"],
+                    title=row["judul"],
+                    artist=row["nama"],
+                    duration=row["duration"],
+                    thumbnail=f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg",
+                )
+            )
         return tracks

@@ -13,11 +13,14 @@ Publishes:
 
 import asyncio
 import re
-from core.state import TrackInfo
+
 from adapters.ytdlp.common import YDL_OPTS_INFO
+from core.state import TrackInfo
+
 
 class YtDlpSearcher:
     """search(query) → list[TrackInfo]"""
+
     def __init__(self, executor):
         self._executor = executor
 
@@ -43,7 +46,18 @@ class YtDlpSearcher:
 
             if duration > 600:
                 continue
-            if any(kw in title for kw in ["compilation", "full album", "mix", "playlist", "mashup", "medley", "megamix"]):
+            if any(
+                kw in title
+                for kw in [
+                    "compilation",
+                    "full album",
+                    "mix",
+                    "playlist",
+                    "mashup",
+                    "medley",
+                    "megamix",
+                ]
+            ):
                 continue
 
             tracks.append(self._to_track(e))
@@ -65,6 +79,7 @@ class YtDlpSearcher:
 
     def _extract_sync(self, url, opts):
         import yt_dlp
+
         with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(url, download=False)
 
@@ -73,7 +88,7 @@ class YtDlpSearcher:
         duration = int(duration_raw) if duration_raw else 0
 
         video_id = entry.get("id", "") or entry.get("url", "")
-        if video_id and not re.match(r'^[a-zA-Z0-9_\-]{1,64}$', video_id):
+        if video_id and not re.match(r"^[a-zA-Z0-9_\-]{1,64}$", video_id):
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
         elif not video_id:
             video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"

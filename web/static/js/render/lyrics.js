@@ -67,7 +67,7 @@ function renderHomeLyrics() {
     if (dom.homeEqualizer) dom.homeEqualizer.style.display = "none";
 
     dom.lyricsCurrent.className = "lyrics-line current lyric-pop";
-    
+
     if (dom.lyricsCurrent._popTimeout) clearTimeout(dom.lyricsCurrent._popTimeout);
     dom.lyricsCurrent._popTimeout = setTimeout(() => {
         if (dom.lyricsCurrent) {

@@ -87,5 +87,15 @@ def test_audio_output_is_str_enum():
 
 def test_playback_mode_and_player_status_members_are_distinct():
     assert PlaybackMode.QUEUE != PlaybackMode.RADIO
-    assert len({PlayerStatus.IDLE, PlayerStatus.LOADING, PlayerStatus.PLAYING,
-                PlayerStatus.PAUSED, PlayerStatus.ERROR}) == 5
+    assert (
+        len(
+            {
+                PlayerStatus.IDLE,
+                PlayerStatus.LOADING,
+                PlayerStatus.PLAYING,
+                PlayerStatus.PAUSED,
+                PlayerStatus.ERROR,
+            }
+        )
+        == 5
+    )

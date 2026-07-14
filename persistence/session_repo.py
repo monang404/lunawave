@@ -13,14 +13,14 @@ Publishes:
 
 import time
 
+
 class SessionRepository:
     def __init__(self, conn):
         self._conn = conn
 
     async def create_session(self, token: str, expires_at: int):
         await self._conn.execute(
-            "INSERT INTO sessions (token, expires_at) VALUES (?, ?)",
-            (token, expires_at)
+            "INSERT INTO sessions (token, expires_at) VALUES (?, ?)", (token, expires_at)
         )
         await self._conn.commit()
 

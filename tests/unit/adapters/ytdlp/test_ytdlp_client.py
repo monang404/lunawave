@@ -15,18 +15,17 @@ Publishes:
 """
 
 import asyncio
-import re
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from adapters.ytdlp import YtDlpClient
 from core.state import TrackInfo
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_entry(
     video_id="abc123",
@@ -66,6 +65,7 @@ def make_stream_info(url="https://cdn.example.com/audio.m4a"):
 # ---------------------------------------------------------------------------
 # _to_track
 # ---------------------------------------------------------------------------
+
 
 class TestToTrack:
     def test_maps_standard_fields_correctly(self):
@@ -115,6 +115,7 @@ class TestToTrack:
 # _pick_audio_url
 # ---------------------------------------------------------------------------
 
+
 class TestPickAudioUrl:
     def test_returns_audio_only_format_url(self):
         client = YtDlpClient()
@@ -155,6 +156,7 @@ class TestPickAudioUrl:
 # search()
 # ---------------------------------------------------------------------------
 
+
 class TestSearch:
     async def test_returns_tracks_for_valid_entries(self):
         client = YtDlpClient()
@@ -179,7 +181,14 @@ class TestSearch:
 
     async def test_filters_out_compilation_keywords_in_title(self):
         client = YtDlpClient()
-        bad_titles = ["Best Mix 2024", "Full Album", "Top Playlist", "Mega Mashup", "Medley", "Megamix"]
+        bad_titles = [
+            "Best Mix 2024",
+            "Full Album",
+            "Top Playlist",
+            "Mega Mashup",
+            "Medley",
+            "Megamix",
+        ]
         entries = [make_entry(f"v{i}", title=t) for i, t in enumerate(bad_titles)]
         entries.append(make_entry("good", title="Normal Song"))
         raw = make_search_result(entries)
@@ -220,6 +229,7 @@ class TestSearch:
 # get_stream_url()
 # ---------------------------------------------------------------------------
 
+
 class TestGetStreamUrl:
     async def test_returns_audio_url_on_success(self):
         client = YtDlpClient()
@@ -248,7 +258,9 @@ class TestGetStreamUrl:
     async def test_wraps_arbitrary_exception_as_runtime_error(self):
         client = YtDlpClient()
 
-        with patch.object(client._resolver, "_extract_sync", side_effect=ConnectionError("net down")):
+        with patch.object(
+            client._resolver, "_extract_sync", side_effect=ConnectionError("net down")
+        ):
             with pytest.raises(RuntimeError, match="Gagal mengambil"):
                 await client.get_stream_url("vid123")
 
@@ -266,6 +278,7 @@ class TestGetStreamUrl:
 # ---------------------------------------------------------------------------
 # download_mp3()
 # ---------------------------------------------------------------------------
+
 
 class TestDownloadMp3:
     async def test_returns_expected_mp3_path(self, tmp_path, monkeypatch):
@@ -301,6 +314,7 @@ class TestDownloadMp3:
 # ---------------------------------------------------------------------------
 # cancel_download / _check_cancel_hook
 # ---------------------------------------------------------------------------
+
 
 class TestCancellation:
     def test_cancel_download_sets_flag(self):

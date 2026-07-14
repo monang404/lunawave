@@ -17,9 +17,9 @@ Publishes:
     None
 """
 
-import pytest
-from core.commands import *
 import core.commands as cmds
+from core.commands import *
+
 
 def test_commands_are_unique_strings():
     command_values = []
@@ -32,4 +32,6 @@ def test_commands_are_unique_strings():
             command_values.append(val)
 
     # Check for uniqueness
-    assert len(command_values) == len(set(command_values)), "There are duplicate command strings in core.commands"
+    assert len(command_values) == len(
+        set(command_values)
+    ), "There are duplicate command strings in core.commands"

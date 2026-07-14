@@ -54,7 +54,7 @@ function initLyricsEvents() {
         lyricsWrap.addEventListener("mousemove", showLyricSync);
         lyricsWrap.addEventListener("touchstart", showLyricSync, { passive: true });
         lyricsWrap.addEventListener("click", showLyricSync);
-        
+
         if (btnSyncMinus) {
             btnSyncMinus.addEventListener("click", (e) => {
                 e.stopPropagation();

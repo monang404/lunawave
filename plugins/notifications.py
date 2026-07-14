@@ -26,17 +26,18 @@ Notes:
 """
 
 import asyncio
-import structlog
 import os
 import shutil
 import threading
 import time
 
-from core.event_bus import EventBus
-from core.events import TrackStartedEvent, TrackPauseChangedEvent
-from core.command_bus import command_bus, CMD_PREV, CMD_NEXT, CMD_TOGGLE_PAUSE
-from core.state import TrackInfo
+import structlog
+
 from config import BASE_DIR
+from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE, command_bus
+from core.event_bus import EventBus
+from core.events import TrackPauseChangedEvent, TrackStartedEvent
+from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
 
@@ -62,7 +63,7 @@ class TermuxNowPlaying:
         self._stop = threading.Event()
         self._reader_thread = None
         self._fifo_path = _FIFO_PATH
-        self._action_paths = {}
+        self._action_paths = {}  # type: ignore
 
         self.bus.subscribe(TrackStartedEvent, self._on_track_started)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
@@ -102,7 +103,7 @@ class TermuxNowPlaying:
     def _blocking_read_loop(self):
         while not self._stop.is_set():
             try:
-                with open(self._fifo_path, "r") as f:
+                with open(self._fifo_path) as f:
                     for line in f:
                         token = line.strip()
                         if token and self._loop:
@@ -137,14 +138,22 @@ class TermuxNowPlaying:
 
         args = [
             "termux-notification",
-            "--id", NOTIFICATION_ID,
-            "--type", "media",
-            "-t", title,
-            "-c", artist,
-            "--media-previous", self._action_paths["prev"],
-            "--media-play", self._action_paths["toggle"],
-            "--media-pause", self._action_paths["toggle"],
-            "--media-next", self._action_paths["next"],
+            "--id",
+            NOTIFICATION_ID,
+            "--type",
+            "media",
+            "-t",
+            title,
+            "-c",
+            artist,
+            "--media-previous",
+            self._action_paths["prev"],
+            "--media-play",
+            self._action_paths["toggle"],
+            "--media-pause",
+            self._action_paths["toggle"],
+            "--media-next",
+            self._action_paths["next"],
         ]
 
         try:
@@ -157,22 +166,26 @@ class TermuxNowPlaying:
 
     async def cleanup(self):
         self._stop.set()
-        
+
         # Unblock the FIFO reader thread
         if self._available and hasattr(self, "_fifo_path"):
             try:
                 import os
+
                 fd = os.open(self._fifo_path, os.O_WRONLY | os.O_NONBLOCK)
                 os.write(fd, b"\n")
                 os.close(fd)
             except OSError:
                 pass
-                
+
         if self._available:
             try:
                 proc = await asyncio.create_subprocess_exec(
-                    "termux-notification-remove", "--id", NOTIFICATION_ID,
-                    stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+                    "termux-notification-remove",
+                    "--id",
+                    NOTIFICATION_ID,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL,
                 )
                 await proc.wait()
             except Exception:

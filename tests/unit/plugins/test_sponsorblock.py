@@ -1,8 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from plugins.sponsorblock import SponsorBlockHandler
+
 from core.events import TrackProgressEvent
 from core.state import AppState
+from plugins.sponsorblock import SponsorBlockHandler
+
 
 @pytest.mark.asyncio
 async def test_sponsorblock_fetch_segments():
@@ -14,7 +17,9 @@ async def test_sponsorblock_fetch_segments():
     # Mocking the context manager for aiohttp session.get
     mock_response = AsyncMock()
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value=[{"segment": [10.0, 20.0]}, {"segment": [30.0, 40.0]}])
+    mock_response.json = AsyncMock(
+        return_value=[{"segment": [10.0, 20.0]}, {"segment": [30.0, 40.0]}]
+    )
 
     # The __aenter__ method is what gets called when using `async with`
     mock_request_context = MagicMock()
@@ -28,6 +33,7 @@ async def test_sponsorblock_fetch_segments():
     assert len(handler.segments) == 2
     assert handler.segments[0] == (10.0, 20.0)
     assert handler.segments[1] == (30.0, 40.0)
+
 
 @pytest.mark.asyncio
 async def test_sponsorblock_on_progress_seeks_past_segment():

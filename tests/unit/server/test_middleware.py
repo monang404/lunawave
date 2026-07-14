@@ -11,14 +11,18 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
+
+import pytest
+
 from server.middleware import check_rate_limit
+
 
 class MockManager:
     def __init__(self):
         self.rl_lock = asyncio.Lock()
         self.command_history = {}
+
 
 @pytest.mark.asyncio
 async def test_check_rate_limit():

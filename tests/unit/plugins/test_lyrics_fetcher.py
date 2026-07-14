@@ -1,7 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from plugins.lyrics_fetcher import LyricsFetcher
+
 from core.state import AppState, TrackInfo
+from plugins.lyrics_fetcher import LyricsFetcher
+
 
 @pytest.mark.asyncio
 @patch("plugins.lyrics_parser.LyricsParser")
@@ -15,7 +18,9 @@ async def test_lyrics_fetcher_success(mock_parser):
     # Mocking the session get response for lrclib /get
     mock_response = AsyncMock()
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value={"syncedLyrics": "[00:10.00]Line 1\n[00:20.00]Line 2"})
+    mock_response.json = AsyncMock(
+        return_value={"syncedLyrics": "[00:10.00]Line 1\n[00:20.00]Line 2"}
+    )
 
     mock_request_context = MagicMock()
     mock_request_context.__aenter__ = AsyncMock(return_value=mock_response)
@@ -33,6 +38,7 @@ async def test_lyrics_fetcher_success(mock_parser):
     assert mock_state.lyrics_timestamps == [10.0, 20.0]
     assert mock_state.lyrics_loading is False
     assert mock_bus.publish.call_count >= 2
+
 
 @pytest.mark.asyncio
 @patch("plugins.lyrics_fetcher.asyncio.wait_for")

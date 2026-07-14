@@ -102,7 +102,7 @@
   body[data-queue-empty="true"][data-has-lyrics="true"] #tab-home .home-left-col {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    grid-template-areas: 
+    grid-template-areas:
       "art lyrics"
       "track lyrics";
     gap: 0 20px;
@@ -112,17 +112,17 @@
     margin: 0 auto;
     padding-top: 0;
   }
-  
+
   body[data-queue-empty="true"][data-has-lyrics="true"] #tab-home .home-left-col .home-art-section {
     grid-area: art;
     justify-self: center;
   }
-  
+
   body[data-queue-empty="true"][data-has-lyrics="true"] #tab-home .home-left-col .home-track-row {
     grid-area: track;
     justify-self: center;
   }
-  
+
   body[data-queue-empty="true"][data-has-lyrics="true"] #tab-home .home-left-col .lyrics-wrap {
     grid-area: lyrics;
     justify-self: center;

@@ -24,11 +24,14 @@ Thread Safety:
 """
 
 import time
+
 import structlog
+
 from config import STREAM_URL_TTL_SEC
 from core.ports import DatabasePort, MediaExtractorPort
 
 logger = structlog.get_logger(__name__)
+
 
 class StreamPrefetchService:
     def __init__(self, db: DatabasePort, ytdlp: MediaExtractorPort):
@@ -42,6 +45,6 @@ class StreamPrefetchService:
                 return
         try:
             url = await self.ytdlp.get_stream_url(video_id)
-            await self.db.update_stream_url_only(video_id, url)
+            await self.db.update_stream_url_only(video_id, url)  # type: ignore
         except Exception as e:
             logger.warning(f"Pre-fetch stream URL gagal untuk {video_id}: {e}")

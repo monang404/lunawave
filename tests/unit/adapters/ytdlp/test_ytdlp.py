@@ -12,16 +12,17 @@ Publishes:
     None
 """
 
-import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+
 from adapters.ytdlp.searcher import YtDlpSearcher
 from core.state import TrackInfo
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_entry(
     id="abc123",
@@ -49,6 +50,7 @@ def make_searcher():
 # ---------------------------------------------------------------------------
 # _to_track
 # ---------------------------------------------------------------------------
+
 
 class TestToTrack:
     def test_maps_basic_fields(self):
@@ -96,6 +98,7 @@ class TestToTrack:
 # ---------------------------------------------------------------------------
 # search — filtering
 # ---------------------------------------------------------------------------
+
 
 class TestSearchFiltering:
     def _make_results(self, entries):
@@ -183,9 +186,11 @@ class TestSearchFiltering:
 # YtDlpResolver._pick_audio_url
 # ---------------------------------------------------------------------------
 
+
 class TestPickAudioUrl:
     def test_prefers_audio_only_format(self):
         from adapters.ytdlp.resolver import YtDlpResolver
+
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
             "url": "http://fallback.url",
@@ -199,6 +204,7 @@ class TestPickAudioUrl:
 
     def test_falls_back_to_top_level_url_when_no_audio_only(self):
         from adapters.ytdlp.resolver import YtDlpResolver
+
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
             "url": "http://fallback.url",
@@ -214,9 +220,11 @@ class TestPickAudioUrl:
 # YtDlpDownloader
 # ---------------------------------------------------------------------------
 
+
 class TestYtDlpDownloader:
     def test_cancel_sets_flag(self):
         from adapters.ytdlp.downloader import YtDlpDownloader
+
         dl = YtDlpDownloader(executor=MagicMock())
         assert dl.is_cancelled is False
         dl.cancel_download()
@@ -224,6 +232,7 @@ class TestYtDlpDownloader:
 
     def test_cancel_hook_raises_when_cancelled(self):
         from adapters.ytdlp.downloader import YtDlpDownloader
+
         dl = YtDlpDownloader(executor=MagicMock())
         dl.is_cancelled = True
         with pytest.raises(Exception, match="DownloadCancelled"):
@@ -231,6 +240,7 @@ class TestYtDlpDownloader:
 
     def test_cancel_hook_does_not_raise_when_not_cancelled(self):
         from adapters.ytdlp.downloader import YtDlpDownloader
+
         dl = YtDlpDownloader(executor=MagicMock())
         dl.is_cancelled = False
         dl._check_cancel_hook({})  # should not raise
@@ -238,6 +248,7 @@ class TestYtDlpDownloader:
     @pytest.mark.asyncio
     async def test_download_mp3_resets_cancel_flag_on_start(self):
         from adapters.ytdlp.downloader import YtDlpDownloader
+
         dl = YtDlpDownloader(executor=MagicMock())
         dl.is_cancelled = True
 

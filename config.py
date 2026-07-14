@@ -31,26 +31,35 @@ from pathlib import Path
 
 # BASE_DIR defaults to the project root
 # can be overridden by LUNAWAVE_BASE or YT_PLAYER_BASE env var
-BASE_DIR = Path(os.environ.get("LUNAWAVE_BASE", os.environ.get("YT_PLAYER_BASE", Path(__file__).parent)))
+BASE_DIR = Path(
+    os.environ.get("LUNAWAVE_BASE", os.environ.get("YT_PLAYER_BASE", Path(__file__).parent))
+)
 
 CACHE_DIR = BASE_DIR / "cache" / "mp3"
 DB_PATH = BASE_DIR / "data" / "lunawave.db"
 
 # Handle Windows compatibility for Unix Sockets
-if os.name == 'nt':
+if os.name == "nt":
     # Windows doesn't support Unix sockets natively in the same way,
     # mpv on Windows supports named pipes instead.
     # Defaulting to a named pipe for Windows testing.
-    MPV_SOCKET = os.environ.get("LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", r"\\.\pipe\mpv-lunawave"))
+    MPV_SOCKET = os.environ.get(
+        "LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", r"\\.\pipe\mpv-lunawave")
+    )
 else:
     socket_dir = BASE_DIR / "cache" / "sockets"
     socket_dir.mkdir(parents=True, exist_ok=True)
-    _raw_socket = os.environ.get("LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", str(socket_dir / "mpv-lunawave.sock")))
+    _raw_socket = os.environ.get(
+        "LUNAWAVE_SOCKET", os.environ.get("YT_PLAYER_SOCKET", str(socket_dir / "mpv-lunawave.sock"))
+    )
     _socket_path = Path(_raw_socket).resolve()
     _allowed_prefix = BASE_DIR.resolve()
     if not str(_socket_path).startswith(str(_allowed_prefix)):
         import warnings
-        warnings.warn(f"LUNAWAVE_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default")
+
+        warnings.warn(
+            f"LUNAWAVE_SOCKET '{_raw_socket}' di luar BASE_DIR — menggunakan default", stacklevel=2
+        )
         _socket_path = socket_dir / "mpv-lunawave.sock"
     MPV_SOCKET = str(_socket_path)
 
@@ -92,11 +101,12 @@ if _raw_env_pass is not None:
         # TASK-1.2: Hash password ENV var agar tidak disimpan sebagai plaintext.
         # Ini wajib setelah TASK-1.1 menghapus plaintext fallback di verify_password.
         from core.security import hash_password
+
         ADMIN_PASSWORD = hash_password(_raw_env_pass)
 else:
     IS_PASSWORD_AUTO_GENERATED = True
     if _password_file.exists():
-        with open(_password_file, "r", encoding="utf-8") as f:
+        with open(_password_file, encoding="utf-8") as f:
             ADMIN_PASSWORD = f.read().strip()
     else:
         # Generate random password
@@ -108,11 +118,12 @@ else:
             f.write(ADMIN_PASSWORD)
         try:
             import stat
+
             _password_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
         except OSError:
             pass
 
-        print(f"\\n==========================================")
+        print("\\n==========================================")
         print(f"PASSWORD ADMIN GENERATED: {raw_password}")
-        print(f"Harap simpan password ini! Tidak akan ditampilkan lagi.")
-        print(f"==========================================\\n")
+        print("Harap simpan password ini! Tidak akan ditampilkan lagi.")
+        print("==========================================\\n")

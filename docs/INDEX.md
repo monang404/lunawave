@@ -22,17 +22,17 @@ status: current
 1. `docs/AI_CONTEXT.md` — **wajib pertama**, berisi constraints, batasan, dan alur kerja lengkap
 2. `docs/STATUS.md` — kondisi per-file & sprint target
 3. `docs/PATCHLOG.md` — 2-3 entri terakhir
-4. Jalankan `python scripts/find_owner.py <nama_file_atau_class>` — orientasi modul yang relevan
+4. Jalankan `python automation/find_owner.py <nama_file_atau_class>` — orientasi modul yang relevan
 5. Baru sentuh source code
 
 > ⚙️ `FILE_INDEX.md` dan blok statistik `REPORT.md` adalah **auto-generated** — jangan edit manual.
-> Jalankan `python scripts/generate_file_index.py` atau `run_all.py` setelah ada perubahan kode.
+> Jalankan `python automation/generate_file_index.py` atau `run_all.py` setelah ada perubahan kode.
 
 ## Setelah selesai kerja:
-1. Jalankan `python scripts/architecture_lint.py` — pastikan tidak ada violation baru
-2. Jalankan `python scripts/generate_file_index.py` — jika ada file/class/fungsi yang berubah
-3. Jalankan `python scripts/generate_report.py` — jika ada penambahan/penghapusan file
-   *(atau `python scripts/run_all.py` untuk jalankan semua sekaligus)*
+1. Jalankan `python automation/architecture_lint.py` — pastikan tidak ada violation baru
+2. Jalankan `python automation/generate_file_index.py` — jika ada file/class/fungsi yang berubah
+3. Jalankan `python automation/generate_report.py` — jika ada penambahan/penghapusan file
+   *(atau `python automation/run_all.py` untuk jalankan semua sekaligus)*
 4. Append entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
 5. Update `docs/STATUS.md` jika kondisi file berubah
 
@@ -107,7 +107,7 @@ lunawave/
 │       ├── index.html SPA monolitik
 │       ├── js/        main, audio, ws, store, dom, utils + subdirs
 │       └── css/       tokens, components, layout, platform, base
-├── scripts/           Dev utilities & health checkers
+├── automation/           Dev utilities & health checkers
 ├── scratch/           Dev scratch files
 └── docs/              Dokumentasi project ini
 ```

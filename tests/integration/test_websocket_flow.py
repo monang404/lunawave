@@ -12,9 +12,10 @@ Publishes:
     None
 """
 
-import json
 import asyncio
+
 import pytest
+
 
 @pytest.mark.asyncio
 async def test_websocket_flow(app_client):
@@ -23,16 +24,15 @@ async def test_websocket_flow(app_client):
     Skenario: Connect → auth → command play → state broadcast
     """
     # 1. Connect WS
-    ws = await app_client.ws_connect('/ws')
+    ws = await app_client.ws_connect("/ws")
 
     # 2. Auth handshake
-    await ws.send_json({
-        "type": "auth",
-        "data": {
-            "username": "admin",
-            "password": "test-admin-password-not-a-secret"
+    await ws.send_json(
+        {
+            "type": "auth",
+            "data": {"username": "admin", "password": "test-admin-password-not-a-secret"},
         }
-    })
+    )
 
     # Assert auth success
     auth_resp = await ws.receive_json()
@@ -43,19 +43,21 @@ async def test_websocket_flow(app_client):
     while True:
         try:
             msg = await asyncio.wait_for(ws.receive_json(), timeout=0.1)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             break
 
     # 3. Send Play command
     # Kita butuh URL pendek dan aman untuk test MPV.
     # Karena kita ingin command bus ter-trigger, kita dispatch lewat WS.
-    await ws.send_json({
-        "type": "command",
-        "data": {
-            "action": "play",
-            "url": "https://www.youtube.com/watch?v=BaW_jenozKc" # video pendek (joma tech/etc) atau video aman
+    await ws.send_json(
+        {
+            "type": "command",
+            "data": {
+                "action": "play",
+                "url": "https://www.youtube.com/watch?v=BaW_jenozKc",  # video pendek (joma tech/etc) atau video aman
+            },
         }
-    })
+    )
 
     # 4. Tunggu state update dari broadcast
     received_track_started = False
@@ -70,9 +72,11 @@ async def test_websocket_flow(app_client):
                     assert "track" in state_data
                     assert "position" in state_data
                     break
-        except asyncio.TimeoutError:
+        except TimeoutError:
             continue
 
-    assert received_track_started, "Did not receive state_update with loading/playing status after sending play command"
+    assert (
+        received_track_started
+    ), "Did not receive state_update with loading/playing status after sending play command"
 
     await ws.close()

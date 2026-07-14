@@ -149,10 +149,10 @@ self.addEventListener('fetch', (event) => {
 
 ## Icon Generation
 
-Icon PWA di-generate via `scripts/generate_icons.py` dari SVG sumber.
+Icon PWA di-generate via `automation/generate_icons.py` dari SVG sumber.
 
 ```bash
-python scripts/generate_icons.py
+python automation/generate_icons.py
 # Output: web/static/icons/icon-192.png, icon-512.png
 ```
 

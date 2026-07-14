@@ -11,6 +11,7 @@ Publishes:
     None
 """
 
+
 async def test_increment_artist_and_genre_click(db):
     await db.conn.execute("INSERT INTO artists (id, nama, kategori) VALUES (1, 'Artist A', 'band')")
     await db.conn.execute("INSERT INTO genres (id, nama_genre) VALUES (1, 'rock')")
@@ -27,8 +28,11 @@ async def test_increment_artist_and_genre_click(db):
         row = await cur.fetchone()
         assert row["click_count"] == 1
 
+
 async def test_get_all_artists_filters_by_kategori(db):
-    await db.conn.execute("INSERT INTO artists (id, nama, kategori) VALUES (1, 'Solo Singer', 'individu')")
+    await db.conn.execute(
+        "INSERT INTO artists (id, nama, kategori) VALUES (1, 'Solo Singer', 'individu')"
+    )
     await db.conn.execute("INSERT INTO artists (id, nama, kategori) VALUES (2, 'The Band', 'band')")
     await db.conn.commit()
 

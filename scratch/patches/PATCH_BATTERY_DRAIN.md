@@ -141,7 +141,7 @@ Cari:
         adjusted_position = position + self.state.lyrics_offset
         active_idx = bisect.bisect_right(timestamps, adjusted_position) - 1
         active_idx = max(0, active_idx)
-                
+
         if self.state.lyrics_index != active_idx:
             self.state.lyrics_index = active_idx
             await self._bus.publish(LyricsUpdatedEvent())
