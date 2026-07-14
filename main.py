@@ -263,14 +263,14 @@ async def main():
         print(f"|   Client : {url_client:<37} |")
         print(f"|   Admin  : {url_admin:<37} |")
 
-        from config import ADMIN_PASSWORD, ADMIN_USERNAME, IS_PASSWORD_AUTO_GENERATED
+        from config import ADMIN_USERNAME, IS_PASSWORD_AUTO_GENERATED
 
         if IS_PASSWORD_AUTO_GENERATED:
             print("|                                                   |")
             print("|   Kredensial Mode Admin:                          |")
             print(f"|   User: {ADMIN_USERNAME:<40} |")
-            print(f"|   Pass: {ADMIN_PASSWORD:<40} |")
-            print("|   (Tersimpan: cache/admin_password.txt)           |")
+            print("|   Pass: (lihat file di bawah — dibuat saat first-run) |")
+            print("|   File: cache/admin_password.txt                  |")
         print("=====================================================")
 
         await run_server(app, host=host, port=port)

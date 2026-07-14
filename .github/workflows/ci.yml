@@ -38,14 +38,12 @@ jobs:
 
     - name: Run Ruff Linting
       run: ruff check .
-      continue-on-error: true
 
     - name: Run Mypy Type Checking
       run: mypy .
 
     - name: Run Security Scan (Bandit)
       run: bandit -r . -c pyproject.toml
-      continue-on-error: true
 
     - name: Run Dependency Audit (pip-audit)
       run: pip-audit -r requirements.txt
@@ -92,7 +90,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-    - name: Docker Build and Push Stub
-      run: |
-        echo "This is a placeholder for CD Pipeline (S05-104)."
-        echo "Pushing image to ghcr.io or docker hub..."
+    - name: Set up Python
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+      with:
+        python-version: "3.12"
+    - name: Install build tool
+      run: python -m pip install build
+    - name: Build wheel
+      run: python -m build
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lunawave-wheel
+        path: dist/*.whl

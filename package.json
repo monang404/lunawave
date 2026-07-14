@@ -1,7 +1,7 @@
 {
   "name": "lunawave",
   "version": "1.0.0",
-  "description": "![Python](https://img.shields.io/badge/Python-3.10+-blue.svg) ![MPV](https://img.shields.io/badge/Powered_by-MPV-purple.svg) ![Termux](https://img.shields.io/badge/Optimized_for-Termux-green.svg)",
+  "description": "LunaWave — personal music player berbasis yt-dlp, MPV, dan aiohttp, dioptimalkan untuk Termux dan desktop.",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/monang404/lunawave/issues"

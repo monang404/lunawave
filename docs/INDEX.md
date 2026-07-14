@@ -65,7 +65,7 @@ status: current
 
 LunaWave adalah **pemutar musik berbasis YouTube** yang berjalan sebagai server lokal (aiohttp + asyncio), diakses via browser mobile/desktop. Audio diputar oleh MPV melalui IPC socket. Dirancang untuk Termux (Android) sebagai host utama, dengan dukungan Windows. Sebelumnya dikenal sebagai *YT Termux Player / bagas.fm / ytgui*.
 
-Fitur utama: Radio autoplay, Queue mode, SponsorBlock, lirik real-time (LRCLIB), smart caching MP3, portal Admin/Client, multi-room (arsitektur siap, belum fully active).
+Fitur utama: Radio autoplay, Queue mode, SponsorBlock, lirik real-time (LRCLIB), smart caching MP3, portal Admin/Client. Arsitektur EventBus sudah menyiapkan fondasi multi-room untuk pengembangan mendatang (belum aktif — lihat ADR-0005).
 
 ---
 
