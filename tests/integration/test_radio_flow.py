@@ -5,11 +5,24 @@ Purpose:
     IT-03: Test end-to-end radio communication.
     Radio enabled -> prefetch -> auto-next.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.command_bus
+    - core.commands
+    - core.event_bus
+    - core.events
+    - core.state
+
 Subscribes to:
-    None
+    - TrackStartedEvent
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

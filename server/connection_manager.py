@@ -2,13 +2,22 @@
 Module: server.connection_manager
 
 Purpose:
-    Auto-generated module docstring.
+    Manages active WebSocket connections and broadcasts events to connected clients.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.observability
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

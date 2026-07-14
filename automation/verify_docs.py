@@ -16,7 +16,7 @@ Side Effects:
     None (read-only analysis).
 
 CLI:
-    python scripts/verify_docs.py [--verbose] [--show-docstring] [--json]
+    python automation/verify_docs.py [--verbose] [--show-docstring] [--json]
 
 
 Subscribes to:
@@ -104,7 +104,7 @@ def main() -> None:
     parser.add_argument(
         "--project-root",
         default=str(DEFAULT_PROJECT_ROOT),
-        help="Root project (default: parent dari folder scripts/)",
+        help="Root project (default: parent dari folder automation/)",
     )
     parser.add_argument(
         "--stale-days",

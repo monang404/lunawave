@@ -2,13 +2,22 @@
 Module: engine.radio.common
 
 Purpose:
-    Auto-generated module docstring.
+    Common utilities and shared logic for the radio engine components.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.task_utils
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import asyncio

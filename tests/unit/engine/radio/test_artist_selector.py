@@ -2,13 +2,23 @@
 Module: tests.unit.engine.radio.test_artist_selector
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for radio artist selection and rotation.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+    - engine.radio.artist_selector
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

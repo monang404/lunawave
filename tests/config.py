@@ -11,7 +11,7 @@ Responsibilities:
     - Validate the socket path stays within BASE_DIR on Unix.
 
 Depends on:
-    - core.security (hash_password, imported lazily)
+    - core.security
 
 Subscribes to:
     None

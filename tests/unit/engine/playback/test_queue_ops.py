@@ -2,13 +2,25 @@
 Module: tests.unit.engine.playback.test_queue_ops
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for queue manipulation operations.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.event_bus
+    - core.events
+    - core.state
+    - engine.playback.queue_ops
 
 Subscribes to:
-    None
+    - QueueUpdatedEvent
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

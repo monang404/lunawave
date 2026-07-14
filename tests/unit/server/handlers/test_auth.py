@@ -6,11 +6,20 @@ Purpose:
     credential validation, rate limiting, and stale IP pruning.
     All I/O (DB, WebSocket) is mocked.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - server.handlers.auth
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import json

@@ -10,8 +10,14 @@ Responsibilities:
     - Initialize BroadcastService, StreamPrefetchService, and event listeners.
 
 Depends on:
-    - server.handlers, server.services, server.serializers, core.ports,
-      engine.playback.controller
+    - core.ports
+    - engine.playback.controller
+    - server.connection_manager
+    - server.handlers.event_listeners
+    - server.handlers.http
+    - server.handlers.websocket
+    - server.services.broadcast_service
+    - server.services.stream_prefetch
 
 Subscribes to:
     None

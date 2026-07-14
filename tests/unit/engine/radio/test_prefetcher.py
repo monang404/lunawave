@@ -2,13 +2,23 @@
 Module: tests.unit.engine.radio.test_prefetcher
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for radio track prefetching.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+    - engine.radio.prefetcher
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

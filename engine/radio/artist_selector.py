@@ -2,13 +2,25 @@
 Module: engine.radio.artist_selector
 
 Purpose:
-    Auto-generated module docstring.
+    Selects and rotates artists intelligently to maintain variety in radio mode.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
+    - engine.radio.common
+    - engine.radio.track_filter
+    - engine.radio.track_interleaver
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import logging

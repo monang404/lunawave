@@ -2,13 +2,22 @@
 Module: adapters.ytdlp.common
 
 Purpose:
-    Auto-generated module docstring.
+    Shared utilities and constants for yt-dlp integration.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 YDL_OPTS_INFO = {

@@ -2,13 +2,22 @@
 Module: persistence.db
 
 Purpose:
-    Auto-generated module docstring.
+    Manages the SQLite database connection lifecycle and initialization.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from pathlib import Path

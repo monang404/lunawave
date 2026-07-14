@@ -8,13 +8,16 @@ Responsibilities:
     - Test functionality and edge cases.
 
 Depends on:
-    - main
+    None
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

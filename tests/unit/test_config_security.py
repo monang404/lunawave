@@ -8,13 +8,16 @@ Responsibilities:
     - Test functionality and edge cases.
 
 Depends on:
-    - config_security
+    - core.security
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 from config_security import generate_admin_password

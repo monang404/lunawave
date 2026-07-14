@@ -10,7 +10,11 @@ Responsibilities:
     - Parse LRC timestamps and expose clean text lines via AppState.
 
 Depends on:
-    - config (LYRICS_API_BASE), core.event_bus, core.events, core.state
+    - core.event_bus
+    - core.events
+    - core.state
+    - plugins.lyrics_parser
+    - plugins.lyrics_sync
 
 Subscribes to:
     TrackProgressEvent

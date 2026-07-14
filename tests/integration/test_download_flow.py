@@ -5,11 +5,25 @@ Purpose:
     IT-04: Test end-to-end download communication.
     Download -> progress event -> complete event -> file exists.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.command_bus
+    - core.commands
+    - core.event_bus
+    - core.events
+    - core.state
+
 Subscribes to:
-    None
+    - DownloadCompleteEvent
+    - LogMessageEvent
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

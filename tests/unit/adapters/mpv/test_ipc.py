@@ -6,11 +6,20 @@ Purpose:
     pending future management. Uses a fake MpvConnection stub instead
     of a real socket.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.mpv.ipc
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

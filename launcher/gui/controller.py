@@ -2,13 +2,23 @@
 Module: launcher.gui.controller
 
 Purpose:
-    Auto-generated module docstring.
+    Controls the underlying server lifecycle from within the launcher GUI.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - launcher
+    - launcher.gui.popups
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Worker thread.
 """
 
 import threading

@@ -15,6 +15,9 @@ Subscribes to:
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from pathlib import Path

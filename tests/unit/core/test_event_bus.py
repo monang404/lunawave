@@ -3,10 +3,12 @@ Purpose:
     Auto-generated purpose.
 
 Subscribes to:
-    None
+    - LogMessageEvent
+    - QueueUpdatedEvent
 
 Publishes:
-    None
+    - LogMessageEvent
+    - QueueUpdatedEvent
 """
 
 import gc

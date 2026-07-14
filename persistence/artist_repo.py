@@ -2,13 +2,22 @@
 Module: persistence.artist_repo
 
 Purpose:
-    Auto-generated module docstring.
+    Repository for tracking artist statistics and fetching artist-specific tracks.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import structlog

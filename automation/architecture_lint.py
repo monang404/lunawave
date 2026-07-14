@@ -16,7 +16,7 @@ Side Effects:
     None (read-only static analysis).
 
 CLI:
-    python scripts/architecture_lint.py [--file PATH] [--strict] [--json]
+    python automation/architecture_lint.py [--file PATH] [--strict] [--json]
 
 
 Subscribes to:
@@ -342,7 +342,7 @@ def main():
         if new_v and not args.warn_only:
             print(
                 "💡 Tips: Jika violation ini disengaja (temporary), tambahkan ke KNOWN_VIOLATIONS\n"
-                "   di scripts/architecture_lint.py dan dokumentasikan di REPORT.md.\n"
+                "   di automation/architecture_lint.py dan dokumentasikan di REPORT.md.\n"
                 "   Untuk skip pre-commit sementara: git commit --no-verify"
             )
 

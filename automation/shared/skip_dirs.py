@@ -27,7 +27,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Gabungan paling lengkap dari semua SKIP_DIRS / NOISE_DIRS di seluruh scripts/
+# Gabungan paling lengkap dari semua SKIP_DIRS / NOISE_DIRS di seluruh automation/
 SKIP_DIRS: frozenset[str] = frozenset(
     {
         "__pycache__",

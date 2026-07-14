@@ -2,13 +2,27 @@
 Module: adapters.mpv.observer
 
 Purpose:
-    Auto-generated module docstring.
+    Observes and dispatches asynchronous events emitted by the MPV player.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.event_bus
+    - core.events
+    - core.task_utils
 
 Subscribes to:
     None
 
 Publishes:
-    None
+    - TrackDurationEvent
+    - TrackEndedEvent
+    - TrackPauseChangedEvent
+    - TrackProgressEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

@@ -2,13 +2,28 @@
 Module: tests.unit.engine.conftest
 
 Purpose:
-    Auto-generated module docstring.
+    Pytest fixtures and configuration for the engine test suite.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - cache.resolver
+    - core.event_bus
+    - core.state
+    - engine.playback.controller
+    - tests.fakes.fake_audio_player
+    - tests.fakes.fake_media_extractor
+    - tests.fakes.fake_track_repository
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import pytest

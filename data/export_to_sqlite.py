@@ -16,11 +16,20 @@ Side Effects:
 CLI:
     python data/export_to_sqlite.py
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import json

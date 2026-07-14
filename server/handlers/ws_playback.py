@@ -2,13 +2,24 @@
 Module: server.handlers.ws_playback
 
 Purpose:
-    Auto-generated module docstring.
+    WebSocket handler for processing playback control commands.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.command_bus
+    - core.state
+    - server.serializers
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import structlog

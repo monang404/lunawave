@@ -6,6 +6,12 @@ Purpose:
     Satu panggilan yang menggabungkan semua tool automation/ jadi 1 JSON —
     endpoint utama untuk AI agent supaya tidak perlu 5 panggilan terpisah.
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/context_pack.py <file_or_feature> [--json]
 """

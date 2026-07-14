@@ -10,8 +10,13 @@ Responsibilities:
     - Route authenticated WS actions to command_bus.execute().
 
 Depends on:
-    - core.command_bus, core.state, server.serializers, server.middleware,
-      server.handlers.auth, services.discover_service
+    - server.handlers.auth
+    - server.handlers.ws_discovery
+    - server.handlers.ws_download
+    - server.handlers.ws_playback
+    - server.handlers.ws_queue
+    - server.middleware
+    - server.serializers
 
 Subscribes to:
     None

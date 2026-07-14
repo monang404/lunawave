@@ -7,11 +7,34 @@ Purpose:
     but points them to temporary directories and memory databases to
     prevent side effects on the dev environment.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - cache.db
+    - cache.resolver
+    - core.event_bus
+    - core.state
+    - engine.command_router
+    - engine.download_manager
+    - engine.mpv_controller
+    - engine.playback.controller
+    - engine.queue_manager
+    - engine.radio_engine
+    - engine.volume_service
+    - engine.ytdlp_client
+    - plugins.lyrics_fetcher
+    - plugins.sponsorblock
+    - server.app
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import os

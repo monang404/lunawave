@@ -2,13 +2,22 @@
 Module: persistence.genre_repo
 
 Purpose:
-    Auto-generated module docstring.
+    Repository for fetching genre information and tracking genre popularity.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import structlog

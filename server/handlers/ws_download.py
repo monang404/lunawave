@@ -2,13 +2,23 @@
 Module: server.handlers.ws_download
 
 Purpose:
-    Auto-generated module docstring.
+    WebSocket handler for managing track download requests and status.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.command_bus
+    - server.serializers
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

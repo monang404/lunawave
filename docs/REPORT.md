@@ -25,27 +25,27 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 60 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 124 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 62 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 127 |
 | Total file `.js` (ekskl. `.min.js`) | 34 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
 | Total class (Python) | 74 |
-| Total function/method (Python) | 471 |
-| Total baris Python | 11,312 |
-| Total baris JS (web/) | 3,075 |
-| Total baris CSS (web/) | 3,277 |
-| Ukuran DB utama (`data/lunawave.db`) | 524 KB (+ WAL 620 KB) |
+| Total function/method (Python) | 493 |
+| Total baris Python | 13,077 |
+| Total baris JS (web/) | 3,070 |
+| Total baris CSS (web/) | 3,265 |
+| Ukuran DB utama (`data/lunawave.db`) | 524 KB (+ WAL 861 KB) |
 | Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `automation/generate_file_index.py` | 349 ⚠️ |
-| `engine/playback/controller.py` | 346 ⚠️ |
-| `automation/architecture_lint.py` | 345 ⚠️ |
-| `automation/find_owner.py` | 302 ⚠️ |
-| `automation/generate_report.py` | 292 |
+| `engine/playback/controller.py` | 371 |
+| `automation/generate_file_index.py` | 370 |
+| `automation/architecture_lint.py` | 359 |
+| `launcher/gui/ui_builder.py` | 355 |
+| `main.py` | 316 |
 <!-- END:GENERATED -->
 
 ---

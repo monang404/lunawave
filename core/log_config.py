@@ -10,7 +10,7 @@ Responsibilities:
     - Set up RotatingFileHandler (1 MB, 2 backups) and a console handler.
 
 Depends on:
-    - config (BASE_DIR)
+    None
 
 Subscribes to:
     None

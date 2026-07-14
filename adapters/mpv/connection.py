@@ -2,13 +2,22 @@
 Module: adapters.mpv.connection
 
 Purpose:
-    Auto-generated module docstring.
+    Manages the raw socket connection to the MPV media player.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.exceptions
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

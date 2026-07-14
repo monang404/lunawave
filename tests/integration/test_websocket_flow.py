@@ -5,11 +5,20 @@ Purpose:
     IT-01: Test end-to-end WebSocket communication.
     Connect -> Auth -> Dispatch command -> Receive broadcast state.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    None
+
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

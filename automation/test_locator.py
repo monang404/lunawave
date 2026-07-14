@@ -6,6 +6,12 @@ Purpose:
     Petakan source <-> test dua arah via konvensi path-mirroring
     tests/unit/<subpath>/test_<nama>.py <-> <subpath>/<nama>.py.
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/test_locator.py --for <file>
     python automation/test_locator.py --orphan

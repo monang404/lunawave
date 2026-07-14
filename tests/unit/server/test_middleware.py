@@ -2,13 +2,22 @@
 Module: tests.unit.server.test_middleware
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for server middleware and request processing.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - server.middleware
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

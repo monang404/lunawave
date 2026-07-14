@@ -2,13 +2,22 @@
 Module: tests.unit.persistence.test_track_repo
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for track metadata operations in the database.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.state
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import time

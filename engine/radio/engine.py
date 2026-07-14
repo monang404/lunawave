@@ -2,13 +2,29 @@
 Module: engine.radio.engine
 
 Purpose:
-    Auto-generated module docstring.
+    Manages the state and playback progression for the radio mode feature.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.events
+    - core.ports
+    - core.state
+    - engine.playback
+    - engine.radio.artist_selector
+    - engine.radio.common
+    - engine.radio.prefetcher
 
 Subscribes to:
     None
 
 Publishes:
-    None
+    - LogMessageEvent
+    - QueueUpdatedEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

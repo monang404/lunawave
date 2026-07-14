@@ -2,13 +2,22 @@
 Module: launcher.gui.ui_builder
 
 Purpose:
-    Auto-generated module docstring.
+    Constructs the main user interface layout and elements for the launcher.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - launcher.gui.auth_panel
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Worker thread.
 """
 
 import tkinter as tk

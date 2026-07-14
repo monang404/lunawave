@@ -7,6 +7,12 @@ Purpose:
     DIGABUNG reverse-dep via event bus (subscriber dari event yang dipublish
     file target) — sisi event wajib, bukan opsional (lihat rationale di atas).
 
+Subscribes to:
+    None
+
+Publishes:
+    None
+
 CLI:
     python automation/impact.py <file_or_symbol> [--json]
 """
@@ -22,7 +28,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from event_graph import build_event_graph
+from event_graph import build_event_map
 from find_owner import collect_py_files, resolve_target
 from shared.repo_index import load_index
 from test_locator import find_test_for
@@ -57,7 +63,7 @@ def compute_impact(root: Path, query: str) -> dict:
 
     target = str(resolved.relative_to(root)).replace("\\", "/")
     index = load_index(root)
-    graph = build_event_graph(root)
+    graph = build_event_map(index["files"])
 
     via_import = transitive_reverse_deps(index, target)
     via_event = event_impacted(index, graph, target)

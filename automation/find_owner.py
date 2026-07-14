@@ -16,7 +16,7 @@ Side Effects:
     None (read-only static analysis).
 
 CLI:
-    python scripts/find_owner.py <file|class|function> [--json]
+    python automation/find_owner.py <file|class|function> [--json]
 
 
 Subscribes to:

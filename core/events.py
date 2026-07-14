@@ -9,7 +9,7 @@ Responsibilities:
     - Declare event contracts for track, queue, lyrics, and download flows.
 
 Depends on:
-    - core.state (TrackInfo)
+    - core.state
 
 Subscribes to:
     None

@@ -10,7 +10,8 @@ Responsibilities:
     - Dispatch commands with OpenTelemetry span and latency/count metrics.
 
 Depends on:
-    - core.observability (COMMAND_COUNT, COMMAND_LATENCY, tracer)
+    - core.commands
+    - core.observability
 
 Subscribes to:
     None

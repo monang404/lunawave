@@ -10,7 +10,7 @@ Responsibilities:
     - Deserialize an incoming dict payload into a TrackInfo instance.
 
 Depends on:
-    - core.state (AppState, TrackInfo, AudioOutput)
+    - core.state
 
 Subscribes to:
     None

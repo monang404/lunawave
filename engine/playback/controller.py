@@ -11,8 +11,9 @@ Responsibilities:
     - Delegate queue advancement to QueueMode or RadioMode.
 
 Depends on:
-    - core.event_bus, core.events, core.state, core.ports, cache.resolver,
-      engine.queue_manager, engine.radio_engine, engine.playback.track_loader
+    - core.event_bus, core.events, core.ports, core.state, core.task_utils,
+      engine.playback.mode_ops, engine.playback.queue_ops,
+      engine.playback.track_loader, engine.queue_manager, engine.radio_engine
 
 Subscribes to:
     TrackEndedEvent, TrackProgressEvent, TrackPauseChangedEvent,
@@ -118,11 +119,6 @@ class PlaybackController:
                 self._loading = True
                 # Play
                 await self.mpv.play(uri)
-
-                # RC-TERMUX-02: Beri jeda singkat agar mpv selesai memproses loadfile
-                # sebelum set_volume/resume dikirim. Di Termux, socket IPC lebih lambat
-                # sehingga perintah yang langsung dikirim setelah loadfile bisa diabaikan
-                # mpv karena file belum fully loaded.
                 await asyncio.sleep(0.15)
 
                 if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
@@ -171,14 +167,6 @@ class PlaybackController:
                     await asyncio.sleep(backoff)
                     # Ensure we don't call _on_next if we are no longer trying to play this track
                     if self.state.current_track == track:
-                        # FIX-DEADLOCK-01: jangan await _advance_to_next() di sini — ini masih
-                        # di dalam `async with self._play_lock` (baris 87). _advance_to_next()
-                        # ujung-ujungnya bisa memanggil balik play_track() (mis. radio_mode.next()
-                        # atau queue_mode.next()), yang akan coba acquire self._play_lock lagi.
-                        # asyncio.Lock tidak reentrant dan ini task yang sama, jadi itu deadlock
-                        # permanen: pemegang lock (frame ini) menunggu panggilan yang menunggu
-                        # lock yang sama. Jadikan fire-and-forget agar play_track() langsung
-                        # selesai & melepas lock dulu, baru _advance_to_next() jalan di task lain.
                         safe_create_task(
                             self._advance_to_next(), name=f"advance_after_failure_{track.video_id}"
                         )
@@ -266,15 +254,6 @@ class PlaybackController:
                 else PlayerStatus.PLAYING
             )
             self.state.status = new_status
-            # FIX-POSITION-DRIFT-01: self.state.position cuma diupdate lewat
-            # TrackProgressEvent, yang di mpv_controller di-throttle max 1x/detik.
-            # Kalau kita broadcast pause/resume pakai state.position apa adanya,
-            # nilainya bisa telat sampai ~1 detik dari posisi asli mpv. Client
-            # browser (ws.js) auto-koreksi audio.currentTime begitu selisih dengan
-            # posisi server > 0.5 detik — akibatnya audio browser "lompat mundur"
-            # sesaat tiap kali resume. Ambil posisi akurat langsung dari mpv di sini
-            # (bareng toggle_pause, tidak perlu nunggu berurutan) sebelum broadcast,
-            # supaya progress yang dikirim ke client sudah presisi.
             _, actual_pos = await asyncio.gather(
                 self.mpv.toggle_pause(),
                 self.mpv.get_position(),

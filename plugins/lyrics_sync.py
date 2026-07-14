@@ -2,13 +2,22 @@
 Module: plugins.lyrics_sync
 
 Purpose:
-    Auto-generated module docstring.
+    Synchronizes lyrics display with current track playback progress.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.events
 
 Subscribes to:
-    None
+    - TrackProgressEvent
 
 Publishes:
-    None
+    - LyricsUpdatedEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import bisect

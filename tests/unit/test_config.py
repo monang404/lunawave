@@ -2,13 +2,22 @@
 Module: tests.unit.test_config
 
 Purpose:
-    Auto-generated module docstring.
+    Unit tests for application configuration and environment variables.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.security
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import pytest

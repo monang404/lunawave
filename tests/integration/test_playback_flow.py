@@ -5,11 +5,25 @@ Purpose:
     IT-02: Test end-to-end playback communication.
     Play -> pause -> next via CommandBus and verify EventBus.
 
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.command_bus
+    - core.commands
+    - core.event_bus
+    - core.events
+    - core.state
+
 Subscribes to:
-    None
+    - TrackPauseChangedEvent
+    - TrackStartedEvent
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

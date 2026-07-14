@@ -10,8 +10,11 @@ Responsibilities:
     - Trigger stream URL pre-fetch on TrackStartedEvent.
 
 Depends on:
-    - core.events, core.task_utils
-    - server.services.stream_prefetch, server.services.broadcast_service
+    - core.events
+    - core.task_utils
+    - server.serializers
+    - server.services.broadcast_service
+    - server.services.stream_prefetch
 
 Subscribes to:
     TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent,

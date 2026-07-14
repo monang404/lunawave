@@ -2,13 +2,22 @@
 Module: server.handlers.ws_discovery
 
 Purpose:
-    Auto-generated module docstring.
+    WebSocket handler for processing discovery and search commands.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - server.serializers
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

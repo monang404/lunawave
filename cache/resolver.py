@@ -10,9 +10,8 @@ Responsibilities:
     - Fetch a fresh stream URL via yt-dlp on cache miss and persist it.
 
 Depends on:
-    - cache.db (TrackRepositoryPort)
-    - core.ports (MediaExtractorPort)
-    - config (STREAM_URL_TTL_SEC)
+    - core.ports
+    - core.state
 
 Subscribes to:
     None

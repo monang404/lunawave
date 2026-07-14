@@ -2,13 +2,24 @@
 Module: adapters.ytdlp
 
 Purpose:
-    Auto-generated module docstring.
+    Unified client for interacting with yt-dlp for search, extraction, and downloading.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - adapters.ytdlp.downloader
+    - adapters.ytdlp.resolver
+    - adapters.ytdlp.searcher
 
 Subscribes to:
     None
 
 Publishes:
     None
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 from concurrent.futures import ThreadPoolExecutor

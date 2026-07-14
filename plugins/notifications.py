@@ -10,7 +10,10 @@ Responsibilities:
     - Update or remove the notification on track start/pause/cleanup.
 
 Depends on:
-    - core.event_bus, core.events, core.command_bus, core.state, config
+    - core.command_bus
+    - core.event_bus
+    - core.events
+    - core.state
 
 Subscribes to:
     TrackStartedEvent, TrackPauseChangedEvent

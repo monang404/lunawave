@@ -9,7 +9,7 @@ Responsibilities:
     - Declare session, lyrics, and sponsorblock provider protocols.
 
 Depends on:
-    - core.state (TrackInfo)
+    - core.state
 
 Subscribes to:
     None

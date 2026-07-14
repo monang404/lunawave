@@ -2,13 +2,26 @@
 Module: engine.playback.mode_ops
 
 Purpose:
-    Auto-generated module docstring.
+    Handles playback mode switches, such as toggling radio mode or SponsorBlock.
+
+Responsibilities:
+    - Implement the core functionality described in the purpose.
+
+Depends on:
+    - core.events
+    - core.ports
+    - core.state
+    - engine.radio
 
 Subscribes to:
     None
 
 Publishes:
-    None
+    - LogMessageEvent
+    - QueueUpdatedEvent
+
+Thread Safety:
+    Main thread (async event loop).
 """
 
 import asyncio

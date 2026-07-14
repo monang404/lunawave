@@ -15,6 +15,9 @@ Subscribes to:
 
 Publishes:
     None
+
+Thread Safety:
+    Stateless.
 """
 
 import core.commands as cmds
