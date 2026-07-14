@@ -19,9 +19,10 @@ exclude_dirs = ["tests", "scratch", "scripts", ".venv", "venv"]
 [tool.coverage.run]
 source = ["core", "engine", "server", "persistence", "adapters", "services", "plugins"]
 omit = [
-    "launcher/gui/app.py",
-    "launcher/gui/ui_builder.py",
+    "launcher/gui/*",
     "start.py",
+    "main.py",
+    "automation/*",
     "*/scratch/*",
 ]
 

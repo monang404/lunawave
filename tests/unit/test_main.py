@@ -90,3 +90,6 @@ async def test_main_smoke(
     mock_run_server.assert_awaited_once()
     nowplaying_inst.start.assert_awaited_once()
     nowplaying_inst.cleanup.assert_awaited_once()
+
+    # Allow event loop to process task cancellations
+    await asyncio.sleep(0.05)

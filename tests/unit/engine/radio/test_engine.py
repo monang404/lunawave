@@ -22,6 +22,7 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+import asyncio
 import pytest
 
 from core.event_bus import EventBus
@@ -41,7 +42,9 @@ class MockDB:
         return ["A", "B"]
 
     async def get_random_songs(self, limit, exclude_ids, artist):
-        return [TrackInfo(video_id=f"v_{artist}", title="T", artist=artist, duration=100)]
+        return [
+            TrackInfo(video_id=f"v_{artist}", title="T", artist=artist, duration=100)
+        ]
 
 
 class MockController:
@@ -64,6 +67,7 @@ async def test_radio_activate_deactivate():
     assert "A" in radio.artist_selector._seed_artists
 
     await radio.on_deactivated()
+    await asyncio.sleep(0)
     assert len(radio._bg_tasks) == 0
 
 
@@ -91,5 +95,6 @@ async def test_radio_next_empty_queue():
     controller = MockController()
 
     await radio.next(controller)
+    await asyncio.sleep(0)
     assert state.status == PlayerStatus.LOADING
     # _start will be triggered as a bg task

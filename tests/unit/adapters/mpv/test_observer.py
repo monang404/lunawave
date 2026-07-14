@@ -51,7 +51,9 @@ def mock_event_bus():
 
 
 def test_observer_initialization(mock_connection, mock_ipc, mock_event_bus):
-    observer = MpvObserver(mock_connection, mock_ipc, mock_event_bus, room_id="test_room")
+    observer = MpvObserver(
+        mock_connection, mock_ipc, mock_event_bus, room_id="test_room"
+    )
     assert observer._conn == mock_connection
     assert observer._ipc == mock_ipc
     assert observer._bus == mock_event_bus
@@ -70,6 +72,9 @@ async def test_observer_start_and_stop(mock_connection, mock_ipc, mock_event_bus
     assert observer._task is not None
     assert not observer._task.done()
 
+    # Let the event loop run so the task can start and await the coroutine
+    await asyncio.sleep(0)
+
     await observer.stop()
     # Give it a tiny sleep to let the task cancel
     await asyncio.sleep(0.01)
@@ -78,7 +83,9 @@ async def test_observer_start_and_stop(mock_connection, mock_ipc, mock_event_bus
 
 
 @pytest.mark.asyncio
-async def test_observer_handles_property_change(mock_connection, mock_ipc, mock_event_bus):
+async def test_observer_handles_property_change(
+    mock_connection, mock_ipc, mock_event_bus
+):
     observer = MpvObserver(mock_connection, mock_ipc, mock_event_bus)
 
     # Simulate an MPV property-change event for 'time-pos'
