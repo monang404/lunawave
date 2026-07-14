@@ -1,7 +1,7 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from launcher.network import check_port_in_use, get_pid_occupying_port
-import sys
+
 
 def test_check_port_in_use():
     with patch("launcher.network.socket.socket") as mock_socket:
@@ -16,15 +16,21 @@ def test_check_port_in_use():
         mock_instance.connect_ex.return_value = 111
         assert check_port_in_use(8080) is False
 
+
 def test_get_pid_occupying_port_win32():
     with patch("launcher.network.sys.platform", "win32"):
         with patch("launcher.network.subprocess.check_output") as mock_check_output:
             # Simulate netstat output
-            mock_check_output.return_value = "  TCP    0.0.0.0:8080           0.0.0.0:0              LISTENING       1234\n"
+            mock_check_output.return_value = (
+                "  TCP    0.0.0.0:8080           0.0.0.0:0              LISTENING       1234\n"
+            )
             assert get_pid_occupying_port(8080) == 1234
 
-            mock_check_output.return_value = "  UDP    0.0.0.0:8080           *:*                                    1234\n"
+            mock_check_output.return_value = (
+                "  UDP    0.0.0.0:8080           *:*                                    1234\n"
+            )
             assert get_pid_occupying_port(8080) is None
+
 
 def test_get_pid_occupying_port_linux():
     with patch("launcher.network.sys.platform", "linux"):

@@ -35,16 +35,16 @@ function login(user, pass) {
         dom.loginErrorMsg.textContent = "Isi username dan password!";
         return;
     }
-    
+
     if (dom.adminSubmitBtn) {
         dom.adminSubmitBtn.disabled = true;
         dom.adminSubmitBtn.textContent = "Menghubungkan...";
     }
     dom.loginErrorMsg.textContent = "";
-    
+
     store.adminUsername = user;
     store.adminPassword = pass;
-    
+
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
         wsSend("auth", { username: user, password: pass });
     } else {

@@ -11,12 +11,15 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
-from core.state import AppState, TrackInfo
-from core.events import QueueUpdatedEvent, LogMessageEvent
+
+import pytest
+
 from core.event_bus import EventBus
+from core.events import QueueUpdatedEvent
+from core.state import AppState, TrackInfo
 from engine.playback.queue_ops import QueueOps
+
 
 @pytest.fixture
 def setup_queue_ops():
@@ -25,6 +28,7 @@ def setup_queue_ops():
     lock = asyncio.Lock()
     ops = QueueOps(state, bus, lock)
     return ops, state, bus
+
 
 @pytest.mark.asyncio
 async def test_add_track(setup_queue_ops):
@@ -38,6 +42,7 @@ async def test_add_track(setup_queue_ops):
     assert len(state.queue) == 1
     assert len(events) == 1
 
+
 @pytest.mark.asyncio
 async def test_queue_select(setup_queue_ops):
     ops, state, bus = setup_queue_ops
@@ -48,6 +53,7 @@ async def test_queue_select(setup_queue_ops):
     selected = await ops.queue_select(1)
     assert selected == t2
     assert len(state.queue) == 0  # Popped both
+
 
 @pytest.mark.asyncio
 async def test_remove_track(setup_queue_ops):
@@ -60,6 +66,7 @@ async def test_remove_track(setup_queue_ops):
     assert len(state.queue) == 1
     assert state.queue[0] == t2
 
+
 @pytest.mark.asyncio
 async def test_replace_queue(setup_queue_ops):
     ops, state, bus = setup_queue_ops
@@ -69,6 +76,7 @@ async def test_replace_queue(setup_queue_ops):
     await ops.replace_queue([t1, t2])
     assert len(state.queue) == 2
     assert state.queue[0] == t1
+
 
 @pytest.mark.asyncio
 async def test_reorder(setup_queue_ops):

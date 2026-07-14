@@ -23,10 +23,10 @@ from engine.playback.track_loader import TrackLoader
 from tests.fakes.fake_media_extractor import FakeMediaExtractor
 from tests.fakes.fake_track_repository import FakeTrackRepository
 
-
 # ---------------------------------------------------------------------------
 # Fakes for SponsorBlockProvider and LyricsProvider
 # ---------------------------------------------------------------------------
+
 
 class FakeSponsorBlock:
     def __init__(self):
@@ -47,6 +47,7 @@ class FakeLyrics:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_track(video_id="v1"):
     return TrackInfo(video_id=video_id, title="T", artist="A", duration=180)
@@ -77,6 +78,7 @@ def lyrics():
 @pytest.fixture
 def loader(repo, extractor, sponsorblock, lyrics):
     from cache.resolver import CacheResolver
+
     resolver = CacheResolver(db=repo, ytdlp=extractor)
     return TrackLoader(resolver=resolver, sponsorblock=sponsorblock, lyrics_fetcher=lyrics)
 
@@ -84,6 +86,7 @@ def loader(repo, extractor, sponsorblock, lyrics):
 # ---------------------------------------------------------------------------
 # load_track
 # ---------------------------------------------------------------------------
+
 
 class TestLoadTrack:
     async def test_returns_resolved_uri(self, loader, extractor, repo):
@@ -95,10 +98,9 @@ class TestLoadTrack:
     async def test_returns_local_path_when_file_exists(self, loader, repo, tmp_path):
         local = tmp_path / "v1.mp3"
         local.write_bytes(b"fake audio")
-        repo.seed(TrackInfo(
-            video_id="v1", title="T", artist="A", duration=180,
-            local_path=str(local)
-        ))
+        repo.seed(
+            TrackInfo(video_id="v1", title="T", artist="A", duration=180, local_path=str(local))
+        )
         track = make_track("v1")
         uri = await loader.load_track(track)
         assert uri == str(local)
@@ -112,7 +114,9 @@ class TestLoadTrack:
         await asyncio.sleep(0.05)
         assert ("increment_play_count", "v1") in repo.call_log
 
-    async def test_fires_sponsorblock_fetch_as_background_task(self, loader, extractor, sponsorblock):
+    async def test_fires_sponsorblock_fetch_as_background_task(
+        self, loader, extractor, sponsorblock
+    ):
         extractor.stream_urls["v1"] = "https://stream/v1"
         track = make_track("v1")
         await loader.load_track(track)

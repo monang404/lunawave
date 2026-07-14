@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from server.services.broadcast_service import BroadcastService
+
 
 @pytest.mark.asyncio
 async def test_broadcast_sends_to_all():

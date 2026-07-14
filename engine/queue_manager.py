@@ -23,12 +23,14 @@ Thread Safety:
     Worker thread (async; called from PlaybackController._lock).
 """
 
+from typing import TYPE_CHECKING
+
 from core.events import QueueUpdatedEvent
 from core.state import PlayerStatus
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController
+
 
 class QueueMode:
     """
@@ -36,6 +38,7 @@ class QueueMode:
     Subscribes to: (tidak ada — dipanggil oleh PlaybackController)
     Publishes: QueueUpdatedEvent
     """
+
     async def next(self, controller: "PlaybackController") -> None:
         """Dipanggil PlaybackController saat track berakhir di QUEUE mode."""
         if not controller.state.queue:

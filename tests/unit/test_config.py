@@ -12,6 +12,7 @@ Publishes:
 """
 
 import pytest
+
 """tests/unit/test_config.py — mirrors config.py
 
 config.py runs all of its logic at *module import time*, keyed off env
@@ -34,7 +35,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).parent.parent.parent
 
 
-def run_config_snippet(code: str, env_overrides: dict, tmp_path: Path) -> subprocess.CompletedProcess:
+def run_config_snippet(
+    code: str, env_overrides: dict, tmp_path: Path
+) -> subprocess.CompletedProcess:
     """Run a short Python snippet, after `import config`, in a subprocess
     with only the given env vars set (plus what's needed to import config)."""
     env = {"PATH": __import__("os").environ.get("PATH", ""), "PYTHONPATH": str(REPO_ROOT)}
@@ -52,9 +55,7 @@ def run_config_snippet(code: str, env_overrides: dict, tmp_path: Path) -> subpro
 
 
 def test_base_dir_resolves_from_lunawave_base_env_var(tmp_path):
-    result = run_config_snippet(
-        "print(config.BASE_DIR)", {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path
-    )
+    result = run_config_snippet("print(config.BASE_DIR)", {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == str(tmp_path)
 
@@ -66,11 +67,19 @@ def test_base_dir_falls_back_to_legacy_yt_player_base_env_var(tmp_path):
         tmp_path,
     )
     # explicitly don't set LUNAWAVE_BASE for this one
-    env = {"PATH": __import__("os").environ.get("PATH", ""), "PYTHONPATH": str(REPO_ROOT),
-           "YT_PLAYER_BASE": str(tmp_path), "LUNAWAVE_ADMIN_PASS": "x"}
+    env = {
+        "PATH": __import__("os").environ.get("PATH", ""),
+        "PYTHONPATH": str(REPO_ROOT),
+        "YT_PLAYER_BASE": str(tmp_path),
+        "LUNAWAVE_ADMIN_PASS": "x",
+    }
     result = subprocess.run(
         [sys.executable, "-c", "import config\nprint(config.BASE_DIR)"],
-        cwd=str(REPO_ROOT), env=env, capture_output=True, text=True, timeout=15,
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == str(tmp_path)
@@ -79,7 +88,8 @@ def test_base_dir_falls_back_to_legacy_yt_player_base_env_var(tmp_path):
 def test_cache_dir_and_db_path_are_derived_from_base_dir(tmp_path):
     result = run_config_snippet(
         "print(config.CACHE_DIR); print(config.DB_PATH)",
-        {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path,
+        {"LUNAWAVE_ADMIN_PASS": "x"},
+        tmp_path,
     )
     assert result.returncode == 0, result.stderr
     lines = result.stdout.strip().splitlines()
@@ -106,7 +116,8 @@ def test_default_volume_reads_env_override(tmp_path):
 def test_web_host_and_port_defaults(tmp_path):
     result = run_config_snippet(
         "print(config.WEB_HOST); print(config.WEB_PORT)",
-        {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path,
+        {"LUNAWAVE_ADMIN_PASS": "x"},
+        tmp_path,
     )
     lines = result.stdout.strip().splitlines()
     assert lines[0] == "0.0.0.0"
@@ -136,17 +147,15 @@ def test_admin_username_default_and_legacy_fallback(tmp_path):
     assert result.stdout.strip() == "root"
 
 
-@pytest.mark.skipif(__import__('os').name == 'nt', reason='Windows uses named pipes for MPV_SOCKET')
+@pytest.mark.skipif(__import__("os").name == "nt", reason="Windows uses named pipes for MPV_SOCKET")
 def test_mpv_socket_defaults_inside_base_dir_cache_sockets(tmp_path):
-    result = run_config_snippet(
-        "print(config.MPV_SOCKET)", {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path
-    )
+    result = run_config_snippet("print(config.MPV_SOCKET)", {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path)
     assert result.returncode == 0, result.stderr
     socket_path = Path(result.stdout.strip())
     assert socket_path.parent == (tmp_path / "cache" / "sockets").resolve()
 
 
-@pytest.mark.skipif(__import__('os').name == 'nt', reason='Windows uses named pipes for MPV_SOCKET')
+@pytest.mark.skipif(__import__("os").name == "nt", reason="Windows uses named pipes for MPV_SOCKET")
 def test_mpv_socket_outside_base_dir_is_rejected_and_falls_back(tmp_path):
     outside = "/tmp/definitely-outside-base-dir.sock"
     result = run_config_snippet(
@@ -163,12 +172,22 @@ def test_mpv_socket_outside_base_dir_is_rejected_and_falls_back(tmp_path):
 
 
 def test_admin_password_is_auto_generated_when_no_env_var_set(tmp_path):
-    env = {"PATH": __import__("os").environ.get("PATH", ""), "PYTHONPATH": str(REPO_ROOT),
-           "LUNAWAVE_BASE": str(tmp_path)}
+    env = {
+        "PATH": __import__("os").environ.get("PATH", ""),
+        "PYTHONPATH": str(REPO_ROOT),
+        "LUNAWAVE_BASE": str(tmp_path),
+    }
     result = subprocess.run(
-        [sys.executable, "-c",
-         "import config\nprint(config.IS_PASSWORD_AUTO_GENERATED)\nprint(config.ADMIN_PASSWORD.startswith('pbkdf2:sha256:'))"],
-        cwd=str(REPO_ROOT), env=env, capture_output=True, text=True, timeout=15,
+        [
+            sys.executable,
+            "-c",
+            "import config\nprint(config.IS_PASSWORD_AUTO_GENERATED)\nprint(config.ADMIN_PASSWORD.startswith('pbkdf2:sha256:'))",
+        ],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
     # The auto-generated-password banner is printed by config.py itself
@@ -182,13 +201,28 @@ def test_admin_password_is_auto_generated_when_no_env_var_set(tmp_path):
 
 
 def test_admin_password_auto_generation_is_stable_across_restarts(tmp_path):
-    env = {"PATH": __import__("os").environ.get("PATH", ""), "PYTHONPATH": str(REPO_ROOT),
-           "LUNAWAVE_BASE": str(tmp_path)}
+    env = {
+        "PATH": __import__("os").environ.get("PATH", ""),
+        "PYTHONPATH": str(REPO_ROOT),
+        "LUNAWAVE_BASE": str(tmp_path),
+    }
     code = "import config\nprint(config.ADMIN_PASSWORD)"
-    first = subprocess.run([sys.executable, "-c", code], cwd=str(REPO_ROOT), env=env,
-                            capture_output=True, text=True, timeout=15)
-    second = subprocess.run([sys.executable, "-c", code], cwd=str(REPO_ROOT), env=env,
-                             capture_output=True, text=True, timeout=15)
+    first = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    second = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
     assert first.returncode == 0 and second.returncode == 0
     # First run auto-generates + prints the banner + the password value on
     # its own last line; second run reads the cached file and prints only
@@ -202,7 +236,8 @@ def test_admin_password_auto_generation_is_stable_across_restarts(tmp_path):
 def test_admin_password_from_ytgui_admin_pass_plaintext_gets_hashed(tmp_path):
     result = run_config_snippet(
         "print(config.ADMIN_PASSWORD)",
-        {"YTGUI_ADMIN_PASS": "plaintext-secret"}, tmp_path,
+        {"YTGUI_ADMIN_PASS": "plaintext-secret"},
+        tmp_path,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().startswith("pbkdf2:sha256:")
@@ -210,10 +245,12 @@ def test_admin_password_from_ytgui_admin_pass_plaintext_gets_hashed(tmp_path):
 
 def test_admin_password_from_ytgui_admin_pass_already_hashed_is_kept_as_is(tmp_path):
     from core.security import hash_password
+
     pre_hashed = hash_password("already-hashed-secret")
     result = run_config_snippet(
         "print(config.ADMIN_PASSWORD)",
-        {"YTGUI_ADMIN_PASS": pre_hashed}, tmp_path,
+        {"YTGUI_ADMIN_PASS": pre_hashed},
+        tmp_path,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == pre_hashed
@@ -231,7 +268,8 @@ def test_admin_password_from_lunawave_admin_pass_plaintext_gets_hashed(tmp_path)
     """
     result = run_config_snippet(
         "print(config.ADMIN_PASSWORD)",
-        {"LUNAWAVE_ADMIN_PASS": "plaintext-secret"}, tmp_path,
+        {"LUNAWAVE_ADMIN_PASS": "plaintext-secret"},
+        tmp_path,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().startswith("pbkdf2:sha256:")
@@ -239,10 +277,12 @@ def test_admin_password_from_lunawave_admin_pass_plaintext_gets_hashed(tmp_path)
 
 def test_admin_password_from_lunawave_admin_pass_already_hashed_is_kept_as_is(tmp_path):
     from core.security import hash_password
+
     pre_hashed = hash_password("already-hashed-secret")
     result = run_config_snippet(
         "print(config.ADMIN_PASSWORD)",
-        {"LUNAWAVE_ADMIN_PASS": pre_hashed}, tmp_path,
+        {"LUNAWAVE_ADMIN_PASS": pre_hashed},
+        tmp_path,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == pre_hashed
@@ -256,19 +296,30 @@ def test_lunawave_admin_pass_takes_precedence_over_ytgui_admin_pass(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     from core.security import verify_password
+
     assert verify_password("new-var-wins", result.stdout.strip()) is True
     assert verify_password("old-var-loses", result.stdout.strip()) is False
 
 
-@pytest.mark.skipif(__import__('os').name == 'nt', reason='WinError 10106 on test environment subprocess')
+@pytest.mark.skipif(
+    __import__("os").name == "nt", reason="WinError 10106 on test environment subprocess"
+)
 def test_auth_handler_imports_cleanly_with_lunawave_admin_pass_set(tmp_path):
     """End-to-end regression check for the same bug: the actual consumer
     module must import without raising."""
-    env = {"PATH": __import__("os").environ.get("PATH", ""), "PYTHONPATH": str(REPO_ROOT),
-           "LUNAWAVE_BASE": str(tmp_path), "LUNAWAVE_ADMIN_PASS": "some-password"}
+    env = {
+        "PATH": __import__("os").environ.get("PATH", ""),
+        "PYTHONPATH": str(REPO_ROOT),
+        "LUNAWAVE_BASE": str(tmp_path),
+        "LUNAWAVE_ADMIN_PASS": "some-password",
+    }
     result = subprocess.run(
         [sys.executable, "-c", "import server.handlers.auth\nprint('import-ok')"],
-        cwd=str(REPO_ROOT), env=env, capture_output=True, text=True, timeout=15,
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
     assert "import-ok" in result.stdout

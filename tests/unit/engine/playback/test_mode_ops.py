@@ -11,18 +11,23 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
-from core.state import AppState, PlaybackMode, AudioOutput, PlayerStatus
+
+import pytest
+
 from core.event_bus import EventBus
+from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus
 from engine.playback.mode_ops import ModeOps
 from tests.fakes.fake_audio_player import FakeAudioPlayer
+
 
 class MockArtistSelector:
     def __init__(self):
         self.reset_rotation_called = False
+
     def reset_rotation(self):
         self.reset_rotation_called = True
+
 
 class MockRadioMode:
     def __init__(self):
@@ -31,6 +36,7 @@ class MockRadioMode:
 
     async def on_deactivated(self):
         self.deactivated = True
+
 
 @pytest.fixture
 def setup_mode_ops():
@@ -42,6 +48,7 @@ def setup_mode_ops():
     ops = ModeOps(state, bus, lock, mpv, radio_mode)
     return ops, state, mpv, radio_mode
 
+
 @pytest.mark.asyncio
 async def test_set_mode_to_radio(setup_mode_ops):
     ops, state, mpv, radio = setup_mode_ops
@@ -50,6 +57,7 @@ async def test_set_mode_to_radio(setup_mode_ops):
     assert should_activate is True
     assert state.playback_mode == PlaybackMode.RADIO
     assert state.status == PlayerStatus.LOADING
+
 
 @pytest.mark.asyncio
 async def test_set_mode_from_radio(setup_mode_ops):
@@ -63,6 +71,7 @@ async def test_set_mode_from_radio(setup_mode_ops):
     assert mpv.is_playing is False
     assert state.status == PlayerStatus.IDLE
 
+
 @pytest.mark.asyncio
 async def test_randomize_radio(setup_mode_ops):
     ops, state, mpv, radio = setup_mode_ops
@@ -73,6 +82,7 @@ async def test_randomize_radio(setup_mode_ops):
     assert seed == "Artist A"
     assert radio.artist_selector.reset_rotation_called is True
     assert state.status == PlayerStatus.LOADING
+
 
 @pytest.mark.asyncio
 async def test_set_output(setup_mode_ops):
@@ -86,6 +96,7 @@ async def test_set_output(setup_mode_ops):
     await ops.set_output(AudioOutput.DEVICE)
     assert state.audio_output == AudioOutput.DEVICE
     assert mpv.volume == 50
+
 
 @pytest.mark.asyncio
 async def test_toggle_sponsorblock(setup_mode_ops):

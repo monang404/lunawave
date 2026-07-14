@@ -15,7 +15,6 @@ Publishes:
 """
 
 from core.ports import AudioPlayerPort, MediaExtractorPort
-
 from tests.fakes.fake_audio_player import FakeAudioPlayer
 from tests.fakes.fake_media_extractor import FakeMediaExtractor
 
@@ -37,9 +36,16 @@ def test_real_database_implements_track_and_session_repository_ports():
     from cache.db import Database
 
     required = [
-        "upsert_track", "update_stream_url_only", "get_track", "increment_play_count",
-        "create_session", "verify_session", "delete_session", "cleanup_sessions",
-        "init", "close",
+        "upsert_track",
+        "update_stream_url_only",
+        "get_track",
+        "increment_play_count",
+        "create_session",
+        "verify_session",
+        "delete_session",
+        "cleanup_sessions",
+        "init",
+        "close",
     ]
     for name in required:
         assert hasattr(Database, name), f"Database missing {name}() required by DatabasePort"

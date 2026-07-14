@@ -36,7 +36,7 @@ Tidak ada modul yang diuji oleh lebih dari satu file test.
 | **Sedang** | Perlu fake/mock (port, socket, HTTP, subprocess) | `adapters/mpv/ipc.py`, `server/handlers/websocket.py` |
 | **Rendah** | Wiring/bootstrap — cukup smoke test | `server/app.py`, `main.py` |
 | **Manual** | GUI Tkinter atau side-effect global — cukup checklist QA | `launcher/gui/app.py`, `start.py` |
-| **Opsional** | Script one-off, ROI rendah | `scripts/export_to_sqlite.py` |
+| **Opsional** | Script one-off, ROI rendah | `automation/export_to_sqlite.py` |
 
 ---
 

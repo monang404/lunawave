@@ -17,9 +17,9 @@ Publishes:
     None
 """
 
-import pytest
 from config_security import generate_admin_password
 from core.security import verify_password
+
 
 def test_generate_admin_password():
     plain, hashed = generate_admin_password()

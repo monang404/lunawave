@@ -24,27 +24,24 @@ Thread Safety:
 """
 
 import asyncio
-import time
-import structlog
 from pathlib import Path
+
+import structlog
 from aiohttp import web
 
-from core.events import (
-    TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent, LyricsUpdatedEvent,
-    DownloadCompleteEvent, LogMessageEvent, TrackPauseChangedEvent
-)
-from core.task_utils import safe_create_task
-from server.serializers import state_to_dict
-from server.handlers.http import serve_index, health_check, serve_stream, serve_metrics
-from server.handlers.websocket import ws_handler, ConnectionManager
-from config import CACHE_DIR, STREAM_URL_TTL_SEC
-from core.ports import MediaExtractorPort, DatabasePort
+from core.ports import DatabasePort, MediaExtractorPort
 from engine.playback.controller import PlaybackController
+from server.connection_manager import ConnectionManager
+from server.handlers.http import health_check, serve_index, serve_metrics, serve_stream
+from server.handlers.websocket import ws_handler
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
-def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort) -> web.Application:
+
+def create_app(
+    playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort
+) -> web.Application:
     app = web.Application()
     manager = ConnectionManager()
 
@@ -56,9 +53,9 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     # Bug #9 fix: ClientSession sudah dibuat di main.py dan di-pass ke plugins.
     # Tidak perlu buat session baru di sini agar tidak ada resource leak.
 
-    from server.services.stream_prefetch import StreamPrefetchService
-    from server.services.broadcast_service import BroadcastService
     from server.handlers.event_listeners import setup_event_listeners
+    from server.services.broadcast_service import BroadcastService
+    from server.services.stream_prefetch import StreamPrefetchService
 
     prefetch_service = StreamPrefetchService(db, ytdlp)
     broadcast_service = BroadcastService(manager)
@@ -73,6 +70,7 @@ def create_app(playback_controller: PlaybackController, ytdlp: MediaExtractorPor
     app.router.add_static("/static", STATIC_DIR, name="static")
 
     return app
+
 
 async def run_server(app: web.Application, host: str = "0.0.0.0", port: int = 8765):
     runner = web.AppRunner(app)

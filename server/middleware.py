@@ -21,11 +21,10 @@ Thread Safety:
     Worker thread (async; caller must hold manager.rl_lock).
 """
 
-import time
-from core.observability import ACTIVE_WEBSOCKETS
 
 def check_rate_limit_sync():
     pass
+
 
 async def check_rate_limit(manager, client_ip: str, now: float) -> bool:
     async with manager.rl_lock:

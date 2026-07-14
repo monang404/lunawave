@@ -11,10 +11,12 @@ Publishes:
     None
 """
 
-import time
 import threading
+import time
 import webbrowser
-from launcher import process, network
+
+from launcher import network, process
+
 
 class ServerController:
     def __init__(self, app, base_dir):
@@ -31,22 +33,30 @@ class ServerController:
         process.kill_mpv()
 
         if network.check_port_in_use(port):
-            self.app._write_log(f"Port {port} is in use. Attempting to kill conflicting process...", "accent")
+            self.app._write_log(
+                f"Port {port} is in use. Attempting to kill conflicting process...", "accent"
+            )
             pid = network.get_pid_occupying_port(port)
             if pid:
                 process.kill_process_tree(pid)
                 time.sleep(1)
             if network.check_port_in_use(port):
-                self.app._write_log(f"Cannot start: Port {port} is still in use after kill attempt.", "err")
+                self.app._write_log(
+                    f"Cannot start: Port {port} is still in use after kill attempt.", "err"
+                )
                 self.app._refresh_status()
                 return
 
         self.app._write_log(f"Starting server on port {port}...", "accent")
 
-        self.app.server_process = process.ServerProcess(str(self.BASE_DIR), port, on_log=self.app._write_log)
+        self.app.server_process = process.ServerProcess(
+            str(self.BASE_DIR), port, on_log=self.app._write_log
+        )
         try:
             self.app.server_process.start()
-            self.app._write_log(f"Server process created — PID {self.app.server_process.process.pid}", "ok")
+            self.app._write_log(
+                f"Server process created — PID {self.app.server_process.process.pid}", "ok"
+            )
 
             # Start thread to poll port and show popup when server is fully ready
             threading.Thread(target=self.wait_for_server_ready, args=(port,), daemon=True).start()
@@ -70,15 +80,30 @@ class ServerController:
 
         if success:
             self.app._write_log(f"Server is fully active and listening on port {port}!", "ok")
+
             def _show_popup():
                 from launcher.gui.popups import show_server_ready_popup
-                show_server_ready_popup(self.app, port, self.app.BG, self.app.ACCENT, self.app.TEXT_1, self.app.TEXT_2, self.app.GREEN, self.app.BORDER, self.app.BG_CARD)
+
+                show_server_ready_popup(
+                    self.app,
+                    port,
+                    self.app.BG,
+                    self.app.ACCENT,
+                    self.app.TEXT_1,
+                    self.app.TEXT_2,
+                    self.app.GREEN,
+                    self.app.BORDER,
+                    self.app.BG_CARD,
+                )
+
             self.app.after(0, _show_popup)
         else:
             if not self.app._is_running():
                 self.app._write_log("Server process terminated unexpectedly.", "err")
             else:
-                self.app._write_log("Server failed to respond on port in time (120s timeout).", "err")
+                self.app._write_log(
+                    "Server failed to respond on port in time (120s timeout).", "err"
+                )
 
     def on_stop(self):
         if not self.app._is_running():
@@ -98,12 +123,14 @@ class ServerController:
 
     def on_restart(self):
         self.app._write_log("Restarting...", "accent")
+
         def _do():
             if self.app._is_running():
                 if self.app.server_process:
                     self.app.server_process.stop()
             time.sleep(0.8)
             self.app.after(0, self.on_start)
+
         threading.Thread(target=_do, daemon=True).start()
 
     def on_open(self):

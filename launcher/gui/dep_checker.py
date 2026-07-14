@@ -14,6 +14,7 @@ Publishes:
 import importlib.util
 import shutil
 
+
 class DependencyChecker:
     def check_dependencies(self) -> tuple[list[str], bool]:
         deps = {
@@ -23,7 +24,7 @@ class DependencyChecker:
             "syncedlyrics": "syncedlyrics",
             "structlog": "structlog",
             "prometheus_client": "prometheus_client",
-            "opentelemetry": "opentelemetry"
+            "opentelemetry": "opentelemetry",
         }
         missing = []
         for label, import_name in deps.items():

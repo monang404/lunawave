@@ -1,20 +1,20 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-13
+last_verified: 2026-07-14
 generated: true
-note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — JANGAN edit manual.
+note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
 
 # FILE_INDEX.md — LunaWave File Inventory
 
-> ⚙️ File ini di-generate otomatis oleh `scripts/generate_file_index.py`.
+> ⚙️ File ini di-generate otomatis oleh `automation/generate_file_index.py`.
 > **Jangan edit manual** — perubahan akan ditimpa saat script dijalankan berikutnya.
-> Jalankan `python scripts/generate_file_index.py` setelah ada file/class/fungsi yang berubah.
+> Jalankan `python automation/generate_file_index.py` setelah ada file/class/fungsi yang berubah.
 >
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-13 oleh `scripts/generate_file_index.py`
+> **Auto-generated:** 2026-07-14 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -868,6 +868,19 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 ---
 
 
+## data/
+
+**File:** `data/export_to_sqlite.py`
+**Fungsi:** Export artist, genre, and song data from a JSON file into a SQLite DB.
+**Class:** —
+**Function utama:** `create_tables()`, `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+
 ## scratch/
 
 **File:** `scratch/check_db.py`
@@ -876,6 +889,26 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 **Function utama:** `main()`
 **Digunakan oleh:** —
 **Menggunakan:** `cache/db`, `core/state`
+
+
+---
+
+**File:** `scratch/cleanup_tests.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** —
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `scratch/fix_docs.py`
+**Fungsi:** Provide fix_docs.py functionality.
+**Class:** —
+**Function utama:** `fix_docstrings()`
+**Digunakan oleh:** —
+**Menggunakan:** —
 
 
 ---
@@ -890,27 +923,258 @@ note: Isi file ini di-generate otomatis oleh scripts/generate_file_index.py — 
 
 ---
 
+**File:** `scratch/fix_failing_tests.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** `write_test()`
+**Digunakan oleh:** —
+**Menggunakan:** —
 
-## ⚠️ File Besar (>200 baris)
+
+---
+
+**File:** `scratch/fix_imports.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** `write_test()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `scratch/generate_tests.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** `write_test()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+
+## automation/
+
+**File:** `automation/architecture_lint.py`
+**Fungsi:** Validate inter-layer import boundaries against the architecture rules defined in docs/architecture/dependency_rules.md.
+**Class:** —
+**Function utama:** `path_to_layer()`, `module_to_layer()`, `check_file()`, `scan_project()`, `collect_results()`, `render_text()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/doctor.py`
+**Fungsi:** Orchestrate all registered health checkers and display a consolidated project health dashboard with aggregate scores.
+**Class:** —
+**Function utama:** `section()`, `run_checker_json()`, `run_all_checkers()`, `render_checker()`, `print_summary()`, `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/find_owner.py`
+**Fungsi:** Display ownership, dependencies, and impact radius of a given module, class, or function name.
+**Class:** —
+**Function utama:** `collect_py_files()`, `extract_info()`, `find_all_classes_and_functions()`, `build_reverse_index()`, `read_status_for_file()`, `resolve_target()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/generate_file_index.py`
+**Fungsi:** Generate and inject an auto-produced file index section into docs/FILE_INDEX.md based on AST analysis of all Python source files.
+**Class:** —
+**Function utama:** `extract_purpose()`, `extract_module_info()`, `collect_py_files()`, `build_reverse_index()`, `format_file_entry()`, `build_generated_block()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/generate_report.py`
+**Fungsi:** Generate and inject project statistics into the <!-- BEGIN:GENERATED --> block of docs/REPORT.md.
+**Class:** —
+**Function utama:** `count_files_by_ext()`, `count_py_files()`, `count_folders()`, `count_classes_and_functions()`, `count_lines()`, `count_js_files()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/run_all.py`
+**Fungsi:** Run all documentation generators and the project health check in a single command.
+**Class:** —
+**Function utama:** `run()`, `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/shared/arch_rules.py`
+**Fungsi:** Auto-generated module docstring.
+**Class:** `Violation`
+**Function utama:** `to_dict()`, `is_known()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/shared/check_result.py`
+**Fungsi:** Define the CheckResult dataclass and generic weighted-scoring helpers shared by all LunaWave health checker scripts.
+**Class:** `CheckResult`
+**Function utama:** `count()`, `percentage()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/shared/constants.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** —
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/shared/generated_block.py`
+**Fungsi:** Provide replace_marker_block() to update <!-- BEGIN/END:GENERATED --> sections in Markdown files.
+**Class:** —
+**Function utama:** `replace_marker_block()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/shared/skip_dirs.py`
+**Fungsi:** Define SKIP_DIRS and walk_py_files() used by all scanner scripts to exclude non-source directories from file system traversal.
+**Class:** —
+**Function utama:** `walk_py_files()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs.py`
+**Fungsi:** Orchestrate all documentation health checks and report results as a human-readable summary or a structured JSON payload.
+**Class:** —
+**Function utama:** `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs/checks_coverage.py`
+**Fungsi:** Implement FILE_INDEX sync, REPORT validation, module docstring coverage, and overall documentation coverage checks for verify_docs.
+**Class:** —
+**Function utama:** `check_file_index()`, `check_report()`, `check_module_docstrings()`, `check_documentation_coverage()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs/checks_docs.py`
+**Fungsi:** Implement documentation structure, PATCHLOG integrity, frontmatter validity, and generated-marker pair checks for verify_docs.
+**Class:** —
+**Function utama:** `check_docs_structure()`, `check_patchlog()`, `check_frontmatter()`, `check_generated_blocks()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs/checks_files.py`
+**Fungsi:** Implement large-file and empty-package checks for verify_docs.
+**Class:** —
+**Function utama:** `check_large_files()`, `check_empty_packages()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs/helpers.py`
+**Fungsi:** Provide shared constants, regex patterns, and I/O/filesystem utilities for all verify_docs sub-modules.
+**Class:** —
+**Function utama:** `read_text()`, `parse_frontmatter()`, `collect_py_files()`, `count_lines()`, `get_module_docstring()`, `fmt_items()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_docs/render.py`
+**Fungsi:** Render verify_docs check results as a human-readable terminal summary or a structured JSON report matching the checker contract.
+**Class:** —
+**Function utama:** `render_summary()`, `render_json()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_security.py`
+**Fungsi:** Verify that sensitive files are listed in .gitignore to prevent accidental credential or database commits.
+**Class:** —
+**Function utama:** `check_credential_ignore()`, `check_db_files_ignore()`, `render_summary()`, `render_json()`, `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `automation/verify_structure.py`
+**Fungsi:** Validate project structure health: oversized Python files and unimplemented stub items tracked in STATUS.md.
+**Class:** —
+**Function utama:** `check_big_files()`, `check_pending_items()`, `render_summary()`, `render_json()`, `main()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+
+## ⚠️ File Besar (>300 baris)
 
 
 | File | Baris | Catatan |
 |---|---|---|
 
-| `engine/playback/controller.py` | 346 | Perhatikan |
+| `automation/generate_file_index.py` | 349 | Perlu dipecah |
 
-| `launcher/gui/ui_builder.py` | 266 | Perhatikan |
+| `engine/playback/controller.py` | 346 | Perlu dipecah |
 
-| `main.py` | 266 | Perhatikan |
+| `automation/architecture_lint.py` | 345 | Perlu dipecah |
 
-| `launcher/gui/app.py` | 255 | Perhatikan |
+| `automation/find_owner.py` | 302 | Perlu dipecah |
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**81/81** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**101/106** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-_(semua file sudah terdokumentasi 🎉)_
+- [ ] `automation/shared/constants.py`
+
+- [ ] `scratch/cleanup_tests.py`
+
+- [ ] `scratch/fix_failing_tests.py`
+
+- [ ] `scratch/fix_imports.py`
+
+- [ ] `scratch/generate_tests.py`
 
 <!-- END:GENERATED -->

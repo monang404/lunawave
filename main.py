@@ -25,24 +25,22 @@ Publishes:
 """
 
 import asyncio
-import logging
-import structlog
 import stat
-import sys
-import aiohttp
-from logging.handlers import RotatingFileHandler
-from core.log_config import setup_logging
-from core.state import AppState, PlayerStatus, AudioOutput
-from core.event_bus import bus
-from engine.ytdlp_client import YtDlpClient
-from engine.mpv_controller import MpvController
-from cache.db import Database
-from engine.download_manager import DownloadManager
-from engine.command_router import CommandRouter
-from plugins.notifications import TermuxNowPlaying
-from core.task_utils import safe_create_task
 
+import aiohttp
+import structlog
+
+from cache.db import Database
 from config import BASE_DIR, WEB_HOST, WEB_PORT
+from core.event_bus import bus
+from core.log_config import setup_logging
+from core.state import AppState, AudioOutput, PlayerStatus
+from core.task_utils import safe_create_task
+from engine.command_router import CommandRouter
+from engine.download_manager import DownloadManager
+from engine.mpv_controller import MpvController
+from engine.ytdlp_client import YtDlpClient
+from plugins.notifications import TermuxNowPlaying
 
 setup_logging()
 
@@ -52,8 +50,9 @@ try:
 except OSError:
     pass
 
+from plugins.lyrics_fetcher import LyricsFetcher
 from plugins.sponsorblock import SponsorBlockHandler
-from plugins.lyrics import LyricsFetcher
+
 
 async def main():
     state = AppState()
@@ -88,32 +87,27 @@ async def main():
     http_session = aiohttp.ClientSession()
 
     # 4. Global Services Initialization
+    from cache.resolver import CacheResolver
+    from engine.playback.controller import PlaybackController
     from engine.queue_manager import QueueMode
     from engine.radio_engine import RadioMode
     from engine.volume_service import VolumeService
-    from engine.playback.controller import PlaybackController
-    from cache.resolver import CacheResolver
 
     resolver = CacheResolver(db, ytdlp)
 
-    sponsorblock = SponsorBlockHandler(
-        mpv, state=state, session=http_session, event_bus=bus
-    )
-    lyrics_fetcher = LyricsFetcher(
-        state, session=http_session, event_bus=bus
-    )
+    sponsorblock = SponsorBlockHandler(mpv, state=state, session=http_session, event_bus=bus)
+    lyrics_fetcher = LyricsFetcher(state, session=http_session, event_bus=bus)
 
     queue_mode = QueueMode()
     radio_mode = RadioMode(ytdlp, state, db=db)
 
     volume_service = VolumeService(bus, mpv, state)
     playback_controller = PlaybackController(
-        bus, state, mpv, resolver,
-        sponsorblock, lyrics_fetcher, queue_mode, radio_mode
+        bus, state, mpv, resolver, sponsorblock, lyrics_fetcher, queue_mode, radio_mode
     )
 
-    download_manager = DownloadManager(bus, state, ytdlp)
-    command_router = CommandRouter(playback_controller, volume_service)
+    DownloadManager(bus, state, ytdlp)
+    CommandRouter(playback_controller, volume_service)
 
     # Termux now-playing notification (no-op outside Termux)
     nowplaying = TermuxNowPlaying(bus, state)
@@ -125,10 +119,10 @@ async def main():
             try:
                 async with http_session.get(
                     "https://connectivitycheck.gstatic.com/generate_204",
-                    timeout=aiohttp.ClientTimeout(total=3)
+                    timeout=aiohttp.ClientTimeout(total=3),
                 ) as r:
-                    state.is_online = (r.status == 204)
-            except (aiohttp.ClientError, asyncio.TimeoutError):
+                    state.is_online = r.status == 204
+            except (TimeoutError, aiohttp.ClientError):
                 state.is_online = False
             except Exception as e:
                 structlog.get_logger(__name__).warning(f"Connectivity check unexpected error: {e}")
@@ -145,26 +139,38 @@ async def main():
         try:
             deleted = await db.evict_stale_tracks()
             if deleted:
-                structlog.get_logger(__name__).info(f"DB maintenance (awal): {deleted} track stale dihapus")
+                structlog.get_logger(__name__).info(
+                    f"DB maintenance (awal): {deleted} track stale dihapus"
+                )
         except Exception as e:
-            structlog.get_logger(__name__).warning(f"DB maintenance awal (evict_stale_tracks) gagal: {e}")
+            structlog.get_logger(__name__).warning(
+                f"DB maintenance awal (evict_stale_tracks) gagal: {e}"
+            )
         try:
             await db.cleanup_sessions()
         except Exception as e:
-            structlog.get_logger(__name__).warning(f"DB maintenance awal (cleanup_sessions) gagal: {e}")
+            structlog.get_logger(__name__).warning(
+                f"DB maintenance awal (cleanup_sessions) gagal: {e}"
+            )
 
         while True:
             await asyncio.sleep(6 * 3600)  # tiap 6 jam
             try:
                 deleted = await db.evict_stale_tracks()
                 if deleted:
-                    structlog.get_logger(__name__).info(f"DB maintenance: {deleted} track stale dihapus")
+                    structlog.get_logger(__name__).info(
+                        f"DB maintenance: {deleted} track stale dihapus"
+                    )
             except Exception as e:
-                structlog.get_logger(__name__).warning(f"DB maintenance (evict_stale_tracks) gagal: {e}")
+                structlog.get_logger(__name__).warning(
+                    f"DB maintenance (evict_stale_tracks) gagal: {e}"
+                )
             try:
                 await db.cleanup_sessions()
             except Exception as e:
-                structlog.get_logger(__name__).warning(f"DB maintenance (cleanup_sessions) gagal: {e}")
+                structlog.get_logger(__name__).warning(
+                    f"DB maintenance (cleanup_sessions) gagal: {e}"
+                )
 
     tasks.append(safe_create_task(db_maintenance(), name="db_maintenance"))
 
@@ -172,19 +178,29 @@ async def main():
     async def mpv_reconnect_checker():
         while True:
             await asyncio.sleep(30)  # 5→30 det: reconnect check cukup sekali per 30 detik
-            if getattr(mpv, "is_available", True) and not getattr(mpv, "is_connected", False) and state.status != PlayerStatus.ERROR:
-                structlog.get_logger(__name__).warning(f"MPV terputus! Mencoba reconnect...")
+            if (
+                getattr(mpv, "is_available", True)
+                and not getattr(mpv, "is_connected", False)
+                and state.status != PlayerStatus.ERROR
+            ):
+                structlog.get_logger(__name__).warning("MPV terputus! Mencoba reconnect...")
                 try:
                     await mpv.close()
                 except Exception:
                     pass
                 try:
                     await mpv.connect()
-                    if state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED) and state.current_track:
+                    if (
+                        state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED)
+                        and state.current_track
+                    ):
                         uri = await resolver.resolve(state.current_track)
                         await mpv.play(uri)
                         await mpv.seek(state.position)
-                        if getattr(state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
+                        if (
+                            getattr(state, "audio_output", AudioOutput.DEVICE)
+                            == AudioOutput.BROWSER
+                        ):
                             await mpv.set_volume(0)
                         else:
                             await mpv.set_volume(state.volume)
@@ -205,6 +221,7 @@ async def main():
         port = WEB_PORT
 
         import socket
+
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
@@ -215,19 +232,20 @@ async def main():
 
         url_client = f"http://{display_host}:{port}"
         url_admin = f"http://{display_host}:{port}/admin"
-        print(f"=====================================================")
-        print(f"|   LunaWave Web Server                             |")
+        print("=====================================================")
+        print("|   LunaWave Web Server                             |")
         print(f"|   Client : {url_client:<37} |")
         print(f"|   Admin  : {url_admin:<37} |")
 
-        from config import ADMIN_USERNAME, ADMIN_PASSWORD, IS_PASSWORD_AUTO_GENERATED
+        from config import ADMIN_PASSWORD, ADMIN_USERNAME, IS_PASSWORD_AUTO_GENERATED
+
         if IS_PASSWORD_AUTO_GENERATED:
-            print(f"|                                                   |")
-            print(f"|   Kredensial Mode Admin:                          |")
+            print("|                                                   |")
+            print("|   Kredensial Mode Admin:                          |")
             print(f"|   User: {ADMIN_USERNAME:<40} |")
             print(f"|   Pass: {ADMIN_PASSWORD:<40} |")
-            print(f"|   (Tersimpan: cache/admin_password.txt)           |")
-        print(f"=====================================================")
+            print("|   (Tersimpan: cache/admin_password.txt)           |")
+        print("=====================================================")
 
         await run_server(app, host=host, port=port)
 
@@ -235,11 +253,14 @@ async def main():
         pass
     finally:
         import traceback
+
         for t in tasks:
             if t.done() and not t.cancelled():
                 e = t.exception()
                 if e:
-                    structlog.get_logger(__name__).error(f"Task {t.get_coro().__name__} crashed: {e}")
+                    structlog.get_logger(__name__).error(
+                        f"Task {t.get_coro().__name__} crashed: {e}"
+                    )
                     print(f"\n[FATAL ERROR] App crashed due to task failure: {e}")
                     traceback.print_exception(type(e), e, e.__traceback__)
 
@@ -249,8 +270,10 @@ async def main():
 
         # Cleanup resources
         await nowplaying.cleanup()
-        try: await mpv.close()
-        except: pass
+        try:
+            await mpv.close()
+        except:
+            pass
         lyrics_fetcher.cleanup()
         sponsorblock.cleanup()
         ytdlp.cancel_download()
@@ -258,6 +281,7 @@ async def main():
         await db.close()
 
         structlog.get_logger(__name__).info("Shutdown complete.")
+
 
 if __name__ == "__main__":
     try:

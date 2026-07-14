@@ -11,6 +11,7 @@ Publishes:
     None
 """
 
+
 async def test_get_genre_artists_returns_only_artists_in_that_genre(db):
     await db.conn.execute("INSERT INTO artists (id, nama) VALUES (1, 'Rock Artist')")
     await db.conn.execute("INSERT INTO artists (id, nama) VALUES (2, 'Jazz Artist')")

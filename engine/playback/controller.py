@@ -26,19 +26,30 @@ Thread Safety:
 """
 
 import asyncio
+
 import structlog
+
 from core.event_bus import EventBus
-from core.events import TrackEndedEvent, TrackProgressEvent, TrackStartedEvent, LogMessageEvent, QueueUpdatedEvent, TrackPauseChangedEvent, TrackDurationEvent
-from core.state import AppState, PlayerStatus, PlaybackMode, AudioOutput, TrackInfo
+from core.events import (
+    LogMessageEvent,
+    QueueUpdatedEvent,
+    TrackDurationEvent,
+    TrackEndedEvent,
+    TrackPauseChangedEvent,
+    TrackProgressEvent,
+    TrackStartedEvent,
+)
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
+from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
+from core.task_utils import safe_create_task
+from engine.playback.mode_ops import ModeOps
+from engine.playback.queue_ops import QueueOps
+from engine.playback.track_loader import TrackLoader
 from engine.queue_manager import QueueMode
 from engine.radio_engine import RadioMode
-from core.task_utils import safe_create_task
-from engine.playback.track_loader import TrackLoader
-from engine.playback.queue_ops import QueueOps
-from engine.playback.mode_ops import ModeOps
 
 logger = structlog.get_logger(__name__)
+
 
 class PlaybackController:
     def __init__(
@@ -50,7 +61,7 @@ class PlaybackController:
         sponsorblock: SponsorBlockProvider,
         lyrics_fetcher: LyricsProvider,
         queue_mode: QueueMode,
-        radio_mode: RadioMode
+        radio_mode: RadioMode,
     ):
         self.bus = bus
         self.state = state
@@ -79,7 +90,10 @@ class PlaybackController:
             if self.state.current_track:
                 self.state.current_track.duration = int(event.duration)
                 # Simpan metadata durasi ke database agar cache berikutnya sudah tahu durasinya
-                safe_create_task(self.resolver.db.upsert_track(self.state.current_track), name="upsert_track_duration")
+                safe_create_task(
+                    self.resolver.db.upsert_track(self.state.current_track),
+                    name="upsert_track_duration",
+                )
             await self.bus.publish(QueueUpdatedEvent())
 
     async def play_track(self, track: TrackInfo):
@@ -114,7 +128,9 @@ class PlaybackController:
                 if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
                     # BACKEND-FIX-01: Pastikan mpv silent di browser mode.
                     await self.mpv.set_volume(0)
-                    await self.bus.publish(LogMessageEvent(message="Audio output is browser, mpv silent (volume=0)."))
+                    await self.bus.publish(
+                        LogMessageEvent(message="Audio output is browser, mpv silent (volume=0).")
+                    )
                 else:
                     await self.mpv.set_volume(self.state.volume)
 
@@ -136,14 +152,22 @@ class PlaybackController:
                 logger.error(f"Failed to play track {track.title}: {e}", exc_info=True)
                 self.state.status = PlayerStatus.ERROR
                 self.state.error_msg = f"Error: {e}"
-                await self.bus.publish(LogMessageEvent(message=f"Gagal memutar lagu: {track.title} | {type(e).__name__}: {str(e)}"))
+                await self.bus.publish(
+                    LogMessageEvent(
+                        message=f"Gagal memutar lagu: {track.title} | {type(e).__name__}: {str(e)}"
+                    )
+                )
 
                 self._retry_count += 1
                 if self._retry_count >= 3:
-                    await self.bus.publish(LogMessageEvent(message="Terlalu banyak kegagalan beruntun. Pemutaran dihentikan."))
+                    await self.bus.publish(
+                        LogMessageEvent(
+                            message="Terlalu banyak kegagalan beruntun. Pemutaran dihentikan."
+                        )
+                    )
                     self._retry_count = 0
                 else:
-                    backoff = 2 ** self._retry_count
+                    backoff = 2**self._retry_count
                     await asyncio.sleep(backoff)
                     # Ensure we don't call _on_next if we are no longer trying to play this track
                     if self.state.current_track == track:
@@ -155,7 +179,9 @@ class PlaybackController:
                         # permanen: pemegang lock (frame ini) menunggu panggilan yang menunggu
                         # lock yang sama. Jadikan fire-and-forget agar play_track() langsung
                         # selesai & melepas lock dulu, baru _advance_to_next() jalan di task lain.
-                        safe_create_task(self._advance_to_next(), name=f"advance_after_failure_{track.video_id}")
+                        safe_create_task(
+                            self._advance_to_next(), name=f"advance_after_failure_{track.video_id}"
+                        )
 
     async def _poll_duration(self, track: TrackInfo):
         # Tunggu stream loading
@@ -166,7 +192,9 @@ class PlaybackController:
         if dur > 0:
             self.state.duration = dur
             track.duration = int(dur)
-            safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
+            safe_create_task(
+                self.resolver.db.upsert_track(track), name="upsert_track_duration_poll"
+            )
             await self.bus.publish(QueueUpdatedEvent())
         else:
             # Coba sekali lagi setelah 5 detik
@@ -176,7 +204,9 @@ class PlaybackController:
                 if dur > 0:
                     self.state.duration = dur
                     track.duration = int(dur)
-                    safe_create_task(self.resolver.db.upsert_track(track), name="upsert_track_duration_poll")
+                    safe_create_task(
+                        self.resolver.db.upsert_track(track), name="upsert_track_duration_poll"
+                    )
                     await self.bus.publish(QueueUpdatedEvent())
 
     async def _on_cmd_play_track(self, track: TrackInfo):
@@ -204,7 +234,9 @@ class PlaybackController:
             # (next/restart track). Abaikan jika sedang dalam proses loading lagu baru,
             # karena ini bukan "user stop" — melainkan peralihan antar track.
             if self._loading:
-                logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition (loadfile replace)")
+                logger.info(
+                    "[AUTOPLAY] Ignoring end-file 'stop' during track transition (loadfile replace)"
+                )
                 return
             # Intentional stop — sync server state ke IDLE
             if self.state.status not in (PlayerStatus.IDLE,):
@@ -228,7 +260,11 @@ class PlaybackController:
 
     async def _on_cmd_toggle_pause(self, _data=None):
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
-            new_status = PlayerStatus.PAUSED if self.state.status == PlayerStatus.PLAYING else PlayerStatus.PLAYING
+            new_status = (
+                PlayerStatus.PAUSED
+                if self.state.status == PlayerStatus.PLAYING
+                else PlayerStatus.PLAYING
+            )
             self.state.status = new_status
             # FIX-POSITION-DRIFT-01: self.state.position cuma diupdate lewat
             # TrackProgressEvent, yang di mpv_controller di-throttle max 1x/detik.
@@ -245,13 +281,20 @@ class PlaybackController:
             )
             if actual_pos:
                 self.state.position = actual_pos
-            await self.bus.publish(TrackPauseChangedEvent(is_paused=(new_status == PlayerStatus.PAUSED)))
+            await self.bus.publish(
+                TrackPauseChangedEvent(is_paused=(new_status == PlayerStatus.PAUSED))
+            )
 
     async def _on_next(self, data=None):
         async with self._lock:
             if data and isinstance(data, dict) and "video_id" in data:
-                if not self.state.current_track or self.state.current_track.video_id != data["video_id"]:
-                    logger.info(f"Ignoring skip: requested {data['video_id']} != current {getattr(self.state.current_track, 'video_id', None)}")
+                if (
+                    not self.state.current_track
+                    or self.state.current_track.video_id != data["video_id"]
+                ):
+                    logger.info(
+                        f"Ignoring skip: requested {data['video_id']} != current {getattr(self.state.current_track, 'video_id', None)}"
+                    )
                     return
             await self._advance_to_next()
 
@@ -317,14 +360,17 @@ class PlaybackController:
         should_fetch, seed = await self._mode_ops.randomize_radio(data)
         if should_fetch:
             from core.task_utils import safe_create_task
+
             safe_create_task(
                 self.radio_mode._fetch_and_play_initial(self, seed_artist=seed),
-                name="radio_randomize_fetch"
+                name="radio_randomize_fetch",
             )
 
     async def _on_pause_changed(self, event: TrackPauseChangedEvent):
         if self._loading:
-            logger.info(f"[PAUSE] Ignoring pause-changed (is_paused={event.is_paused}) during track load")
+            logger.info(
+                f"[PAUSE] Ignoring pause-changed (is_paused={event.is_paused}) during track load"
+            )
             return
         if event.is_paused:
             if self.state.status == PlayerStatus.PLAYING:
@@ -343,4 +389,5 @@ class PlaybackController:
         offset = data.get("offset", 0.0)
         self.state.lyrics_offset = float(offset)
         from core.events import LyricsUpdatedEvent
+
         await self.bus.publish(LyricsUpdatedEvent())

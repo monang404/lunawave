@@ -15,7 +15,7 @@ Publishes:
 
 import pytest
 
-from core.command_bus import CommandBus, CMD_PLAY_TRACK, CMD_QUIT, command_bus
+from core.command_bus import CMD_PLAY_TRACK, CMD_QUIT, CommandBus, command_bus
 
 
 def test_register_and_execute_sync_handler():
@@ -28,6 +28,7 @@ def test_register_and_execute_sync_handler():
         result = await bus.execute("cmd.echo", "hello")
 
     import asyncio
+
     asyncio.run(run())
     assert result == "hello"
 
@@ -100,7 +101,8 @@ def test_command_constants_are_unique_strings():
     from core import command_bus as module
 
     constants = [
-        value for name, value in vars(module).items()
+        value
+        for name, value in vars(module).items()
         if name.startswith("CMD_") and isinstance(value, str)
     ]
     assert len(constants) >= 15

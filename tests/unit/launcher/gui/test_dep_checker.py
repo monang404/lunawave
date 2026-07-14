@@ -11,8 +11,8 @@ Publishes:
     None
 """
 
-import pytest
 from launcher.gui.dep_checker import DependencyChecker
+
 
 def test_check_dependencies(monkeypatch):
     checker = DependencyChecker()
@@ -26,7 +26,9 @@ def test_check_dependencies(monkeypatch):
     monkeypatch.setattr("importlib.util.find_spec", mock_find_spec)
 
     # Temporarily override deps mapping for testing
-    monkeypatch.setattr(checker.__class__, "check_dependencies", lambda self: (["missing_pkg"], True))
+    monkeypatch.setattr(
+        checker.__class__, "check_dependencies", lambda self: (["missing_pkg"], True)
+    )
 
     missing, mpv_ok = checker.check_dependencies()
     assert "missing_pkg" in missing

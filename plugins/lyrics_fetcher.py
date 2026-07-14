@@ -22,26 +22,28 @@ Thread Safety:
     Worker thread (async; _current_generation guards stale fetch results).
 """
 
-import re
-import structlog
-import aiohttp
-import bisect
 import asyncio
-from contextlib import asynccontextmanager
+import re
+
+import aiohttp
+import structlog
+
 from config import LYRICS_API_BASE
 from core.event_bus import EventBus
-from core.events import LyricsUpdatedEvent, TrackProgressEvent
+from core.events import LyricsUpdatedEvent
 
 logger = structlog.get_logger(__name__)
 
 from core.state import TrackInfo
+
 
 class LyricsFetcher:
     """
     MED-01 fix: Accepts a shared aiohttp session.
     LOW-07 fix: Strips timestamp prefixes from displayed lyrics.
     """
-    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):
+
+    def __init__(self, state, session: aiohttp.ClientSession = None, event_bus: EventBus = None):  # type: ignore
         self.state = state
         self.lyrics_data: list[tuple[float, str]] = []
         self._session = session
@@ -51,9 +53,11 @@ class LyricsFetcher:
         # TASK-3.4: Injected per-room bus (fallback ke global jika belum direfactor)
         if event_bus is None:
             from core.event_bus import bus as _global_bus
+
             event_bus = _global_bus
         self._bus = event_bus
         from plugins.lyrics_sync import LyricsSync
+
         self._sync = LyricsSync(self.state, self._bus)
 
     def _get_session(self) -> aiohttp.ClientSession:
@@ -67,6 +71,7 @@ class LyricsFetcher:
         self._sync.cleanup()
         if self._owns_session and self._session and not self._session.closed:
             import asyncio as _asyncio
+
             try:
                 loop = _asyncio.get_event_loop()
                 if loop.is_running():
@@ -102,29 +107,48 @@ class LyricsFetcher:
                 params_get = {"track_name": title, "artist_name": artist, "duration": duration}
                 lrc = None
 
-                async with session.get(url_get, params=params_get, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                async with session.get(
+                    url_get,
+                    params=params_get,
+                    timeout=aiohttp.ClientTimeout(total=5),  # type: ignore
+                ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         lrc = data.get("syncedLyrics") or data.get("plainLyrics", "")
 
                 # Bersihkan judul secara umum (karena info dari YouTube sering kotor)
-                clean_title = re.sub(r'[\(\[].*?[\)\]]', '', title)
-                for kw in ['official', 'music video', 'lyric', 'lyrics', 'audio', 'video', 'mv', 'hq']:
-                    clean_title = re.sub(rf'\b{kw}s?\b', '', clean_title, flags=re.IGNORECASE)
-                clean_title = re.sub(r'\s+', ' ', clean_title).strip('- ')
+                clean_title = re.sub(r"[\(\[].*?[\)\]]", "", title)
+                for kw in [
+                    "official",
+                    "music video",
+                    "lyric",
+                    "lyrics",
+                    "audio",
+                    "video",
+                    "mv",
+                    "hq",
+                ]:
+                    clean_title = re.sub(rf"\b{kw}s?\b", "", clean_title, flags=re.IGNORECASE)
+                clean_title = re.sub(r"\s+", " ", clean_title).strip("- ")
 
                 # Buat search query yang lebih bersih
                 if "-" in title:
                     search_query = clean_title
                 else:
-                    search_query = f"{clean_title} {artist}" if artist and artist.lower() not in ["unknown", "topic"] else clean_title
+                    search_query = (
+                        f"{clean_title} {artist}"
+                        if artist and artist.lower() not in ["unknown", "topic"]
+                        else clean_title
+                    )
 
                 # 2. Jika gagal karena durasi tidak persis sama (sering terjadi di YouTube), gunakan fallback search
                 if not lrc:
                     url_search = f"{LYRICS_API_BASE}/search"
                     params_search = {"q": search_query}
 
-                    async with session.get(url_search, params=params_search, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    async with session.get(
+                        url_search, params=params_search, timeout=aiohttp.ClientTimeout(total=5)
+                    ) as resp:
                         if resp.status == 200:
                             results = await resp.json()
                             if isinstance(results, list):
@@ -135,19 +159,25 @@ class LyricsFetcher:
 
             # 3. Ultimate Fallback: gunakan pustaka syncedlyrics untuk mencari di Musixmatch, NetEase, dll.
             if not lrc:
-                logger.info("lrclib failed. Falling back to syncedlyrics (Musixmatch/NetEase/etc)...")
+                logger.info(
+                    "lrclib failed. Falling back to syncedlyrics (Musixmatch/NetEase/etc)..."
+                )
                 logger.info(f"syncedlyrics query: {search_query}")
                 import syncedlyrics  # lazy import — modul besar, hanya dipakai di fallback terakhir ini
+
                 loop = asyncio.get_running_loop()
                 try:
-                    lrc = await asyncio.wait_for(loop.run_in_executor(None, syncedlyrics.search, search_query), timeout=5.0)
-                except asyncio.TimeoutError:
+                    lrc = await asyncio.wait_for(
+                        loop.run_in_executor(None, syncedlyrics.search, search_query), timeout=5.0
+                    )
+                except TimeoutError:
                     logger.warning("syncedlyrics timeout (5.0s)")
                     lrc = None
 
             if self._current_generation == gen:
                 if lrc:
                     from plugins.lyrics_parser import LyricsParser
+
                     self.lyrics_data = LyricsParser.parse_lrc(lrc)
                     # LOW-07 fix: Store CLEAN lines (no timestamps) for display
                     self.state.lyrics_lines = [text for _, text in self.lyrics_data]

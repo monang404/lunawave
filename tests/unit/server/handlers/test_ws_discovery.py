@@ -1,7 +1,10 @@
-import pytest
 import json
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from server.handlers.ws_discovery import handle_discovery_command
+
 
 @pytest.mark.asyncio
 async def test_handle_discovery_command_search():
@@ -19,6 +22,7 @@ async def test_handle_discovery_command_search():
     sent_data = json.loads(mock_ws.send_str.call_args[0][0])
     assert sent_data["type"] == "search_results"
     assert sent_data["data"] == [{"title": "Test"}]
+
 
 @pytest.mark.asyncio
 @patch("server.handlers.ws_discovery.DiscoverService")

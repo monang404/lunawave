@@ -12,10 +12,12 @@ Publishes:
     None
 """
 
-from core.state import AppState, TrackInfo
 import logging
 
+from core.state import AppState, TrackInfo
+
 _log = logging.getLogger(__name__)
+
 
 class TrackFilter:
     def __init__(self, state: AppState):
@@ -40,11 +42,11 @@ class TrackFilter:
             exclude_ids.add(t.video_id)
 
         history_list = list(self.state.history)
-        for t in history_list[-self.max_history_check:]:
+        for t in history_list[-self.max_history_check :]:
             exclude_ids.add(t.video_id)
 
         # Build current artist quota from the queue
-        artist_counts = {}
+        artist_counts = {}  # type: ignore
         for t in self.state.radio_queue:
             artist_counts[t.artist] = artist_counts.get(t.artist, 0) + 1
 

@@ -12,10 +12,13 @@ Publishes:
 """
 
 import time
+
 import structlog
+
 from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
+
 
 class TrackRepository:
     def __init__(self, conn):
@@ -47,7 +50,9 @@ class TrackRepository:
                 is_favorite=is_fav,
             )
 
-    async def upsert_track(self, track: TrackInfo, stream_url: str | None = None, local_path: str | None = None):
+    async def upsert_track(
+        self, track: TrackInfo, stream_url: str | None = None, local_path: str | None = None
+    ):
         """Inserts or updates a track record (metadata + cache URLs only)."""
         ts = int(time.time())
         query = """
@@ -66,11 +71,21 @@ class TrackRepository:
                 local_path=COALESCE(excluded.local_path, tracks.local_path),
                 last_played=excluded.last_played
         """
-        await self._conn.execute(query, (
-            track.video_id, track.title, track.artist, track.duration,
-            track.view_count, track.thumbnail, stream_url, ts if stream_url else None,
-            local_path, ts
-        ))
+        await self._conn.execute(
+            query,
+            (
+                track.video_id,
+                track.title,
+                track.artist,
+                track.duration,
+                track.view_count,
+                track.thumbnail,
+                stream_url,
+                ts if stream_url else None,
+                local_path,
+                ts,
+            ),
+        )
         await self._conn.commit()
 
     async def update_stream_url_only(self, video_id: str, stream_url: str):
@@ -78,15 +93,14 @@ class TrackRepository:
         ts = int(time.time())
         await self._conn.execute(
             "UPDATE tracks SET stream_url=?, stream_url_ts=? WHERE video_id=?",
-            (stream_url, ts, video_id)
+            (stream_url, ts, video_id),
         )
         await self._conn.commit()
 
     async def set_local_path(self, video_id: str, local_path: str | None):
         """Set local_path explicitly (can be used to clear it by passing None)."""
         await self._conn.execute(
-            "UPDATE tracks SET local_path=? WHERE video_id=?",
-            (local_path, video_id)
+            "UPDATE tracks SET local_path=? WHERE video_id=?", (local_path, video_id)
         )
         await self._conn.commit()
 
@@ -95,7 +109,7 @@ class TrackRepository:
         ts = int(time.time())
         await self._conn.execute(
             "UPDATE tracks SET play_count = play_count + 1, last_played = ? WHERE video_id = ?",
-            (ts, video_id)
+            (ts, video_id),
         )
         await self._conn.commit()
 
@@ -111,7 +125,7 @@ class TrackRepository:
                      stream_url_ts IS NULL
                      OR stream_url_ts < ?
                  )""",
-            (thirty_days_ago,)
+            (thirty_days_ago,),
         )
         await self._conn.commit()
         deleted = cursor.rowcount
@@ -129,7 +143,7 @@ class TrackRepository:
 
         await self._conn.execute(
             "UPDATE tracks SET is_favorite = 1 - COALESCE(is_favorite, 0) WHERE video_id = ?",
-            (video_id,)
+            (video_id,),
         )
         await self._conn.commit()
 

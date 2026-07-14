@@ -13,12 +13,13 @@ Publishes:
 """
 
 import asyncio
+
 import pytest
 
 from core.command_bus import command_bus
-from core.commands import CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE, CMD_NEXT
+from core.commands import CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE
 from core.event_bus import bus
-from core.events import TrackStartedEvent, TrackPauseChangedEvent
+from core.events import TrackPauseChangedEvent, TrackStartedEvent
 from core.state import TrackInfo
 
 

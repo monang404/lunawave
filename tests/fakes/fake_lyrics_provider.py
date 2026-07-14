@@ -13,6 +13,7 @@ Publishes:
 
 from core.ports import LyricsProvider
 
+
 class FakeLyricsProvider(LyricsProvider):
     def __init__(self, lyrics=None):
         self._lyrics = lyrics or []

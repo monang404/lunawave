@@ -18,10 +18,10 @@ import pytest
 from core.state import TrackInfo
 from services.discover_service import DiscoverService
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_track(video_id="v1", **kwargs):
     defaults = dict(title="T", artist="A", duration=180)
@@ -38,6 +38,7 @@ def svc(db):
 # ---------------------------------------------------------------------------
 # get_recent
 # ---------------------------------------------------------------------------
+
 
 class TestGetRecent:
     async def test_returns_empty_when_no_tracks(self, svc):
@@ -69,6 +70,7 @@ class TestGetRecent:
 
     async def test_returns_empty_when_db_has_no_conn(self):
         """Service must not crash when DB connection is absent."""
+
         class NoConnDB:
             pass  # no conn attribute
 
@@ -80,6 +82,7 @@ class TestGetRecent:
 # ---------------------------------------------------------------------------
 # get_favorites
 # ---------------------------------------------------------------------------
+
 
 class TestGetFavorites:
     async def test_returns_empty_when_no_tracks(self, svc):
@@ -124,6 +127,7 @@ class TestGetFavorites:
 # get_cached
 # ---------------------------------------------------------------------------
 
+
 class TestGetCached:
     async def test_returns_only_tracks_with_local_path(self, svc, db):
         await db.upsert_track(make_track("v1"), local_path="/mp3/v1.mp3")
@@ -150,13 +154,16 @@ class TestGetCached:
 # get_featured_artists
 # ---------------------------------------------------------------------------
 
+
 class TestGetFeaturedArtists:
     async def test_returns_empty_when_no_artists(self, svc):
         result = await svc.get_featured_artists(5)
         assert result == []
 
     async def test_returns_artist_dicts(self, svc, db):
-        await db.conn.execute("INSERT INTO artists (id, nama, kategori) VALUES (1, 'Band X', 'band')")
+        await db.conn.execute(
+            "INSERT INTO artists (id, nama, kategori) VALUES (1, 'Band X', 'band')"
+        )
         await db.conn.commit()
 
         result = await svc.get_featured_artists(5)
@@ -166,7 +173,7 @@ class TestGetFeaturedArtists:
 
     async def test_returns_at_most_n_artists(self, svc, db):
         for i in range(10):
-            await db.conn.execute(f"INSERT INTO artists (id, nama) VALUES ({i+1}, 'Artist {i}')")
+            await db.conn.execute(f"INSERT INTO artists (id, nama) VALUES ({i + 1}, 'Artist {i}')")
         await db.conn.commit()
 
         result = await svc.get_featured_artists(3)
@@ -183,6 +190,7 @@ class TestGetFeaturedArtists:
 # ---------------------------------------------------------------------------
 # get_featured_genres
 # ---------------------------------------------------------------------------
+
 
 class TestGetFeaturedGenres:
     async def test_returns_empty_when_no_genres(self, svc):
@@ -201,7 +209,9 @@ class TestGetFeaturedGenres:
 
     async def test_returns_at_most_n_genres(self, svc, db):
         for i in range(8):
-            await db.conn.execute(f"INSERT INTO genres (id, nama_genre) VALUES ({i+1}, 'genre_{i}')")
+            await db.conn.execute(
+                f"INSERT INTO genres (id, nama_genre) VALUES ({i + 1}, 'genre_{i}')"
+            )
         await db.conn.commit()
 
         result = await svc.get_featured_genres(4)

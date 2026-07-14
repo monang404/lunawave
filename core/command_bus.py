@@ -23,21 +23,27 @@ Thread Safety:
 """
 
 import asyncio
-import structlog
 import time
-from typing import Callable, Any, Dict
-from core.observability import COMMAND_COUNT, COMMAND_LATENCY
+from collections.abc import Callable
+from typing import Any
+
+import structlog
+
 from core.commands import *  # noqa: F401, F403
+from core.observability import COMMAND_COUNT, COMMAND_LATENCY
 
 logger = structlog.get_logger(__name__)
 
+
 class CommandBus:
     def __init__(self):
-        self._handlers: Dict[str, Callable] = {}
+        self._handlers: dict[str, Callable] = {}
 
     def register(self, command: str, handler: Callable):
         if command in self._handlers:
-            raise RuntimeError(f"Command '{command}' is already registered to {self._handlers[command]}")
+            raise RuntimeError(
+                f"Command '{command}' is already registered to {self._handlers[command]}"
+            )
         self._handlers[command] = handler
 
     def unregister(self, command: str):
@@ -65,5 +71,6 @@ class CommandBus:
             duration = time.perf_counter() - start_time
             COMMAND_LATENCY.labels(command_name=command).observe(duration)
             COMMAND_COUNT.labels(command_name=command, status=status).inc()
+
 
 command_bus = CommandBus()

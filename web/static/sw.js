@@ -88,7 +88,7 @@ self.addEventListener('install', (event) => {
         caches.open(STATIC_CACHE)
             .then(cache => {
                 return Promise.all(
-                    PRECACHE_ASSETS.map(url => 
+                    PRECACHE_ASSETS.map(url =>
                         cache.add(url).catch(err => console.warn('Cache add failed for', url, err))
                     )
                 );

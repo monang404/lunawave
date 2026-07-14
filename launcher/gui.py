@@ -10,4 +10,3 @@ Subscribes to:
 Publishes:
     None
 """
-from launcher.gui.app import ServerManager

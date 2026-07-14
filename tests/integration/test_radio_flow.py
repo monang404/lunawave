@@ -13,6 +13,7 @@ Publishes:
 """
 
 import asyncio
+
 import pytest
 
 from core.command_bus import command_bus

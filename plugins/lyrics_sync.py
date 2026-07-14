@@ -13,7 +13,9 @@ Publishes:
 
 import bisect
 import time
+
 from core.events import LyricsUpdatedEvent, TrackProgressEvent
+
 
 class LyricsSync:
     def __init__(self, state, event_bus):
@@ -30,15 +32,15 @@ class LyricsSync:
         if not self.state.lyrics_lines or not isinstance(position, (int, float)):
             return
 
-        timestamps = getattr(self.state, 'lyrics_timestamps', [])
+        timestamps = getattr(self.state, "lyrics_timestamps", [])
         if not timestamps:
             return
 
-        adjusted_position = position + getattr(self.state, 'lyrics_offset', 0.0)
+        adjusted_position = position + getattr(self.state, "lyrics_offset", 0.0)
         active_idx = bisect.bisect_right(timestamps, adjusted_position) - 1
         active_idx = max(0, active_idx)
 
-        if getattr(self.state, 'lyrics_index', 0) != active_idx:
+        if getattr(self.state, "lyrics_index", 0) != active_idx:
             self.state.lyrics_index = active_idx
             _now = time.monotonic()
             if _now - self._last_lyrics_broadcast_ts >= 0.5:

@@ -9,7 +9,7 @@
             ? store.active_tab
             : "home";
         initDOM();
-        
+
         const initTab = document.body.dataset.activeTab;
         if (dom["tab" + initTab.charAt(0).toUpperCase() + initTab.slice(1)]) {
             dom["tab" + initTab.charAt(0).toUpperCase() + initTab.slice(1)].classList.add("active");
@@ -74,7 +74,3 @@
 //             .catch(err => console.warn('SW registration failed:', err));
 //     });
 // }
-    
-
-
-

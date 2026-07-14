@@ -22,40 +22,54 @@ Thread Safety:
     Worker thread (stdout piped in a daemon thread; Popen is thread-safe).
 """
 
-import subprocess
 import os
+import subprocess
 import sys
 import threading
-import time
+
 
 def kill_process_tree(pid: int):
     if sys.platform == "win32":
         try:
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except Exception:
             pass
     else:
         try:
             import signal
+
             os.killpg(os.getpgid(pid), signal.SIGKILL)
         except Exception:
             try:
                 import signal
+
                 os.kill(pid, signal.SIGKILL)
             except Exception:
                 pass
 
+
 def kill_mpv():
     if sys.platform == "win32":
         try:
-            subprocess.run(["taskkill", "/F", "/IM", "mpv.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                ["taskkill", "/F", "/IM", "mpv.exe"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except Exception:
             pass
     else:
         try:
-            subprocess.run(["pkill", "-f", "mpv"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                ["pkill", "-f", "mpv"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
         except Exception:
             pass
+
 
 class ServerProcess:
     def __init__(self, cwd: str, port: int, on_log=None):
@@ -73,30 +87,31 @@ class ServerProcess:
         env["PYTHONUTF8"] = "1"
         env["PYTHONIOENCODING"] = "utf-8"
         env["PYTHONUNBUFFERED"] = "1"
-        
+
         kwargs = {}
         if sys.platform == "win32":
             kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
         else:
             kwargs["preexec_fn"] = os.setsid
-            
+
         python_exe = sys.executable
-        self.process = subprocess.Popen(
+        self.process = subprocess.Popen(  # type: ignore
             [python_exe, "main.py"],
             cwd=self.cwd,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True, bufsize=1,
+            text=True,
+            bufsize=1,
             errors="replace",
             encoding="utf-8",
-            **kwargs
+            **kwargs,
         )
-        
+
         if self.on_log:
             threading.Thread(target=self._pipe_stdout, daemon=True).start()
-            
-        return self.process
+
+        return self.process  # type: ignore
 
     def _pipe_stdout(self):
         try:

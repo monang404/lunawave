@@ -20,11 +20,26 @@ import pytest
 
 import engine.command_router as command_router_module
 from core.command_bus import (
-    CMD_LYRICS_OFFSET, CMD_NEXT, CMD_PLAY_TRACK, CMD_PREV, CMD_QUEUE_ADD,
-    CMD_QUEUE_REMOVE, CMD_QUEUE_REORDER, CMD_QUEUE_REPLACE, CMD_QUEUE_SELECT,
-    CMD_RADIO_RANDOMIZE, CMD_SEEK, CMD_SET_MODE, CMD_SET_OUTPUT,
-    CMD_SET_SPONSORBLOCK, CMD_STOP, CMD_TOGGLE_PAUSE, CMD_VOLUME_DOWN,
-    CMD_VOLUME_SET, CMD_VOLUME_UP, CommandBus,
+    CMD_LYRICS_OFFSET,
+    CMD_NEXT,
+    CMD_PLAY_TRACK,
+    CMD_PREV,
+    CMD_QUEUE_ADD,
+    CMD_QUEUE_REMOVE,
+    CMD_QUEUE_REORDER,
+    CMD_QUEUE_REPLACE,
+    CMD_QUEUE_SELECT,
+    CMD_RADIO_RANDOMIZE,
+    CMD_SEEK,
+    CMD_SET_MODE,
+    CMD_SET_OUTPUT,
+    CMD_SET_SPONSORBLOCK,
+    CMD_STOP,
+    CMD_TOGGLE_PAUSE,
+    CMD_VOLUME_DOWN,
+    CMD_VOLUME_SET,
+    CMD_VOLUME_UP,
+    CommandBus,
 )
 from engine.command_router import CommandRouter
 
@@ -160,14 +175,18 @@ def test_init_registers_all_19_commands(router, isolated_bus):
 
 
 @pytest.mark.parametrize("cmd_name,expected_tag", PLAYBACK_COMMANDS)
-async def test_playback_command_routes_to_controller_with_data(router, isolated_bus, controller, cmd_name, expected_tag):
+async def test_playback_command_routes_to_controller_with_data(
+    router, isolated_bus, controller, cmd_name, expected_tag
+):
     payload = {"marker": expected_tag}
     await isolated_bus.execute(cmd_name, payload)
     assert controller.calls == [(expected_tag, payload)]
 
 
 @pytest.mark.parametrize("cmd_name,expected_tag", VOLUME_COMMANDS)
-async def test_volume_command_routes_to_volume_service_with_data(router, isolated_bus, volume_service, cmd_name, expected_tag):
+async def test_volume_command_routes_to_volume_service_with_data(
+    router, isolated_bus, volume_service, cmd_name, expected_tag
+):
     payload = {"marker": expected_tag}
     await isolated_bus.execute(cmd_name, payload)
     assert volume_service.calls == [(expected_tag, payload)]
@@ -190,6 +209,8 @@ async def test_route_volume_awaits_coroutine_results(router, isolated_bus, volum
     assert volume_service.calls == [("volume_down", {"x": 1})]
 
 
-def test_registering_a_second_router_on_the_same_bus_raises_duplicate_error(router, isolated_bus, controller, volume_service):
+def test_registering_a_second_router_on_the_same_bus_raises_duplicate_error(
+    router, isolated_bus, controller, volume_service
+):
     with pytest.raises(RuntimeError):
         CommandRouter(playback_controller=controller, volume_service=volume_service)

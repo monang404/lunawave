@@ -12,8 +12,10 @@ Publishes:
 """
 
 import pytest
-from engine.radio.artist_selector import ArtistSelector
+
 from core.state import AppState, TrackInfo
+from engine.radio.artist_selector import ArtistSelector
+
 
 class MockDB:
     def __init__(self):
@@ -25,8 +27,9 @@ class MockDB:
     async def get_random_songs(self, limit, exclude_ids, artist):
         return [
             TrackInfo(video_id="1", title="T1", artist=artist, duration=100),
-            TrackInfo(video_id="2", title="T2", artist=artist, duration=100)
+            TrackInfo(video_id="2", title="T2", artist=artist, duration=100),
         ]
+
 
 @pytest.mark.asyncio
 async def test_ensure_artists_loaded():
@@ -36,6 +39,7 @@ async def test_ensure_artists_loaded():
 
     await selector.ensure_artists_loaded()
     assert "Artist A" in selector._seed_artists
+
 
 @pytest.mark.asyncio
 async def test_build_exclusion_set():
@@ -48,6 +52,7 @@ async def test_build_exclusion_set():
     exclusions = selector.build_exclusion_set()
 
     assert exclusions == {"q1", "c1", "h1"}
+
 
 @pytest.mark.asyncio
 async def test_gather_batch():

@@ -14,21 +14,20 @@ Publishes:
 """
 
 import asyncio
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from core.command_bus import CommandBus, CMD_DOWNLOAD
+from core.command_bus import CommandBus
 from core.event_bus import EventBus
-from core.events import LogMessageEvent, DownloadCompleteEvent
+from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.state import AppState, TrackInfo
 from tests.fakes.fake_media_extractor import FakeMediaExtractor
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_track(video_id="vid1", local_path=None):
     return TrackInfo(
@@ -54,6 +53,7 @@ def make_env(current_track=None):
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def isolated_command_bus():
     """Fresh CommandBus to avoid handler pollution across tests."""
@@ -69,9 +69,11 @@ def env():
 # Import helper — deferred to avoid side-effects at module level
 # ---------------------------------------------------------------------------
 
+
 def make_manager(bus, state, ytdlp, isolated_bus):
     """Instantiate DownloadManager with an isolated command bus."""
     from engine.download_manager import DownloadManager
+
     with patch("engine.download_manager.command_bus", isolated_bus):
         mgr = DownloadManager(bus=bus, state=state, ytdlp=ytdlp)
     return mgr
@@ -80,6 +82,7 @@ def make_manager(bus, state, ytdlp, isolated_bus):
 # ---------------------------------------------------------------------------
 # _on_download guard conditions
 # ---------------------------------------------------------------------------
+
 
 class TestOnDownloadGuards:
     async def test_publishes_log_when_no_target_track(self):
@@ -149,6 +152,7 @@ class TestOnDownloadGuards:
 # _do_download happy path
 # ---------------------------------------------------------------------------
 
+
 class TestDoDownload:
     async def test_do_download_publishes_complete_event(self, tmp_path):
         track = make_track()
@@ -156,19 +160,20 @@ class TestDoDownload:
         ytdlp.download_paths["vid1"] = str(tmp_path / "vid1.mp3")
         (tmp_path / "vid1.mp3").write_bytes(b"audio")
         isolated = CommandBus()
+
         # Override download_mp3 to call progress hook with a proper yt-dlp dict
         async def fake_dl(video_id, on_progress=None):
             if on_progress:
                 on_progress({"status": "downloading", "downloaded_bytes": 100, "total_bytes": 100})
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
+
         ytdlp.download_mp3 = fake_dl
         mgr = make_manager(bus, state, ytdlp, isolated)
 
         received = []
         bus.subscribe(DownloadCompleteEvent, received.append)
 
-        with patch("shutil.move"), \
-             patch("pathlib.Path.mkdir"):
+        with patch("shutil.move"), patch("pathlib.Path.mkdir"):
             await mgr._do_download(track)
 
         assert len(received) == 1
@@ -178,8 +183,10 @@ class TestDoDownload:
         track = make_track()
         bus, state, ytdlp = make_env(current_track=track)
         ytdlp.download_paths["vid1"] = str(tmp_path / "vid1.mp3")
+
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
+
         ytdlp.download_mp3 = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
@@ -197,8 +204,10 @@ class TestDoDownload:
         track = make_track()
         bus, state, ytdlp = make_env(current_track=track)
         ytdlp.download_paths["vid1"] = str(tmp_path / "vid1.mp3")
+
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
+
         ytdlp.download_mp3 = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
@@ -213,8 +222,10 @@ class TestDoDownload:
         track = make_track()
         bus, state, ytdlp = make_env(current_track=track)
         ytdlp.download_paths["vid1"] = str(tmp_path / "vid1.mp3")
+
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
+
         ytdlp.download_mp3 = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
@@ -265,6 +276,7 @@ class TestDoDownload:
 # _update_progress
 # ---------------------------------------------------------------------------
 
+
 class TestUpdateProgress:
     async def test_update_progress_sets_state_download_progress(self):
         bus, state, ytdlp = make_env()
@@ -280,6 +292,7 @@ class TestUpdateProgress:
         mgr = make_manager(bus, state, ytdlp, isolated)
 
         from core.events import DownloadProgressEvent
+
         received = []
         bus.subscribe(DownloadProgressEvent, received.append)
 

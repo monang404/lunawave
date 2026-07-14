@@ -1,5 +1,5 @@
 ---
-last_verified: 2026-07-13
+last_verified: 2026-07-14
 sprint: 3.2 (selesai) — Batch 8–12 sudah jalan pasca-3.2, belum diberi nomor sprint resmi
 ---
 
@@ -37,14 +37,14 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 1. Baca file ini
 2. Baca `docs/STATUS.md` — cek kondisi file yang akan disentuh
 3. Baca `docs/PATCHLOG.md` — 2-3 entri terakhir
-4. Gunakan `scripts/find_owner.py` untuk orientasi cepat (lihat §Developer Scripts)
+4. Gunakan `automation/find_owner.py` untuk orientasi cepat (lihat §Developer Scripts)
 5. Baru kerjakan task
 
 ### Setelah selesai (wajib, jangan skip)
-1. Jalankan `python scripts/doctor.py` — satu perintah untuk semua health check (docs + arsitektur + struktur + keamanan)
+1. Jalankan `python automation/doctor.py` — satu perintah untuk semua health check (docs + arsitektur + struktur + keamanan)
    - Atau per-checker jika hanya ingin cek satu aspek (lihat §Developer Scripts)
-2. Jalankan `python scripts/generate_file_index.py` — jika ada file/class/fungsi baru atau berubah
-3. Jalankan `python scripts/generate_report.py` — jika ada penambahan/penghapusan file
+2. Jalankan `python automation/generate_file_index.py` — jika ada file/class/fungsi baru atau berubah
+3. Jalankan `python automation/generate_report.py` — jika ada penambahan/penghapusan file
 4. Append entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
 5. Update `docs/STATUS.md` jika kondisi file berubah
 
@@ -78,9 +78,15 @@ dokumen yang sudah ada, hanya di antara marker:
 Bagian dokumen **di luar marker** (narasi, rekomendasi, keputusan) adalah
 wilayah manual — AI boleh edit, tapi harus append ke `PATCHLOG.md` setelahnya.
 
-## Developer Scripts
+## Automation Tools
 
-Project ini punya tooling di `scripts/` untuk membantu orientasi dan menjaga docs tetap sinkron.
+> **Catatan migrasi (hapus setelah Sprint 3.3):** folder utomation/ (sebelumnya scripts/) telah
+> di-rename pada 2026-07-14.
+> Jika menemukan referensi scripts/... di file lain yang belum ter-update, laporkan sebagai
+> dokumentasi stale — jangan asumsikan folder lama masih ada.
+
+
+Project ini punya tooling di `automation/` untuk membantu orientasi dan menjaga docs tetap sinkron.
 **Selalu gunakan ini sebelum membaca puluhan file secara manual.**
 
 ### Orientasi cepat — gunakan ini dulu sebelum baca kode
@@ -88,34 +94,34 @@ Project ini punya tooling di `scripts/` untuk membantu orientasi dan menjaga doc
 ```bash
 # Siapa yang bertanggung jawab atas sebuah modul, class, atau fungsi?
 # Jawab: layer arsitektur, callers, dependencies, status di STATUS.md, ADR terkait
-python scripts/find_owner.py DownloadManager
-python scripts/find_owner.py cache/db.py
-python scripts/find_owner.py publish          # cari berdasarkan nama fungsi
+python automation/find_owner.py DownloadManager
+python automation/find_owner.py cache/db.py
+python automation/find_owner.py publish          # cari berdasarkan nama fungsi
 ```
 
 ```bash
 # Cek kesehatan project secara menyeluruh sebelum mulai kerja
-python scripts/doctor.py
+python automation/doctor.py
 ```
 
 ### Setelah edit kode
 
 ```bash
 # Cara paling mudah — jalankan semua checker sekaligus
-python scripts/doctor.py
+python automation/doctor.py
 
 # Atau per-aspek jika ingin cek satu hal saja:
-python scripts/architecture_lint.py   # import boundary
-python scripts/verify_docs.py         # frontmatter, PATCHLOG, coverage docstring
-python scripts/verify_structure.py    # file besar, pending items
-python scripts/verify_security.py     # credential & DB files di .gitignore
+python automation/architecture_lint.py   # import boundary
+python automation/verify_docs.py         # frontmatter, PATCHLOG, coverage docstring
+python automation/verify_structure.py    # file besar, pending items
+python automation/verify_security.py     # credential & DB files di .gitignore
 
 # Regenerate docs setelah ada perubahan file/fungsi
-python scripts/generate_file_index.py
-python scripts/generate_report.py
+python automation/generate_file_index.py
+python automation/generate_report.py
 
 # Atau regenerate + semua check sekaligus
-python scripts/run_all.py
+python automation/run_all.py
 ```
 
 ### Kapan pakai doctor.py vs checker individual
@@ -152,18 +158,34 @@ Semua checker (`verify_docs`, `architecture_lint`, `verify_structure`, `verify_s
 
 `doctor.py` hanya membaca JSON ini — tidak punya logika validasi sendiri. Untuk tambah checker baru, cukup implementasikan kontrak di atas lalu daftarkan di `CHECKERS` list di `doctor.py`.
 
-### Struktur internal scripts/ (untuk AI yang perlu memodifikasi tooling)
+### Struktur internal automation/ (untuk AI yang perlu memodifikasi tooling) (untuk AI yang perlu memodifikasi tooling)
 
-`scripts/` kini punya dua sub-package internal:
+`automation/` kini punya dua sub-package internal:
 - **`shared/`** — utilitas bersama: `check_result.py` (dataclass `CheckResult` + fungsi `_score`/`_overall_status`), `skip_dirs.py` (`SKIP_DIRS` + `walk_py_files`), `generated_block.py` (`replace_marker_block`)
 - **`verify_docs/`** — pecahan dari `verify_docs.py` monolitik: `helpers.py`, `checks_docs.py`, `checks_coverage.py`, `checks_files.py`, `render.py`
 
 Semua checker mengimport `CheckResult` dari `shared.check_result`. CLI dan exit code identik dengan sebelum refactor.
 
+
+## Kontrak Output untuk AI Agent
+
+Semua tool di automation/ yang mendukung --json WAJIB dipanggil dengan flag
+itu ketika dipanggil oleh AI agent (bukan manusia interaktif).
+
+| Tugas | Tool | Mode AI (--json) |
+|---|---|---|
+| Cek kesehatan repo sebelum mulai |  utomation/doctor.py | belum ada agregasi JSON — panggil tiap checker satu-satu |
+| Cari owner/dependency file/class/fungsi |  utomation/find_owner.py | tersedia sejak task 0.4 |
+| Mendapatkan konteks lengkap file/fitur | `automation/context_pack.py` | Endpoint utama (agregasi 5 checker sekaligus) |
+| Cek satu aspek spesifik | `verify_docs.py --json`, dst. | sudah ada |
+
+Catatan: `doctor.py` saat ini hanya merender dashboard teks untuk manusia. Jika
+kamu (AI agent) butuh hasil gabungan dalam JSON, gunakan `context_pack.py --json`.
+
 ## Pointer ke detail
 | Butuh info tentang | Cara tercepat |
 |--------------------|---------------|
-| File mana yang relevan untuk task ini | `python scripts/find_owner.py <nama_class_atau_file>` |
+| File mana yang relevan untuk task ini | `python automation/find_owner.py <nama_class_atau_file>` |
 | Semua file & fungsinya | `docs/FILE_INDEX.md` ← auto-generated, selalu akurat |
 | Kondisi per-file & sprint target | `docs/STATUS.md` |
 | Struktur folder detail | `docs/architecture/folder_structure.md` |
@@ -176,7 +198,7 @@ Semua checker mengimport `CheckResult` dari `shared.check_result`. CLI dan exit 
 | Keputusan arsitektur | `docs/adr/` |
 | Constraints teknis & lingkungan | `docs/CONSTRAINTS.md` |
 | Temuan & status bug | `docs/REPORT.md` |
-| Kesehatan project | `python scripts/doctor.py` |
+| Kesehatan project | `python automation/doctor.py` |
 
 ## Navigasi docs/ untuk AI
 

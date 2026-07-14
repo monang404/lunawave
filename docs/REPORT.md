@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-13
+last_verified: 2026-07-14
 sprint: 3.2
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-13
+> **Tanggal Scan:** 2026-07-14
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -15,37 +15,37 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 ## Statistik Project
 
-> ⚙️ Blok ini di-generate otomatis oleh `scripts/generate_report.py`. **Jangan edit manual.**
-> Jalankan `python scripts/generate_report.py` untuk memperbarui.
+> ⚙️ Blok ini di-generate otomatis oleh `automation/generate_report.py`. **Jangan edit manual.**
+> Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-13 oleh `scripts/generate_report.py`
+> **Auto-generated:** 2026-07-14 oleh `automation/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 57 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 96 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 60 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 124 |
 | Total file `.js` (ekskl. `.min.js`) | 34 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
-| Total class (Python) | 72 |
-| Total function/method (Python) | 374 |
-| Total baris Python | 7,354 |
+| Total class (Python) | 74 |
+| Total function/method (Python) | 471 |
+| Total baris Python | 11,312 |
 | Total baris JS (web/) | 3,075 |
 | Total baris CSS (web/) | 3,277 |
-| Ukuran DB utama (`data/lunawave.db`) | 524 KB (+ WAL 161 KB) |
+| Ukuran DB utama (`data/lunawave.db`) | 524 KB (+ WAL 620 KB) |
 | Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
+| `automation/generate_file_index.py` | 349 ⚠️ |
 | `engine/playback/controller.py` | 346 ⚠️ |
-| `main.py` | 266 |
-| `launcher/gui/ui_builder.py` | 266 |
-| `launcher/gui/app.py` | 255 |
-| `engine/radio/engine.py` | 195 |
+| `automation/architecture_lint.py` | 345 ⚠️ |
+| `automation/find_owner.py` | 302 ⚠️ |
+| `automation/generate_report.py` | 292 |
 <!-- END:GENERATED -->
 
 ---

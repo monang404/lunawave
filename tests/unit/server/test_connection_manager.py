@@ -12,7 +12,9 @@ Publishes:
 """
 
 import pytest
+
 from server.connection_manager import ConnectionManager
+
 
 class MockWebSocket:
     def __init__(self, fail=False):
@@ -23,6 +25,7 @@ class MockWebSocket:
         if self.fail:
             raise Exception("Connection failed")
         self.sent.append(data)
+
 
 @pytest.mark.asyncio
 async def test_connect_disconnect():
@@ -36,6 +39,7 @@ async def test_connect_disconnect():
     cm.disconnect(ws)
     assert ws not in cm.active_connections
     assert len(cm.active_connections) == 0
+
 
 @pytest.mark.asyncio
 async def test_broadcast():

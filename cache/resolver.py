@@ -26,13 +26,15 @@ Thread Safety:
 
 import os
 import time
+
 import structlog
-from cache.db import Database
+
 from config import STREAM_URL_TTL_SEC
-from core.state import TrackInfo
 from core.ports import MediaExtractorPort, TrackRepositoryPort
+from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
+
 
 class CacheResolver:
     """
@@ -49,11 +51,12 @@ class CacheResolver:
     async def resolve(self, track: TrackInfo) -> str:
         """Returns the playback URI (local path atau YouTube URL untuk MPV)."""
         row = await self.db.get_track(track.video_id)
-        
+
         # Rule 1: Local file — ini yang benar-benar berguna
         if row and row.local_path:
             path = row.local_path
             import asyncio
+
             if await asyncio.to_thread(os.path.isfile, path):
                 track.local_path = path
                 return path
@@ -70,4 +73,4 @@ class CacheResolver:
         track.stream_url = url
         # Simpan metadata track ke DB
         await self.db.upsert_track(track, stream_url=url)
-        return url
+        return url  # type: ignore

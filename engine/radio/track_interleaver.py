@@ -11,15 +11,41 @@ Publishes:
     None
 """
 
-import re
 import random
+import re
 
-_TITLE_NOISE_WORDS = frozenset({
-    "official", "music", "video", "audio", "lyric", "lyrics", "mv",
-    "cover", "live", "performance", "hd", "hq", "remastered", "remaster",
-    "full", "version", "ver", "feat", "ft", "original", "soundtrack",
-    "ost", "karaoke", "instrumental", "acoustic", "akustik", "konser",
-})
+_TITLE_NOISE_WORDS = frozenset(
+    {
+        "official",
+        "music",
+        "video",
+        "audio",
+        "lyric",
+        "lyrics",
+        "mv",
+        "cover",
+        "live",
+        "performance",
+        "hd",
+        "hq",
+        "remastered",
+        "remaster",
+        "full",
+        "version",
+        "ver",
+        "feat",
+        "ft",
+        "original",
+        "soundtrack",
+        "ost",
+        "karaoke",
+        "instrumental",
+        "acoustic",
+        "akustik",
+        "konser",
+    }
+)
+
 
 def _normalize_title(title: str) -> str:
     if not title:
@@ -29,6 +55,7 @@ def _normalize_title(title: str) -> str:
     t = re.sub(r"[^a-z0-9\s]", " ", t)
     words = [w for w in t.split() if w not in _TITLE_NOISE_WORDS]
     return " ".join(words).strip()
+
 
 def interleave_by_artist(tracks: list) -> list:
     """Round-robin interleaving: kelompokkan track per artis (urutan asli tiap

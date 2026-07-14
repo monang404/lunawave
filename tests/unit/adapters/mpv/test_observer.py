@@ -17,10 +17,13 @@ Publishes:
     None
 """
 
-import pytest
 import asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from adapters.mpv.observer import MpvObserver
+
 
 @pytest.fixture
 def mock_connection():
@@ -29,11 +32,13 @@ def mock_connection():
     conn.reader = AsyncMock()
     return conn
 
+
 @pytest.fixture
 def mock_ipc():
     ipc = MagicMock()
     ipc.send_command = AsyncMock()
     return ipc
+
 
 @pytest.fixture
 def mock_event_bus():
@@ -41,12 +46,14 @@ def mock_event_bus():
     bus.publish = AsyncMock()
     return bus
 
+
 def test_observer_initialization(mock_connection, mock_ipc, mock_event_bus):
     observer = MpvObserver(mock_connection, mock_ipc, mock_event_bus, room_id="test_room")
     assert observer._conn == mock_connection
     assert observer._ipc == mock_ipc
     assert observer._bus == mock_event_bus
     assert observer._room_id == "test_room"
+
 
 @pytest.mark.asyncio
 async def test_observer_start_and_stop(mock_connection, mock_ipc, mock_event_bus):
@@ -66,6 +73,7 @@ async def test_observer_start_and_stop(mock_connection, mock_ipc, mock_event_bus
 
     assert observer._task.cancelled() or observer._task.done()
 
+
 @pytest.mark.asyncio
 async def test_observer_handles_property_change(mock_connection, mock_ipc, mock_event_bus):
     observer = MpvObserver(mock_connection, mock_ipc, mock_event_bus)
@@ -79,6 +87,7 @@ async def test_observer_handles_property_change(mock_connection, mock_ipc, mock_
     call_args = mock_event_bus.publish.call_args[0][0]
     assert call_args.__class__.__name__ == "TrackProgressEvent"
     assert call_args.position == 12.5
+
 
 @pytest.mark.asyncio
 async def test_observer_handles_pause_change(mock_connection, mock_ipc, mock_event_bus):

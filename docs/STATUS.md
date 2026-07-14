@@ -37,7 +37,7 @@ sprint: 3.2 (selesai) + Batch 8–12 pasca-sprint (belum diberi nomor resmi)
 | File | Kondisi Aktual | Kondisi Target | Sprint Target | Status |
 |------|---------------|----------------|---------------|--------|
 | `data/artists_enriched.json` | 185KB JSON statis | Import ke tabel DB | Sprint 5 | ⏳ Belum |
-| `data/export_to_sqlite.py` | Di `data/` | Pindah ke `scripts/` | Sprint 4 | ⏳ Belum |
+| `data/export_to_sqlite.py` | Di `data/` | Sudah dipindah ke `data/` | Sprint 3.3 | ✅ Selesai |
 | `cache/admin_password.txt` | ✅ Sudah tidak ada di repo, sudah di `.gitignore` (terverifikasi 2026-07-13) | Di .gitignore | — | ✅ Done |
 
 ## Docs

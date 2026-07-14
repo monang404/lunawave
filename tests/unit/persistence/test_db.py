@@ -11,6 +11,7 @@ Publishes:
     None
 """
 
+
 async def test_init_is_idempotent_when_called_twice_on_a_file_backed_db(tmp_path):
     from persistence import Database
 

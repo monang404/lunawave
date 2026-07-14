@@ -11,8 +11,8 @@ Publishes:
     None
 """
 
-import pytest
 from plugins.lyrics_parser import LyricsParser
+
 
 def test_parse_lrc_standard():
     lrc = """
@@ -24,6 +24,7 @@ def test_parse_lrc_standard():
     assert result[0] == (12.5, "Line 1")
     assert result[1] == (65.0, "Line 2")
 
+
 def test_parse_lrc_no_decimals():
     lrc = """
     [00:12]Line 1
@@ -33,6 +34,7 @@ def test_parse_lrc_no_decimals():
     assert len(result) == 2
     assert result[0] == (12.0, "Line 1")
     assert result[1] == (65.0, "Line 2")
+
 
 def test_parse_lrc_invalid():
     lrc = """

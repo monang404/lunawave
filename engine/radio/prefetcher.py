@@ -13,9 +13,10 @@ Publishes:
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
 from core.state import AppState
-from engine.radio.common import track_task, ARTISTS_PER_BATCH
+from engine.radio.common import ARTISTS_PER_BATCH, track_task
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController
@@ -23,25 +24,27 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
+
 class RadioPrefetcher:
     """Standby queue, prefetch background task."""
+
     PREFETCH_LOOKAHEAD = 3  # jumlah lagu ke depan yang di-prefetch sekaligus
 
-    def __init__(self, state: AppState, artist_selector: 'ArtistSelector'):
+    def __init__(self, state: AppState, artist_selector: "ArtistSelector"):
         self.state = state
         self.artist_selector = artist_selector
         self._standby: list = []
         self._standby_lock = asyncio.Lock()
         self._fetch_lock = asyncio.Lock()
         self._bg_tasks: set = set()
-        self._last_prefetch_vid: Optional[str] = None
+        self._last_prefetch_vid: str | None = None
 
     def cancel_tasks(self):
         for task in list(self._bg_tasks):
             task.cancel()
         self._bg_tasks.clear()
 
-    async def pop_standby(self) -> Optional[list]:
+    async def pop_standby(self) -> list | None:
         async with self._standby_lock:
             if self._standby:
                 tracks = self._standby
@@ -77,8 +80,7 @@ class RadioPrefetcher:
         async with self._fetch_lock:
             try:
                 tracks = await asyncio.wait_for(
-                    self.artist_selector.gather_batch(max_artists=ARTISTS_PER_BATCH),
-                    timeout=30.0
+                    self.artist_selector.gather_batch(max_artists=ARTISTS_PER_BATCH), timeout=30.0
                 )
                 if tracks:
                     async with self._standby_lock:
@@ -89,7 +91,9 @@ class RadioPrefetcher:
     def trigger_build_standby(self, controller: "PlaybackController"):
         track_task(self._bg_tasks, self.build_standby(controller), name="radio_build_standby")
 
-    def check_prefetch(self, controller: "PlaybackController", position: float, duration: float) -> None:
+    def check_prefetch(
+        self, controller: "PlaybackController", position: float, duration: float
+    ) -> None:
         """Trigger prefetch stream_url untuk lagu berikutnya jika waktu tersisa <= 30 detik."""
         if duration > 0 and (duration - position) <= 30.0:
             current_vid = self.state.current_track.video_id if self.state.current_track else None
@@ -109,8 +113,7 @@ class RadioPrefetcher:
             return
 
         candidates = [
-            t for t in list(self.state.radio_queue)[: self.PREFETCH_LOOKAHEAD]
-            if not t.stream_url
+            t for t in list(self.state.radio_queue)[: self.PREFETCH_LOOKAHEAD] if not t.stream_url
         ]
         if not candidates:
             return
@@ -125,14 +128,18 @@ class RadioPrefetcher:
         await asyncio.gather(*[_resolve_one(t) for t in candidates])
 
     # Method proxy agar RadioMode bisa mendelegasikan fetch and lock
-    async def fetch_batch_with_lock(self, prioritized_artist: Optional[str] = None, max_artists: int = ARTISTS_PER_BATCH):
+    async def fetch_batch_with_lock(
+        self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
+    ):
         if self._fetch_lock.locked():
             return []
         async with self._fetch_lock:
             try:
                 return await asyncio.wait_for(
-                    self.artist_selector.gather_batch(prioritized_artist=prioritized_artist, max_artists=max_artists),
-                    timeout=30.0
+                    self.artist_selector.gather_batch(
+                        prioritized_artist=prioritized_artist, max_artists=max_artists
+                    ),
+                    timeout=30.0,
                 )
             except Exception as e:
                 _log.warning(f"Radio fetch batch gagal: {e}")

@@ -142,7 +142,7 @@ Layer wiring — sebagian besar `Sedang` karena membutuhkan WebSocket/HTTP mock.
 | `launcher/gui/status_panel.py` | `tests/unit/launcher/gui/test_status_panel.py` | Rendah |
 | `launcher/gui/log_panel.py` | `tests/unit/launcher/gui/test_log_panel.py` | Rendah |
 | `launcher/gui/dep_checker.py` | `tests/unit/launcher/gui/test_dep_checker.py` | Tinggi *(mock `shutil.which`)* |
-| `scripts/export_to_sqlite.py` | `tests/unit/scripts/test_export_to_sqlite.py` | Opsional |
+| `automation/export_to_sqlite.py` | `tests/unit/automation/test_export_to_sqlite.py` | Opsional |
 
 **Total: 13 file test (+ 2 Manual, 1 Opsional)**
 

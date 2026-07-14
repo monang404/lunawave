@@ -11,20 +11,27 @@ Publishes:
     None
 """
 
-import json
 import asyncio
-from services.discover_service import DiscoverService
+import json
+
 from server.serializers import track_to_dict
+from services.discover_service import DiscoverService
+
 
 async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
     if action == "search":
         query = data.get("query", "").strip()
         if query:
             results = await ytdlp.search(query, max_results=10)
-            await ws.send_str(json.dumps({
-                "type": "search_results",
-                "data": [track_to_dict(t) for t in results],
-            }, ensure_ascii=False))
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "search_results",
+                        "data": [track_to_dict(t) for t in results],
+                    },
+                    ensure_ascii=False,
+                )
+            )
 
     elif action == "discover":
         ds = DiscoverService(db)
@@ -35,12 +42,17 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
             ds.get_featured_artists(100),
             ds.get_featured_genres(100),
         )
-        await ws.send_str(json.dumps({
-            "type": "discover_data",
-            "data": {
-                "recent": [track_to_dict(t) for t in recent],
-                "cached_tracks": [track_to_dict(t) for t in cached],
-                "featured_artists": featured_artists,
-                "featured_genres": featured_genres
-            }
-        }, ensure_ascii=False))
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "discover_data",
+                    "data": {
+                        "recent": [track_to_dict(t) for t in recent],
+                        "cached_tracks": [track_to_dict(t) for t in cached],
+                        "featured_artists": featured_artists,
+                        "featured_genres": featured_genres,
+                    },
+                },
+                ensure_ascii=False,
+            )
+        )

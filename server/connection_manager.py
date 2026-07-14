@@ -13,10 +13,13 @@ Publishes:
 
 import asyncio
 import json
+
 import structlog
+
 from core.observability import ACTIVE_WEBSOCKETS
 
 logger = structlog.get_logger(__name__)
+
 
 class ConnectionManager:
     def __init__(self):
@@ -49,7 +52,8 @@ class ConnectionManager:
             return_exceptions=True,
         )
         dead = [
-            ws for ws, result in zip(list(self.active_connections), results)
+            ws
+            for ws, result in zip(list(self.active_connections), results, strict=False)
             if isinstance(result, Exception)
         ]
         for ws in dead:

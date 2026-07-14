@@ -13,14 +13,13 @@ Publishes:
 
 import asyncio
 from collections import deque
+
 import pytest
 
-from core.events import (
-    LogMessageEvent, TrackEndedEvent,
-    TrackStartedEvent, TrackPauseChangedEvent
-)
-from core.state import PlayerStatus, AudioOutput
+from core.events import LogMessageEvent, TrackEndedEvent, TrackPauseChangedEvent, TrackStartedEvent
+from core.state import AudioOutput, PlayerStatus
 from tests.unit.engine.conftest import make_track
+
 
 class TestPlayTrack:
     async def test_sets_status_to_playing_on_success(self, controller, state, extractor):
@@ -55,8 +54,10 @@ class TestPlayTrack:
 
     async def test_sets_status_to_error_on_failure(self, controller, state, extractor):
         extractor.stream_urls.clear()
+
         async def raise_on_get(*_a, **_kw):
             raise RuntimeError("no url")
+
         extractor.get_stream_url = raise_on_get
         track = make_track("v1")
         await controller.play_track(track)
@@ -73,6 +74,7 @@ class TestPlayTrack:
         await controller.play_track(make_track("v1"))
         assert ("set_volume", 0) in player.call_log
 
+
 class TestOnStop:
     async def test_stop_sets_idle_and_clears_track(self, controller, state):
         state.current_track = make_track("v1")
@@ -85,6 +87,7 @@ class TestOnStop:
         state.queue = deque([make_track("v2"), make_track("v3")])
         await controller._on_stop()
         assert len(state.queue) == 0
+
 
 class TestOnPrev:
     async def test_prev_plays_last_history_track(self, controller, state, extractor):
@@ -99,6 +102,7 @@ class TestOnPrev:
         bus.subscribe(LogMessageEvent, logs.append)
         await controller._on_prev()
         assert any("sebelumnya" in m.message for m in logs)
+
 
 class TestOnSeek:
     async def test_seek_updates_state_position(self, controller, state, player):
@@ -116,6 +120,7 @@ class TestOnSeek:
         await controller._on_seek(30.0)
         assert all(op[0] != "seek" for op in player.call_log)
 
+
 class TestOnTrackEnded:
     async def test_eof_delegates_to_queue_mode_next(self, controller, queue_mode):
         await controller._on_track_ended(TrackEndedEvent(reason="eof"))
@@ -132,6 +137,7 @@ class TestOnTrackEnded:
         controller._loading = False
         await controller._on_track_ended(TrackEndedEvent(reason="stop"))
         assert state.status == PlayerStatus.IDLE
+
 
 class TestOnPauseChanged:
     async def test_pause_changed_true_sets_paused_when_playing(self, controller, state):

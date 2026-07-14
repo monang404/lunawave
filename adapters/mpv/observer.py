@@ -13,13 +13,20 @@ Publishes:
 
 import asyncio
 import json
+
 import structlog
-import os
+
 from core.event_bus import EventBus
-from core.events import TrackProgressEvent, TrackEndedEvent, TrackPauseChangedEvent, TrackDurationEvent
+from core.events import (
+    TrackDurationEvent,
+    TrackEndedEvent,
+    TrackPauseChangedEvent,
+    TrackProgressEvent,
+)
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
+
 
 class MpvObserver:
     """Baca event dari MPV socket, publish ke EventBus sebagai DomainEvent."""
@@ -71,8 +78,10 @@ class MpvObserver:
                 # Coba reconnect ke mpv yang mungkin masih hidup (misal socket terputus sesaat)
                 reconnected = False
                 for attempt in range(3):
-                    backoff = 2 ** attempt  # 1s, 2s, 4s
-                    logger.info(f"Mencoba reconnect ke mpv (attempt {attempt + 1}/3) dalam {backoff}s...")
+                    backoff = 2**attempt  # 1s, 2s, 4s
+                    logger.info(
+                        f"Mencoba reconnect ke mpv (attempt {attempt + 1}/3) dalam {backoff}s..."
+                    )
                     await asyncio.sleep(backoff)
                     if getattr(self._conn, "shutting_down", False):
                         break
@@ -107,6 +116,7 @@ class MpvObserver:
             data = msg.get("data")
             if name == "time-pos" and isinstance(data, (int, float)):
                 import time as _time
+
                 _now = _time.monotonic()
                 # Throttle: publish maksimal 1× per detik untuk hemat CPU/baterai.
                 if _now - self._last_progress_ts >= 1.0:

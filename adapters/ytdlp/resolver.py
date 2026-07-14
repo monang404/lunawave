@@ -13,13 +13,16 @@ Publishes:
 
 import asyncio
 import logging
-from config import YTDLP_RESOLVE_TIMEOUT_SEC
+
 from adapters.ytdlp.common import YDL_OPTS_INFO
+from config import YTDLP_RESOLVE_TIMEOUT_SEC
 
 _log = logging.getLogger(__name__)
 
+
 class YtDlpResolver:
     """get_stream_url(video_id) → str"""
+
     def __init__(self, executor):
         self._executor = executor
 
@@ -40,8 +43,10 @@ class YtDlpResolver:
                 if stream_url:
                     return stream_url
             raise RuntimeError(f"yt-dlp returned no stream URL for {video_id}")
-        except asyncio.TimeoutError:
-            _log.error(f"get_stream_url timed out after {YTDLP_RESOLVE_TIMEOUT_SEC}s for {video_id}")
+        except TimeoutError:
+            _log.error(
+                f"get_stream_url timed out after {YTDLP_RESOLVE_TIMEOUT_SEC}s for {video_id}"
+            )
             raise RuntimeError(
                 f"Timeout ({YTDLP_RESOLVE_TIMEOUT_SEC}s) saat mengambil stream URL untuk {video_id}"
             )
@@ -53,6 +58,7 @@ class YtDlpResolver:
 
     def _extract_sync(self, url, opts):
         import yt_dlp
+
         with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(url, download=False)
 

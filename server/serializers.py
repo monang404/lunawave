@@ -22,10 +22,10 @@ Thread Safety:
     Stateless.
 """
 
-from typing import Optional
-from core.state import AppState, TrackInfo, AudioOutput
+from core.state import AppState, AudioOutput, TrackInfo
 
-def track_to_dict(track: Optional[TrackInfo]) -> Optional[dict]:
+
+def track_to_dict(track: TrackInfo | None) -> dict | None:
     if not track:
         return None
     return {
@@ -38,6 +38,7 @@ def track_to_dict(track: Optional[TrackInfo]) -> Optional[dict]:
         "view_count": track.view_count,
         "is_favorite": bool(getattr(track, "is_favorite", 0)),
     }
+
 
 def state_to_dict(state: AppState, include_lyrics: bool = True) -> dict:
     """include_lyrics=False dipakai untuk broadcast periodik yang tidak butuh
@@ -67,7 +68,8 @@ def state_to_dict(state: AppState, include_lyrics: bool = True) -> dict:
         data["lyrics_timestamps"] = list(state.lyrics_timestamps)
     return data
 
-def dict_to_track(data: dict) -> Optional[TrackInfo]:
+
+def dict_to_track(data: dict) -> TrackInfo | None:
     video_id = data.get("video_id")
     if not video_id:
         return None

@@ -26,25 +26,32 @@ Thread Safety:
 
 import asyncio
 import json
-import time
 import secrets
-from config import ADMIN_USERNAME, ADMIN_PASSWORD
+
+from config import ADMIN_PASSWORD, ADMIN_USERNAME
 from core.security import verify_password
+
 
 def _prune_stale_ips(manager, now: float) -> None:
     """Hapus entry IP yang sudah melewati window dari kedua dict rate-limit.
     Dipanggil tiap handle_auth agar dict tidak tumbuh tanpa batas (memory leak).
     """
-    WINDOW_AUTH = 300   # 5 menit — sama dengan window login_attempts
-    WINDOW_CMD  = 60    # 1 menit — sama dengan window command_history
+    WINDOW_AUTH = 300  # 5 menit — sama dengan window login_attempts
+    WINDOW_CMD = 60  # 1 menit — sama dengan window command_history
 
-    stale_auth = [ip for ip, ts_list in manager.login_attempts.items()
-                  if not any(now - t < WINDOW_AUTH for t in ts_list)]
+    stale_auth = [
+        ip
+        for ip, ts_list in manager.login_attempts.items()
+        if not any(now - t < WINDOW_AUTH for t in ts_list)
+    ]
     for ip in stale_auth:
         del manager.login_attempts[ip]
 
-    stale_cmd = [ip for ip, ts_list in manager.command_history.items()
-                 if not any(now - t < WINDOW_CMD for t in ts_list)]
+    stale_cmd = [
+        ip
+        for ip, ts_list in manager.command_history.items()
+        if not any(now - t < WINDOW_CMD for t in ts_list)
+    ]
     for ip in stale_cmd:
         del manager.command_history[ip]
 
@@ -58,10 +65,9 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         if token and db:
             if await db.verify_session(token):
                 manager.authenticated_connections.add(ws)
-                await ws.send_str(json.dumps({
-                    "type": "auth_status",
-                    "data": {"success": True, "token": token}
-                }))
+                await ws.send_str(
+                    json.dumps({"type": "auth_status", "data": {"success": True, "token": token}})
+                )
                 return
 
         attempts = manager.login_attempts.get(client_ip, [])
@@ -71,10 +77,17 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         else:
             manager.login_attempts[client_ip] = attempts
         if len(attempts) >= 5:
-            await ws.send_str(json.dumps({
-                "type": "auth_status",
-                "data": {"success": False, "message": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}
-            }))
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "auth_status",
+                        "data": {
+                            "success": False,
+                            "message": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.",
+                        },
+                    }
+                )
+            )
             return
 
         username = data.get("username", "")
@@ -85,9 +98,8 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         # berhenti selama itu. Jalankan di thread executor agar event loop
         # tetap responsif untuk client lain selagi verifikasi berjalan.
         loop = asyncio.get_running_loop()
-        password_ok = (
-            username == ADMIN_USERNAME
-            and await loop.run_in_executor(None, verify_password, password, ADMIN_PASSWORD)
+        password_ok = username == ADMIN_USERNAME and await loop.run_in_executor(
+            None, verify_password, password, ADMIN_PASSWORD
         )
         if password_ok:
             new_token = secrets.token_hex(16)
@@ -96,17 +108,21 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
             manager.authenticated_connections.add(ws)
             if client_ip in manager.login_attempts:
                 del manager.login_attempts[client_ip]
-            await ws.send_str(json.dumps({
-                "type": "auth_status",
-                "data": {"success": True, "token": new_token}
-            }))
+            await ws.send_str(
+                json.dumps({"type": "auth_status", "data": {"success": True, "token": new_token}})
+            )
         else:
             attempts.append(now)
             manager.login_attempts[client_ip] = attempts
-            await ws.send_str(json.dumps({
-                "type": "auth_status",
-                "data": {"success": False, "message": "Username atau Password salah!"}
-            }))
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "auth_status",
+                        "data": {"success": False, "message": "Username atau Password salah!"},
+                    }
+                )
+            )
+
 
 def require_auth(manager, ws) -> bool:
     return ws in manager.authenticated_connections

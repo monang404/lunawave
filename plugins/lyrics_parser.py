@@ -13,6 +13,7 @@ Publishes:
 
 import re
 
+
 class LyricsParser:
     @staticmethod
     def parse_lrc(lrc_text: str) -> list[tuple[float, str]]:

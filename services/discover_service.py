@@ -23,9 +23,9 @@ Thread Safety:
     Worker thread (async; read-only queries).
 """
 
-import aiosqlite
-from core.state import TrackInfo
 from core.ports import DatabasePort
+from core.state import TrackInfo
+
 
 class DiscoverService:
     def __init__(self, db: DatabasePort):
@@ -33,94 +33,103 @@ class DiscoverService:
 
     async def get_recent(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu yang terakhir diputar dari DB."""
-        if not getattr(self.db, 'conn', None):
+        if not getattr(self.db, "conn", None):
             return []
 
         tracks = []
         try:
-            async with self.db.conn.execute(
+            async with self.db.conn.execute(  # type: ignore
                 "SELECT * FROM tracks ORDER BY last_played DESC LIMIT ?", (n,)
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
-                    tracks.append(TrackInfo(
-                        video_id=d["video_id"],
-                        title=d["title"],
-                        artist=d["artist"],
-                        duration=d["duration"],
-                        thumbnail=d["thumbnail"],
-                        local_path=d["local_path"],
-                        stream_url=d["stream_url"],
-                        view_count=d["view_count"],
-                        is_favorite=d.get("is_favorite", 0)
-                    ))
+                    tracks.append(
+                        TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist=d["artist"],
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d["stream_url"],
+                            view_count=d["view_count"],
+                            is_favorite=d.get("is_favorite", 0),
+                        )
+                    )
         except Exception as e:
             raise e
         return tracks
 
     async def get_favorites(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu dengan play_count tertinggi atau eksplisit difavoritkan dari DB."""
-        if not getattr(self.db, 'conn', None):
+        if not getattr(self.db, "conn", None):
             return []
 
         tracks = []
         try:
-            async with self.db.conn.execute(
-                "SELECT * FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?", (n,)
+            async with self.db.conn.execute(  # type: ignore
+                "SELECT * FROM tracks WHERE is_favorite = 1 OR play_count > 0 ORDER BY is_favorite DESC, play_count DESC LIMIT ?",
+                (n,),
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
-                    tracks.append(TrackInfo(
-                        video_id=d["video_id"],
-                        title=d["title"],
-                        artist=d["artist"],
-                        duration=d["duration"],
-                        thumbnail=d["thumbnail"],
-                        local_path=d["local_path"],
-                        stream_url=d["stream_url"],
-                        view_count=d["view_count"],
-                        is_favorite=d.get("is_favorite", 0)
-                    ))
+                    tracks.append(
+                        TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist=d["artist"],
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d["stream_url"],
+                            view_count=d["view_count"],
+                            is_favorite=d.get("is_favorite", 0),
+                        )
+                    )
         except Exception as e:
             raise e
         return tracks
 
     async def get_cached(self, n: int) -> list[TrackInfo]:
         """Mengambil n lagu yang sudah ter-cache (local_path is not null)."""
-        if not getattr(self.db, 'conn', None):
+        if not getattr(self.db, "conn", None):
             return []
 
         tracks = []
         try:
-            async with self.db.conn.execute(
-                "SELECT * FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?", (n,)
+            async with self.db.conn.execute(  # type: ignore
+                "SELECT * FROM tracks WHERE local_path IS NOT NULL ORDER BY last_played DESC LIMIT ?",
+                (n,),
             ) as cursor:
                 async for row in cursor:
                     d = dict(row)
-                    tracks.append(TrackInfo(
-                        video_id=d["video_id"],
-                        title=d["title"],
-                        artist=d["artist"],
-                        duration=d["duration"],
-                        thumbnail=d["thumbnail"],
-                        local_path=d["local_path"],
-                        stream_url=d["stream_url"],
-                        view_count=d["view_count"],
-                        is_favorite=d.get("is_favorite", 0)
-                    ))
+                    tracks.append(
+                        TrackInfo(
+                            video_id=d["video_id"],
+                            title=d["title"],
+                            artist=d["artist"],
+                            duration=d["duration"],
+                            thumbnail=d["thumbnail"],
+                            local_path=d["local_path"],
+                            stream_url=d["stream_url"],
+                            view_count=d["view_count"],
+                            is_favorite=d.get("is_favorite", 0),
+                        )
+                    )
         except Exception as e:
             raise e
         return tracks
 
     async def get_featured_artists(self, n: int) -> list[dict]:
         """Mengambil n artis acak dari tabel artists beserta click_count."""
-        if not getattr(self.db, 'conn', None):
+        if not getattr(self.db, "conn", None):
             return []
 
         artists = []
         try:
-            async with self.db.conn.execute(
-                "SELECT id, nama, kategori, tahun_aktif, COALESCE(click_count, 0) as click_count FROM artists WHERE id IN (SELECT id FROM artists ORDER BY RANDOM() LIMIT ?)", (n,)
+            async with self.db.conn.execute(  # type: ignore
+                "SELECT id, nama, kategori, tahun_aktif, COALESCE(click_count, 0) as click_count FROM artists WHERE id IN (SELECT id FROM artists ORDER BY RANDOM() LIMIT ?)",
+                (n,),
             ) as cursor:
                 async for row in cursor:
                     artists.append(dict(row))
@@ -130,20 +139,23 @@ class DiscoverService:
 
     async def get_featured_genres(self, n: int) -> list[dict]:
         """Mengambil n genre acak dari tabel genres beserta click_count."""
-        if not getattr(self.db, 'conn', None):
+        if not getattr(self.db, "conn", None):
             return []
 
         genres = []
         try:
-            async with self.db.conn.execute(
-                "SELECT id, nama_genre, COALESCE(click_count, 0) as click_count FROM genres WHERE id IN (SELECT id FROM genres ORDER BY RANDOM() LIMIT ?)", (n,)
+            async with self.db.conn.execute(  # type: ignore
+                "SELECT id, nama_genre, COALESCE(click_count, 0) as click_count FROM genres WHERE id IN (SELECT id FROM genres ORDER BY RANDOM() LIMIT ?)",
+                (n,),
             ) as cursor:
                 async for row in cursor:
-                    genres.append({
-                        "id": row["id"],
-                        "nama_genre": row["nama_genre"],
-                        "click_count": row["click_count"]
-                    })
+                    genres.append(
+                        {
+                            "id": row["id"],
+                            "nama_genre": row["nama_genre"],
+                            "click_count": row["click_count"],
+                        }
+                    )
         except Exception as e:
             print(f"Error in get_featured_genres: {e}")
         return genres

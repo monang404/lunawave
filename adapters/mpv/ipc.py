@@ -13,9 +13,11 @@ Publishes:
 
 import asyncio
 import json
+
 import structlog
 
 logger = structlog.get_logger(__name__)
+
 
 class MpvIPC:
     """Send/receive JSON IPC ke MPV. Tidak tahu tentang event domain."""
@@ -54,7 +56,7 @@ class MpvIPC:
             self._conn.writer.write(payload.encode())
             await self._conn.writer.drain()
             return await asyncio.wait_for(fut, timeout=2.0)
-        except (OSError, asyncio.TimeoutError):
+        except (TimeoutError, OSError):
             self._pending.pop(req_id, None)
             return None
 

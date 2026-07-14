@@ -24,20 +24,23 @@ Thread Safety:
     Worker thread (async publish).
 """
 
-from typing import Callable, Type, TypeVar, Any
-from collections import defaultdict
 import asyncio
-import structlog
 import inspect
 import weakref
+from collections import defaultdict
+from collections.abc import Callable
+from typing import Any, TypeVar
 
-from core.task_utils import safe_create_task
+import structlog
+
 from core.events import DomainEvent
 from core.observability import EVENT_COUNT
+from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(__name__)
 
 E = TypeVar("E", bound=DomainEvent)
+
 
 class EventBus:
     """
@@ -45,6 +48,7 @@ class EventBus:
     Modules do not import each other directly —
     all communication goes through events to prevent circular imports.
     """
+
     def __init__(self):
         self._subscribers = defaultdict(list)
 
@@ -52,12 +56,12 @@ class EventBus:
     # Metode class/instance akan disimpan sebagai weak reference.
     # Namun, fungsi biasa, lambda, atau closure akan disimpan sebagai
     # strong reference, yang bisa menyebabkan memory leak jika tidak di-unsubscribe!
-    def subscribe(self, event_type: Type[E], handler: Callable[[E], Any]):
+    def subscribe(self, event_type: type[E], handler: Callable[[E], Any]):
         # Gunakan weakref untuk method agar tidak memory leak
         if inspect.ismethod(handler):
-            ref = weakref.WeakMethod(handler)
+            ref: Any = weakref.WeakMethod(handler)
         else:
-            ref = handler # Fallback strong reference untuk fungsi biasa/lambda
+            ref = handler
         self._subscribers[event_type].append(ref)
 
     def _resolve(self, ref):
@@ -73,18 +77,18 @@ class EventBus:
         """
         for event_type in list(self._subscribers):
             self._subscribers[event_type] = [
-                r for r in self._subscribers[event_type]
-                if self._resolve(r) is not None
+                r for r in self._subscribers[event_type] if self._resolve(r) is not None
             ]
             # Hapus key jika list sudah kosong agar dict tidak tumbuh
             if not self._subscribers[event_type]:
                 del self._subscribers[event_type]
 
-    def unsubscribe(self, event_type: Type[E], handler: Callable[[E], Any]):
+    def unsubscribe(self, event_type: type[E], handler: Callable[[E], Any]):
         """Remove a handler from an event, sekaligus bersihkan dead refs."""
         if event_type in self._subscribers:
             self._subscribers[event_type] = [
-                r for r in self._subscribers[event_type]
+                r
+                for r in self._subscribers[event_type]
                 # Buang: (1) dead weakref, (2) ref yang menunjuk ke handler target
                 if self._resolve(r) is not None and self._resolve(r) != handler
             ]
@@ -97,16 +101,16 @@ class EventBus:
         """Publish event to all subscribers. Exceptions in one handler
         do NOT prevent subsequent handlers from executing (CRITICAL-01 fix)."""
         event_type = type(event)
-        
+
         # Record Metric
         EVENT_COUNT.labels(event_type=event_type.__name__).inc()
-        
+
         active_handlers = []
         for ref in list(self._subscribers.get(event_type, [])):
             if isinstance(ref, weakref.ref):
                 handler = ref()
                 if handler is None:
-                    self._subscribers[event_type].remove(ref) # Cleanup dead reference
+                    self._subscribers[event_type].remove(ref)  # Cleanup dead reference
                     continue
             else:
                 handler = ref
@@ -116,20 +120,29 @@ class EventBus:
         tasks = []
         for handler in active_handlers:
             if asyncio.iscoroutinefunction(handler):
+
                 async def _wrap_handler(h=handler):
                     try:
                         await h(event)
                     except Exception as e:
-                        logger.error(f"Async Handler {getattr(h, '__name__', h)} error on '{event_type.__name__}': {e}", exc_info=True)
+                        logger.error(
+                            f"Async Handler {getattr(h, '__name__', h)} error on '{event_type.__name__}': {e}",
+                            exc_info=True,
+                        )
+
                 tasks.append(safe_create_task(_wrap_handler(), name=f"event_{event_type.__name__}"))
             else:
                 try:
                     handler(event)
                 except Exception as e:
-                    logger.error(f"Handler {getattr(handler, '__name__', handler)} error on '{event_type.__name__}': {e}", exc_info=True)
-        
+                    logger.error(
+                        f"Handler {getattr(handler, '__name__', handler)} error on '{event_type.__name__}': {e}",
+                        exc_info=True,
+                    )
+
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
+
 
 # Singleton
 bus = EventBus()

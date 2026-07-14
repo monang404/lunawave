@@ -23,17 +23,25 @@ Thread Safety:
 """
 
 import asyncio
+from collections.abc import Callable, Coroutine
+from typing import Any
+
 import structlog
-from typing import Coroutine, Optional, Callable, Any
 
 logger = structlog.get_logger(__name__)
 
-def safe_create_task(coro: Coroutine[Any, Any, Any], name: str = "", on_error: Optional[Callable[[Exception], Any]] = None) -> asyncio.Task:
+
+def safe_create_task(
+    coro: Coroutine[Any, Any, Any],
+    name: str = "",
+    on_error: Callable[[Exception], Any] | None = None,
+) -> asyncio.Task:
     """
     Membungkus pembuatan asyncio.Task dengan penanganan error terpusat
     sehingga exception tidak menjadi 'Task exception was never retrieved'
     yang menyebabkan silent crash.
     """
+
     async def _wrap_coro():
         try:
             await coro
@@ -49,7 +57,9 @@ def safe_create_task(coro: Coroutine[Any, Any, Any], name: str = "", on_error: O
                     else:
                         on_error(e)
                 except Exception as inner_e:
-                    logger.error(f"Error in on_error callback for task '{name}': {inner_e}", exc_info=True)
+                    logger.error(
+                        f"Error in on_error callback for task '{name}': {inner_e}", exc_info=True
+                    )
 
     task = asyncio.create_task(_wrap_coro(), name=name)
     return task

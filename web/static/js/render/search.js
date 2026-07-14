@@ -78,7 +78,7 @@ function updateSearchPlayingState() {
         item.classList.toggle("current", !!isCurrent);
         item.classList.toggle("playing", !!(isCurrent && isPlaying));
     });
-    
+
     if (typeof window.loadLazyCovers === "function") {
         window.loadLazyCovers();
     }

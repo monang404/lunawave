@@ -25,33 +25,40 @@ Thread Safety:
 
 import re
 import time
-import structlog
 from pathlib import Path
+
+import structlog
 from aiohttp import web
+
 from config import CACHE_DIR, STREAM_URL_TTL_SEC
 from core.observability import get_metrics_content
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
+
 async def serve_index(request):
     resp = web.FileResponse(STATIC_DIR / "index.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
+
 async def health_check(request):
     db = request.app["db"]
     db_status = "connected" if db.conn else "disconnected"
-    
+
     pc = request.app.get("playback_controller")
     mpv_ok = getattr(getattr(pc, "mpv", None), "is_connected", False)
     mpv_status = "connected" if mpv_ok else "not_started"
-    
-    return web.json_response({
-        "status": "ok" if db_status == "connected" else "degraded",
-        "db": db_status,
-        "mpv": mpv_status
-    })
+
+    return web.json_response(
+        {
+            "status": "ok" if db_status == "connected" else "degraded",
+            "db": db_status,
+            "mpv": mpv_status,
+        }
+    )
+
 
 async def serve_stream(request):
     video_id = request.match_info.get("video_id")
@@ -66,10 +73,7 @@ async def serve_stream(request):
         return web.HTTPBadRequest(text="Path tidak valid")
 
     if cache_file.exists():
-        return web.FileResponse(
-            cache_file,
-            headers={"Access-Control-Allow-Origin": "*"}
-        )
+        return web.FileResponse(cache_file, headers={"Access-Control-Allow-Origin": "*"})
 
     db = request.app["db"]
     ytdlp = request.app["ytdlp"]
@@ -93,6 +97,7 @@ async def serve_stream(request):
                 return web.HTTPServiceUnavailable(text="Stream tidak tersedia saat ini")
         # Validasi domain sebelum redirect (cegah open-redirect / SSRF)
         from urllib.parse import urlparse as _urlparse
+
         _p = _urlparse(stream_url)
         _domain = _p.netloc.lower()
         if _p.scheme != "https" or not (
@@ -114,6 +119,7 @@ async def serve_stream(request):
 
         try:
             from urllib.parse import urlparse
+
             parsed_url = urlparse(stream_url)
             if parsed_url.scheme != "https":
                 raise ValueError("Skema URL harus HTTPS")
@@ -142,9 +148,9 @@ async def serve_stream(request):
                         "Accept-Ranges": "bytes",
                         "Access-Control-Allow-Origin": "*",
                         "Cache-Control": "private, max-age=3600",
-                    }
+                    },
                 )
-                
+
                 if "Content-Range" in upstream.headers:
                     response.headers["Content-Range"] = upstream.headers["Content-Range"]
                 if "Content-Length" in upstream.headers:
@@ -168,18 +174,21 @@ async def serve_stream(request):
                 continue
             return web.HTTPInternalServerError(text="Proxy stream error")
 
+
 async def serve_metrics(request):
     import os as _os
+
     client_ip = request.remote
     _localhost_ips = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
-    metrics_token = _os.environ.get("LUNAWAVE_METRICS_TOKEN", _os.environ.get("YTGUI_METRICS_TOKEN"))
-    is_local = client_ip in _localhost_ips
-    has_valid_token = (
-        metrics_token
-        and request.headers.get("X-Metrics-Token") == metrics_token
+    metrics_token = _os.environ.get(
+        "LUNAWAVE_METRICS_TOKEN", _os.environ.get("YTGUI_METRICS_TOKEN")
     )
+    is_local = client_ip in _localhost_ips
+    has_valid_token = metrics_token and request.headers.get("X-Metrics-Token") == metrics_token
     if not is_local and not has_valid_token:
-        return web.HTTPForbidden(text="Akses ditolak: metrics hanya untuk localhost atau gunakan X-Metrics-Token")
+        return web.HTTPForbidden(
+            text="Akses ditolak: metrics hanya untuk localhost atau gunakan X-Metrics-Token"
+        )
 
     content, content_type = get_metrics_content()
     ct = content_type.split(";")[0].strip()
