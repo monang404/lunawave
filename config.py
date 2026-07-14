@@ -107,7 +107,10 @@ else:
     IS_PASSWORD_AUTO_GENERATED = True
     if _password_file.exists():
         with open(_password_file, encoding="utf-8") as f:
-            ADMIN_PASSWORD = f.read().strip()
+            _raw_from_file = f.read().strip()
+        from core.security import hash_password
+
+        ADMIN_PASSWORD = hash_password(_raw_from_file)
     else:
         # Generate random password
         from config_security import generate_admin_password
@@ -115,7 +118,7 @@ else:
         raw_password, ADMIN_PASSWORD = generate_admin_password()
         _password_file.parent.mkdir(parents=True, exist_ok=True)
         with open(_password_file, "w", encoding="utf-8") as f:
-            f.write(ADMIN_PASSWORD)
+            f.write(raw_password)
         try:
             import stat
 
@@ -123,7 +126,7 @@ else:
         except OSError:
             pass
 
-        print("\\n==========================================")
+        print("\n==========================================")
         print(f"PASSWORD ADMIN GENERATED: {raw_password}")
-        print("Harap simpan password ini! Tidak akan ditampilkan lagi.")
-        print("==========================================\\n")
+        print("Harap simpan password ini! Tersimpan juga di cache/admin_password.txt")
+        print("==========================================\n")

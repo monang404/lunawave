@@ -33,3 +33,21 @@ name = plugins hanya boleh import core
 type = forbidden
 source_modules = plugins
 forbidden_modules = server, launcher
+
+[importlinter:contract:engine-no-server-import]
+name = engine tidak boleh import server (arah dependency harus server -> engine)
+type = forbidden
+source_modules = engine
+forbidden_modules = server
+
+[importlinter:contract:services-only-import-core-and-persistence]
+name = services hanya boleh import core dan persistence
+type = forbidden
+source_modules = services
+forbidden_modules = adapters, engine, server, launcher
+
+[importlinter:contract:launcher-no-server-import]
+name = launcher tidak boleh import server (launcher menjalankan proses, bukan sebaliknya)
+type = forbidden
+source_modules = launcher
+forbidden_modules = server, engine, services

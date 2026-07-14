@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "generated_at": 1784003336.1238554,
+    "generated_at": 1784016860.1233976,
     "source_mtimes": {
-      "config.py": 1783996504.806494,
+      "config.py": 1784016655.7577472,
       "config_security.py": 1783996504.8086205,
-      "main.py": 1783996504.8140936,
+      "main.py": 1784016655.8196568,
       "start.py": 1783996504.8152113,
       "adapters/__init__.py": 1783911908.3891668,
       "adapters/mpv/connection.py": 1783996505.13344,
@@ -59,19 +59,19 @@
       "core/ports.py": 1783996504.881217,
       "core/security.py": 1783992890.8193908,
       "core/state.py": 1783992971.0607047,
-      "core/task_utils.py": 1783992890.867391,
+      "core/task_utils.py": 1784004933.3199055,
       "core/__init__.py": 1783906963.0,
       "data/export_to_sqlite.py": 1783996504.8842158,
       "data/__init__.py": 1783993535.900467,
       "engine/command_router.py": 1783996504.886217,
-      "engine/download_manager.py": 1783996504.8892171,
+      "engine/download_manager.py": 1784016811.3841307,
       "engine/mpv_controller.py": 1783996504.8902175,
       "engine/queue_manager.py": 1783996504.8902175,
       "engine/radio_engine.py": 1783996504.891218,
       "engine/volume_service.py": 1783996504.8932211,
       "engine/ytdlp_client.py": 1783996504.8932211,
       "engine/__init__.py": 1783906963.0,
-      "engine/playback/controller.py": 1784003103.167511,
+      "engine/playback/controller.py": 1784003408.6318493,
       "engine/playback/mode_ops.py": 1783996505.094444,
       "engine/playback/queue_ops.py": 1783996505.0964446,
       "engine/playback/track_loader.py": 1783996505.098447,
@@ -84,7 +84,7 @@
       "engine/radio/track_interleaver.py": 1783996505.1104488,
       "engine/radio/__init__.py": 1783914066.442545,
       "launcher/gui.py": 1783992907.8831055,
-      "launcher/network.py": 1783992890.5753927,
+      "launcher/network.py": 1784016761.282821,
       "launcher/process.py": 1783993602.2350001,
       "launcher/updater.py": 1783992872.3390532,
       "launcher/__init__.py": 1783911908.486587,
@@ -102,7 +102,7 @@
       "persistence/library_repo.py": 1783996504.9042184,
       "persistence/session_repo.py": 1783996504.9062185,
       "persistence/track_repo.py": 1783996504.908216,
-      "persistence/__init__.py": 1783996504.9102156,
+      "persistence/__init__.py": 1784016811.3841307,
       "plugins/lyrics.py": 1783996504.9112155,
       "plugins/lyrics_fetcher.py": 1783996504.915219,
       "plugins/lyrics_parser.py": 1783996504.9162152,
@@ -111,6 +111,7 @@
       "plugins/sponsorblock.py": 1783996504.9224427,
       "plugins/__init__.py": 1783906963.0,
       "scratch/check_db.py": 1784002203.0,
+      "scratch/phase02_e2e.py": 1784016811.3841307,
       "server/app.py": 1783996504.938442,
       "server/connection_manager.py": 1783996504.9404452,
       "server/middleware.py": 1783992907.8781018,
@@ -121,7 +122,7 @@
       "server/handlers/http.py": 1783996505.059442,
       "server/handlers/websocket.py": 1783996505.0614433,
       "server/handlers/ws_discovery.py": 1783996505.0624444,
-      "server/handlers/ws_download.py": 1783996505.0644448,
+      "server/handlers/ws_download.py": 1784016688.6389651,
       "server/handlers/ws_playback.py": 1783996505.0654438,
       "server/handlers/ws_queue.py": 1783996505.0664427,
       "server/handlers/__init__.py": 1783906963.0,
@@ -141,12 +142,13 @@
         "pathlib",
         "warnings",
         "core.security",
+        "core.security",
         "config_security",
         "stat"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 130,
+      "loc": 132,
       "docstring_purpose": "Load and expose all environment-based runtime configuration constants     for LunaWave, including paths, ports, and the admin password.",
       "reverse_deps": [
         "main.py",
@@ -156,6 +158,7 @@
         "adapters/ytdlp/resolver.py",
         "cache/resolver.py",
         "core/log_config.py",
+        "engine/download_manager.py",
         "persistence/db.py",
         "persistence/__init__.py",
         "plugins/lyrics_fetcher.py",
@@ -163,6 +166,7 @@
         "plugins/sponsorblock.py",
         "server/handlers/auth.py",
         "server/handlers/http.py",
+        "server/handlers/ws_download.py",
         "server/services/stream_prefetch.py"
       ]
     },
@@ -1460,6 +1464,7 @@
       "docstring_purpose": "Provide PBKDF2-SHA256 password hashing and constant-time verification.",
       "reverse_deps": [
         "config.py",
+        "config.py",
         "config_security.py",
         "launcher/gui/auth_panel.py",
         "server/handlers/auth.py"
@@ -1530,7 +1535,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 66,
+      "loc": 76,
       "docstring_purpose": "Wrap asyncio.create_task with centralized exception handling to prevent     silent background-task crashes.",
       "reverse_deps": [
         "main.py",
@@ -1616,7 +1621,7 @@
         "core.events",
         "re",
         "shutil",
-        "pathlib"
+        "config"
       ],
       "publishes": [
         "DownloadProgressEvent",
@@ -1629,7 +1634,7 @@
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 134,
+      "loc": 135,
       "docstring_purpose": "Handle the CMD_DOWNLOAD command by downloading the current or specified     track via yt-dlp and moving it to the downloads/ folder.",
       "reverse_deps": [
         "main.py"
@@ -1785,7 +1790,7 @@
         "TrackPauseChangedEvent",
         "TrackDurationEvent"
       ],
-      "loc": 371,
+      "loc": 373,
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "main.py",
@@ -2509,6 +2514,7 @@
       ],
       "imports": [
         "pathlib",
+        "structlog",
         "persistence.artist_repo",
         "persistence.db",
         "persistence.genre_repo",
@@ -2519,7 +2525,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 135,
+      "loc": 147,
       "docstring_purpose": "Database facade that aggregates all repositories into a unified data access layer.",
       "reverse_deps": []
     },
@@ -2966,11 +2972,12 @@
         "core.command_bus",
         "server.serializers",
         "services.discover_service",
+        "config",
         "server.serializers"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 98,
+      "loc": 99,
       "docstring_purpose": "WebSocket handler for managing track download requests and status.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -3121,6 +3128,29 @@
       "publishes": [],
       "subscribes": [],
       "loc": 2,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "scratch/phase02_e2e.py": {
+      "layer": "scratch",
+      "classes": [],
+      "functions": [
+        "main"
+      ],
+      "imports": [
+        "asyncio",
+        "json",
+        "os",
+        "signal",
+        "subprocess",
+        "sys",
+        "time",
+        "pathlib",
+        "aiohttp"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 137,
       "docstring_purpose": "",
       "reverse_deps": []
     }

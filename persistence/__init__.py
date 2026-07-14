@@ -27,6 +27,10 @@ Thread Safety:
 
 from pathlib import Path
 
+import structlog
+
+logger = structlog.get_logger(__name__)
+
 from persistence.artist_repo import ArtistRepository
 from persistence.db import DatabaseConnection
 from persistence.genre_repo import GenreRepository
@@ -63,8 +67,16 @@ class Database:
             try:
                 await self._db.conn.execute(sql)
                 await self._db.conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                # "duplicate column" itu NORMAL (migrasi sudah pernah jalan) — jangan di-log sebagai error.
+                # Selain itu (disk full, DB corrupt, dll) WAJIB tercatat.
+                if "duplicate column" not in str(e).lower():
+                    logger.error(
+                        "db_migration_failed",
+                        sql=sql,
+                        error=str(e),
+                        error_type=type(e).__name__,
+                    )
         self._tracks = TrackRepository(self._db.conn)
         self._sessions = SessionRepository(self._db.conn)
         self._artists = ArtistRepository(self._db.conn)

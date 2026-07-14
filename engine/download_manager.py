@@ -93,10 +93,11 @@ class DownloadManager:
 
                 import re
                 import shutil
-                from pathlib import Path
 
-                downloads_dir = Path("downloads")
-                downloads_dir.mkdir(exist_ok=True)
+                from config import BASE_DIR
+
+                downloads_dir = BASE_DIR / "downloads"
+                downloads_dir.mkdir(parents=True, exist_ok=True)
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", track.title)
                 user_path = downloads_dir / f"{safe_artist} - {safe_title}.mp3"

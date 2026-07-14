@@ -36,7 +36,7 @@ def check_port_in_use(port: int) -> bool:
 def get_pid_occupying_port(port: int) -> int | None:
     if sys.platform == "win32":
         try:
-            output = subprocess.check_output("netstat -aon", shell=True, text=True)
+            output = subprocess.check_output(["netstat", "-aon"], shell=False, text=True)
             for line in output.splitlines():
                 if "TCP" in line.upper():
                     parts = line.strip().split()
@@ -53,20 +53,22 @@ def get_pid_occupying_port(port: int) -> int | None:
             pass
     else:
         try:
-            output = subprocess.check_output(f"lsof -t -i:{port}", shell=True, text=True)
+            output = subprocess.check_output(
+                ["lsof", "-t", "-i", f":{port}"], shell=False, text=True
+            )
             pids = output.strip().split()
             if pids:
                 return int(pids[0])
         except Exception:
             try:
-                output = subprocess.check_output(f"fuser {port}/tcp", shell=True, text=True)
+                output = subprocess.check_output(["fuser", f"{port}/tcp"], shell=False, text=True)
                 parts = output.strip().split()
                 if parts:
                     return int(parts[-1])
             except Exception:
                 try:
                     output = subprocess.check_output(
-                        f'ss -lptn "sport = :{port}"', shell=True, text=True
+                        ["ss", "-lptn", f"sport = :{port}"], shell=False, text=True
                     )
                     import re
 

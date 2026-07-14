@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-14-040
+latest_patch_id: PATCH-2026-07-14-041
 
-total_entries: 40
+total_entries: 41
 
 ---
 
@@ -26,6 +26,28 @@ total_entries: 40
 
 ---
 
+
+
+## [2026-07-14] Stable Release Hardening & Bug Fixes
+
+**ID:** `PATCH-2026-07-14-041`
+**Tanggal:** 2026-07-14
+**Ringkasan:** Eksekusi P0-P2 dari IMPLEMENTATION_PLAN.md untuk persiapan Stable Release v1.0.0. Termasuk perbaikan banner password, path downloads, DB migration logging, `shell=False` di network probing, pemblokiran CI gate, metadata `pyproject.toml`, update package metadata, dan setup wheel build di CI.
+**File Terdampak:**
+- `main.py`
+- `config.py`
+- `README.md`
+- `docs/INDEX.md`
+- `engine/download_manager.py`
+- `server/handlers/ws_download.py`
+- `persistence/__init__.py`
+- `launcher/network.py`
+- `package.json`
+- `.importlinter`
+- `.github/workflows/ci.yml`
+- `pyproject.toml`
+
+---
 
 
 ## [2026-07-14] Baseline Stable v1.0.0 Release

@@ -55,7 +55,9 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                 # Fallback legacy: hapus juga dari folder downloads jika dulu file tersimpan ganda
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", db_track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", db_track.title)
-                user_path = Path("downloads") / f"{safe_artist} - {safe_title}.mp3"
+                from config import BASE_DIR
+
+                user_path = BASE_DIR / "downloads" / f"{safe_artist} - {safe_title}.mp3"
                 if user_path.exists() and str(user_path) != db_track.local_path:
                     try:
                         os.remove(str(user_path))
