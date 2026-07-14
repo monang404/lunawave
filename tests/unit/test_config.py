@@ -235,9 +235,19 @@ def test_admin_password_auto_generation_is_stable_across_restarts(tmp_path):
     assert first.returncode == 0 and second.returncode == 0
     # First run auto-generates + prints the banner + the password value on
     # its own last line; second run reads the cached file and prints only
-    # the value. Compare just the last line (the actual ADMIN_PASSWORD) —
-    # not full stdout, since the banner should NOT reappear on run two.
-    assert first.stdout.strip().splitlines()[-1] == second.stdout.strip().splitlines()[-1]
+    # the value. Both values are hashes of the same underlying password,
+    # but they will differ in string representation due to random salting.
+    from core.security import verify_password
+
+    first_hash = first.stdout.strip().splitlines()[-1]
+    second_hash = second.stdout.strip().splitlines()[-1]
+
+    raw_password = (tmp_path / "cache" / "admin_password.txt").read_text(encoding="utf-8").strip()
+
+    assert verify_password(raw_password, first_hash) is True
+    assert verify_password(raw_password, second_hash) is True
+    assert first_hash != second_hash
+
     # second run reads the existing file, so it must not print the banner again
     assert "PASSWORD ADMIN GENERATED" not in second.stdout
 
