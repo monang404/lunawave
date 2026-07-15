@@ -63,10 +63,10 @@ class MpvController:
             await self._observer.start()
         return connected
 
-    async def play(self, url_or_path: str):
+    async def play(self, uri: str) -> None:
         if not self.is_connected:
             return
-        await self._ipc.send_command(["loadfile", url_or_path, "replace"])
+        await self._ipc.send_command(["loadfile", uri, "replace"])
 
     async def pause(self):
         if not self.is_connected:
