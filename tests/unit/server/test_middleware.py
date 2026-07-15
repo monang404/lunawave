@@ -50,3 +50,7 @@ async def test_check_rate_limit():
     # First command was at t=0, so now-t = 61 > 60 -> should be filtered out
     # Only 28 commands remain (t=1..28)
     assert await check_rate_limit(manager, ip, 61) is True
+
+    # Test with new IP to ensure deque defaults correctly
+    ip2 = "192.168.1.2"
+    assert await check_rate_limit(manager, ip2, 100) is True

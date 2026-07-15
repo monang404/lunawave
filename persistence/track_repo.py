@@ -45,6 +45,7 @@ class TrackRepository:
             if "is_favorite" in row.keys():
                 is_fav = row["is_favorite"] or 0
             loudness = row["loudness_lufs"] if "loudness_lufs" in row.keys() else None
+            last_position = row["last_position"] if "last_position" in row.keys() else 0.0
             return TrackInfo(
                 video_id=row["video_id"],
                 title=row["title"],
@@ -59,6 +60,7 @@ class TrackRepository:
                 last_played=row["last_played"],
                 is_favorite=is_fav,
                 loudness_lufs=loudness,
+                last_position=last_position,
             )
 
     async def upsert_track(
@@ -169,5 +171,13 @@ class TrackRepository:
         await self._conn.execute(
             "UPDATE tracks SET loudness_lufs = ? WHERE video_id = ?",
             (lufs, video_id),
+        )
+        await self._conn.commit()
+
+    async def set_last_position(self, video_id: str, position: float) -> None:
+        """Simpan last playback position."""
+        await self._conn.execute(
+            "UPDATE tracks SET last_position = ? WHERE video_id = ?",
+            (position, video_id),
         )
         await self._conn.commit()

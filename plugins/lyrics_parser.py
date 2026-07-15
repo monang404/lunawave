@@ -22,17 +22,18 @@ Thread Safety:
 
 import re
 
+_LRC_LINE_RE = re.compile(r"\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)")
+
 
 class LyricsParser:
     @staticmethod
     def parse_lrc(lrc_text: str) -> list[tuple[float, str]]:
-        pattern = re.compile(r"\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)")
         result = []
         for line in lrc_text.splitlines():
             line = line.strip()
             if not line:
                 continue
-            m = pattern.match(line)
+            m = _LRC_LINE_RE.match(line)
             if m:
                 minutes, seconds, text = m.groups()
                 timestamp = int(minutes) * 60 + float(seconds)

@@ -66,6 +66,7 @@ class Database:
             "ALTER TABLE artists ADD COLUMN reward_alpha INTEGER DEFAULT 1",
             "ALTER TABLE artists ADD COLUMN reward_beta INTEGER DEFAULT 1",
             "ALTER TABLE tracks ADD COLUMN loudness_lufs REAL",
+            "ALTER TABLE tracks ADD COLUMN last_position REAL DEFAULT 0.0",
         ]:
             try:
                 await self._db.conn.execute(sql)
@@ -159,3 +160,6 @@ class Database:
 
     async def set_loudness(self, *a, **kw):
         return await self._tracks.set_loudness(*a, **kw)
+
+    async def set_last_position(self, *a, **kw):
+        return await self._tracks.set_last_position(*a, **kw)

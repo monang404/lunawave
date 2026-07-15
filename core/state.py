@@ -60,20 +60,24 @@ class TrackInfo:
     last_played: int | None = None
     is_favorite: int | None = 0
     loudness_lufs: float | None = None
+    last_position: float | None = 0.0
 
 
 @dataclass
 class AppState:
     # Playback
     status: PlayerStatus = PlayerStatus.IDLE
+    playback_speed: float = 1.0
+    loop_mode: str = "off"
     playback_mode: PlaybackMode = PlaybackMode.QUEUE
     audio_output: AudioOutput = AudioOutput.BROWSER
     current_track: TrackInfo | None = None
     position: float = 0.0
     duration: float = 0.0
     volume: int = 80
-    sponsorblock_active: bool = True
-    loudness_normalization_enabled: bool = True
+    sponsorblock_active: bool = False
+    crossfade_enabled: bool = False
+    loudness_normalization_enabled: bool = False
 
     # Queue (hanya aktif di QUEUE mode)
     queue: deque = field(default_factory=deque)

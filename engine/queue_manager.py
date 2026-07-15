@@ -43,6 +43,12 @@ class QueueMode:
 
     async def next(self, controller: "PlaybackController") -> None:
         """Dipanggil PlaybackController saat track berakhir di QUEUE mode."""
+        loop_mode = getattr(controller.state, "loop_mode", "off")
+
+        if loop_mode == "track" and controller.state.current_track:
+            await controller.play_track(controller.state.current_track)
+            return
+
         if not controller.state.queue:
             controller.state.status = PlayerStatus.IDLE
             controller.state.current_track = None
@@ -50,4 +56,7 @@ class QueueMode:
             return
 
         track = controller.state.queue.popleft()
+        if loop_mode == "queue":
+            controller.state.queue.append(track)
+
         await controller.play_track(track)

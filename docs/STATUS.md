@@ -1,7 +1,7 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-13
-sprint: 3.2 (selesai) + Batch 8–12 pasca-sprint (belum diberi nomor resmi)
+last_verified: 2026-07-15
+sprint: Phase 8 (selesai) + Tier 2 (T10-T16)
 ---
 
 # STATUS.md — Kondisi File per Sprint

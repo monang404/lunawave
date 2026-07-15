@@ -74,3 +74,39 @@ async def test_lyrics_fetcher_fallback_syncedlyrics(mock_get_loop, mock_wait_for
     assert mock_session.get.call_count == 2
     assert mock_wait_for.called
     assert mock_state.lyrics_lines == ["Fallback Line"]
+
+
+@pytest.mark.asyncio
+@patch("plugins.lyrics_fetcher.asyncio.wait_for")
+@patch("plugins.lyrics_fetcher.asyncio.get_running_loop")
+async def test_lyrics_fetcher_cleans_title(mock_get_loop, mock_wait_for):
+    mock_state = AppState()
+    mock_bus = MagicMock()
+    mock_bus.publish = AsyncMock()
+    mock_session = MagicMock()
+
+    mock_response = AsyncMock()
+    mock_response.status = 404
+    mock_response.json = AsyncMock(return_value={})
+
+    mock_request_context = MagicMock()
+    mock_request_context.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_request_context.__aexit__ = AsyncMock()
+    mock_session.get = MagicMock(return_value=mock_request_context)
+
+    fetcher = LyricsFetcher(mock_state, session=mock_session, event_bus=mock_bus)
+    track = TrackInfo(
+        video_id="123",
+        title="Song Name Official Music Video (Lyrics)",
+        artist="Test Artist",
+        duration=200,
+    )
+
+    with patch("plugins.lyrics_parser.LyricsParser") as mock_parser:
+        mock_parser.parse_lrc.return_value = []
+        await fetcher.fetch(track)
+
+    # Check search query
+    assert mock_session.get.call_count == 2
+    search_call_args = mock_session.get.call_args_list[1]
+    assert search_call_args.kwargs["params"]["q"] == "Song Name Test Artist"

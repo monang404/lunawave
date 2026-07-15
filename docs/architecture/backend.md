@@ -73,8 +73,9 @@ Setiap modul di bawah memiliki **satu tanggung jawab**. Kolom *Testable* menanda
 |---|---|---|
 | `controller.py` | Slim orchestrator: play, pause, skip, stop | ✅ |
 | `queue_ops.py` 🆕 | Operasi queue saat playback (next, prev) | ✅ |
-| `mode_ops.py` 🆕 | Mode switching (normal, radio, shuffle) | ✅ |
+| `mode_ops.py` 🆕 | Mode switching + set_speed, set_loop, set_crossfade, sleep timer | ✅ |
 | `track_loader.py` | Resolve URL dan load ke player | ✅ |
+| `crossfade.py` 🆕 | Crossfade fade-in/fade-out via MPV volume ramping | ✅ |
 
 #### `engine/radio/`
 
@@ -145,10 +146,11 @@ Detail → [backend/caching.md](../backend/caching.md)
 | `http.py` | HTTP endpoints (serve static, status) | ✅ |
 | `event_listeners.py` | Subscribe event bus → trigger broadcast | ✅ |
 | `websocket.py` | Slim: lifecycle WS + routing ke sub-handler | ✅ |
-| `ws_playback.py` 🆕 | Handle cmd play/pause/skip/seek/volume | ✅ |
+| `ws_playback.py` 🆕 | Handle cmd play/pause/skip/seek/volume/speed/loop/crossfade/sleep | ✅ |
 | `ws_queue.py` 🆕 | Handle cmd queue add/remove/reorder | ✅ |
 | `ws_discovery.py` 🆕 | Handle cmd search/discover | ✅ |
 | `ws_download.py` 🆕 | Handle cmd download/cancel | ✅ |
+| `ws_cache.py` 🆕 | Handle cmd get_cache_size / clear_cache | ✅ |
 
 #### `server/services/`
 

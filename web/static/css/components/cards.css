@@ -463,9 +463,10 @@
 .hashtag-cloud-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 16px;
+  gap: 8px;
   padding: var(--s2) var(--s5) var(--s5);
   align-items: center;
+  justify-content: flex-start;
 }
 
 .hashtag-cloud-container::after {

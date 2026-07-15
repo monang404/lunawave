@@ -105,3 +105,26 @@ async def test_next_pops_from_the_left_fifo_order():
 
     assert controller.played[0].video_id == "first"
     assert [t.video_id for t in state.queue] == ["second", "third"]
+
+
+async def test_next_loop_track():
+    state = AppState(current_track=make_track("v1"), loop_mode="track")
+    controller = _FakeController(state, EventBus())
+    mode = QueueMode()
+
+    await mode.next(controller)
+
+    assert len(controller.played) == 1
+    assert controller.played[0].video_id == "v1"
+
+
+async def test_next_loop_queue():
+    state = AppState(queue=deque([make_track("v1"), make_track("v2")]), loop_mode="queue")
+    controller = _FakeController(state, EventBus())
+    mode = QueueMode()
+
+    await mode.next(controller)
+
+    assert len(controller.played) == 1
+    assert controller.played[0].video_id == "v1"
+    assert [t.video_id for t in state.queue] == ["v2", "v1"]

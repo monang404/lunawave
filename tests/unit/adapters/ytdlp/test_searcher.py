@@ -57,12 +57,14 @@ def test_to_track_empty_or_invalid_id():
 
     entry = {"title": "Unknown Song"}
 
-    track = searcher._to_track(entry)
+    track1 = searcher._to_track(entry)
+    track2 = searcher._to_track(entry)
 
-    assert track.video_id.startswith("vid_")
-    assert track.title == "Unknown Song"
-    assert track.artist == "Unknown"
-    assert track.duration == 0
+    assert track1.video_id.startswith("vid_")
+    assert track1.video_id == track2.video_id  # Deterministic check
+    assert track1.title == "Unknown Song"
+    assert track1.artist == "Unknown"
+    assert track1.duration == 0
 
 
 @pytest.mark.asyncio

@@ -140,8 +140,12 @@ async def main():
         loudness_service,
     )
 
+    from engine.sleep_timer import SleepTimer
+
+    sleep_timer = SleepTimer(bus)
+
     DownloadManager(bus, state, ytdlp)
-    CommandRouter(playback_controller, volume_service)
+    CommandRouter(playback_controller, volume_service, sleep_timer)
 
     # Termux now-playing notification (no-op outside Termux)
     nowplaying = TermuxNowPlaying(bus, state)
@@ -166,6 +170,26 @@ async def main():
 
     connectivity_task = safe_create_task(check_connectivity(), name="connectivity_checker")
     tasks = [connectivity_task]
+
+    # Resume last playback
+    try:
+        async with db.conn.execute(
+            "SELECT video_id, last_position FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT 1"
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row and row["video_id"]:
+                vid = row["video_id"]
+                last_pos = float(row["last_position"] or 0.0)
+                track = await db.get_track(vid)
+                if track and last_pos > 0:
+                    await playback_controller.play_track(
+                        track, start_position=last_pos, start_paused=True
+                    )
+                    structlog.get_logger(__name__).info(
+                        f"Resumed last track: {track.title} at {last_pos}s"
+                    )
+    except Exception as e:
+        structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
 
     # DB Maintenance: eviction track stale + cleanup session expired.
     async def db_maintenance():

@@ -22,7 +22,10 @@ Thread Safety:
 """
 
 import asyncio
+import hashlib
 import re
+
+_VALID_ID_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
 
 from adapters.ytdlp.common import YDL_OPTS_INFO
 from core.state import TrackInfo
@@ -98,10 +101,10 @@ class YtDlpSearcher:
         duration = int(duration_raw) if duration_raw else 0
 
         video_id = entry.get("id", "") or entry.get("url", "")
-        if video_id and not re.match(r"^[a-zA-Z0-9_\-]{1,64}$", video_id):
-            video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
+        if video_id and not _VALID_ID_RE.match(video_id):
+            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode()).hexdigest()[:10]}"
         elif not video_id:
-            video_id = f"vid_{abs(hash(entry.get('title', ''))) % 10**10}"
+            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode()).hexdigest()[:10]}"
 
         return TrackInfo(
             video_id=video_id,

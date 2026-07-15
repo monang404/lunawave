@@ -48,6 +48,7 @@ PLAYBACK_CMDS = {
     "toggle_pause",
     "next",
     "prev",
+    "stop",
     "seek",
     "set_mode",
     "set_output",
@@ -57,6 +58,10 @@ PLAYBACK_CMDS = {
     "volume_up",
     "volume_down",
     "volume_set",
+    "set_sleep_timer",
+    "set_speed",
+    "set_loop",
+    "set_crossfade",
 }
 QUEUE_CMDS = {
     "queue_select",
@@ -68,6 +73,7 @@ QUEUE_CMDS = {
 }
 DISCOVERY_CMDS = {"search", "discover"}
 DOWNLOAD_CMDS = {"download", "delete_download"}
+CACHE_CMDS = {"get_cache_size", "clear_cache"}
 
 
 logger = structlog.get_logger(__name__)
@@ -158,6 +164,10 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
             await handle_discovery_command(action, data, ytdlp, db, ws)
         elif action in DOWNLOAD_CMDS:
             await handle_download_command(action, data, db, manager, state)
+        elif action in CACHE_CMDS:
+            from server.handlers.ws_cache import handle_cache_command
+
+            await handle_cache_command(action, data, ws, db, manager, state)
     except Exception as e:
         logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
         try:
