@@ -102,9 +102,9 @@ class YtDlpSearcher:
 
         video_id = entry.get("id", "") or entry.get("url", "")
         if video_id and not _VALID_ID_RE.match(video_id):
-            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode()).hexdigest()[:10]}"
+            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode(), usedforsecurity=False).hexdigest()[:10]}"
         elif not video_id:
-            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode()).hexdigest()[:10]}"
+            video_id = f"vid_{hashlib.sha1(entry.get('title', '').encode(), usedforsecurity=False).hexdigest()[:10]}"
 
         return TrackInfo(
             video_id=video_id,
