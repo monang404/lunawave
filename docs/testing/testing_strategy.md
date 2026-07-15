@@ -71,7 +71,7 @@ graph TD
     subgraph Pyramid
         E2E["🔺 E2E / Manual<br/>(Playwright, QA checklist)"]
         INT["🔷 Integration Tests<br/>(4 skenario, butuh MPV + yt-dlp)"]
-        UNIT["🟩 Unit Tests<br/>(~65 file, pure logic + fakes)"]
+        UNIT["🟩 Unit Tests<br/>(~72 file, pure logic + fakes)"]
         FRONT["🟦 Frontend Tests<br/>(Vitest, opsional)"]
     end
 

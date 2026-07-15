@@ -21,6 +21,8 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
 from core.state import AppState, TrackInfo
@@ -74,3 +76,38 @@ async def test_clear_standby():
 
     await prefetcher.async_clear_standby()
     assert len(prefetcher._standby) == 0
+
+
+@pytest.mark.asyncio
+async def test_do_prefetch_handles_resolve_error():
+    state = AppState()
+    state.radio_queue.append(TrackInfo(video_id="1", title="T1", artist="A", duration=100))
+    selector = MockArtistSelector()
+    prefetcher = RadioPrefetcher(state, selector)
+
+    controller = MagicMock()
+    controller.track_loader.resolver.resolve = AsyncMock(side_effect=Exception("Resolve Error"))
+
+    await prefetcher._do_prefetch(controller)
+    controller.track_loader.resolver.resolve.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_check_prefetch_triggers_prefetch():
+    state = AppState()
+    state.current_track = TrackInfo(video_id="1", title="T1", artist="A", duration=100)
+    selector = MockArtistSelector()
+    prefetcher = RadioPrefetcher(state, selector)
+
+    controller = MagicMock()
+    controller.track_loader.resolver.latency_window.percentile.return_value = 10.0
+
+    # 10 * 1.5 = 15 sec threshold
+    # position 86, duration 100 -> remaining 14 sec (<= 15) -> trigger
+    prefetcher.check_prefetch(controller, 86, 100)
+
+    assert len(prefetcher._bg_tasks) == 1
+
+    # check idempotency
+    prefetcher.check_prefetch(controller, 87, 100)
+    assert len(prefetcher._bg_tasks) == 1

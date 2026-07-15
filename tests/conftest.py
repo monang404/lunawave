@@ -22,6 +22,27 @@ from pathlib import Path
 
 import pytest
 
+_pytest_exit_status = 0
+
+def pytest_sessionfinish(session, exitstatus):
+    """Store exit status to use it if we have to force exit."""
+    global _pytest_exit_status
+    _pytest_exit_status = exitstatus
+
+def pytest_unconfigure(config):
+    """
+    Called after all tests have finished and coverage is printed.
+    If there are zombie non-daemon threads (e.g. from yt-dlp inside ThreadPoolExecutor),
+    Python will hang forever on exit. This hook detects them and forces exit.
+    """
+    import threading
+    import sys
+    
+    non_daemon_threads = [t for t in threading.enumerate() if not t.daemon and t.ident != threading.current_thread().ident]
+    if non_daemon_threads:
+        print(f"\n[WARNING] Zombie non-daemon threads detected: {non_daemon_threads}. Force exiting to prevent CI hang!", file=sys.stderr)
+        os._exit(_pytest_exit_status)
+
 # Make sure the repo root (parent of tests/) is importable as top-level
 # packages: `core`, `cache`, `engine`, `config`, etc.
 REPO_ROOT = Path(__file__).parent.parent

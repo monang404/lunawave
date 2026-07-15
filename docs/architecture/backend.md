@@ -25,6 +25,7 @@ Setiap modul di bawah memiliki **satu tanggung jawab**. Kolom *Testable* menanda
 | `observability.py` | Metrics, tracing stubs | ✅ |
 | `exceptions.py` | Hierarki exception domain | ✅ |
 | `log_config.py` | Setup logging (structlog / stdlib) | ⚠️ side-effect |
+| `latency_window.py` 🆕 | Adaptive prefetch metric window | ✅ |
 
 > `core/` tidak boleh mengimport apapun di luar `core/`.
 > Lihat → [architecture/dependency_rules.md](dependency_rules.md)
@@ -82,7 +83,17 @@ Setiap modul di bawah memiliki **satu tanggung jawab**. Kolom *Testable* menanda
 | `engine.py` | Orchestrator radio mode, export `RadioMode` | ✅ |
 | `prefetcher.py` | Prefetch track berikutnya di background | ✅ |
 | `artist_selector.py` | Pilih artis berdasar queue & riwayat | ✅ |
+| `artist_bandit.py` 🆕 | Thompson sampling untuk seleksi artis | ✅ |
+| `track_interleaver.py` 🆕 | Interleave hasil pencarian berdasar artis | ✅ |
 | `track_filter.py` | Filter track dari hasil pencarian — **akar bug radio mode** | ✅ ⚠️ |
+
+#### `engine/loudness/` 🆕
+
+| File | Tanggung Jawab | Testable |
+|---|---|---|
+| `analyzer.py` 🆕 | Eksekusi `ffprobe` untuk mengukur EBU R128 | ✅ |
+| `gain_calculator.py` 🆕 | Hitung gain (dB) dan filter `af` MPV | ✅ |
+| `service.py` 🆕 | Orchestrator pipeline normalisasi kenyaringan | ✅ |
 
 ---
 
