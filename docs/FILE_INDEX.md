@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-14
+last_verified: 2026-07-15
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-14 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-15 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `cache/resolver`, `core/log_config`, _8 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `cache/resolver`, `core/log_config`, _10 lainnya_
 **Menggunakan:** —
 
 
@@ -113,6 +113,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `core/latency_window.py`
+**Fungsi:** Rolling window durasi (detik) untuk menghitung percentile ke-n dari N sample terakhir. Dipakai untuk threshold adaptif yang bereaksi ke kondisi jaringan aktual, bukan angka statis.
+**Class:** `LatencyWindow`
+**Function utama:** `record()`, `percentile()`, `sample_count()`
+**Digunakan oleh:** `cache/resolver`
+**Menggunakan:** —
+
+
+---
+
 **File:** `core/log_config.py`
 **Fungsi:** Configure structlog and stdlib logging with an async queue handler, rotating file output, and a compact single-line renderer.
 **Class:** —
@@ -127,7 +137,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.
 **Class:** —
 **Function utama:** `get_metrics_content()`
-**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `server/connection_manager`, `server/handlers/http`
+**Digunakan oleh:** `cache/resolver`, `core/command_bus`, `core/event_bus`, `server/connection_manager`, `server/handlers/http`
 **Menggunakan:** —
 
 
@@ -137,7 +147,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.
 **Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
 **Function utama:** `is_connected()`, `cancel_download()`, `db()`
-**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/mode_ops`, `engine/playback/track_loader`, _6 lainnya_
+**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, _7 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -289,6 +299,36 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `engine/loudness/analyzer.py`
+**Fungsi:** Ukur integrated loudness (LUFS) sebuah track via satu-pass ffmpeg `loudnorm` filter mode measure-only (tidak re-encode, tidak menyimpan file baru).
+**Class:** `LoudnessAnalyzer`
+**Function utama:** `measure_sync()`
+**Digunakan oleh:** `engine/loudness/service`
+**Menggunakan:** `config`
+
+
+---
+
+**File:** `engine/loudness/gain_calculator.py`
+**Fungsi:** Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS).
+**Class:** —
+**Function utama:** `compute_gain_db()`, `build_af_filter()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `engine/loudness/service.py`
+**Fungsi:** Orkestrasi analisis loudness: cek apakah track sudah pernah diukur, kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.
+**Class:** `LoudnessService`
+**Function utama:** —
+**Digunakan oleh:** —
+**Menggunakan:** `core/ports`, `engine/loudness/analyzer`
+
+
+---
+
 **File:** `engine/mpv_controller.py`
 **Fungsi:** Auto-generated purpose.
 **Class:** —
@@ -331,7 +371,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 **File:** `engine/playback/track_loader.py`
 **Fungsi:** Resolve a track URI and trigger background side-effects (sponsorblock, lyrics fetch, play-count increment) before playback begins.
-**Class:** `TrackLoader`
+**Class:** `LoadedTrack`, `TrackLoader`
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/controller`
 **Menggunakan:** `core/ports`, `core/state`, `core/task_utils`
@@ -345,6 +385,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/controller`
 **Menggunakan:** `core/events`, `core/state`
+
+
+---
+
+**File:** `engine/radio/artist_bandit.py`
+**Fungsi:** Thompson Sampling (Beta-Bernoulli) untuk memilih artis radio berdasarkan histori selesai/skip, dengan eksplorasi otomatis untuk artis yang datanya masih sedikit.
+**Class:** `ArtistStat`
+**Function utama:** `sample_artists()`
+**Digunakan oleh:** —
+**Menggunakan:** —
 
 
 ---
@@ -384,7 +434,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `RadioPrefetcher`
 **Function utama:** `cancel_tasks()`, `clear_standby()`, `trigger_build_standby()`, `check_prefetch()`
 **Digunakan oleh:** `engine/radio/engine`
-**Menggunakan:** `core/state`, `engine/radio/common`
+**Menggunakan:** `config`, `core/state`, `engine/radio/common`
 
 
 ---
@@ -530,7 +580,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `CacheResolver`
 **Function utama:** —
 **Digunakan oleh:** —
-**Menggunakan:** `config`, `core/ports`, `core/state`
+**Menggunakan:** `config`, `core/latency_window`, `core/observability`, `core/ports`, `core/state`
 
 
 ---
@@ -1169,7 +1219,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**108/108** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**113/113** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi 🎉)_

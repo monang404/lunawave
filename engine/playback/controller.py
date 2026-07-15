@@ -27,6 +27,10 @@ Thread Safety:
 """
 
 import asyncio
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from engine.loudness.service import LoudnessService
 
 import structlog
 
@@ -63,6 +67,7 @@ class PlaybackController:
         lyrics_fetcher: LyricsProvider,
         queue_mode: QueueMode,
         radio_mode: RadioMode,
+        loudness_service: "LoudnessService | None" = None,
     ):
         self.bus = bus
         self.state = state
@@ -70,7 +75,7 @@ class PlaybackController:
         self.resolver = resolver
         self.queue_mode = queue_mode
         self.radio_mode = radio_mode
-        self.track_loader = TrackLoader(resolver, sponsorblock, lyrics_fetcher)
+        self.track_loader = TrackLoader(resolver, sponsorblock, lyrics_fetcher, loudness_service)
 
         self._lock = asyncio.Lock()
         self._play_lock = asyncio.Lock()
@@ -112,7 +117,8 @@ class PlaybackController:
 
             try:
                 # Load track (resolve URI, fetch lyrics/sponsorblock, increment play count)
-                uri = await self.track_loader.load_track(track)
+                loaded = await self.track_loader.load_track(track)
+                uri = loaded.uri
 
                 # RC-TERMUX-01: Set flag sebelum loadfile agar end-file "stop" yang
                 # dipancarkan mpv saat replace tidak ditafsirkan sebagai user stop.
@@ -120,6 +126,14 @@ class PlaybackController:
                 # Play
                 await self.mpv.play(uri)
                 await asyncio.sleep(0.15)
+
+                # Loudness Normalization (Phase 6/7)
+                from engine.loudness.gain_calculator import build_af_filter
+
+                if getattr(self.state, "loudness_normalization_enabled", True):
+                    await self.mpv.set_af(build_af_filter(loaded.gain_db))
+                else:
+                    await self.mpv.set_af(build_af_filter(0.0))
 
                 if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
                     # BACKEND-FIX-01: Pastikan mpv silent di browser mode.
@@ -278,6 +292,15 @@ class PlaybackController:
             await self._advance_to_next()
 
     async def _advance_to_next(self):
+        # Track Completion/Skip for Bandit (Phase 5)
+        if self.state.current_track and self.state.duration > 0:
+            if self.state.position >= self.state.duration * 0.9:
+                safe_create_task(
+                    self.resolver.db.record_completion(self.state.current_track.artist)
+                )
+            else:
+                safe_create_task(self.resolver.db.record_skip(self.state.current_track.artist))
+
         if self.state.playback_mode == PlaybackMode.QUEUE:
             await self.queue_mode.next(self)
         else:
@@ -363,6 +386,9 @@ class PlaybackController:
 
     async def _on_set_sponsorblock(self, enabled: bool):
         await self._mode_ops.toggle_sponsorblock(enabled)
+
+    async def _on_set_loudness_normalization(self, enabled: bool):
+        await self._mode_ops.toggle_loudness_normalization(enabled)
 
     async def _on_lyrics_offset(self, data: dict):
         offset = data.get("offset", 0.0)

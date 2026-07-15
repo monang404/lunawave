@@ -43,7 +43,9 @@ import pytest
 @patch("server.app.create_app")
 @patch("server.app.run_server", new_callable=AsyncMock)
 @patch("main.aiohttp.ClientSession")
+@patch("engine.loudness.service.LoudnessService")
 async def test_main_smoke(
+    mock_loudness,
     mock_session,
     mock_run_server,
     mock_create_app,

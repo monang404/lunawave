@@ -44,6 +44,7 @@ class TrackRepository:
             is_fav = 0
             if "is_favorite" in row.keys():
                 is_fav = row["is_favorite"] or 0
+            loudness = row["loudness_lufs"] if "loudness_lufs" in row.keys() else None
             return TrackInfo(
                 video_id=row["video_id"],
                 title=row["title"],
@@ -57,6 +58,7 @@ class TrackRepository:
                 play_count=row["play_count"],
                 last_played=row["last_played"],
                 is_favorite=is_fav,
+                loudness_lufs=loudness,
             )
 
     async def upsert_track(
@@ -161,3 +163,11 @@ class TrackRepository:
         ) as cursor:
             row = await cursor.fetchone()
             return int(row["is_favorite"] or 0) if row else 0
+
+    async def set_loudness(self, video_id: str, lufs: float) -> None:
+        """Simpan hasil pengukuran integrated loudness (LUFS)."""
+        await self._conn.execute(
+            "UPDATE tracks SET loudness_lufs = ? WHERE video_id = ?",
+            (lufs, video_id),
+        )
+        await self._conn.commit()

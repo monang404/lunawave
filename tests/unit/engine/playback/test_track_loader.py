@@ -92,8 +92,8 @@ class TestLoadTrack:
     async def test_returns_resolved_uri(self, loader, extractor, repo):
         extractor.stream_urls["v1"] = "https://cdn.example.com/v1.m4a"
         track = make_track("v1")
-        uri = await loader.load_track(track)
-        assert uri == "https://cdn.example.com/v1.m4a"
+        result = await loader.load_track(track)
+        assert result.uri == "https://cdn.example.com/v1.m4a"
 
     async def test_returns_local_path_when_file_exists(self, loader, repo, tmp_path):
         local = tmp_path / "v1.mp3"
@@ -102,8 +102,8 @@ class TestLoadTrack:
             TrackInfo(video_id="v1", title="T", artist="A", duration=180, local_path=str(local))
         )
         track = make_track("v1")
-        uri = await loader.load_track(track)
-        assert uri == str(local)
+        result = await loader.load_track(track)
+        assert result.uri == str(local)
 
     async def test_increments_play_count_as_background_task(self, loader, repo, extractor):
         extractor.stream_urls["v1"] = "https://stream/v1"
@@ -144,5 +144,5 @@ class TestLoadTrack:
 
         track = make_track("v1")
         # Should complete without waiting for slow_fetch
-        uri = await asyncio.wait_for(loader.load_track(track), timeout=1.0)
-        assert uri.startswith("https://")
+        result = await asyncio.wait_for(loader.load_track(track), timeout=1.0)
+        assert result.uri.startswith("https://")

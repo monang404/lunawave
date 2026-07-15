@@ -70,6 +70,24 @@ class ArtistSelector:
             ids.add(t.video_id)
         return ids
 
+    async def _sampled_seed_artist(self) -> str | None:
+        if not self._seed_artists:
+            return None
+        stats = {}
+        if self.db and getattr(self.db, "conn", None):
+            try:
+                stats = await self.db.get_reward_stats()
+            except Exception as e:
+                _log.warning(f"Gagal ambil reward stats: {e}")
+        from engine.radio.artist_bandit import ArtistStat, sample_artists
+
+        candidates = [
+            ArtistStat(name=name, alpha=stats.get(name, (1, 1))[0], beta=stats.get(name, (1, 1))[1])
+            for name in self._seed_artists
+        ]
+        picked = sample_artists(candidates, k=1)
+        return picked[0] if picked else None
+
     async def gather_batch(
         self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
     ) -> list:
@@ -77,12 +95,13 @@ class ArtistSelector:
         existing = self.build_exclusion_set()
 
         if not prioritized_artist and self._seed_artists:
-            prioritized_artist = random.choice(self._seed_artists)
+            prioritized_artist = await self._sampled_seed_artist()
 
         if self.db and getattr(self.db, "conn", None):  # Use getattr for safety
             try:
+                artists = [prioritized_artist] if prioritized_artist else None
                 tracks = await self.db.get_random_songs(
-                    limit=limit, exclude_ids=existing, artist=prioritized_artist
+                    limit=limit, exclude_ids=existing, artists=artists
                 )
                 track_filter = TrackFilter(self.state)
                 filtered_tracks = track_filter.filter_tracks(tracks)

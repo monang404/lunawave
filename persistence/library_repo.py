@@ -31,9 +31,12 @@ class LibraryRepository:
         self,
         limit: int = 12,
         exclude_ids: set[str] | None = None,
+        artists: list[str] | None = None,
         artist: str | None = None,
         max_per_artist: int = 3,
     ) -> list[TrackInfo]:
+        if artist and not artists:
+            artists = [artist]
         if exclude_ids is None:
             exclude_ids = set()
 
@@ -59,9 +62,11 @@ class LibraryRepository:
         """
         params.append(max_per_artist)
 
-        if artist:
-            query += " ORDER BY CASE WHEN nama = ? THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
-            params.extend([artist, limit])  # type: ignore
+        if artists:
+            artist_placeholders = ",".join("?" for _ in artists)
+            query += f" ORDER BY CASE WHEN nama IN ({artist_placeholders}) THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
+            params.extend(artists)
+            params.append(limit)
         else:
             query += " ORDER BY RANDOM() LIMIT ?"
             params.append(limit)

@@ -34,6 +34,7 @@ CMD_DOWNLOAD = "cmd.download"  # data: TrackInfo | None
 CMD_SET_MODE = "cmd.set.mode"  # data: PlaybackMode
 CMD_SET_OUTPUT = "cmd.set.output"  # data: AudioOutput
 CMD_SET_SPONSORBLOCK = "cmd.set.sponsorblock"  # data: bool
+CMD_SET_LOUDNESS_NORMALIZATION = "cmd.set.loudness_normalization"  # data: bool
 CMD_QUEUE_SELECT = "cmd.queue.select"  # data: int (index)
 CMD_QUEUE_ADD = "cmd.queue.add"  # data: TrackInfo
 CMD_QUEUE_REPLACE = "cmd.queue.replace"  # data: list[TrackInfo]
