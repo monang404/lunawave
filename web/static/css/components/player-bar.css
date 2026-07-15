@@ -461,12 +461,8 @@ body[data-active-tab="home"] #player-bar {
   color: #fff !important;
 }
 
-.btn-prev:hover,
-.btn-next:hover,
-.btn-shuffle:hover,
-.btn-repeat:hover {
-  color: var(--accent) !important;
-}
+.btn-prev:hover, .btn-next:hover, .btn-repeat:hover, .btn-shuffle:hover { color: var(--text-1); background: rgba(255,255,255,0.05); }
+.btn-repeat.active, .btn-shuffle.active { color: var(--accent); }
 
 /* ── PLAYER BAR ── */
 #player-bar {

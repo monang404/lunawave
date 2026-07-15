@@ -82,11 +82,14 @@ class PlaybackController:
         self._queue_ops = QueueOps(self.state, self.bus, self._lock)
         self._mode_ops = ModeOps(self.state, self.bus, self._lock, self.mpv, self.radio_mode)
         self._retry_count = 0
-        self._loading = False  # RC-TERMUX-01: flag bahwa loadfile sedang dalam proses
+        self._loading = False
+        self._last_position_save = 0.0
 
         # Subscribe events
-        self.bus.subscribe(TrackEndedEvent, self._on_track_ended)
-        self.bus.subscribe(TrackProgressEvent, self._on_track_progress)
+        self.bus.subscribe(TrackEndedEvent, lambda e: safe_create_task(self._on_track_ended(e)))
+        self.bus.subscribe(
+            TrackProgressEvent, lambda e: safe_create_task(self._on_track_progress(e))
+        )
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
 
@@ -102,28 +105,22 @@ class PlaybackController:
                 )
             await self.bus.publish(QueueUpdatedEvent())
 
-    async def play_track(self, track: TrackInfo):
+    async def play_track(
+        self, track: TrackInfo, start_position: float = 0.0, start_paused: bool = False
+    ):
         async with self._play_lock:  # A-05: cegah concurrent play_track race
-            # Push current to history if it exists
             if self.state.current_track:
                 self.state.history.append(self.state.current_track)
-
             self.state.current_track = track
             self.state.status = PlayerStatus.LOADING
-            self.state.position = 0.0
+            self.state.position = start_position
             self.state.duration = float(track.duration)
             self.state.lyrics_lines = []
             self.state.lyrics_index = 0
-
             try:
-                # Load track (resolve URI, fetch lyrics/sponsorblock, increment play count)
                 loaded = await self.track_loader.load_track(track)
                 uri = loaded.uri
-
-                # RC-TERMUX-01: Set flag sebelum loadfile agar end-file "stop" yang
-                # dipancarkan mpv saat replace tidak ditafsirkan sebagai user stop.
                 self._loading = True
-                # Play
                 await self.mpv.play(uri)
                 await asyncio.sleep(0.15)
 
@@ -142,15 +139,24 @@ class PlaybackController:
                         LogMessageEvent(message="Audio output is browser, mpv silent (volume=0).")
                     )
                 else:
-                    await self.mpv.set_volume(self.state.volume)
+                    if getattr(self.state, "crossfade_enabled", False):
+                        from engine.playback.crossfade import apply_crossfade_in
 
-                # RC-TERMUX-02: Pastikan mpv tidak dalam state pause setelah loadfile.
-                # mpv kadang mempertahankan pause state dari track sebelumnya di Termux.
-                await self.mpv.resume()
+                        safe_create_task(apply_crossfade_in(self.mpv, self.state), name="fade_in")
+                    else:
+                        await self.mpv.set_volume(self.state.volume)
 
-                self.state.status = PlayerStatus.PLAYING
-                self._retry_count = 0  # Reset retry count on success
-                self._loading = False  # RC-TERMUX-01: clear flag setelah play berhasil
+                if start_paused:
+                    await self.mpv.pause()
+                else:
+                    await self.mpv.resume()  # RC-TERMUX-02
+
+                if start_position > 0:
+                    await self.mpv.seek(start_position)
+
+                self.state.status = PlayerStatus.PAUSED if start_paused else PlayerStatus.PLAYING
+                self._retry_count = 0
+                self._loading = False  # RC-TERMUX-01
                 await self.bus.publish(TrackStartedEvent(track=track))
 
                 # Fetch duration actively if not available
@@ -186,30 +192,17 @@ class PlaybackController:
                         )
 
     async def _poll_duration(self, track: TrackInfo):
-        # Tunggu stream loading
-        await asyncio.sleep(2)
-        if self.state.current_track != track:
-            return
-        dur = await self.mpv.get_duration()
-        if dur > 0:
-            self.state.duration = dur
-            track.duration = int(dur)
-            safe_create_task(
-                self.resolver.db.upsert_track(track), name="upsert_track_duration_poll"
-            )
-            await self.bus.publish(QueueUpdatedEvent())
-        else:
-            # Coba sekali lagi setelah 5 detik
-            await asyncio.sleep(5)
-            if self.state.current_track == track:
-                dur = await self.mpv.get_duration()
-                if dur > 0:
-                    self.state.duration = dur
-                    track.duration = int(dur)
-                    safe_create_task(
-                        self.resolver.db.upsert_track(track), name="upsert_track_duration_poll"
-                    )
-                    await self.bus.publish(QueueUpdatedEvent())
+        for delay in [2, 5]:
+            await asyncio.sleep(delay)
+            if self.state.current_track != track:
+                return
+            dur = await self.mpv.get_duration()
+            if dur > 0:
+                self.state.duration = dur
+                track.duration = int(dur)
+                safe_create_task(self.resolver.db.upsert_track(track), name="upsert_duration")
+                await self.bus.publish(QueueUpdatedEvent())
+                return
 
     async def _on_cmd_play_track(self, track: TrackInfo):
         async with self._lock:
@@ -232,15 +225,9 @@ class PlaybackController:
             await asyncio.sleep(0.35)
             await self._on_next(next_data)
         elif reason == "stop":
-            # RC-TERMUX-01: mpv mengeluarkan end-file "stop" saat loadfile replace
-            # (next/restart track). Abaikan jika sedang dalam proses loading lagu baru,
-            # karena ini bukan "user stop" — melainkan peralihan antar track.
             if self._loading:
-                logger.info(
-                    "[AUTOPLAY] Ignoring end-file 'stop' during track transition (loadfile replace)"
-                )
+                logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition")
                 return
-            # Intentional stop — sync server state ke IDLE
             if self.state.status not in (PlayerStatus.IDLE,):
                 self.state.status = PlayerStatus.IDLE
         elif reason == "error":
@@ -257,8 +244,29 @@ class PlaybackController:
 
     async def _on_track_progress(self, event: TrackProgressEvent):
         self.state.position = event.position
+
+        if (
+            getattr(self.state, "crossfade_enabled", False)
+            and getattr(self.state, "audio_output", AudioOutput.DEVICE) != AudioOutput.BROWSER
+        ):
+            if self.state.duration > 0 and self.state.status == PlayerStatus.PLAYING:
+                from engine.playback.crossfade import check_crossfade_out
+
+                remaining = self.state.duration - self.state.position
+                safe_create_task(check_crossfade_out(self.mpv, self.state, remaining))
+
         if self.state.playback_mode == PlaybackMode.RADIO:
             self.radio_mode.check_prefetch(self, self.state.position, self.state.duration)
+
+        import time
+
+        if time.time() - getattr(self, "_last_ps", 0.0) >= 10.0 and self.state.current_track:
+            self._last_ps = time.time()
+            safe_create_task(
+                self.resolver.db.set_last_position(
+                    self.state.current_track.video_id, event.position
+                )
+            )
 
     async def _on_cmd_toggle_pause(self, _data=None):
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):

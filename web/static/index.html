@@ -248,8 +248,16 @@
                     </button>
                 </div>
 
-                <div id="search-msg" style="padding:4px 20px 8px; font-size:12px; color:var(--text-3);">Search songs,
-                    artists, albums...</div>
+                <div id="search-msg" style="padding:4px 20px 8px; font-size:12px; color:var(--text-3);">Search songs, artists, albums...</div>
+
+                <div id="search-history-container" style="display: none; padding: 0 20px 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 13px; color: var(--text-2); font-weight: 500;">Pencarian Terakhir</span>
+                        <button id="search-history-clear" style="background: none; border: none; color: var(--text-3); font-size: 12px; cursor: pointer; padding: 4px;">Hapus</button>
+                    </div>
+                    <div id="search-history-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+                </div>
+
                 <div id="search-results"></div>
             </section>
 
@@ -434,6 +442,19 @@
 
             <div class="ss-row">
                 <div class="ss-label">
+                    <i class="ti ti-headphones" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Crossfade (Eksperimental)</div>
+                        <div class="ss-label-sub">Transisi halus antar lagu</div>
+                    </div>
+                </div>
+                <button class="ss-toggle" id="crossfade-toggle" data-on="false" aria-label="Toggle Crossfade">
+                    <div class="toggle-dot"></div>
+                </button>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
                     <i class="ti ti-device-speaker" aria-hidden="true"></i>
                     <div>
                         <div class="ss-label-text">Output Audio</div>
@@ -485,6 +506,50 @@
                     </div>
                 </div>
                 <button id="ss-history-btn" class="ss-action-btn">Lihat</button>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
+                    <i class="ti ti-server" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Ukuran Cache</div>
+                        <div class="ss-label-sub" id="ss-cache-sub">Memuat...</div>
+                    </div>
+                </div>
+                <button id="ss-cache-clear-btn" class="ss-action-btn">Bersihkan</button>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
+                    <i class="ti ti-clock" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Sleep Timer</div>
+                        <div class="ss-label-sub" id="ss-sleep-sub">Mati</div>
+                    </div>
+                </div>
+                <select id="ss-sleep-select" style="background:var(--bg-elevated);border:1px solid var(--border-2);border-radius:8px;padding:4px 10px;color:var(--text-1);font-size:11px;cursor:pointer">
+                    <option value="0">Off</option>
+                    <option value="15">15 Menit</option>
+                    <option value="30">30 Menit</option>
+                    <option value="60">60 Menit</option>
+                </select>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
+                    <i class="ti ti-brand-speedtest" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Kecepatan Pemutaran</div>
+                        <div class="ss-label-sub" id="ss-speed-sub">1.0x</div>
+                    </div>
+                </div>
+                <select id="ss-speed-select" style="background:var(--bg-elevated);border:1px solid var(--border-2);border-radius:8px;padding:4px 10px;color:var(--text-1);font-size:11px;cursor:pointer">
+                    <option value="0.75">0.75x</option>
+                    <option value="1.0" selected>1.0x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2.0">2.0x</option>
+                </select>
             </div>
 
             <div class="ss-row" id="logout-btn" style="cursor:pointer">

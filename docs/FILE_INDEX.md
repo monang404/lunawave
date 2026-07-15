@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `cache/resolver`, `core/log_config`, _10 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `cache/resolver`, `core/log_config`, _11 lainnya_
 **Menggunakan:** —
 
 
@@ -67,7 +67,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.
 **Class:** `CommandBus`
 **Function utama:** `register()`, `unregister()`
-**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `plugins/notifications`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _1 lainnya_
+**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, `server/handlers/ws_download`, _2 lainnya_
 **Menggunakan:** `core/commands`, `core/observability`
 
 
@@ -97,7 +97,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
 **Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/mode_ops`, _9 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/mode_ops`, _10 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -167,7 +167,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(StrEnum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`
 **Function utama:** —
-**Digunakan oleh:** `adapters/ytdlp/searcher`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _24 lainnya_
+**Digunakan oleh:** `adapters/ytdlp/searcher`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _25 lainnya_
 **Menggunakan:** —
 
 
@@ -282,7 +282,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `engine/command_router.py`
 **Fungsi:** Register all CMD_* CommandBus handlers, routing each command to the appropriate method on PlaybackController or VolumeService.
 **Class:** `CommandRouter`
-**Function utama:** `_route()`, `_route_volume()`
+**Function utama:** `_route_sleep()`, `_route()`, `_route_volume()`
 **Digunakan oleh:** `main`
 **Menggunakan:** `core/command_bus`
 
@@ -345,6 +345,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
 **Menggunakan:** `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`, `engine/playback/mode_ops`, _4 lainnya_
+
+
+---
+
+**File:** `engine/playback/crossfade.py`
+**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** —
+**Function utama:** `apply_crossfade_in()`, `check_crossfade_out()`
+**Digunakan oleh:** —
+**Menggunakan:** `core/state`
 
 
 ---
@@ -465,6 +475,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/controller`
 **Menggunakan:** `engine/radio`
+
+
+---
+
+**File:** `engine/sleep_timer.py`
+**Fungsi:** Handles setting, tracking, and executing a sleep timer to stop playback after a specified duration.
+**Class:** `SleepTimer`
+**Function utama:** —
+**Digunakan oleh:** —
+**Menggunakan:** `core/command_bus`, `core/events`
 
 
 ---
@@ -644,6 +664,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Function utama:** `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** `server/app`
 **Menggunakan:** `server/handlers/auth`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, `server/handlers/ws_queue`, `server/middleware`, _1 lainnya_
+
+
+---
+
+**File:** `server/handlers/ws_cache.py`
+**Fungsi:** WebSocket handler for managing cache queries and clearing.
+**Class:** —
+**Function utama:** `handle_cache_command()`
+**Digunakan oleh:** —
+**Menggunakan:** `config`
 
 
 ---
@@ -1219,9 +1249,9 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**113/113** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**115/116** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-_(semua file sudah terdokumentasi 🎉)_
+- [ ] `engine/playback/crossfade.py`
 
 <!-- END:GENERATED -->

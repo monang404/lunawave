@@ -116,3 +116,12 @@ async def test_toggle_sponsorblock(setup_mode_ops):
 
     await ops.toggle_sponsorblock(True)
     assert state.sponsorblock_active is True
+
+
+@pytest.mark.asyncio
+async def test_set_speed(setup_mode_ops):
+    ops, state, mpv, radio = setup_mode_ops
+
+    await ops.set_speed({"speed": 1.5})
+    assert state.playback_speed == 1.5
+    assert mpv.properties.get("speed") == 1.5

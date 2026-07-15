@@ -261,6 +261,15 @@ function handleServerMessage(msg) {
             if (typeof renderPlayerBar === "function") renderPlayerBar();
             if (typeof renderSettingsSheet === "function") renderSettingsSheet();
             break;
+        case "cache_size":
+            if (dom.ssCacheSub) {
+                const mb = (msg.data.size_bytes / (1024 * 1024)).toFixed(2);
+                dom.ssCacheSub.textContent = mb + " MB";
+            }
+            break;
+        case "cache_cleared":
+            if (dom.ssCacheSub) dom.ssCacheSub.textContent = "0.00 MB";
+            break;
     }
 }
 

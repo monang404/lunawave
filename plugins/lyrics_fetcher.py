@@ -29,6 +29,11 @@ Thread Safety:
 import asyncio
 import re
 
+_NOISE_RE = re.compile(
+    r"\b(?:official|music video|lyrics?|audio|video|mv|hq)s?\b",
+    re.IGNORECASE,
+)
+
 import aiohttp
 import structlog
 
@@ -122,17 +127,7 @@ class LyricsFetcher:
 
                 # Bersihkan judul secara umum (karena info dari YouTube sering kotor)
                 clean_title = re.sub(r"[\(\[].*?[\)\]]", "", title)
-                for kw in [
-                    "official",
-                    "music video",
-                    "lyric",
-                    "lyrics",
-                    "audio",
-                    "video",
-                    "mv",
-                    "hq",
-                ]:
-                    clean_title = re.sub(rf"\b{kw}s?\b", "", clean_title, flags=re.IGNORECASE)
+                clean_title = _NOISE_RE.sub("", clean_title)
                 clean_title = re.sub(r"\s+", " ", clean_title).strip("- ")
 
                 # Buat search query yang lebih bersih
