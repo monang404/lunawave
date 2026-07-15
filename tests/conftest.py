@@ -35,8 +35,8 @@ def pytest_unconfigure(config):
     If there are zombie non-daemon threads (e.g. from yt-dlp inside ThreadPoolExecutor),
     Python will hang forever on exit. This hook detects them and forces exit.
     """
-    import threading
     import sys
+    import threading
     
     non_daemon_threads = [t for t in threading.enumerate() if not t.daemon and t.ident != threading.current_thread().ident]
     if non_daemon_threads:
