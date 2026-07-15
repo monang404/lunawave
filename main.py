@@ -327,13 +327,11 @@ async def main():
 
         for t in tasks:
             if t.done() and not t.cancelled():
-                e = t.exception()
-                if e:
-                    structlog.get_logger(__name__).error(
-                        f"Task {t.get_coro().__name__} crashed: {e}"
-                    )
-                    print(f"\n[FATAL ERROR] App crashed due to task failure: {e}")
-                    traceback.print_exception(type(e), e, e.__traceback__)
+                exc = t.exception()
+                if exc:
+                    structlog.get_logger(__name__).error(f"Task {t.get_name()} crashed: {exc}")
+                    print(f"\n[FATAL ERROR] App crashed due to task failure: {exc}")
+                    traceback.print_exception(type(exc), exc, exc.__traceback__)
 
         # Cancel remaining tasks
         for t in tasks:

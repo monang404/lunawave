@@ -23,6 +23,8 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from typing import Any
+
 from adapters.mpv.connection import MpvConnection
 from adapters.mpv.ipc import MpvIPC
 from adapters.mpv.observer import MpvObserver
@@ -88,20 +90,25 @@ class MpvController:
             return
         await self._ipc.send_command(["stop"])
 
-    async def seek(self, seconds: float):
+    async def seek(self, position: float) -> None:
         if not self.is_connected:
             return
-        await self._ipc.send_command(["seek", seconds, "absolute"])
+        await self._ipc.send_command(["seek", position, "absolute"])
 
-    async def set_volume(self, vol: int):
+    async def set_volume(self, volume: int) -> None:
         if not self.is_connected:
             return
-        await self._ipc.set_property("volume", max(0, min(150, vol)))
+        await self._ipc.set_property("volume", max(0, min(150, volume)))
 
     async def set_af(self, filter_str: str):
         if not self.is_connected:
             return
         await self._ipc.set_property("af", filter_str)
+
+    async def set_property(self, name: str, value: Any) -> None:
+        if not self.is_connected:
+            return
+        await self._ipc.set_property(name, value)
 
     async def get_position(self) -> float:
         if not self.is_connected:
