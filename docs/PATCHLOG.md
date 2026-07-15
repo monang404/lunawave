@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-15-042
+latest_patch_id: PATCH-2026-07-15-047
 
-total_entries: 42
+total_entries: 47
 
 ---
 
@@ -23,6 +23,56 @@ total_entries: 42
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-15] CI Hang Diagnosis & Documentation Update
+**ID:** `PATCH-2026-07-15-047`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Mendiagnosa dan menemukan akar masalah "hang 1 jam 54 menit" pada CI pytest. Hang terbukti disebabkan oleh *zombie process* `yt-dlp` pada integration test (`test_download_flow.py`) yang gagal *timeout* akibat pemblokiran IP oleh YouTube di server GitHub Actions, dan tidak di-kill saat *teardown*. Memperbarui panduan integration testing dengan instruksi untuk memastikan `yt-dlp` dibunuh secara eksplisit di *teardown*. Seluruh 435 unit tests (P0-P4) terbukti *green* dan tidak bermasalah.
+**File Terdampak:**
+- `docs/testing/integration_testing.md`
+- `log.md` (Catatan Mentah / Laporan Investigasi)
+
+---
+
+## [2026-07-15] Test Coverage P3 & P4 - WS & Radio Engine
+**ID:** `PATCH-2026-07-15-046`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Menambahkan unit test untuk error handling dan WS routing di `server/handlers/websocket.py` & `ws_playback.py` (P3) serta fallback prefetch dan radio_next di `engine/radio/engine.py` & `prefetcher.py` (P4) sesuai dengan `PATCH_TEST_COVERAGE.md`.
+**File Terdampak:**
+- `tests/unit/server/handlers/test_websocket.py`
+- `tests/unit/server/handlers/test_ws_playback.py`
+- `tests/unit/engine/radio/test_engine.py`
+- `tests/unit/engine/radio/test_prefetcher.py`
+- `tests/unit/engine/radio/test_artist_selector.py`
+
+---
+
+## [2026-07-15] Test Coverage P2 - observer.py
+**ID:** `PATCH-2026-07-15-045`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Menambahkan unit test untuk loop event async di `adapters/mpv/observer.py` sesuai dengan P2 di `PATCH_TEST_COVERAGE.md` (unknown property change, cleanup path, socket reconnect loop). Coverage keseluruhan naik dari 77.48% menjadi 78.43%.
+**File Terdampak:**
+- `tests/unit/adapters/mpv/test_observer.py`
+
+---
+
+## [2026-07-15] Test Coverage P1 - controller.py
+**ID:** `PATCH-2026-07-15-044`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Menambahkan unit test untuk state machine di `engine/playback/controller.py` sesuai dengan P1 di `PATCH_TEST_COVERAGE.md` (race condition, error state, empty queue, rollback). Coverage keseluruhan naik dari 77.10% menjadi 77.48%.
+**File Terdampak:**
+- `tests/unit/engine/playback/test_controller.py`
+
+---
+
+## [2026-07-15] Test Coverage P0 - serve_stream
+**ID:** `PATCH-2026-07-15-043`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Menambahkan unit test untuk fungsi `serve_stream()` di `server/handlers/http.py` sesuai dengan P0 di `PATCH_TEST_COVERAGE.md`. Coverage keseluruhan naik dari 75.10% menjadi 77.10%.
+**File Terdampak:**
+- `tests/unit/server/handlers/test_http.py`
 
 ---
 
