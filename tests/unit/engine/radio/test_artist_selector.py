@@ -34,7 +34,11 @@ class MockDB:
     async def get_all_artists(self):
         return ["Artist A", "Artist B"]
 
-    async def get_random_songs(self, limit, exclude_ids, artist):
+    async def get_reward_stats(self):
+        return {}  # No stats yet; bandit will use defaults (1, 1)
+
+    async def get_random_songs(self, limit, exclude_ids, artists=None):
+        artist = artists[0] if artists else "Artist A"
         return [
             TrackInfo(video_id="1", title="T1", artist=artist, duration=100),
             TrackInfo(video_id="2", title="T2", artist=artist, duration=100),

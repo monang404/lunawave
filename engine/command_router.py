@@ -36,6 +36,7 @@ from core.command_bus import (
     CMD_QUEUE_SELECT,
     CMD_RADIO_RANDOMIZE,
     CMD_SEEK,
+    CMD_SET_LOUDNESS_NORMALIZATION,
     CMD_SET_MODE,
     CMD_SET_OUTPUT,
     CMD_SET_SPONSORBLOCK,
@@ -89,6 +90,10 @@ class CommandRouter:
         command_bus.register(CMD_SET_OUTPUT, self._route(lambda c, data: c._on_set_output(data)))
         command_bus.register(
             CMD_SET_SPONSORBLOCK, self._route(lambda c, data: c._on_set_sponsorblock(data))
+        )
+        command_bus.register(
+            CMD_SET_LOUDNESS_NORMALIZATION,
+            self._route(lambda c, data: c._on_set_loudness_normalization(data)),
         )
         command_bus.register(
             CMD_LYRICS_OFFSET, self._route(lambda c, data: c._on_lyrics_offset(data))

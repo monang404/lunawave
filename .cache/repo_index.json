@@ -1,16 +1,16 @@
 {
   "_meta": {
-    "generated_at": 1784016860.1233976,
+    "generated_at": 1784081595.1120846,
     "source_mtimes": {
-      "config.py": 1784016655.7577472,
+      "config.py": 1784080411.6774197,
       "config_security.py": 1783996504.8086205,
-      "main.py": 1784016655.8196568,
+      "main.py": 1784081546.7754982,
       "start.py": 1783996504.8152113,
       "adapters/__init__.py": 1783911908.3891668,
       "adapters/mpv/connection.py": 1783996505.13344,
       "adapters/mpv/ipc.py": 1783996505.1354403,
       "adapters/mpv/observer.py": 1783996505.1374424,
-      "adapters/mpv/__init__.py": 1783996505.1394436,
+      "adapters/mpv/__init__.py": 1784080212.991563,
       "adapters/ytdlp/common.py": 1783996505.1404426,
       "adapters/ytdlp/downloader.py": 1783996505.1414447,
       "adapters/ytdlp/resolver.py": 1783996505.1434436,
@@ -47,23 +47,24 @@
       "automation/verify_docs/render.py": 1784002202.0,
       "automation/verify_docs/__init__.py": 1784002202.0,
       "cache/db.py": 1783996504.8712296,
-      "cache/resolver.py": 1783996504.8722186,
+      "cache/resolver.py": 1784081546.7734983,
       "cache/__init__.py": 1783906963.0,
-      "core/commands.py": 1783996504.8732188,
+      "core/commands.py": 1784080059.0236113,
       "core/command_bus.py": 1783996504.8742175,
       "core/events.py": 1783996504.8752172,
       "core/event_bus.py": 1783996504.8772163,
       "core/exceptions.py": 1783992872.2870545,
+      "core/latency_window.py": 1784080113.1923876,
       "core/log_config.py": 1783996504.878217,
-      "core/observability.py": 1783992890.8383918,
-      "core/ports.py": 1783996504.881217,
+      "core/observability.py": 1784080132.3981144,
+      "core/ports.py": 1784080059.3413436,
       "core/security.py": 1783992890.8193908,
-      "core/state.py": 1783992971.0607047,
+      "core/state.py": 1784080059.0122082,
       "core/task_utils.py": 1784004933.3199055,
       "core/__init__.py": 1783906963.0,
       "data/export_to_sqlite.py": 1783996504.8842158,
       "data/__init__.py": 1783993535.900467,
-      "engine/command_router.py": 1783996504.886217,
+      "engine/command_router.py": 1784081546.7744987,
       "engine/download_manager.py": 1784016811.3841307,
       "engine/mpv_controller.py": 1783996504.8902175,
       "engine/queue_manager.py": 1783996504.8902175,
@@ -71,20 +72,24 @@
       "engine/volume_service.py": 1783996504.8932211,
       "engine/ytdlp_client.py": 1783996504.8932211,
       "engine/__init__.py": 1783906963.0,
-      "engine/playback/controller.py": 1784003408.6318493,
-      "engine/playback/mode_ops.py": 1783996505.094444,
+      "engine/loudness/analyzer.py": 1784081546.7744987,
+      "engine/loudness/gain_calculator.py": 1784081546.7734983,
+      "engine/loudness/service.py": 1784080173.5863993,
+      "engine/playback/controller.py": 1784081546.7795043,
+      "engine/playback/mode_ops.py": 1784080215.6999607,
       "engine/playback/queue_ops.py": 1783996505.0964446,
-      "engine/playback/track_loader.py": 1783996505.098447,
+      "engine/playback/track_loader.py": 1784080184.8434062,
       "engine/playback/__init__.py": 1783906963.0,
-      "engine/radio/artist_selector.py": 1783996505.0994444,
+      "engine/radio/artist_bandit.py": 1784081546.7734983,
+      "engine/radio/artist_selector.py": 1784081546.7754982,
       "engine/radio/common.py": 1783996505.100446,
       "engine/radio/engine.py": 1783996505.103443,
-      "engine/radio/prefetcher.py": 1783996505.1064456,
+      "engine/radio/prefetcher.py": 1784080132.698439,
       "engine/radio/track_filter.py": 1783996505.108454,
       "engine/radio/track_interleaver.py": 1783996505.1104488,
       "engine/radio/__init__.py": 1783914066.442545,
       "launcher/gui.py": 1783992907.8831055,
-      "launcher/network.py": 1784016761.282821,
+      "launcher/network.py": 1784017023.2384324,
       "launcher/process.py": 1783993602.2350001,
       "launcher/updater.py": 1783992872.3390532,
       "launcher/__init__.py": 1783911908.486587,
@@ -96,13 +101,13 @@
       "launcher/gui/popups.py": 1783996505.0814455,
       "launcher/gui/ui_builder.py": 1783996505.087445,
       "launcher/gui/__init__.py": 1783915466.6170304,
-      "persistence/artist_repo.py": 1783996504.9002197,
+      "persistence/artist_repo.py": 1784080090.6382875,
       "persistence/db.py": 1783996504.9012194,
       "persistence/genre_repo.py": 1783996504.9032152,
-      "persistence/library_repo.py": 1783996504.9042184,
+      "persistence/library_repo.py": 1784080093.4001007,
       "persistence/session_repo.py": 1783996504.9062185,
-      "persistence/track_repo.py": 1783996504.908216,
-      "persistence/__init__.py": 1784016811.3841307,
+      "persistence/track_repo.py": 1784080093.2792454,
+      "persistence/__init__.py": 1784080237.8122835,
       "plugins/lyrics.py": 1783996504.9112155,
       "plugins/lyrics_fetcher.py": 1783996504.915219,
       "plugins/lyrics_parser.py": 1783996504.9162152,
@@ -111,18 +116,17 @@
       "plugins/sponsorblock.py": 1783996504.9224427,
       "plugins/__init__.py": 1783906963.0,
       "scratch/check_db.py": 1784002203.0,
-      "scratch/phase02_e2e.py": 1784016811.3841307,
       "server/app.py": 1783996504.938442,
       "server/connection_manager.py": 1783996504.9404452,
       "server/middleware.py": 1783992907.8781018,
-      "server/serializers.py": 1783996504.941444,
+      "server/serializers.py": 1784080237.4846244,
       "server/__init__.py": 1783906963.0,
       "server/handlers/auth.py": 1783996505.0554419,
       "server/handlers/event_listeners.py": 1783996505.0564444,
       "server/handlers/http.py": 1783996505.059442,
       "server/handlers/websocket.py": 1783996505.0614433,
       "server/handlers/ws_discovery.py": 1783996505.0624444,
-      "server/handlers/ws_download.py": 1784016688.6389651,
+      "server/handlers/ws_download.py": 1784017023.2384324,
       "server/handlers/ws_playback.py": 1783996505.0654438,
       "server/handlers/ws_queue.py": 1783996505.0664427,
       "server/handlers/__init__.py": 1783906963.0,
@@ -148,7 +152,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 132,
+      "loc": 141,
       "docstring_purpose": "Load and expose all environment-based runtime configuration constants     for LunaWave, including paths, ports, and the admin password.",
       "reverse_deps": [
         "main.py",
@@ -159,6 +163,7 @@
         "cache/resolver.py",
         "core/log_config.py",
         "engine/download_manager.py",
+        "engine/radio/prefetcher.py",
         "persistence/db.py",
         "persistence/__init__.py",
         "plugins/lyrics_fetcher.py",
@@ -167,7 +172,8 @@
         "server/handlers/auth.py",
         "server/handlers/http.py",
         "server/handlers/ws_download.py",
-        "server/services/stream_prefetch.py"
+        "server/services/stream_prefetch.py",
+        "engine/loudness/analyzer.py"
       ]
     },
     "config_security.py": {
@@ -217,6 +223,7 @@
         "plugins.lyrics_fetcher",
         "plugins.sponsorblock",
         "cache.resolver",
+        "engine.loudness.service",
         "engine.playback.controller",
         "engine.queue_manager",
         "engine.radio_engine",
@@ -224,11 +231,12 @@
         "server.app",
         "socket",
         "config",
-        "traceback"
+        "traceback",
+        "engine.loudness.gain_calculator"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 317,
+      "loc": 340,
       "docstring_purpose": "Bootstrap all LunaWave subsystems and start the async aiohttp web server.",
       "reverse_deps": []
     },
@@ -357,6 +365,7 @@
         "stop",
         "seek",
         "set_volume",
+        "set_af",
         "get_position",
         "get_duration",
         "close"
@@ -369,7 +378,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 116,
+      "loc": 121,
       "docstring_purpose": "High-level MPV controller combining connection, IPC, and event observation.",
       "reverse_deps": []
     },
@@ -1164,13 +1173,15 @@
         "time",
         "structlog",
         "config",
+        "core.latency_window",
+        "core.observability",
         "core.ports",
         "core.state",
         "asyncio"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 76,
+      "loc": 84,
       "docstring_purpose": "Resolve the playback URI for a track using a priority-based cache     strategy: local file > cached stream URL > fresh yt-dlp extraction.",
       "reverse_deps": [
         "main.py"
@@ -1194,7 +1205,7 @@
       "imports": [],
       "publishes": [],
       "subscribes": [],
-      "loc": 45,
+      "loc": 46,
       "docstring_purpose": "Defines all command constants used by the CommandBus.     Separated to allow importing without pulling in the entire CommandBus.",
       "reverse_deps": [
         "core/command_bus.py"
@@ -1369,9 +1380,10 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 54,
+      "loc": 60,
       "docstring_purpose": "Expose Prometheus metric singletons and an OpenTelemetry tracer for     application-wide instrumentation.",
       "reverse_deps": [
+        "cache/resolver.py",
         "core/command_bus.py",
         "core/event_bus.py",
         "server/connection_manager.py",
@@ -1399,6 +1411,7 @@
         "resume",
         "stop",
         "set_volume",
+        "set_af",
         "seek",
         "get_duration",
         "get_position",
@@ -1414,6 +1427,7 @@
         "update_stream_url_only",
         "get_track",
         "increment_play_count",
+        "set_loudness",
         "create_session",
         "verify_session",
         "delete_session",
@@ -1430,7 +1444,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 88,
+      "loc": 90,
       "docstring_purpose": "Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.",
       "reverse_deps": [
         "cache/resolver.py",
@@ -1443,7 +1457,8 @@
         "plugins/sponsorblock.py",
         "server/app.py",
         "server/services/stream_prefetch.py",
-        "services/discover_service.py"
+        "services/discover_service.py",
+        "engine/loudness/service.py"
       ]
     },
     "core/security.py": {
@@ -1487,7 +1502,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 96,
+      "loc": 98,
       "docstring_purpose": "Define shared application state dataclasses, enums, and the single     mutable AppState object for LunaWave.",
       "reverse_deps": [
         "main.py",
@@ -1595,7 +1610,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 128,
+      "loc": 133,
       "docstring_purpose": "Register all CMD_* CommandBus handlers, routing each command to the     appropriate method on PlaybackController or VolumeService.",
       "reverse_deps": [
         "main.py"
@@ -1766,7 +1781,8 @@
         "engine.queue_manager",
         "engine.radio_engine",
         "core.events",
-        "core.task_utils"
+        "core.task_utils",
+        "engine.loudness.gain_calculator"
       ],
       "publishes": [
         "LogMessageEvent",
@@ -1790,7 +1806,7 @@
         "TrackPauseChangedEvent",
         "TrackDurationEvent"
       ],
-      "loc": 373,
+      "loc": 395,
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "main.py",
@@ -1807,7 +1823,8 @@
         "set_mode",
         "randomize_radio",
         "set_output",
-        "toggle_sponsorblock"
+        "toggle_sponsorblock",
+        "toggle_loudness_normalization"
       ],
       "imports": [
         "asyncio",
@@ -1823,12 +1840,14 @@
         "QueueUpdatedEvent",
         "LogMessageEvent",
         "QueueUpdatedEvent",
+        "LogMessageEvent",
+        "QueueUpdatedEvent",
         "QueueUpdatedEvent",
         "LogMessageEvent",
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 112,
+      "loc": 118,
       "docstring_purpose": "Handles playback mode switches, such as toggling radio mode or SponsorBlock.",
       "reverse_deps": [
         "engine/playback/controller.py"
@@ -1869,20 +1888,23 @@
     "engine/playback/track_loader.py": {
       "layer": "engine",
       "classes": [
+        "LoadedTrack",
         "TrackLoader"
       ],
       "functions": [
         "load_track"
       ],
       "imports": [
+        "dataclasses",
         "structlog",
         "core.ports",
         "core.state",
-        "core.task_utils"
+        "core.task_utils",
+        "engine.loudness.gain_calculator"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 70,
+      "loc": 92,
       "docstring_purpose": "Resolve a track URI and trigger background side-effects (sponsorblock,     lyrics fetch, play-count increment) before playback begins.",
       "reverse_deps": [
         "engine/playback/controller.py"
@@ -1918,11 +1940,12 @@
         "core.state",
         "engine.radio.common",
         "engine.radio.track_filter",
-        "engine.radio.track_interleaver"
+        "engine.radio.track_interleaver",
+        "engine.radio.artist_bandit"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 93,
+      "loc": 112,
       "docstring_purpose": "Selects and rotates artists intelligently to maintain variety in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py",
@@ -2015,6 +2038,7 @@
         "asyncio",
         "logging",
         "typing",
+        "config",
         "core.state",
         "engine.radio.common",
         "engine.playback",
@@ -2022,7 +2046,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 159,
+      "loc": 172,
       "docstring_purpose": "Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py"
@@ -2105,7 +2129,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 79,
+      "loc": 81,
       "docstring_purpose": "Provide cross-platform utilities to detect TCP port availability and     identify the PID currently occupying a port.",
       "reverse_deps": []
     },
@@ -2356,7 +2380,10 @@
       "functions": [
         "increment_artist_click",
         "get_all_artists",
-        "get_artist_songs_strict"
+        "get_artist_songs_strict",
+        "record_completion",
+        "record_skip",
+        "get_reward_stats"
       ],
       "imports": [
         "structlog",
@@ -2364,7 +2391,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 82,
+      "loc": 117,
       "docstring_purpose": "Repository for tracking artist statistics and fetching artist-specific tracks.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -2429,7 +2456,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 84,
+      "loc": 89,
       "docstring_purpose": "Repository for global library operations such as fetching random songs.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -2469,7 +2496,8 @@
         "set_local_path",
         "increment_play_count",
         "evict_stale_tracks",
-        "toggle_favorite"
+        "toggle_favorite",
+        "set_loudness"
       ],
       "imports": [
         "time",
@@ -2478,7 +2506,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 164,
+      "loc": 174,
       "docstring_purpose": "Repository for track metadata, play counts, favorites, and local file paths.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -2507,10 +2535,14 @@
         "increment_artist_click",
         "get_all_artists",
         "get_artist_songs_strict",
+        "get_reward_stats",
+        "record_completion",
+        "record_skip",
         "increment_genre_click",
         "get_genre_artists",
         "get_genre_songs",
-        "get_random_songs"
+        "get_random_songs",
+        "set_loudness"
       ],
       "imports": [
         "pathlib",
@@ -2525,7 +2557,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 147,
+      "loc": 162,
       "docstring_purpose": "Database facade that aggregates all repositories into a unified data access layer.",
       "reverse_deps": []
     },
@@ -2800,7 +2832,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 87,
+      "loc": 88,
       "docstring_purpose": "Convert between AppState/TrackInfo domain objects and JSON-serializable     dicts for WebSocket message payloads.",
       "reverse_deps": [
         "server/handlers/event_listeners.py",
@@ -2977,7 +3009,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 99,
+      "loc": 100,
       "docstring_purpose": "WebSocket handler for managing track download requests and status.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -3131,28 +3163,110 @@
       "docstring_purpose": "",
       "reverse_deps": []
     },
-    "scratch/phase02_e2e.py": {
-      "layer": "scratch",
-      "classes": [],
+    "engine/loudness/service.py": {
+      "layer": "engine",
+      "classes": [
+        "LoudnessService"
+      ],
       "functions": [
-        "main"
+        "analyze_and_store"
       ],
       "imports": [
         "asyncio",
-        "json",
-        "os",
-        "signal",
-        "subprocess",
-        "sys",
-        "time",
-        "pathlib",
-        "aiohttp"
+        "concurrent.futures",
+        "structlog",
+        "core.ports",
+        "engine.loudness.analyzer"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 137,
-      "docstring_purpose": "",
-      "reverse_deps": []
+      "loc": 63,
+      "docstring_purpose": "Orkestrasi analisis loudness: cek apakah track sudah pernah diukur,     kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.",
+      "reverse_deps": [
+        "main.py"
+      ]
+    },
+    "core/latency_window.py": {
+      "layer": "core",
+      "classes": [
+        "LatencyWindow"
+      ],
+      "functions": [
+        "record",
+        "percentile",
+        "sample_count"
+      ],
+      "imports": [
+        "collections"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 50,
+      "docstring_purpose": "Rolling window durasi (detik) untuk menghitung percentile ke-n dari     N sample terakhir. Dipakai untuk threshold adaptif yang bereaksi ke     kondisi jaringan aktual, bukan angka statis.",
+      "reverse_deps": [
+        "cache/resolver.py"
+      ]
+    },
+    "engine/loudness/gain_calculator.py": {
+      "layer": "engine",
+      "classes": [],
+      "functions": [
+        "compute_gain_db",
+        "build_af_filter"
+      ],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 50,
+      "docstring_purpose": "Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya     mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS).",
+      "reverse_deps": [
+        "main.py",
+        "engine/playback/controller.py",
+        "engine/playback/track_loader.py"
+      ]
+    },
+    "engine/radio/artist_bandit.py": {
+      "layer": "engine",
+      "classes": [
+        "ArtistStat"
+      ],
+      "functions": [
+        "sample_artists"
+      ],
+      "imports": [
+        "random",
+        "dataclasses"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 50,
+      "docstring_purpose": "Thompson Sampling (Beta-Bernoulli) untuk memilih artis radio berdasarkan     histori selesai/skip, dengan eksplorasi otomatis untuk artis yang     datanya masih sedikit.",
+      "reverse_deps": [
+        "engine/radio/artist_selector.py"
+      ]
+    },
+    "engine/loudness/analyzer.py": {
+      "layer": "engine",
+      "classes": [
+        "LoudnessAnalyzer"
+      ],
+      "functions": [
+        "measure_sync"
+      ],
+      "imports": [
+        "json",
+        "re",
+        "subprocess",
+        "structlog",
+        "config"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 85,
+      "docstring_purpose": "Ukur integrated loudness (LUFS) sebuah track via satu-pass ffmpeg     `loudnorm` filter mode measure-only (tidak re-encode, tidak menyimpan file     baru).",
+      "reverse_deps": [
+        "engine/loudness/service.py"
+      ]
     }
   }
 }

@@ -98,6 +98,11 @@ class MpvController:
             return
         await self._ipc.set_property("volume", max(0, min(150, vol)))
 
+    async def set_af(self, filter_str: str):
+        if not self.is_connected:
+            return
+        await self._ipc.set_property("af", filter_str)
+
     async def get_position(self) -> float:
         if not self.is_connected:
             return 0.0

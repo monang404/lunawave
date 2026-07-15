@@ -29,6 +29,8 @@ import time
 import structlog
 
 from config import STREAM_URL_TTL_SEC
+from core.latency_window import LatencyWindow
+from core.observability import RESOLVE_LATENCY
 from core.ports import MediaExtractorPort, TrackRepositoryPort
 from core.state import TrackInfo
 
@@ -46,6 +48,7 @@ class CacheResolver:
     def __init__(self, db: TrackRepositoryPort, ytdlp: MediaExtractorPort):
         self.db = db
         self.ytdlp = ytdlp
+        self.latency_window = LatencyWindow()
 
     async def resolve(self, track: TrackInfo) -> str:
         """Returns the playback URI (local path atau YouTube URL untuk MPV)."""
@@ -68,7 +71,12 @@ class CacheResolver:
                 return track.stream_url
 
         # Rule 3: Ambil direct URL dari yt-dlp
+        t0 = time.monotonic()
         url = await self.ytdlp.get_stream_url(track.video_id)
+        duration = time.monotonic() - t0
+        self.latency_window.record(duration)
+        RESOLVE_LATENCY.observe(duration)
+
         track.stream_url = url
         # Simpan metadata track ke DB
         await self.db.upsert_track(track, stream_url=url)
