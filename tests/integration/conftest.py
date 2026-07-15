@@ -134,8 +134,10 @@ async def integration_app(tmp_path, monkeypatch):
     # Ensure MPV process is killed if disconnect didn't
     if os.name != "nt":
         subprocess.run(["pkill", "-f", "mpv"], capture_output=True)
+        subprocess.run(["pkill", "-f", "yt-dlp"], capture_output=True)
     else:
         subprocess.run(["taskkill", "/f", "/im", "mpv.exe"], capture_output=True)
+        subprocess.run(["taskkill", "/f", "/im", "yt-dlp.exe"], capture_output=True)
 
 
 @pytest.fixture
