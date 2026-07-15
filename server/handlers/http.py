@@ -26,6 +26,8 @@ import re
 import time
 from pathlib import Path
 
+_STREAM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
+
 import structlog
 from aiohttp import web
 
@@ -61,7 +63,7 @@ async def health_check(request):
 
 async def serve_stream(request):
     video_id = request.match_info.get("video_id")
-    if not video_id or not re.match(r"^[a-zA-Z0-9_-]{11}$", video_id):
+    if not video_id or not _STREAM_ID_RE.match(video_id):
         return web.HTTPBadRequest(text="Invalid video_id")
 
     cache_file = CACHE_DIR / f"{video_id}.mp3"
@@ -137,6 +139,14 @@ async def serve_stream(request):
             async with http_session.get(stream_url, headers=headers) as upstream:
                 if upstream.status in (403, 410) and attempt == 0:
                     logger.warning(f"YouTube stream URL expired ({upstream.status}), refetching...")
+                    import asyncio
+
+                    from core.event_bus import bus
+                    from core.events import LogMessageEvent
+
+                    asyncio.create_task(
+                        bus.publish(LogMessageEvent(message="Mencoba ulang koneksi stream..."))
+                    )
                     stream_url = None
                     continue
 

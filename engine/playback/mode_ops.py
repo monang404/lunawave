@@ -96,13 +96,30 @@ class ModeOps:
 
     async def set_output(self, output: AudioOutput):
         self.state.audio_output = output
-        if output == AudioOutput.BROWSER:
+        if self.state.audio_output == AudioOutput.BROWSER:
             await self.mpv.set_volume(0)
         else:
             await self.mpv.set_volume(self.state.volume)
-        msg = "Browser" if output == AudioOutput.BROWSER else "HP"
+
+        msg = "Browser" if self.state.audio_output == AudioOutput.BROWSER else "HP"
         await self.bus.publish(LogMessageEvent(message=f"Output suara diubah ke: {msg}"))
         await self.bus.publish(QueueUpdatedEvent())
+
+    async def set_speed(self, data: dict):
+        speed = data.get("speed", 1.0)
+        self.state.playback_speed = float(speed)
+        await self.mpv.set_property("speed", self.state.playback_speed)
+        await self.bus.publish(LogMessageEvent(message=f"Kecepatan pemutaran diubah ke {speed}x"))
+
+    async def set_loop(self, data: dict):
+        mode = data.get("mode", "off")
+        if mode in ["off", "track", "queue"]:
+            self.state.loop_mode = mode
+            msg_map = {"off": "Mati", "track": "Ulangi Lagu", "queue": "Ulangi Antrean"}
+            await self.bus.publish(LogMessageEvent(message=f"Mode Loop: {msg_map[mode]}"))
+            from core.events import QueueUpdatedEvent
+
+            await self.bus.publish(QueueUpdatedEvent())
 
     async def toggle_sponsorblock(self, enabled: bool):
         self.state.sponsorblock_active = enabled
@@ -114,4 +131,11 @@ class ModeOps:
         self.state.loudness_normalization_enabled = enabled
         status_msg = "ON" if enabled else "OFF"
         await self.bus.publish(LogMessageEvent(message=f"Loudness Normalization: {status_msg}"))
+        await self.bus.publish(QueueUpdatedEvent())
+
+    async def set_crossfade(self, data: dict):
+        enabled = data.get("enabled", False)
+        self.state.crossfade_enabled = enabled
+        status_msg = "ON" if enabled else "OFF"
+        await self.bus.publish(LogMessageEvent(message=f"Crossfade: {status_msg}"))
         await self.bus.publish(QueueUpdatedEvent())

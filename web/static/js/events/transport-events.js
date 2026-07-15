@@ -46,6 +46,22 @@ function initTransportEvents() {
         }
     });
 
+    if (dom.btnNext) {
+        dom.btnNext.addEventListener("click", () => {
+            if (store.userRole !== "admin") return;
+            wsSend("next");
+        });
+    }
+
+    if (dom.btnRepeat) {
+        dom.btnRepeat.addEventListener("click", () => {
+            if (store.userRole !== "admin") return;
+            const currentMode = store.loop_mode || "off";
+            const modeCycle = { "off": "track", "track": "queue", "queue": "off" };
+            wsSend("set_loop", { mode: modeCycle[currentMode] });
+        });
+    }
+
     if (dom.btnStop) {
         dom.btnStop.addEventListener('click', () => {
             if (store.userRole === 'admin') wsSend('stop');

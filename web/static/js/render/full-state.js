@@ -3,6 +3,17 @@ function applyFullState(data) {
     if (typeof setPositionAnchor === "function") {
         setPositionAnchor(store.position);
     }
+    // Sync browser audio playback rate jika output = browser
+    if (store.audio_output === "browser" && typeof getOrInitAudio === "function") {
+        const audio = getOrInitAudio();
+        if (audio && store.playback_speed) {
+            audio.playbackRate = store.playback_speed;
+        }
+    }
+    // Sync speed dropdown ke nilai dari server
+    if (dom.ssSpeedSelect && store.playback_speed) {
+        dom.ssSpeedSelect.value = store.playback_speed.toFixed(2);
+    }
     renderFullState();
     if (store.userRole !== 'portal' && typeof syncBrowserAudio === "function") {
         syncBrowserAudio();

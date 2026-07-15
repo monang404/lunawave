@@ -1,7 +1,7 @@
 // ── Service Worker — LunaWave ──
 // Strategy: Cache-first untuk static assets, network-first untuk API/WS
 
-const CACHE_VERSION = 'lunawave-20260709-offline-v2';
+const CACHE_VERSION = 'lunawave-20260715-offline-v1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Assets yang di-cache saat install
@@ -53,17 +53,24 @@ const PRECACHE_ASSETS = [
     '/static/js/store.js',
     '/static/js/dom.js',
     '/static/js/ws.js',
-    '/static/js/audio.js',
-    '/static/js/utils.js',
     '/static/js/portal.js',
     '/static/js/config.js',
 
+    // ── JS: Utils ──
+    '/static/js/utils/format.js',
+    '/static/js/utils/toast.js',
+
     // ── JS: Events ──
     '/static/js/events/index.js',
-    '/static/js/events/player-events.js',
+    '/static/js/events/action-modal-events.js',
+    '/static/js/events/click-delegation-events.js',
+    '/static/js/events/keyboard-shortcut-events.js',
     '/static/js/events/lyrics-events.js',
+    '/static/js/events/progress-events.js',
     '/static/js/events/queue-events.js',
+    '/static/js/events/search-input-events.js',
     '/static/js/events/settings-events.js',
+    '/static/js/events/transport-events.js',
 
     // ── JS: Render ──
     '/static/js/render/player.js',
@@ -71,7 +78,9 @@ const PRECACHE_ASSETS = [
     '/static/js/render/lyrics.js',
     '/static/js/render/queue.js',
     '/static/js/render/now-playing.js',
-    '/static/js/render/discover.js',
+    '/static/js/render/discover-tab.js',
+    '/static/js/render/radio-tab.js',
+    '/static/js/render/full-state.js',
 
     // ── JS: Services ──
     '/static/js/services/auth.js',

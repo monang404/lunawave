@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-15-047
+latest_patch_id: PATCH-2026-07-15-060
 
-total_entries: 47
+total_entries: 60
 
 ---
 
@@ -23,6 +23,199 @@ total_entries: 47
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-15] Test Coverage — Sesi Audit Bug Fix
+**ID:** `PATCH-2026-07-15-060`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Penambahan test yang hilang pasca-implementasi PATCH-058 dan PATCH-059.
+- `test_websocket.py`: Tambah `test_new_playback_actions_are_routed` (parametrize 5 action: stop, set_sleep_timer, set_speed, set_loop, set_crossfade), `test_cache_commands_are_routed`, `test_unknown_action_does_not_crash`.
+- `test_serializers.py`: Tambah assert untuk 3 field baru di `state_to_dict` (playback_speed, loop_mode, crossfade_enabled) termasuk verifikasi nilai non-default.
+**File Terdampak:**
+- `tests/unit/server/handlers/test_websocket.py`
+- `tests/unit/server/test_serializers.py`
+
+---
+
+
+**ID:** `PATCH-2026-07-15-059`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Audit runtime menemukan 3 bug lanjutan setelah PATCH-058.
+- **BUG-A (Kritis):** `server/serializers.py` tidak menyertakan `playback_speed`, `loop_mode`, `crossfade_enabled` di payload state WS. Akibatnya toggle crossfade tidak bisa di-sync dari server, speed tidak persist setelah reconnect, loop mode button tidak reflect state server. Fix: tambahkan 3 field ke `state_to_dict()`.
+- **BUG-B (Kritis):** Kecepatan pemutaran hanya dikirim ke MPV (hanya berlaku untuk output Device). Browser audio (`<audio>`) tidak punya hook ke MPV property. Fix: tambahkan `audio.playbackRate = speed` di `settings-events.js` dan `full-state.js`.
+- **IMPROVE-C:** Sleep timer tidak punya feedback visual — subtitle hanya menampilkan "15 Menit" statis. Fix: tambahkan countdown timer client-side yang mundur detik per detik dan reset ke "Mati" saat habis.
+**File Terdampak:**
+- `server/serializers.py`
+- `web/static/js/render/full-state.js`
+- `web/static/js/events/settings-events.js`
+
+---
+
+
+**ID:** `PATCH-2026-07-15-058`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Audit pasca-implementasi T1–T16 menemukan 4 bug kritis dan 2 bug minor yang menyebabkan beberapa fitur baru tidak berfungsi dari frontend.
+- **BUG-1 (Kritis):** `PLAYBACK_CMDS` di `server/handlers/websocket.py` tidak mencakup 5 action baru (`stop`, `set_sleep_timer`, `set_speed`, `set_loop`, `set_crossfade`). WebSocket menerima pesan tapi diam-diam mengabaikannya. Fix: tambahkan 5 action ke set.
+- **BUG-2 (Kritis):** `store.js` tidak punya field `crossfade_enabled`. Fix: tambahkan `crossfade_enabled: false` ke `createStore()`.
+- **BUG-3 (Kritis):** `transport-events.js` membaca `store.loopMode` (camelCase) padahal store memakai `store.loop_mode` (snake_case). Tombol Repeat selalu cycle ke "track". Fix: rename ke `loop_mode`.
+- **BUG-4 (Kritis):** `queue_manager.py` punya dead code `pass` di blok `loop_mode == "queue"` saat queue kosong. Fix: hapus blok if/pass yang tidak berguna.
+- **MINOR-1:** `core/state.py` mendefinisikan `playback_speed` dan `loop_mode` dua kali di dataclass. Fix: hapus duplikat.
+- **MINOR-2:** `settings-events.js` mendaftarkan listener `sbToggle.click` dua kali, yang kedua mengirim action `toggle_sponsorblock` yang tidak ada handler-nya. Fix: hapus listener duplikat.
+**File Terdampak:**
+- `server/handlers/websocket.py`
+- `web/static/js/store.js`
+- `web/static/js/events/transport-events.js`
+- `engine/queue_manager.py`
+- `core/state.py`
+- `web/static/js/events/settings-events.js`
+
+---
+
+
+**ID:** `PATCH-2026-07-15-057`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T16: Implementasi efek crossfade eksperimental. Menambah `crossfade_enabled` di state, command `CMD_SET_CROSSFADE`, pengaturan UI di Settings, fade-out manual 2 detik di `controller.py`, fade-in di `controller.py` saat putar track baru untuk DEVICE output, dan JS client-side volume fade untuk BROWSER output. Refactoring crossfade dilakukan dengan memisahkan logika ke `crossfade.py` untuk menjaga ukuran file `controller.py` di bawah batas.
+**File Terdampak:**
+- `core/state.py`
+- `core/commands.py`
+- `engine/command_router.py`
+- `engine/playback/mode_ops.py`
+- `engine/playback/controller.py`
+- `engine/playback/crossfade.py`
+- `server/handlers/ws_playback.py`
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+- `web/static/js/render/player.js`
+- `web/static/js/dom.js`
+- `docs/ADR/003-Crossfade.md`
+
+---
+
+## [2026-07-15] Queue Duration UI (Tier 2 - T15)
+**ID:** `PATCH-2026-07-15-056`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T15: Penambahan informasi jumlah lagu dan total durasi estimasi secara real-time pada footer panel "Antrean Putar".
+**File Terdampak:**
+- `web/static/js/render/queue.js`
+
+---
+
+## [2026-07-15] Retry Stream Indicator (Tier 2 - T14)
+**ID:** `PATCH-2026-07-15-055`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T14: Menambahkan log publish (berupa `LogMessageEvent`) yang diekspos ke UI apabila endpoint `/stream/<video_id>` menerima respons 403 atau 410 dari upstream.
+**File Terdampak:**
+- `server/handlers/http.py`
+
+---
+
+## [2026-07-15] Loop Mode (Tier 2 - T13)
+**ID:** `PATCH-2026-07-15-054`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T13: Menambahkan fitur Loop Mode (off/track/queue). Menambah flag di AppState, logic `next()` pada `queue_manager.py`, command WS baru, serta toggle UI button yang disinkronisasi dengan state.
+**File Terdampak:**
+- `core/state.py`
+- `core/commands.py`
+- `engine/queue_manager.py`
+- `engine/playback/mode_ops.py`
+- `server/handlers/ws_playback.py`
+- `web/static/js/store.js`
+- `web/static/js/dom.js`
+- `web/static/js/render/player.js`
+- `web/static/js/events/transport-events.js`
+- `web/static/css/components/player-bar.css`
+- `tests/unit/engine/test_queue_manager.py`
+
+---
+
+## [2026-07-15] Recent Search History (Tier 2 - T12)
+**ID:** `PATCH-2026-07-15-053`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T12: Riwayat pencarian terkini menggunakan safeStorage di sisi client beserta dukungan penghapusan manual. Juga memperbaiki fitur penghapusan item individual di daftar antrean.
+**File Terdampak:**
+- `web/static/js/events/search-input-events.js`
+- `web/static/js/render/queue.js`
+- `web/static/js/events/queue-events.js`
+- `server/handlers/ws_playback.py`
+
+---
+
+## [2026-07-15] Playback Speed Control (Tier 2 - T11)
+**ID:** `PATCH-2026-07-15-052`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T11: Fitur kontrol kecepatan pemutaran. Menambahkan dropdown kecepatan di Setting, menghubungkannya melalui event WebSocket, serta pengaturan real-time menggunakan `mpv.set_property("speed", value)`.
+**File Terdampak:**
+- `core/state.py`
+- `core/commands.py`
+- `engine/playback/mode_ops.py`
+- `server/handlers/ws_playback.py`
+- `web/static/js/store.js`
+- `web/static/js/render/player.js`
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+
+---
+
+## [2026-07-15] Sleep Timer (Tier 2 - T10)
+**ID:** `PATCH-2026-07-15-051`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T10: Implementasi mode Sleep Timer. Mengatur waktu tidur dengan opsi countdown, mengintegrasikannya dengan command bus agar memicu auto-stop playback setelah waktu terlampaui, dan menambah test.
+**File Terdampak:**
+- `core/commands.py`
+- `engine/sleep_timer.py`
+- `engine/command_router.py`
+- `server/handlers/ws_playback.py`
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+- `web/static/js/render/player.js`
+- `tests/unit/engine/test_sleep_timer.py`
+
+---
+
+## [2026-07-15] Cache Size Indicator & Clear (Tier 2 - T9)
+**ID:** `PATCH-2026-07-15-050`
+**Tanggal:** 2026-07-15
+**Ringkasan:** T9: Penambahan handler `ws_cache.py` untuk mengukur direktori cache MP3 (`config.CACHE_DIR`) dan menghapusnya tanpa menyentuh file statis atau unduhan manual, disertai unit test. Di UI ditambahkan tampilan ukuran disk pada tab Settings.
+**File Terdampak:**
+- `server/handlers/ws_cache.py`
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+- `tests/unit/server/handlers/test_ws_cache.py`
+
+---
+
+## [2026-07-15] Playback Resume Functionality (Tier 2 - T8)
+**ID:** `PATCH-2026-07-15-049`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Implementasi Task T8: Resume posisi playback setelah restart server. Modifikasi meliputi penambahan kolom `last_position` di tabel `tracks`, method di repositori untuk write/read posisi, `_on_track_progress` di controller untuk menyimpan secara periodik (setiap 10 detik), dan script `main.py` untuk load last state saat startup. Unit test untuk start_paused pada controller telah ditambahkan. Panjang file `controller.py` telah dikompres kembali sehingga lolos pengecekan `<400 baris` doctor.
+**File Terdampak:**
+- `core/state.py`
+- `persistence/schema.sql`
+- `persistence/track_repo.py`
+- `persistence/__init__.py`
+- `engine/playback/controller.py`
+- `tests/unit/engine/playback/test_controller.py`
+- `main.py`
+
+---
+
+## [2026-07-15] Fixes and Optimizations Tier 1
+**ID:** `PATCH-2026-07-15-048`
+**Tanggal:** 2026-07-15
+**Ringkasan:** Implementasi Task T1-T7 Tier 1: Perbaikan bug data integrity hash fallback, precompile regex di searcher, lrc parser, HTTP handler, optimasi regex noise-keyword lirik, dan penggantian list ke deque pada rate limiter. Menambahkan unique index pada `artists.nama` di schema DB.
+**File Terdampak:**
+- `adapters/ytdlp/searcher.py`
+- `tests/unit/adapters/ytdlp/test_searcher.py`
+- `persistence/schema.sql`
+- `plugins/lyrics_parser.py`
+- `tests/unit/plugins/test_lyrics_parser.py`
+- `plugins/lyrics_fetcher.py`
+- `tests/unit/plugins/test_lyrics_fetcher.py`
+- `server/handlers/http.py`
+- `tests/unit/server/handlers/test_http.py`
+- `server/middleware.py`
+- `tests/unit/server/test_middleware.py`
 
 ---
 

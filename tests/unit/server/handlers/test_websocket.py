@@ -131,3 +131,64 @@ async def test_handle_ws_message_malformed_payload(mock_handle_playback, mock_ch
     )
 
     mock_handle_playback.assert_called_once_with("play_track", {})
+
+
+@pytest.mark.parametrize(
+    "action", ["stop", "set_sleep_timer", "set_speed", "set_loop", "set_crossfade"]
+)
+@pytest.mark.asyncio
+@patch("server.handlers.websocket.require_auth", return_value=True)
+@patch("server.handlers.websocket.check_rate_limit", return_value=True)
+@patch("server.handlers.websocket.handle_playback_command")
+async def test_new_playback_actions_are_routed(
+    mock_handle_playback, mock_check, mock_require, action
+):
+    """Verifikasi 5 action baru (PATCH-058) di-route ke handle_playback_command."""
+    await handle_ws_message(
+        {"type": "cmd", "action": action, "data": {}},
+        AsyncMock(),
+        "127.0.0.1",
+        None,
+        None,
+        None,
+        None,
+    )
+    mock_handle_playback.assert_called_once_with(action, {})
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.websocket.require_auth", return_value=True)
+@patch("server.handlers.websocket.check_rate_limit", return_value=True)
+async def test_cache_commands_are_routed(mock_check, mock_require):
+    """Verifikasi get_cache_size dan clear_cache di-route ke ws_cache handler."""
+    with patch("server.handlers.ws_cache.handle_cache_command") as mock_cache:
+        mock_ws = AsyncMock()
+        await handle_ws_message(
+            {"type": "cmd", "action": "get_cache_size", "data": {}},
+            mock_ws,
+            "127.0.0.1",
+            None,
+            None,
+            MagicMock(),
+            MagicMock(),
+        )
+        mock_cache.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.websocket.require_auth", return_value=True)
+@patch("server.handlers.websocket.check_rate_limit", return_value=True)
+async def test_unknown_action_does_not_crash(mock_check, mock_require):
+    """Action tidak dikenal harus diabaikan tanpa error/exception."""
+    mock_ws = AsyncMock()
+    await handle_ws_message(
+        {"type": "cmd", "action": "action_yang_tidak_ada", "data": {}},
+        mock_ws,
+        "127.0.0.1",
+        None,
+        None,
+        None,
+        None,
+    )
+    # Tidak boleh crash, tidak boleh kirim error ke client
+    mock_ws.send_str.assert_not_called()

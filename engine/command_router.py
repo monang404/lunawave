@@ -56,9 +56,10 @@ class CommandRouter:
     Rutes Global CommandBus requests ke RoomPlaybackController yang sesuai.
     """
 
-    def __init__(self, playback_controller, volume_service):
+    def __init__(self, playback_controller, volume_service, sleep_timer=None):
         self.playback_controller = playback_controller
         self.volume_service = volume_service
+        self.sleep_timer = sleep_timer
 
         command_bus.register(
             CMD_PLAY_TRACK, self._route(lambda c, data: c._on_cmd_play_track(data))
@@ -108,6 +109,34 @@ class CommandRouter:
         command_bus.register(
             CMD_VOLUME_SET, self._route_volume(lambda v, data: v._on_volume_set(data))
         )
+
+        from core.command_bus import CMD_SET_LOOP, CMD_SET_SLEEP_TIMER, CMD_SET_SPEED
+        from core.commands import CMD_SET_CROSSFADE
+
+        command_bus.register(
+            CMD_SET_CROSSFADE, self._route(lambda c, data: c._mode_ops.set_crossfade(data))
+        )
+        command_bus.register(
+            CMD_SET_SPEED, self._route(lambda c, data: c._mode_ops.set_speed(data))
+        )
+        command_bus.register(CMD_SET_LOOP, self._route(lambda c, data: c._mode_ops.set_loop(data)))
+
+        if self.sleep_timer:
+            command_bus.register(
+                CMD_SET_SLEEP_TIMER,
+                self._route_sleep(lambda s, data: s.set_timer(data.get("minutes", 0))),
+            )
+
+    def _route_sleep(self, action):
+        async def handler(data):
+            import asyncio
+
+            res = action(self.sleep_timer, data)
+            if asyncio.iscoroutine(res):
+                return await res
+            return res
+
+        return handler
 
     def _route(self, action):
         async def handler(data):

@@ -31,6 +31,7 @@ from core.command_bus import (
     CMD_PREV,
     CMD_RADIO_RANDOMIZE,
     CMD_SEEK,
+    CMD_SET_CROSSFADE,
     CMD_SET_MODE,
     CMD_SET_OUTPUT,
     CMD_SET_SPONSORBLOCK,
@@ -100,3 +101,25 @@ async def handle_playback_command(action: str, data: dict):
     elif action == "lyrics_offset":
         offset = data.get("offset", 0.0)
         await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})
+
+    elif action == "set_crossfade":
+        enabled = data.get("enabled", False)
+        await command_bus.execute(CMD_SET_CROSSFADE, {"enabled": bool(enabled)})
+
+    elif action == "set_sleep_timer":
+        from core.command_bus import CMD_SET_SLEEP_TIMER
+
+        minutes = data.get("minutes", 0)
+        await command_bus.execute(CMD_SET_SLEEP_TIMER, {"minutes": int(minutes)})
+
+    elif action == "set_speed":
+        from core.command_bus import CMD_SET_SPEED
+
+        speed = data.get("speed", 1.0)
+        await command_bus.execute(CMD_SET_SPEED, {"speed": float(speed)})
+
+    elif action == "set_loop":
+        from core.command_bus import CMD_SET_LOOP
+
+        mode = data.get("mode", "off")
+        await command_bus.execute(CMD_SET_LOOP, {"mode": mode})

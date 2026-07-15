@@ -122,9 +122,9 @@ async def test_serve_metrics_forbids_external_without_token(mock_request):
 
 
 @pytest.mark.asyncio
-@patch("server.handlers.http.re.match")
-async def test_serve_stream_path_traversal(mock_re_match, mock_request):
-    mock_re_match.return_value = True
+@patch("server.handlers.http._STREAM_ID_RE")
+async def test_serve_stream_path_traversal(mock_regex, mock_request):
+    mock_regex.match.return_value = True
     mock_request.match_info = {"video_id": "../../../etc/passwd"}
 
     with patch("server.handlers.http.CACHE_DIR", Path("/fake/cache")):

@@ -18,6 +18,7 @@ class FakeAudioPlayer:
         self.volume = 80
         self.position = 0.0
         self.af = ""
+        self.properties = {}
         self.call_log: list[tuple] = []
 
     async def connect(self) -> None:
@@ -57,3 +58,7 @@ class FakeAudioPlayer:
     async def seek(self, position: float) -> None:
         self.call_log.append(("seek", position))
         self.position = position
+
+    async def set_property(self, prop: str, value: any) -> None:
+        self.call_log.append(("set_property", prop, value))
+        self.properties[prop] = value
