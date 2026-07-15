@@ -1,16 +1,19 @@
 import json
+import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from engine.loudness.analyzer import LoudnessAnalyzer
 
 
-def test_parse_loudness_json():
+@patch("engine.loudness.analyzer.subprocess.run")
+def test_measure_sync_success(mock_run):
     analyzer = LoudnessAnalyzer()
 
-    # Simulate ffmpeg output
-    ffmpeg_output = """
-    some irrelevant text
+    mock_result = MagicMock()
+    mock_result.stderr = """
+    [Parsed_loudnorm_0 @ 0x5555555]
     {
         "input_i" : "-16.5",
         "input_tp" : "-2.0",
@@ -19,26 +22,43 @@ def test_parse_loudness_json():
         "output_i" : "-14.0"
     }
     """
+    mock_run.return_value = mock_result
 
-    result = analyzer._parse_loudness_json(ffmpeg_output)
+    result = analyzer.measure_sync("dummy_uri")
     assert result == -16.5
+    assert mock_run.called
 
 
-def test_parse_loudness_json_invalid():
+@patch("engine.loudness.analyzer.subprocess.run")
+def test_measure_sync_timeout(mock_run):
     analyzer = LoudnessAnalyzer()
+    mock_run.side_effect = subprocess.TimeoutExpired("cmd", 10)
 
-    ffmpeg_output = "No json here"
-    result = analyzer._parse_loudness_json(ffmpeg_output)
+    result = analyzer.measure_sync("dummy_uri")
     assert result is None
 
-    ffmpeg_output = '{"wrong_key": "-10.0"}'
-    result = analyzer._parse_loudness_json(ffmpeg_output)
+
+@patch("engine.loudness.analyzer.subprocess.run")
+def test_measure_sync_no_json(mock_run):
+    analyzer = LoudnessAnalyzer()
+    mock_result = MagicMock()
+    mock_result.stderr = "No json here"
+    mock_run.return_value = mock_result
+
+    result = analyzer.measure_sync("dummy_uri")
     assert result is None
 
 
-def test_parse_loudness_json_malformed():
+@patch("engine.loudness.analyzer.subprocess.run")
+def test_measure_sync_malformed_json(mock_run):
     analyzer = LoudnessAnalyzer()
+    mock_result = MagicMock()
+    mock_result.stderr = """
+    {
+        "input_i": "not a float"
+    }
+    """
+    mock_run.return_value = mock_result
 
-    ffmpeg_output = '{ "input_i": "not a float" }'
-    result = analyzer._parse_loudness_json(ffmpeg_output)
+    result = analyzer.measure_sync("dummy_uri")
     assert result is None
