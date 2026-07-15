@@ -137,7 +137,7 @@ EventBus publish: download_complete {path: "cache/mp3/..."}
 
 Setiap integration test harus memastikan:
 
-1. **MPV process mati** — gunakan fixture yang memanggil `pkill -f mpv` setelah test
+1. **MPV & yt-dlp process mati** — gunakan fixture yang memanggil `kill` (atau taskkill di Windows) untuk mematikan subprocess MPV dan yt-dlp secara eksplicit (mencegah *zombie process* yang memblokir penutupan *event loop* pada CI).
 2. **Cache dibersihkan** — download test menggunakan directory temporary, bukan `cache/mp3/` asli
 3. **Database** — gunakan `:memory:` SQLite atau temporary file, bukan database development
 4. **Port tidak bentrok** — server test menggunakan port acak (misalnya `port=0`), bukan port 8000
@@ -151,6 +151,7 @@ async def integration_server():
     yield server
     await server.stop()
     os.system("pkill -f mpv")  # pastikan MPV mati
+    os.system("pkill -f yt-dlp")  # pastikan yt-dlp mati agar event loop teardown tidak hang di CI
 ```
 
 ---

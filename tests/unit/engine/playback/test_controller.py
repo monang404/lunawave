@@ -25,6 +25,7 @@ Thread Safety:
 
 import asyncio
 from collections import deque
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -86,6 +87,24 @@ class TestPlayTrack:
         await controller.play_track(make_track("v1"))
         assert ("set_volume", 0) in player.call_log
 
+    async def test_play_track_concurrent(self, controller, state, extractor):
+        extractor.stream_urls["v1"] = "https://stream/v1"
+        extractor.stream_urls["v2"] = "https://stream/v2"
+
+        async def delayed_get(*args, **kwargs):
+            await asyncio.sleep(0.01)
+            return "https://stream/mock"
+
+        extractor.get_stream_url = delayed_get
+
+        t1 = asyncio.create_task(controller.play_track(make_track("v1")))
+        t2 = asyncio.create_task(controller.play_track(make_track("v2")))
+        await asyncio.gather(t1, t2)
+
+        assert len(state.history) == 1
+        assert state.current_track.video_id in ["v1", "v2"]
+        assert state.status == PlayerStatus.PLAYING
+
 
 class TestOnStop:
     async def test_stop_sets_idle_and_clears_track(self, controller, state):
@@ -115,6 +134,27 @@ class TestOnPrev:
         await controller._on_prev()
         assert any("sebelumnya" in m.message for m in logs)
 
+    async def test_prev_with_empty_history(self, controller, state, bus):
+        state.history.clear()
+        logs = []
+        bus.subscribe(LogMessageEvent, logs.append)
+        await controller._on_prev()
+        assert len(logs) == 1
+        assert "Tidak ada lagu sebelumnya" in logs[0].message
+        assert state.current_track is None
+
+
+class TestOnNext:
+    async def test_next_with_empty_queue(self, controller, state, queue_mode):
+        from core.state import PlaybackMode
+
+        state.playback_mode = PlaybackMode.QUEUE
+        state.queue.clear()
+
+        await controller._on_next()
+
+        assert len(queue_mode.next_calls) == 1
+
 
 class TestOnSeek:
     async def test_seek_updates_state_position(self, controller, state, player):
@@ -131,6 +171,20 @@ class TestOnSeek:
         state.status = PlayerStatus.IDLE
         await controller._on_seek(30.0)
         assert all(op[0] != "seek" for op in player.call_log)
+
+    async def test_seek_exception_rollback(self, controller, state, player):
+        state.status = PlayerStatus.PLAYING
+        state.position = 10.0
+
+        async def seek_mock(*args):
+            raise RuntimeError("Seek failed")
+
+        player.seek = seek_mock
+
+        with pytest.raises(RuntimeError):
+            await controller._on_seek(50.0)
+
+        assert state.position == 10.0
 
 
 class TestOnTrackEnded:
@@ -150,6 +204,22 @@ class TestOnTrackEnded:
         await controller._on_track_ended(TrackEndedEvent(reason="stop"))
         assert state.status == PlayerStatus.IDLE
 
+    async def test_error_sets_status_error_and_advances_after_sleep(
+        self, controller, state, queue_mode, bus
+    ):
+        state.status = PlayerStatus.PLAYING
+        state.current_track = make_track("v1")
+
+        logs = []
+        bus.subscribe(LogMessageEvent, logs.append)
+
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()):
+            await controller._on_track_ended(TrackEndedEvent(reason="error"))
+
+            assert state.status == PlayerStatus.ERROR
+            assert len(queue_mode.next_calls) == 1
+            assert any("kesalahan pemutaran" in m.message for m in logs)
+
 
 class TestOnPauseChanged:
     async def test_pause_changed_true_sets_paused_when_playing(self, controller, state):
@@ -167,3 +237,12 @@ class TestOnPauseChanged:
         controller._loading = True
         await controller._on_pause_changed(TrackPauseChangedEvent(is_paused=True))
         assert state.status == PlayerStatus.PLAYING
+
+
+class TestTogglePause:
+    async def test_toggle_pause_ignored_during_loading(self, controller, state, player):
+        state.status = PlayerStatus.LOADING
+
+        await controller._on_cmd_toggle_pause()
+
+        assert all(op[0] != "toggle_pause" for op in player.call_log)
