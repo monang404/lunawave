@@ -1,6 +1,6 @@
 # Unit Testing
 
-> Tabel unit test seluruh layer LunaWave — ~65 file, mirror path 1:1.
+> Tabel unit test seluruh layer LunaWave — ~72 file, mirror path 1:1.
 > Untuk filosofi dan setup, lihat → [testing_strategy.md](testing_strategy.md)
 
 ---
@@ -33,8 +33,9 @@ Layer paling stabil — pure Python, tidak ada I/O, tidak ada dependency ekstern
 | `core/observability.py` | `tests/unit/core/test_observability.py` | Sedang |
 | `core/exceptions.py` | `tests/unit/core/test_exceptions.py` | Tinggi |
 | `core/log_config.py` | `tests/unit/core/test_log_config.py` | Rendah |
+| `core/latency_window.py` | — | Sedang |
 
-**Total: 11 file test**
+**Total: 12 file test**
 
 ---
 
@@ -73,8 +74,13 @@ Layer paling bernilai — **pure domain logic**, tidak ada I/O langsung. Priorit
 | `engine/playback/queue_ops.py` | `tests/unit/engine/playback/test_queue_ops.py` | Tinggi |
 | `engine/playback/mode_ops.py` | `tests/unit/engine/playback/test_mode_ops.py` | Tinggi |
 | `engine/playback/track_loader.py` | `tests/unit/engine/playback/test_track_loader.py` | Tinggi |
+| `engine/radio/artist_bandit.py` | `tests/unit/engine/radio/test_artist_bandit.py` | Sedang |
+| `engine/radio/track_interleaver.py` | `tests/unit/engine/radio/test_track_interleaver.py` | Sedang |
+| `engine/loudness/analyzer.py` | `tests/unit/engine/loudness/test_analyzer.py` | Tinggi |
+| `engine/loudness/gain_calculator.py` | `tests/unit/engine/loudness/test_gain_calculator.py` | Tinggi |
+| `engine/loudness/service.py` | — | Sedang |
 
-**Total: 12 file test**
+**Total: 17 file test**
 
 > **Catatan `track_filter.py`:** File ini adalah akar dari bug radio mode.
 > Test harus mencakup: filter duplikat, filter track yang baru diputar, filter berdasarkan genre/artist, edge case list kosong.
@@ -153,13 +159,13 @@ Layer wiring — sebagian besar `Sedang` karena membutuhkan WebSocket/HTTP mock.
 | Layer | File Test | Catatan |
 |---|---|---|
 | Root | 3 | + 1 Manual |
-| core/ | 11 | Pure logic, prioritas tinggi semua |
+| core/ | 12 | Pure logic, prioritas tinggi semua |
 | adapters/ | 6 | Butuh fake socket/HTTP |
-| engine/ | 12 | Layer paling bernilai |
+| engine/ | 17 | Layer paling bernilai |
 | persistence/ | 7 | In-memory SQLite |
 | server/ | 14 | WebSocket/HTTP mock |
 | services/plugins/launcher/ | 13 | + 2 Manual, 1 Opsional |
-| **Total** | **~66** | |
+| **Total** | **~72** | |
 
 ---
 

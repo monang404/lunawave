@@ -23,6 +23,7 @@ Thread Safety:
 """
 
 import asyncio
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -97,3 +98,37 @@ async def test_radio_next_empty_queue():
     await asyncio.sleep(0)
     assert state.status == PlayerStatus.LOADING
     # _start will be triggered as a bg task
+
+
+@pytest.mark.asyncio
+@patch("engine.radio.engine.ArtistSelector.gather_batch")
+async def test_radio_start_empty_standby_fetches_quick(mock_gather_batch):
+    state = AppState()
+    db = MockDB()
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    controller = MockController()
+
+    track = TrackInfo(video_id="1", title="T1", artist="A", duration=100)
+    mock_gather_batch.return_value = [track]
+
+    await radio._start(controller)
+
+    mock_gather_batch.assert_called_once()
+    assert controller.played == [track]
+
+
+@pytest.mark.asyncio
+@patch("engine.radio.engine.ArtistSelector.gather_batch")
+async def test_fetch_and_play_initial_randomize(mock_gather_batch):
+    state = AppState()
+    db = MockDB()
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    controller = MockController()
+
+    track = TrackInfo(video_id="1", title="T1", artist="A", duration=100)
+    mock_gather_batch.return_value = [track]
+
+    await radio._fetch_and_play_initial(controller, seed_artist="Coldplay")
+
+    mock_gather_batch.assert_called_once()
+    assert controller.played == [track]

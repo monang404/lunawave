@@ -145,8 +145,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 **File:** `core/ports.py`
 **Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.
-**Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
-**Function utama:** `is_connected()`, `cancel_download()`, `db()`
+**Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `ArtistRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, ArtistRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
+**Function utama:** `is_connected()`, `cancel_download()`, `db()`, `latency_window()`
 **Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, _7 lainnya_
 **Menggunakan:** `core/state`
 
