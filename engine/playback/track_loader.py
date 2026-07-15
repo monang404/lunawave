@@ -24,6 +24,12 @@ Thread Safety:
     Worker thread (async).
 """
 
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from engine.loudness.service import LoudnessService
+
 import structlog
 
 from core.ports import LyricsProvider, SponsorBlockProvider, StreamResolverPort
@@ -33,18 +39,26 @@ from core.task_utils import safe_create_task
 logger = structlog.get_logger(__name__)
 
 
+@dataclass
+class LoadedTrack:
+    uri: str
+    gain_db: float = 0.0
+
+
 class TrackLoader:
     def __init__(
         self,
         resolver: StreamResolverPort,
         sponsorblock: SponsorBlockProvider,
         lyrics_fetcher: LyricsProvider,
+        loudness_service: "LoudnessService | None" = None,
     ):
         self.resolver = resolver
         self.sponsorblock = sponsorblock
         self.lyrics_fetcher = lyrics_fetcher
+        self.loudness_service = loudness_service
 
-    async def load_track(self, track: TrackInfo) -> str:
+    async def load_track(self, track: TrackInfo) -> LoadedTrack:
         """
         Resolves the track URI and triggers background tasks
         for lyrics and sponsorblock. Also increments play count.
@@ -66,4 +80,16 @@ class TrackLoader:
         )
         safe_create_task(self.lyrics_fetcher.fetch(track), name=f"fetch_lyrics_{track.video_id}")
 
-        return uri
+        gain_db = 0.0
+        if self.loudness_service:
+            row = await self.resolver.db.get_track(track.video_id)
+            if row and row.loudness_lufs is not None:
+                from engine.loudness.gain_calculator import compute_gain_db
+
+                gain_db = compute_gain_db(row.loudness_lufs)
+            safe_create_task(
+                self.loudness_service.analyze_and_store(track.video_id, uri),
+                name=f"analyze_loudness_{track.video_id}",
+            )
+
+        return LoadedTrack(uri=uri, gain_db=gain_db)

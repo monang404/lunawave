@@ -43,6 +43,7 @@ class FakeTrackRepository:
             play_count=existing.play_count if existing else 0,
             last_played=existing.last_played if existing else None,
             is_favorite=existing.is_favorite if existing else 0,
+            loudness_lufs=existing.loudness_lufs if existing else None,
         )
         if stream_url is not None:
             import time
@@ -63,3 +64,8 @@ class FakeTrackRepository:
         self.call_log.append(("increment_play_count", video_id))
         if video_id in self._tracks:
             self._tracks[video_id].play_count = (self._tracks[video_id].play_count or 0) + 1
+
+    async def set_loudness(self, video_id: str, lufs: float) -> None:
+        self.call_log.append(("set_loudness", video_id, lufs))
+        if video_id in self._tracks:
+            self._tracks[video_id].loudness_lufs = lufs

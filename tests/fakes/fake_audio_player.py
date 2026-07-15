@@ -17,6 +17,7 @@ class FakeAudioPlayer:
         self.is_playing = False
         self.volume = 80
         self.position = 0.0
+        self.af = ""
         self.call_log: list[tuple] = []
 
     async def connect(self) -> None:
@@ -48,6 +49,10 @@ class FakeAudioPlayer:
     async def set_volume(self, volume: int) -> None:
         self.call_log.append(("set_volume", volume))
         self.volume = volume
+
+    async def set_af(self, filter_str: str) -> None:
+        self.call_log.append(("set_af", filter_str))
+        self.af = filter_str
 
     async def seek(self, position: float) -> None:
         self.call_log.append(("seek", position))

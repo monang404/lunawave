@@ -79,3 +79,38 @@ class ArtistRepository:
                 )
             )
         return tracks
+
+    async def record_completion(self, artist_name: str) -> None:
+        """Track selesai penuh — reward positif untuk bandit."""
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                "UPDATE artists SET reward_alpha = COALESCE(reward_alpha, 1) + 1 WHERE nama = ?",
+                (artist_name,),
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.error(f"Error recording completion: {e}")
+
+    async def record_skip(self, artist_name: str) -> None:
+        """Track skip dini — reward negatif untuk bandit."""
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                "UPDATE artists SET reward_beta = COALESCE(reward_beta, 1) + 1 WHERE nama = ?",
+                (artist_name,),
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.error(f"Error recording skip: {e}")
+
+    async def get_reward_stats(self) -> dict[str, tuple[int, int]]:
+        """Ambil {nama_artis: (alpha, beta)} untuk semua artis."""
+        if not self._conn:
+            return {}
+        query = "SELECT nama, COALESCE(reward_alpha, 1) as a, COALESCE(reward_beta, 1) as b FROM artists"
+        async with self._conn.execute(query) as cursor:
+            rows = await cursor.fetchall()
+        return {row["nama"]: (row["a"], row["b"]) for row in rows}

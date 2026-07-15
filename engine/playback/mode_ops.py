@@ -109,3 +109,9 @@ class ModeOps:
         status_msg = "ON" if enabled else "OFF"
         await self.bus.publish(LogMessageEvent(message=f"SponsorBlock: {status_msg}"))
         await self.bus.publish(QueueUpdatedEvent())
+
+    async def toggle_loudness_normalization(self, enabled: bool):
+        self.state.loudness_normalization_enabled = enabled
+        status_msg = "ON" if enabled else "OFF"
+        await self.bus.publish(LogMessageEvent(message=f"Loudness Normalization: {status_msg}"))
+        await self.bus.publish(QueueUpdatedEvent())

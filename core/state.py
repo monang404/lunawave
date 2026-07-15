@@ -59,6 +59,7 @@ class TrackInfo:
     play_count: int | None = None
     last_played: int | None = None
     is_favorite: int | None = 0
+    loudness_lufs: float | None = None
 
 
 @dataclass
@@ -72,6 +73,7 @@ class AppState:
     duration: float = 0.0
     volume: int = 80
     sponsorblock_active: bool = True
+    loudness_normalization_enabled: bool = True
 
     # Queue (hanya aktif di QUEUE mode)
     queue: deque = field(default_factory=deque)

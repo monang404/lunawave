@@ -114,6 +114,7 @@ async def main():
 
     # 4. Global Services Initialization
     from cache.resolver import CacheResolver
+    from engine.loudness.service import LoudnessService
     from engine.playback.controller import PlaybackController
     from engine.queue_manager import QueueMode
     from engine.radio_engine import RadioMode
@@ -123,13 +124,22 @@ async def main():
 
     sponsorblock = SponsorBlockHandler(mpv, state=state, session=http_session, event_bus=bus)
     lyrics_fetcher = LyricsFetcher(state, session=http_session, event_bus=bus)
+    loudness_service = LoudnessService(db)
 
     queue_mode = QueueMode()
     radio_mode = RadioMode(ytdlp, state, db=db)
 
     volume_service = VolumeService(bus, mpv, state)
     playback_controller = PlaybackController(
-        bus, state, mpv, resolver, sponsorblock, lyrics_fetcher, queue_mode, radio_mode
+        bus,
+        state,
+        mpv,
+        resolver,
+        sponsorblock,
+        lyrics_fetcher,
+        queue_mode,
+        radio_mode,
+        loudness_service,
     )
 
     DownloadManager(bus, state, ytdlp)
@@ -223,6 +233,19 @@ async def main():
                         uri = await resolver.resolve(state.current_track)
                         await mpv.play(uri)
                         await mpv.seek(state.position)
+
+                        from engine.loudness.gain_calculator import build_af_filter, compute_gain_db
+
+                        row = await db.get_track(state.current_track.video_id)
+                        gain_db = 0.0
+                        if row and row.loudness_lufs is not None:
+                            gain_db = compute_gain_db(row.loudness_lufs)
+
+                        if getattr(state, "loudness_normalization_enabled", True):
+                            await mpv.set_af(build_af_filter(gain_db))
+                        else:
+                            await mpv.set_af(build_af_filter(0.0))
+
                         if (
                             getattr(state, "audio_output", AudioOutput.DEVICE)
                             == AudioOutput.BROWSER
