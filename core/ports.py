@@ -22,7 +22,10 @@ Thread Safety:
 """
 
 from collections.abc import Callable
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from core.latency_window import LatencyWindow
 
 from core.state import TrackInfo
 
@@ -56,6 +59,8 @@ class MediaExtractorPort(Protocol):
 class StreamResolverPort(Protocol):
     @property
     def db(self) -> "DatabasePort": ...
+    @property
+    def latency_window(self) -> "LatencyWindow": ...
     async def resolve(self, track: TrackInfo) -> str: ...
 
 
