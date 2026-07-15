@@ -11,11 +11,10 @@ LunaWave adalah music player berbasis YouTube yang jalan sebagai server lokal
 Platform utama: Termux (Android) + Windows.
 Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 
-## Sprint Aktif: 3.2 (selesai) — beberapa batch sudah jalan pasca-3.2
-- Sprint 3.2 selesai: refactor `start.py` → `launcher/` ✅
-- Sprint 3.2 lanjutan (pasca): Batch 8–12 (2026-07-11) — DB Index, websocket improvements, lyric serializer, OTel cleanup, startup script.
-- Sprint 3.2 lanjutan (2026-07-13): refactor `cache/db.py` → `persistence/`, `engine/mpv_controller.py` + `engine/ytdlp_client.py` → `adapters/`, docs cleanup.
-- Sprint 3.3 target: lihat `docs/STATUS.md` — sumber kebenaran kondisi per-file.
+## Sprint Aktif: 3.3 (Stabilisasi & QoL)
+- Sprint 3.2 telah diselesaikan.
+- Sprint 3.3 (2026-07-15): Implementasi Thompson Sampling Bandit, Loudness Normalization, Adaptive Prefetch.
+- Sprint 3.3 (2026-07-15): Penyelesaian isu CI hang akibat *zombie thread* `yt-dlp` dan peningkatan *test coverage* (mencapai > 78%).
 - Lihat `docs/PATCHLOG.md` untuk detail patch terbaru.
 
 ## File yang TIDAK BOLEH disentuh tanpa izin eksplisit
@@ -30,6 +29,7 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 - Tidak boleh ganti SQLite ke DB lain
 - Tidak boleh refactor 2 tahap sekaligus dalam 1 commit
 - Setiap file yang dipindah WAJIB ada backward-compat alias
+- **Waspada Zombie Threads**: `ThreadPoolExecutor` (seperti saat membungkus `yt-dlp` atau `ffprobe`) yang hang dapat menyebabkan *non-daemon thread* tersangkut, membuat Python gagal *exit* (membuat CI/CD *hang* meski *test coverage* lulus). Eksekusi `os._exit()` pada `pytest_unconfigure` di `tests/conftest.py` menangani isu ini, jadi jangan dihapus.
 
 ## Alur kerja AI yang benar
 
