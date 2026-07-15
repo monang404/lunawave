@@ -53,6 +53,7 @@ def state_to_dict(state: AppState, include_lyrics: bool = True) -> dict:
         "volume": state.volume,
         "audio_output": getattr(state, "audio_output", AudioOutput.DEVICE).value,
         "sponsorblock_active": state.sponsorblock_active,
+        "loudness_normalization_enabled": getattr(state, "loudness_normalization_enabled", True),
         "queue": [track_to_dict(t) for t in state.queue],
         "radio_queue": [track_to_dict(t) for t in state.radio_queue],
         "history_count": len(state.history),

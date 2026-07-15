@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     play_count   INTEGER DEFAULT 0,
     last_played  INTEGER,        -- Unix timestamp
     is_favorite  INTEGER DEFAULT 0, -- 1 if liked, 0 otherwise
+    loudness_lufs REAL,          -- NULL = belum dianalisis; integrated loudness (LUFS)
     created_at   INTEGER DEFAULT (strftime('%s','now'))
 );
 
@@ -31,7 +32,9 @@ CREATE TABLE IF NOT EXISTS artists (
     id INTEGER PRIMARY KEY,
     nama TEXT NOT NULL,
     kategori TEXT,
-    tahun_aktif TEXT
+    tahun_aktif TEXT,
+    reward_alpha INTEGER DEFAULT 1,
+    reward_beta INTEGER DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS genres (

@@ -47,6 +47,12 @@ ACTIVE_WEBSOCKETS = Gauge(
     "Number of currently active WebSocket connections",
 )
 
+# 5. Resolve Latency (Histogram)
+RESOLVE_LATENCY = Histogram(
+    "lunawave_stream_resolve_duration_seconds",
+    "Duration of yt-dlp stream URL resolution (Rule 3 cache miss only)",
+)
+
 
 def get_metrics_content():
     """Returns the Prometheus metrics in text format."""

@@ -27,6 +27,12 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+from config import (
+    PREFETCH_DEFAULT_THRESHOLD_SEC,
+    PREFETCH_MAX_THRESHOLD_SEC,
+    PREFETCH_MIN_THRESHOLD_SEC,
+    PREFETCH_SAFETY_FACTOR,
+)
 from core.state import AppState
 from engine.radio.common import ARTISTS_PER_BATCH, track_task
 
@@ -103,11 +109,18 @@ class RadioPrefetcher:
     def trigger_build_standby(self, controller: "PlaybackController"):
         track_task(self._bg_tasks, self.build_standby(controller), name="radio_build_standby")
 
+    def _current_threshold(self, controller: "PlaybackController") -> float:
+        window = controller.track_loader.resolver.latency_window
+        p90 = window.percentile(90, default=PREFETCH_DEFAULT_THRESHOLD_SEC)
+        raw = p90 * PREFETCH_SAFETY_FACTOR
+        return max(PREFETCH_MIN_THRESHOLD_SEC, min(raw, PREFETCH_MAX_THRESHOLD_SEC))
+
     def check_prefetch(
         self, controller: "PlaybackController", position: float, duration: float
     ) -> None:
-        """Trigger prefetch stream_url untuk lagu berikutnya jika waktu tersisa <= 30 detik."""
-        if duration > 0 and (duration - position) <= 30.0:
+        """Trigger prefetch stream_url untuk lagu berikutnya jika waktu tersisa <= threshold adaptif."""
+        threshold = self._current_threshold(controller)
+        if duration > 0 and (duration - position) <= threshold:
             current_vid = self.state.current_track.video_id if self.state.current_track else None
             if current_vid and self._last_prefetch_vid != current_vid:
                 self._last_prefetch_vid = current_vid

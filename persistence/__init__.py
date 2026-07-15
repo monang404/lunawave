@@ -63,6 +63,9 @@ class Database:
             "ALTER TABLE tracks ADD COLUMN is_favorite INTEGER DEFAULT 0",
             "ALTER TABLE artists ADD COLUMN click_count INTEGER DEFAULT 0",
             "ALTER TABLE genres ADD COLUMN click_count INTEGER DEFAULT 0",
+            "ALTER TABLE artists ADD COLUMN reward_alpha INTEGER DEFAULT 1",
+            "ALTER TABLE artists ADD COLUMN reward_beta INTEGER DEFAULT 1",
+            "ALTER TABLE tracks ADD COLUMN loudness_lufs REAL",
         ]:
             try:
                 await self._db.conn.execute(sql)
@@ -133,6 +136,15 @@ class Database:
     async def get_artist_songs_strict(self, *a, **kw):
         return await self._artists.get_artist_songs_strict(*a, **kw)
 
+    async def get_reward_stats(self, *a, **kw):
+        return await self._artists.get_reward_stats(*a, **kw)
+
+    async def record_completion(self, *a, **kw):
+        return await self._artists.record_completion(*a, **kw)
+
+    async def record_skip(self, *a, **kw):
+        return await self._artists.record_skip(*a, **kw)
+
     async def increment_genre_click(self, *a, **kw):
         return await self._genres.increment_genre_click(*a, **kw)
 
@@ -144,3 +156,6 @@ class Database:
 
     async def get_random_songs(self, *a, **kw):
         return await self._library.get_random_songs(*a, **kw)
+
+    async def set_loudness(self, *a, **kw):
+        return await self._tracks.set_loudness(*a, **kw)

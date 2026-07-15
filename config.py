@@ -77,6 +77,14 @@ STREAM_URL_TTL_SEC = 21600
 # supaya error/retry-path yang sudah ada di play_track() bisa jalan.
 YTDLP_RESOLVE_TIMEOUT_SEC = 25
 
+# Adaptive prefetch
+PREFETCH_DEFAULT_THRESHOLD_SEC = 30.0
+PREFETCH_SAFETY_FACTOR = 1.5
+PREFETCH_MIN_THRESHOLD_SEC = 10.0
+PREFETCH_MAX_THRESHOLD_SEC = 60.0
+
+LOUDNESS_ANALYZE_TIMEOUT_SEC = 25.0
+
 # Web Server
 WEB_HOST = os.environ.get("LUNAWAVE_HOST", os.environ.get("YTGUI_HOST", "0.0.0.0"))
 WEB_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
