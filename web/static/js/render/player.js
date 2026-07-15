@@ -30,9 +30,24 @@ function renderPlayerBar() {
     if (store.playback_mode === "RADIO") {
         dom.pbModeBadge.textContent = "📻 radio";
         dom.pbModeBadge.className = "pb-mode-badge radio";
+        dom.btnRepeat.style.display = "none";
     } else {
         dom.pbModeBadge.textContent = "≡ queue";
         dom.pbModeBadge.className = "pb-mode-badge queue";
+        dom.btnRepeat.style.display = "inline-flex";
+    }
+
+    if (dom.btnRepeat) {
+        if (store.loop_mode === "track") {
+            dom.btnRepeat.innerHTML = '<i class="ti ti-repeat-once" aria-hidden="true"></i>';
+            dom.btnRepeat.classList.add("active");
+        } else if (store.loop_mode === "queue") {
+            dom.btnRepeat.innerHTML = '<i class="ti ti-repeat" aria-hidden="true"></i>';
+            dom.btnRepeat.classList.add("active");
+        } else {
+            dom.btnRepeat.innerHTML = '<i class="ti ti-repeat" aria-hidden="true"></i>';
+            dom.btnRepeat.classList.remove("active");
+        }
     }
 
     if (dom.pbVolLabel) dom.pbVolLabel.textContent = store.volume + "%";
@@ -156,6 +171,21 @@ function _renderProgressCore(posOverride) {
 
     dom.pbTimePos.textContent = formatTime(pos);
     dom.pbTimeDur.textContent = formatTime(dur);
+
+    if (window.audio && store.audio_output === "browser") {
+        if (store.crossfade_enabled && dur > 0) {
+            const remaining = dur - pos;
+            let fadeVol = store.volume / 100;
+            if (remaining <= 2.0 && remaining > 0) {
+                fadeVol = Math.max(0, fadeVol * (remaining / 2.0));
+            } else if (pos <= 2.0) {
+                fadeVol = Math.max(0, fadeVol * (pos / 2.0));
+            }
+            window.audio.volume = fadeVol;
+        } else {
+            window.audio.volume = store.volume / 100;
+        }
+    }
 
     // S8-08 Mini Player Progress
     const playerBar = document.getElementById("player-bar");

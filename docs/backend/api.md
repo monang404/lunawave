@@ -58,13 +58,23 @@ Token diperoleh dari `POST /auth/login`. Koneksi tanpa token atau token invalid 
 
 | Command | Payload | Keterangan |
 |---|---|---|
-| `play` | `{"video_id": "abc123"}` | Mainkan track dari video_id |
-| `pause` | `{}` | Pause/resume toggle |
+| `play_track` | `{"video_id": "abc123"}` | Mainkan track dari video_id |
+| `toggle_pause` | `{}` | Pause/resume toggle |
 | `stop` | `{}` | Stop dan reset posisi |
-| `skip_next` | `{}` | Skip ke track berikutnya |
-| `skip_prev` | `{}` | Kembali ke track sebelumnya |
+| `next` | `{}` | Skip ke track berikutnya |
+| `prev` | `{}` | Kembali ke track sebelumnya |
 | `seek` | `{"position": 42.5}` | Seek ke posisi (detik) |
-| `set_volume` | `{"volume": 75}` | Set volume (0–100) |
+| `volume_set` | `{"volume": 75}` | Set volume (0–100) |
+| `volume_up` | `{}` | Volume naik |
+| `volume_down` | `{}` | Volume turun |
+| `set_mode` | `{"mode": "QUEUE\|RADIO"}` | Ganti mode playback |
+| `set_output` | `{"output": "browser\|device"}` | Ganti output audio |
+| `set_loop` | `{"mode": "off\|track\|queue"}` | Set loop mode |
+| `set_speed` | `{"speed": 1.5}` | Set kecepatan putar (0.25–4.0) |
+| `set_sleep_timer` | `{"minutes": 15}` | Sleep timer (0 = off) |
+| `set_crossfade` | `{"enabled": true}` | Toggle crossfade |
+| `set_sponsorblock` | `{"enabled": true}` | Toggle SponsorBlock |
+| `lyrics_offset` | `{"offset": -0.5}` | Adjust lyrics offset (detik) |
 
 ### Queue
 
@@ -72,29 +82,37 @@ Token diperoleh dari `POST /auth/login`. Koneksi tanpa token atau token invalid 
 |---|---|---|
 | `queue_add` | `{"video_id": "abc", "position": null}` | Tambah ke queue (null = akhir) |
 | `queue_remove` | `{"index": 2}` | Hapus dari index |
-| `queue_reorder` | `{"from": 1, "to": 3}` | Pindah posisi (drag & drop) |
-| `queue_clear` | `{}` | Kosongkan queue |
+| `queue_reorder` | `{"from_index": 1, "to_index": 3}` | Pindah posisi (drag & drop) |
+| `queue_select` | `{"index": 0}` | Mainkan langsung dari posisi queue |
+| `enqueue_artist_songs` | `{"artist": "Radiohead"}` | Tambah semua lagu artis ke queue |
+| `enqueue_genre_songs` | `{"genre": "Rock"}` | Tambah semua lagu genre ke queue |
 
 ### Radio
 
 | Command | Payload | Keterangan |
 |---|---|---|
-| `radio_start` | `{"artist": "Radiohead"}` | Mulai mode radio dari artis |
-| `radio_stop` | `{}` | Hentikan mode radio |
+| `radio_randomize` | `{"seed_artist": null}` | Randomize sumber artis radio |
 
 ### Download
 
 | Command | Payload | Keterangan |
 |---|---|---|
-| `download_start` | `{"video_id": "abc123"}` | Mulai download MP3 |
-| `download_cancel` | `{"video_id": "abc123"}` | Batalkan download |
+| `download` | `{}` | Download track yang sedang diputar |
+| `delete_download` | `{"video_id": "abc123"}` | Hapus file download lokal |
 
 ### Search & Discover
 
 | Command | Payload | Keterangan |
 |---|---|---|
 | `search` | `{"query": "bohemian rhapsody"}` | Cari track |
-| `discover` | `{"mode": "mix | trending | recent"}` | Dapatkan rekomendasi |
+| `discover` | `{}` | Dapatkan data discover (recent, cached) |
+
+### Cache
+
+| Command | Payload | Keterangan |
+|---|---|---|
+| `get_cache_size` | `{}` | Query ukuran folder cache MP3 |
+| `clear_cache` | `{}` | Hapus semua file MP3 di cache |
 
 ---
 
@@ -102,50 +120,42 @@ Token diperoleh dari `POST /auth/login`. Koneksi tanpa token atau token invalid 
 
 Server broadcast state setelah setiap perubahan yang relevan.
 
-### `state` — Partial Update
+### `state` — State Snapshot (Periodik & Event-driven)
 
-Dikirim setelah aksi spesifik. Hanya field yang berubah yang disertakan.
+Dikirim setelah setiap perubahan yang relevan. Berisi **state lengkap**.
 
 ```json
 {
   "type": "state",
-  "playback": {
-    "status": "playing",
-    "position": 42.5,
-    "duration": 243.0,
-    "track": {
-      "video_id": "abc123",
-      "title": "Creep",
-      "artist": "Radiohead",
-      "duration": 243,
-      "thumbnail_url": "https://..."
-    }
-  }
-}
-```
-
-### `full_state` — Full Snapshot
-
-Dikirim saat koneksi pertama kali terhubung atau setelah reconnect.
-
-```json
-{
-  "type": "full_state",
-  "playback": { ... },
-  "queue": [
-    { "video_id": "abc", "title": "Creep", "artist": "Radiohead", "duration": 243 },
-    { "video_id": "def", "title": "Karma Police", "artist": "Radiohead", "duration": 264 }
-  ],
-  "volume": 75,
-  "mode": "radio",
-  "radio": {
-    "active": true,
-    "current_artist": "Radiohead",
-    "history": ["abc", "xyz"]
+  "status": "PLAYING",
+  "playback_mode": "QUEUE",
+  "current_track": {
+    "video_id": "abc123",
+    "title": "Creep",
+    "artist": "Radiohead",
+    "duration": 243,
+    "thumbnail": "https://...",
+    "is_cached": false,
+    "is_favorite": false
   },
-  "downloads": [
-    { "video_id": "ghi", "title": "High and Dry", "status": "downloading", "pct": 63 }
-  ]
+  "position": 42.5,
+  "duration": 243.0,
+  "volume": 80,
+  "playback_speed": 1.0,
+  "loop_mode": "off",
+  "crossfade_enabled": false,
+  "audio_output": "browser",
+  "sponsorblock_active": false,
+  "loudness_normalization_enabled": true,
+  "queue": [{"video_id": "def", "title": "Karma Police", ...}],
+  "radio_queue": [],
+  "history_count": 3,
+  "lyrics_index": 12,
+  "lyrics_offset": 0,
+  "active_tab": "home",
+  "error_msg": null,
+  "is_online": true,
+  "download_progress": null
 }
 ```
 

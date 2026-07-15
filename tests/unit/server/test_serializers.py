@@ -56,5 +56,22 @@ def test_state_to_dict():
     assert d["playback_mode"] == "RADIO"
     assert d["lyrics_lines"] == ["Line 1"]
 
+    # PATCH-059: field baru wajib ada di payload state
+    assert "playback_speed" in d
+    assert d["playback_speed"] == 1.0  # default
+    assert "loop_mode" in d
+    assert d["loop_mode"] == "off"  # default
+    assert "crossfade_enabled" in d
+    assert d["crossfade_enabled"] is False  # default
+
+    # Verifikasi nilai non-default ikut ter-serialize
+    state.playback_speed = 1.5
+    state.loop_mode = "track"
+    state.crossfade_enabled = True
+    d2 = state_to_dict(state)
+    assert d2["playback_speed"] == 1.5
+    assert d2["loop_mode"] == "track"
+    assert d2["crossfade_enabled"] is True
+
     d_no_lyrics = state_to_dict(state, include_lyrics=False)
     assert "lyrics_lines" not in d_no_lyrics

@@ -11,9 +11,15 @@ function renderQueue() {
         renderList(dom.radioQueueList, store.radio_queue, true, isRadio);
     }
 
+    let totalDur = 0;
+    store.queue.forEach(t => {
+        if (t && t.duration) totalDur += t.duration;
+    });
+
+    const queueCount = store.queue.length;
     const modeStr = isRadio
         ? '<span style="color:var(--fm-green)">RADIO</span>'
-        : '<span style="color:var(--fm-text-5)">QUEUE</span>';
+        : '<span style="color:var(--fm-text-5)">QUEUE</span>' + (queueCount > 0 ? ` &bull; ${queueCount} lagu (${typeof formatDurationLong === 'function' ? formatDurationLong(totalDur) : formatTime(totalDur)})` : '');
     if (dom.queueFooter) {
         dom.queueFooter.innerHTML = "Mode: " + modeStr;
     }

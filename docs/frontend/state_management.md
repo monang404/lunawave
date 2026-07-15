@@ -27,51 +27,36 @@ Frontend hanya boleh melakukan **optimistic update** sementara menunggu konfirma
 ## `store.js` — Struktur
 
 ```javascript
-// State lengkap store
-export const store = {
-  // --- Server state (selalu di-sync dari server) ---
-  playback: {
-    status: 'stopped',      // 'playing' | 'paused' | 'stopped'
-    position: 0,            // detik (float)
-    duration: 0,            // detik (float)
-    track: null,            // TrackInfo | null
-  },
+// State lengkap store (flat, bukan nested)
+const store = {
+  // --- Server state (selalu di-sync dari server via Object.assign) ---
+  status: "IDLE",            // "IDLE" | "LOADING" | "PLAYING" | "PAUSED"
+  playback_mode: "QUEUE",   // "QUEUE" | "RADIO"
+  audio_output: "browser",  // "browser" | "device"
+  current_track: null,       // TrackInfo | null
+  position: 0,               // detik (float)
+  volume: 80,                // 0–100
+  playback_speed: 1.0,       // kecepatan putar (0.25–4.0)
+  loop_mode: "off",          // "off" | "track" | "queue"
+  crossfade_enabled: false,  // boolean
+  sponsorblock_active: false,// boolean
+  queue: [],                 // TrackInfo[]
+  radio_queue: [],           // TrackInfo[]
+  history_count: 0,          // jumlah track yang pernah diputar
+  lyrics_lines: [],          // string[]
+  lyrics_index: 0,           // index baris lirik aktif
+  lyrics_offset: 0,          // offset waktu lirik (detik)
+  download_progress: null,   // DownloadProgress | null
+  error_msg: null,           // string | null
+  is_online: true,           // boolean
+  server_ts: 0,              // server timestamp
 
-  queue: [],                // TrackInfo[]
-
-  volume: 75,               // 0–100
-
-  mode: 'normal',           // 'normal' | 'radio' | 'shuffle'
-
-  radio: null,              // RadioState | null
-  /*
-    RadioState: {
-      active: bool,
-      current_artist: string,
-      history: string[]     // video_id[]
-    }
-  */
-
-  downloads: [],            // DownloadJob[]
-  /*
-    DownloadJob: {
-      video_id: string,
-      title: string,
-      status: 'queued' | 'downloading' | 'done' | 'error' | 'cancelled',
-      pct: number
-    }
-  */
-
-  // --- UI state lokal (tidak dari server) ---
-  ui: {
-    activeTab: 'queue',     // 'queue' | 'search' | 'discover' | 'radio'
-    lyricsVisible: false,
-    settingsOpen: false,
-    searchQuery: '',
-    searchResults: [],
-    isConnected: false,
-    isReconnecting: false,
-  }
+  // --- UI state lokal (tidak dari server, tidak pernah di-overwrite) ---
+  userRole: "portal",       // "portal" | "client" | "admin"
+  active_tab: "home",        // "home" | "queue" | "search" | "discover"
+  search_results: [],
+  discover_recent: [],
+  discover_cached: [],
 }
 ```
 

@@ -60,6 +60,16 @@ class TestPlayTrack:
         await controller.play_track(second)
         assert first in list(state.history)
 
+    async def test_play_track_start_paused(self, controller, state, player, extractor):
+        extractor.stream_urls["v1"] = "https://stream/v1"
+        track = make_track("v1")
+        await controller.play_track(track, start_position=10.5, start_paused=True)
+
+        assert state.position == 10.5
+        assert state.status == PlayerStatus.PAUSED
+        assert ("pause",) in player.call_log
+        assert ("seek", 10.5) in player.call_log
+
     async def test_resets_position_to_zero(self, controller, state):
         state.position = 999.0
         await controller.play_track(make_track("v1"))
