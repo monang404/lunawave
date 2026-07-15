@@ -20,6 +20,8 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from typing import Any
+
 from core.state import TrackInfo
 
 
@@ -49,7 +51,7 @@ class LibraryRepository:
                 JOIN artists a ON s.artist_id = a.id
                 WHERE 1=1
         """
-        params = []  # type: ignore
+        params: list[Any] = []
         if exclude_ids:
             query += f" AND s.youtube_id NOT IN ({placeholders})"
             params.extend(exclude_ids)
