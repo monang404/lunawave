@@ -91,7 +91,6 @@ async def main():
     async def _init_mpv():
         try:
             await mpv.connect()
-            mpv.is_available = True
         except Exception as e:
             structlog.get_logger(__name__).error(f"mpv not available: {e}")
             state.error_msg = (
@@ -99,7 +98,6 @@ async def main():
                 "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
             )
             state.status = PlayerStatus.ERROR
-            mpv.is_available = False
 
     await asyncio.gather(db.init(), _init_mpv())
 
