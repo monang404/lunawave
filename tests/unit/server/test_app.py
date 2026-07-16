@@ -94,7 +94,7 @@ async def test_run_server_starts_and_cleans_up():
         # Yield to let run_server execute up to the sleep
         await asyncio.sleep(0.01)
 
-        MockAppRunner.assert_called_once_with(app)
+        MockAppRunner.assert_called_once_with(app, access_log=None)
         mock_runner.setup.assert_called_once()
         MockTCPSite.assert_called_once_with(mock_runner, "127.0.0.1", 8080)
         mock_site.start.assert_called_once()

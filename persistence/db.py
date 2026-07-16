@@ -52,5 +52,27 @@ class DatabaseConnection:
 
     async def close(self):
         if self._conn:
+            # Simpan referensi thread worker SEBELUM close(), karena setelah
+            # close() self._conn sudah None.
+            worker_thread = getattr(self._conn, "_thread", None)
             await self._conn.close()
             self._conn = None
+
+            # ROOT-CAUSE-FIX (zombie thread): aiosqlite.Connection.close()
+            # menganggap selesai begitu future dari stop() ter-resolve, tapi
+            # future itu di-resolve via call_soon_threadsafe() DI DALAM worker
+            # thread, SEBELUM thread itu sendiri sempat break dari loop-nya
+            # (lihat _connection_worker_thread: set_result dulu baru cek
+            # sentinel & break). Jadi ada window kecil di mana close() sudah
+            # return tapi OS thread masih hidup -- inilah yang bikin
+            # '_connection_worker_thread' nyangkut jadi zombie non-daemon
+            # thread di akhir test run dan memicu force-exit CI.
+            # Join eksplisit di sini memberi jaminan nyata bahwa thread sudah
+            # benar-benar terminate sebelum close() return ke caller.
+            if worker_thread is not None and worker_thread.is_alive():
+                worker_thread.join(timeout=2.0)
+                if worker_thread.is_alive():
+                    logger.warning(
+                        "aiosqlite worker thread masih hidup setelah join(timeout=2.0); "
+                        "kemungkinan ada operasi tergantung di queue"
+                    )
