@@ -79,7 +79,6 @@ function handleServerMessage(msg) {
             if (msg.data.success) {
                 store.userRole = "admin";
                 window.safeStorage.set("lunawave_user_role", "admin");
-                store.userRole = "admin";
                 if (msg.data && msg.data.token) {
                     window.safeStorage.set("lunawave_session_token", msg.data.token);
                 }

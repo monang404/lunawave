@@ -67,3 +67,68 @@ async def test_broadcast():
     # ws2 should be disconnected because it raised an exception
     assert ws2 not in cm.active_connections
     assert len(cm.active_connections) == 1
+
+
+@pytest.mark.asyncio
+async def test_broadcast_does_not_misattribute_result_to_concurrently_connected_client():
+    """PATCH-2026-07-16-065 regression.
+
+    Bug found: broadcast() built its `results` list against one snapshot of
+    active_connections (taken to launch send_str() tasks), but then paired
+    those results with a FRESHLY re-fetched `list(self.active_connections)`
+    after the `await asyncio.gather(...)`. If the connection list's
+    contents/order shift during that await — e.g. a client's own
+    ws_handler independently calls disconnect() the moment its socket
+    closes, concurrently with a brand-new client connecting — the
+    re-fetched list no longer lines up index-for-index with `results`,
+    so a send result meant for one ws gets attributed to a different ws.
+
+    Reproduced here: while broadcast() is mid-flight for [ws_a (slow,
+    succeeds), ws_b (fails)], ws_b's own handler independently disconnects
+    it (simulating its reader loop noticing the close on its own, not via
+    broadcast's cleanup) at the same moment a brand new client ws_c
+    connects. Before the fix, ws_c — which was never even part of this
+    broadcast — ended up wrongly disconnected because of the index
+    misalignment between the stale `results` and the re-fetched list.
+    """
+    import asyncio
+
+    class SlowWebSocket(MockWebSocket):
+        def __init__(self, fail=False, delay=0.0):
+            super().__init__(fail=fail)
+            self.delay = delay
+
+        async def send_str(self, data):
+            if self.delay:
+                await asyncio.sleep(self.delay)
+            await super().send_str(data)
+
+    cm = ConnectionManager()
+    ws_a = SlowWebSocket(fail=False, delay=0.05)
+    ws_b = SlowWebSocket(fail=True, delay=0.01)
+    await cm.connect(ws_a)
+    await cm.connect(ws_b)
+
+    async def concurrent_mutation():
+        # Timed to land after ws_b's send_str() has already raised
+        # (delay=0.01) but before ws_a's finishes (delay=0.05) — i.e.
+        # squarely inside broadcast()'s gather() await window.
+        await asyncio.sleep(0.02)
+        ws_c = SlowWebSocket(fail=False)
+        await cm.connect(ws_c)
+        # ws_b's own connection handler independently notices the close
+        # and disconnects it — a real, common race with broadcast()'s own
+        # cleanup of the same ws.
+        cm.disconnect(ws_b)
+        return ws_c
+
+    _, ws_c = await asyncio.gather(
+        cm.broadcast({"cmd": "test"}),
+        concurrent_mutation(),
+    )
+
+    # ws_b genuinely failed (and was independently disconnected) -> gone.
+    assert ws_b not in cm.active_connections
+    # ws_a and the newly-connected ws_c never failed -> both must remain.
+    assert ws_a in cm.active_connections
+    assert ws_c in cm.active_connections

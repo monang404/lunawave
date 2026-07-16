@@ -36,7 +36,7 @@ from pathlib import Path
 from launcher import network
 
 # ── Config ────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
 PYTHON = sys.executable
 
