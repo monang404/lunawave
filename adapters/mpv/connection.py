@@ -37,7 +37,12 @@ class MpvConnection:
 
     def __init__(self, socket_path: str = None, tcp_port: str = None):  # type: ignore
         self.socket_path = socket_path or MPV_SOCKET
-        self.tcp_port = tcp_port or os.environ.get("YT_PLAYER_MPV_PORT", "12345")
+        env_port = os.environ.get("YT_PLAYER_MPV_PORT")
+        self.tcp_port = tcp_port or env_port or "12345"
+        # A port is "pinned" (must survive dynamic-port auto-selection) if the
+        # caller passed one explicitly, or set it via env var. Only the
+        # hardcoded fallback default is eligible for dynamic replacement.
+        self._port_pinned = bool(tcp_port or env_port)
         self._reader = None
         self._writer = None
         self.is_connected = False
@@ -77,12 +82,14 @@ class MpvConnection:
         ]
 
         if os.name == "nt":
-            import socket
+            if not self._port_pinned:
+                import socket
 
-            # Find a free dynamic port to avoid TIME_WAIT issues on reconnect
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(("127.0.0.1", 0))
-                self.tcp_port = str(s.getsockname()[1])
+                # Find a free dynamic port to avoid TIME_WAIT issues on reconnect.
+                # Only do this when the caller didn't pin a specific port.
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(("127.0.0.1", 0))
+                    self.tcp_port = str(s.getsockname()[1])
 
             cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
             if ytdl_arg:
@@ -143,7 +150,7 @@ class MpvConnection:
             except (ConnectionError, OSError, FileNotFoundError):
                 await asyncio.sleep(0.5)
         raise MpvConnectionError(
-            f"Cannot connect to mpv socket after 10 attempts (TCP: {os.environ.get('YT_PLAYER_MPV_PORT', 'N/A')}, Unix: {self.socket_path})"
+            f"Cannot connect to mpv socket after 10 attempts (TCP: {self.tcp_port}, Unix: {self.socket_path})"
         )
 
     async def disconnect(self):
