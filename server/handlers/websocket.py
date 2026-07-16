@@ -62,6 +62,7 @@ PLAYBACK_CMDS = {
     "set_speed",
     "set_loop",
     "set_crossfade",
+    "set_loudness_normalization",
 }
 QUEUE_CMDS = {
     "queue_select",

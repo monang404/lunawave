@@ -134,7 +134,15 @@ async def test_handle_ws_message_malformed_payload(mock_handle_playback, mock_ch
 
 
 @pytest.mark.parametrize(
-    "action", ["stop", "set_sleep_timer", "set_speed", "set_loop", "set_crossfade"]
+    "action",
+    [
+        "stop",
+        "set_sleep_timer",
+        "set_speed",
+        "set_loop",
+        "set_crossfade",
+        "set_loudness_normalization",
+    ],
 )
 @pytest.mark.asyncio
 @patch("server.handlers.websocket.require_auth", return_value=True)
@@ -143,7 +151,7 @@ async def test_handle_ws_message_malformed_payload(mock_handle_playback, mock_ch
 async def test_new_playback_actions_are_routed(
     mock_handle_playback, mock_check, mock_require, action
 ):
-    """Verifikasi 5 action baru (PATCH-058) di-route ke handle_playback_command."""
+    """Verifikasi action baru (PATCH-058, PATCH-061) di-route ke handle_playback_command."""
     await handle_ws_message(
         {"type": "cmd", "action": action, "data": {}},
         AsyncMock(),

@@ -262,8 +262,9 @@ async def main():
                         gain_db = 0.0
                         if row and row.loudness_lufs is not None:
                             gain_db = compute_gain_db(row.loudness_lufs)
+                        state.current_track_gain_db = gain_db
 
-                        if getattr(state, "loudness_normalization_enabled", True):
+                        if getattr(state, "loudness_normalization_enabled", False):
                             await mpv.set_af(build_af_filter(gain_db))
                         else:
                             await mpv.set_af(build_af_filter(0.0))

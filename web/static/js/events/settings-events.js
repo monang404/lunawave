@@ -14,6 +14,7 @@ function renderSettingsSheet() {
     if (!dom.settingsSheet || !dom.settingsSheet.classList.contains("open")) return;
     if (dom.sbToggle) dom.sbToggle.dataset.on = store.sponsorblock_active ? "true" : "false";
     if (dom.crossfadeToggle) dom.crossfadeToggle.dataset.on = store.crossfade_enabled ? "true" : "false";
+    if (dom.loudnessToggle) dom.loudnessToggle.dataset.on = store.loudness_normalization_enabled ? "true" : "false";
     // Sync speed dropdown ke nilai state saat ini
     if (dom.ssSpeedSelect && store.playback_speed) {
         dom.ssSpeedSelect.value = parseFloat(store.playback_speed).toFixed(2);
@@ -93,6 +94,14 @@ function initSettingsEvents() {
             if (store.userRole !== 'admin') return;
             const current = store.crossfade_enabled;
             wsSend("set_crossfade", { enabled: !current });
+        });
+    }
+
+    if (dom.loudnessToggle) {
+        dom.loudnessToggle.addEventListener('click', () => {
+            if (store.userRole !== 'admin') return;
+            const current = store.loudness_normalization_enabled;
+            wsSend("set_loudness_normalization", { enabled: !current });
         });
     }
 

@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from core.state import AppState
     from engine.loudness.service import LoudnessService
 
 import structlog
@@ -52,11 +53,13 @@ class TrackLoader:
         sponsorblock: SponsorBlockProvider,
         lyrics_fetcher: LyricsProvider,
         loudness_service: "LoudnessService | None" = None,
+        state: "AppState | None" = None,
     ):
         self.resolver = resolver
         self.sponsorblock = sponsorblock
         self.lyrics_fetcher = lyrics_fetcher
         self.loudness_service = loudness_service
+        self.state = state
 
     async def load_track(self, track: TrackInfo) -> LoadedTrack:
         """
@@ -87,9 +90,10 @@ class TrackLoader:
                 from engine.loudness.gain_calculator import compute_gain_db
 
                 gain_db = compute_gain_db(row.loudness_lufs)
-            safe_create_task(
-                self.loudness_service.analyze_and_store(track.video_id, uri),
-                name=f"analyze_loudness_{track.video_id}",
-            )
+            if getattr(self.state, "loudness_normalization_enabled", False):
+                safe_create_task(
+                    self.loudness_service.analyze_and_store(track.video_id, uri),
+                    name=f"analyze_loudness_{track.video_id}",
+                )
 
         return LoadedTrack(uri=uri, gain_db=gain_db)

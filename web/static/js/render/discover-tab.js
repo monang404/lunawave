@@ -110,6 +110,43 @@ function renderDiscoverTab() {
         }
     }
 
+    if (dom.discFavorites && store.discover_favorites) {
+        if (store.discover_favorites.length === 0) {
+            dom.discFavorites.innerHTML = '<div class="discover-empty"><i class="ti ti-heart" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada lagu favorit</div>';
+        } else {
+            dom.discFavorites.innerHTML = store.discover_favorites.map(track => {
+                const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
+                let artistName = track.artist || "";
+                if (artistName.length > 25) {
+                    artistName = artistName.substring(0, 22) + "...";
+                }
+                const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
+                return `
+                <div class="sr-item" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
+                    <div class="sr-thumb">
+                        <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
+                        <div class="thumb-eq-overlay">
+                            <div class="eq-anim-icon">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        ${track.local_path ? '<span class="disc-tag">cache</span>' : ''}
+                    </div>
+                    <div class="sr-info">
+                        <div class="sr-title">${title}</div>
+                        <div class="sr-meta">${escapeHtml(artistName)}</div>
+                    </div>
+                    <div class="sr-duration">${formatTime(track.duration)}</div>
+                    <button class="sr-more-btn" aria-label="More">
+                        <i class="ti ti-dots-vertical"></i>
+                    </button>
+                </div>
+            `}).join('');
+        }
+    }
+
     if (dom.discCached && store.discover_cached) {
         if (store.discover_cached.length === 0) {
             dom.discCached.innerHTML = '<div class="discover-empty"><i class="ti ti-box-off" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Tidak ada file tersimpan</div>';
@@ -169,6 +206,14 @@ function updateDiscoverPlayingState() {
 
     if (dom.discRecent) {
         dom.discRecent.querySelectorAll(".sr-item").forEach(item => {
+            const isCurrent = currentId && item.dataset.vid === currentId;
+            item.classList.toggle("current", !!isCurrent);
+            item.classList.toggle("playing", !!(isCurrent && isPlaying));
+        });
+    }
+
+    if (dom.discFavorites) {
+        dom.discFavorites.querySelectorAll(".sr-item").forEach(item => {
             const isCurrent = currentId && item.dataset.vid === currentId;
             item.classList.toggle("current", !!isCurrent);
             item.classList.toggle("playing", !!(isCurrent && isPlaying));

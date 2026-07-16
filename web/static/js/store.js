@@ -12,6 +12,7 @@ function createStore() {
         playback_speed: 1.0,
         loop_mode: "off",
         crossfade_enabled: false,
+        loudness_normalization_enabled: false,
         sponsorblock_active: false,
         queue: [],
         radio_queue: [],
@@ -24,6 +25,7 @@ function createStore() {
         is_online: true,
         download_progress: null,
         discover_recent: [],
+        discover_favorites: [],
         discover_cached: [],
         search_results: [],
         server_ts: 0

@@ -57,6 +57,7 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
                     "type": "discover_data",
                     "data": {
                         "recent": [track_to_dict(t) for t in recent],
+                        "favorites": [track_to_dict(t) for t in favorites],
                         "cached_tracks": [track_to_dict(t) for t in cached],
                         "featured_artists": featured_artists,
                         "featured_genres": featured_genres,

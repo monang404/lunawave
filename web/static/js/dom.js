@@ -76,6 +76,7 @@ function initDOM() {
         settingsSheet: $("settings-sheet"),
         sbToggle: $("sb-toggle"),
         crossfadeToggle: $("crossfade-toggle"),
+        loudnessToggle: $("loudness-toggle"),
         ssOutBtn: $("ss-out-btn"),
         ssOutSub: $("ss-out-sub"),
         ssStopBtn: $("ss-stop-btn"),
@@ -104,6 +105,7 @@ function initDOM() {
         connectionToast: $("connection-toast"),
         logToast: $("log-toast"),
         discRecent: $("discover-recent"),
+        discFavorites: $("discover-favorites"),
         discCached: $("discover-cached"),
         discArtists: $("discover-artists"),
         discGenres: $("discover-genres")

@@ -19,32 +19,32 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-15 oleh `automation/generate_report.py`
+> **Auto-generated:** 2026-07-15 oleh `automation/generate_report.py`  
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 63 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 60 |
 | Total file `.py` (source, ekskl. `__pycache__`) | 135 |
 | Total file `.js` (ekskl. `.min.js`) | 34 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
 | Total class (Python) | 81 |
-| Total function/method (Python) | 539 |
-| Total baris Python | 13,893 |
-| Total baris JS (web/) | 3,326 |
+| Total function/method (Python) | 541 |
+| Total baris Python | 13,972 |
+| Total baris JS (web/) | 3,395 |
 | Total baris CSS (web/) | 3,262 |
-| Ukuran DB utama (`data/lunawave.db`) | 688 KB (+ WAL 40 KB) |
-| Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
+| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
+| Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 391 |
+| `engine/playback/controller.py` | 406 ⚠️ |
 | `automation/generate_file_index.py` | 370 |
+| `main.py` | 359 |
 | `automation/architecture_lint.py` | 359 |
-| `main.py` | 358 |
 | `launcher/gui/ui_builder.py` | 355 |
 <!-- END:GENERATED -->
 

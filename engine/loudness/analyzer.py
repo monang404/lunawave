@@ -65,7 +65,7 @@ class LoudnessAnalyzer:
                 shell=False,
             )
         except subprocess.TimeoutExpired:
-            logger.warning(f"Loudness analysis timeout: {uri}")
+            logger.debug(f"Loudness analysis timeout: {uri}")
             return None
         except OSError as e:
             logger.error(f"ffmpeg tidak bisa dijalankan: {e}")
@@ -73,7 +73,7 @@ class LoudnessAnalyzer:
 
         match = _JSON_BLOCK_RE.search(result.stderr)
         if not match:
-            logger.warning(f"Loudness analysis: tidak ada output JSON dari ffmpeg untuk {uri}")
+            logger.debug(f"Loudness analysis: tidak ada output JSON dari ffmpeg untuk {uri}")
             return None
 
         try:

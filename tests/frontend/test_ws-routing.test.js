@@ -41,4 +41,29 @@ describe("WebSocket Message Router", () => {
     wsModule.handleServerMessage({ type: "search_results", data: [] });
     expect(global.renderSearchResults).toHaveBeenCalledWith([]);
   });
+
+  it("handles discover_data and stores favorites alongside recent/cached", () => {
+    wsModule.handleServerMessage({
+      type: "discover_data",
+      data: {
+        recent: [{ video_id: "r1" }],
+        favorites: [{ video_id: "f1" }],
+        cached_tracks: [{ video_id: "c1" }],
+        featured_artists: [],
+        featured_genres: [],
+      },
+    });
+    expect(global.store.discover_recent).toEqual([{ video_id: "r1" }]);
+    expect(global.store.discover_favorites).toEqual([{ video_id: "f1" }]);
+    expect(global.store.discover_cached).toEqual([{ video_id: "c1" }]);
+    expect(global.renderDiscoverTab).toHaveBeenCalled();
+  });
+
+  it("defaults discover_favorites to empty array when server omits it", () => {
+    wsModule.handleServerMessage({
+      type: "discover_data",
+      data: { recent: [], cached_tracks: [], featured_artists: [], featured_genres: [] },
+    });
+    expect(global.store.discover_favorites).toEqual([]);
+  });
 });

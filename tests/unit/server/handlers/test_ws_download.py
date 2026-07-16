@@ -38,6 +38,7 @@ async def test_handle_download_command_delete_download(
 
     mock_ds_instance = mock_discover_service.return_value
     mock_ds_instance.get_recent = AsyncMock(return_value=[])
+    mock_ds_instance.get_favorites = AsyncMock(return_value=[])
     mock_ds_instance.get_cached = AsyncMock(return_value=[])
     mock_ds_instance.get_featured_artists = AsyncMock(return_value=[])
     mock_ds_instance.get_featured_genres = AsyncMock(return_value=[])
@@ -59,3 +60,6 @@ async def test_handle_download_command_delete_download(
     mock_manager.broadcast.assert_any_call(
         {"type": "log", "data": f"Unduhan dihapus: {mock_track.title}"}
     )
+    discover_data_call = mock_manager.broadcast.call_args_list[0]
+    assert discover_data_call[0][0]["type"] == "discover_data"
+    assert discover_data_call[0][0]["data"]["favorites"] == []
