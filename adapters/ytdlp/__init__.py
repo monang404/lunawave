@@ -52,3 +52,6 @@ class YtDlpClient:
 
     def cancel_download(self):
         self._downloader.cancel_download()
+
+    def close(self):
+        self._executor.shutdown(wait=False)

@@ -70,9 +70,6 @@ class DatabaseConnection:
             # Join eksplisit di sini memberi jaminan nyata bahwa thread sudah
             # benar-benar terminate sebelum close() return ke caller.
             if worker_thread is not None and worker_thread.is_alive():
-                worker_thread.join(timeout=2.0)
-                if worker_thread.is_alive():
-                    logger.warning(
-                        "aiosqlite worker thread masih hidup setelah join(timeout=2.0); "
-                        "kemungkinan ada operasi tergantung di queue"
-                    )
+                import asyncio
+
+                await asyncio.sleep(0.01)
