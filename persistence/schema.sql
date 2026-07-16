@@ -53,13 +53,19 @@ CREATE TABLE IF NOT EXISTS artist_genres (
     FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
 );
 
+-- youtube_id is unique per-artist (not globally): collaborations/duets
+-- legitimately belong to more than one artist's popular-song list, and the
+-- radio exclusion/prefetch logic already keys off video_id itself, not the
+-- (artist_id, video_id) pair, so allowing the same video under multiple
+-- artist rows is safe.
 CREATE TABLE IF NOT EXISTS songs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     artist_id INTEGER,
     judul TEXT NOT NULL,
-    youtube_id TEXT UNIQUE NOT NULL,
+    youtube_id TEXT NOT NULL,
     duration INTEGER DEFAULT 0,
-    FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+    FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
+    UNIQUE (artist_id, youtube_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);

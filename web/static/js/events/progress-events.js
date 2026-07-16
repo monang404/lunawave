@@ -49,5 +49,11 @@ function initProgressEvents() {
                 wsSend("seek", { position: targetPos });
             }
         });
+        dom.pbProgressTrack.addEventListener("pointercancel", (e) => {
+            if (!window.isDraggingPb) return;
+            window.isDraggingPb = false;
+            try { dom.pbProgressTrack.releasePointerCapture(e.pointerId); } catch (err) {}
+            if (typeof renderProgress === "function") renderProgress();
+        });
     }
 }

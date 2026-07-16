@@ -46,7 +46,7 @@ class UIBuilder:
     # ── UI Layout ─────────────────────────────────────────
     def build_ui(self, app):
         # ── Header ──
-        header = tk.Frame(self, bg=self.BG_SURFACE, pady=14)
+        header = tk.Frame(app, bg=self.BG_SURFACE, pady=14)
         header.pack(fill="x")
 
         tk.Label(
@@ -65,7 +65,7 @@ class UIBuilder:
         ).pack()
 
         # ── Status Card ──
-        status_frame = tk.Frame(self, bg=self.BG_CARD, pady=12, padx=16)
+        status_frame = tk.Frame(app, bg=self.BG_CARD, pady=12, padx=16)
         status_frame.pack(fill="x", padx=16, pady=(14, 0))
 
         left = tk.Frame(status_frame, bg=self.BG_CARD)
@@ -135,25 +135,25 @@ class UIBuilder:
         )
 
         # ── Buttons ──
-        btn_frame = tk.Frame(self, bg=self.BG, pady=10)
+        btn_frame = tk.Frame(app, bg=self.BG, pady=10)
         btn_frame.pack(fill="x", padx=16)
         btn_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
         app._btn_start = self._make_btn(
-            app, btn_frame, "▶  Start", self.ACCENT, "#2A1F06", app._on_start, col=0
+            btn_frame, "▶  Start", self.ACCENT, "#2A1F06", app._on_start, col=0
         )
         app._btn_stop = self._make_btn(
-            app, btn_frame, "■  Stop", self.RED, "#2A0A0A", app._on_stop, col=1
+            btn_frame, "■  Stop", self.RED, "#2A0A0A", app._on_stop, col=1
         )
         app._btn_restart = self._make_btn(
-            app, btn_frame, "↺  Restart", self.TEXT_2, self.BG_CARD, app._on_restart, col=2
+            btn_frame, "↺  Restart", self.TEXT_2, self.BG_CARD, app._on_restart, col=2
         )
         app._btn_open = self._make_btn(
-            app, btn_frame, "⬡  Open Portal", self.TEXT_2, self.BG_CARD, app._on_open, col=3
+            btn_frame, "⬡  Open Portal", self.TEXT_2, self.BG_CARD, app._on_open, col=3
         )
 
         # ── Admin Credentials Frame ──
-        admin_frame = tk.Frame(self, bg=self.BG_CARD, pady=10, padx=16)
+        admin_frame = tk.Frame(app, bg=self.BG_CARD, pady=10, padx=16)
         admin_frame.pack(fill="x", padx=16, pady=(4, 0))
 
         tk.Label(
@@ -185,7 +185,7 @@ class UIBuilder:
             activeforeground=self.TEXT_1,
             padx=10,
             command=lambda: on_reset_password(
-                self,
+                app,
                 self.BASE_DIR,
                 self.BG,
                 self.BG_CARD,
@@ -212,7 +212,7 @@ class UIBuilder:
         btn_reset.bind("<Leave>", on_leave_reset)
 
         # ── Quick Links Frame ──
-        links_frame = tk.Frame(self, bg=self.BG_CARD, pady=10, padx=16)
+        links_frame = tk.Frame(app, bg=self.BG_CARD, pady=10, padx=16)
         links_frame.pack(fill="x", padx=16, pady=(10, 0))
 
         tk.Label(
@@ -229,7 +229,7 @@ class UIBuilder:
         app._link_metrics = self._make_link(app, links_frame, "Metrics API", "/metrics", 1, 3)
 
         # ── Dependencies Frame ──
-        deps_frame = tk.Frame(self, bg=self.BG_CARD, pady=10, padx=16)
+        deps_frame = tk.Frame(app, bg=self.BG_CARD, pady=10, padx=16)
         deps_frame.pack(fill="x", padx=16, pady=(10, 0))
 
         tk.Label(
@@ -252,7 +252,7 @@ class UIBuilder:
         app._deps_status.pack(fill="x")
 
         # ── Log area ──
-        log_header = tk.Frame(self, bg=self.BG, pady=0)
+        log_header = tk.Frame(app, bg=self.BG, pady=0)
         log_header.pack(fill="x", padx=16, pady=(10, 0))
         tk.Label(
             log_header,
@@ -277,7 +277,7 @@ class UIBuilder:
         ).pack(side="right")
 
         app._log = scrolledtext.ScrolledText(
-            self,
+            app,
             bg=self.BG_SURFACE,
             fg=self.TEXT_2,
             font=("Consolas", 8),

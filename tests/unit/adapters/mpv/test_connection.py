@@ -77,6 +77,43 @@ async def test_mpv_connection_connect_windows(mock_subprocess, mock_open_connect
 
 
 @pytest.mark.asyncio
+@patch("os.name", "nt")
+async def test_mpv_connection_windows_default_port_still_dynamic(
+    mock_subprocess, mock_open_connection
+):
+    """When no tcp_port is pinned (constructor arg or env var), Windows should
+    still auto-select a free dynamic port to avoid TIME_WAIT reconnect issues."""
+    conn = MpvConnection()
+    assert conn._port_pinned is False
+
+    success = await conn.connect()
+
+    assert success is True
+    called_port = mock_open_connection.call_args.args[1]
+    # The dynamically bound port must not equal the hardcoded fallback default,
+    # confirming dynamic selection still ran for the unpinned case.
+    assert conn.tcp_port != "12345"
+    assert called_port == int(conn.tcp_port)
+
+
+@pytest.mark.asyncio
+@patch("os.name", "nt")
+@patch.dict("os.environ", {"YT_PLAYER_MPV_PORT": "23456"})
+async def test_mpv_connection_windows_env_pinned_port_survives(
+    mock_subprocess, mock_open_connection
+):
+    """A port pinned via the YT_PLAYER_MPV_PORT env var must also survive
+    the dynamic-port auto-selection on Windows, not just constructor args."""
+    conn = MpvConnection()
+    assert conn._port_pinned is True
+
+    success = await conn.connect()
+
+    assert success is True
+    mock_open_connection.assert_called_once_with("127.0.0.1", 23456)
+
+
+@pytest.mark.asyncio
 @patch("os.name", "posix")
 @patch("os.path.exists", return_value=True)
 async def test_mpv_connection_connect_unix(mock_exists, mock_subprocess, mock_open_unix_connection):

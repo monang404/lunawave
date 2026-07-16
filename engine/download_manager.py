@@ -48,6 +48,19 @@ class DownloadManager:
         self.state = state
         self.ytdlp = ytdlp
         self._download_lock = asyncio.Lock()
+        # RACE-FIX: `_download_lock.locked()` saja tidak cukup untuk menolak
+        # trigger download kedua, karena lock itu baru benar-benar ter-acquire
+        # saat task `_do_download` MULAI JALAN (bukan saat dijadwalkan lewat
+        # safe_create_task). Antara dua trigger download() yang datang beruntun
+        # cepat (mis. klik tombol dobel, atau klik + shortcut keyboard di message
+        # WS yang berbeda tapi diproses berdekatan), _on_download() bisa
+        # dipanggil dua kali sebelum task pertama sempat berjalan sama sekali --
+        # keduanya lolos cek .locked() dan sama-sama menjadwalkan _do_download(),
+        # sehingga file yang sama ter-download dua kali secara berurutan.
+        # Flag ini di-set SINKRON (tanpa ada `await` di antaranya) tepat sebelum
+        # task dijadwalkan, sehingga trigger kedua langsung tertolak walau task
+        # pertama belum sempat jalan sama sekali.
+        self._download_scheduled = False
 
         command_bus.register(CMD_DOWNLOAD, self._on_download)
 
@@ -63,12 +76,13 @@ class DownloadManager:
             await self.bus.publish(LogMessageEvent(message="Lagu sudah tersimpan lokal"))
             return
 
-        if self._download_lock.locked():
+        if self._download_lock.locked() or self._download_scheduled:
             await self.bus.publish(
                 LogMessageEvent(message="Download sedang berjalan, tunggu selesai.")
             )
             return
 
+        self._download_scheduled = True
         safe_create_task(self._do_download(target), name=f"download_{target.video_id}")
 
     async def _do_download(self, track: TrackInfo):
@@ -124,6 +138,8 @@ class DownloadManager:
                 self.state.download_progress = None
                 logger.error(f"Download error: {e}", exc_info=True)
                 await self.bus.publish(LogMessageEvent(message=f"Download gagal: {str(e)}"))
+            finally:
+                self._download_scheduled = False
 
     def _update_progress(self, percent: float):
         self.state.download_progress = percent

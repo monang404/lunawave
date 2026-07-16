@@ -89,6 +89,10 @@ const PRECACHE_ASSETS = [
     '/static/js/platform/keyboard.js',
     '/static/js/platform/touch.js',
     '/static/js/platform/viewport.js',
+
+    // ── JS: Audio ──
+    '/static/js/audio/playback-sync.js',
+    '/static/js/audio/visualizer.js',
 ];
 
 // Install: pre-cache static assets

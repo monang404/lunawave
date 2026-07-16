@@ -60,6 +60,7 @@ function initDOM() {
         pbProgressTrack: $("pb-progress-track"),
         pbProgressFill: $("pb-progress-fill"),
         pbVolLabel: $("pb-vol-label"),
+        volSlider: $("vol-slider"),
         btnShuffle: $("btn-shuffle"),
         btnPrev: $("btn-prev"),
         btnPlay: $("btn-play"),

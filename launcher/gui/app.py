@@ -61,6 +61,7 @@ class ServerManager(tk.Tk):
         self._log_lock = threading.Lock()
         self._conflict_pid = None
         self._last_stdout_line = ""
+        self._closing = False
 
         self._btn_start = None
         self._btn_stop = None
@@ -140,6 +141,28 @@ class ServerManager(tk.Tk):
         except ValueError:
             return 8765
 
+    # ── Safe scheduling ────────────────────────────────────
+    def _safe_after(self, delay, callback):
+        """Schedule `callback` via Tk's `after`, unless the window is
+        already closing/destroyed.
+
+        Background threads (dependency check, server-ready poller, stdout
+        pipe, restart timer) all eventually call back into the GUI via
+        `after()`. Without this guard, a thread that finishes after the
+        user has closed the window raises an unhandled RuntimeError/
+        TclError ("main thread is not in main loop" / "invalid command
+        name ...") in that thread — confirmed via reproduction
+        (PATCH-2026-07-16-002). This does not crash the process (daemon
+        threads), but it is an unguarded exit path that pollutes logs and
+        can mask real errors.
+        """
+        if self._closing:
+            return
+        try:
+            self.after(delay, callback)
+        except (RuntimeError, tk.TclError):
+            pass
+
     # ── Dependency Checker ─────────────────────────────────
     def _run_dependency_check(self):
         def _thread_fn():
@@ -163,7 +186,7 @@ class ServerManager(tk.Tk):
                 status_text = "  ·  ".join(parts)
                 color = RED
 
-            self.after(0, lambda: self._deps_status.config(text=status_text, fg=color))
+            self._safe_after(0, lambda: self._deps_status.config(text=status_text, fg=color))
 
         threading.Thread(target=_thread_fn, daemon=True).start()
 
@@ -172,6 +195,8 @@ class ServerManager(tk.Tk):
         return self.server_process is not None and self.server_process.is_running()
 
     def _refresh_status(self):
+        if self._closing:
+            return
         port = self.server_port
         running = self._is_running()
 
@@ -228,7 +253,7 @@ class ServerManager(tk.Tk):
         # Update status label text
         self._status_label.config(text=status, fg=color)
 
-        self.after(2000, self._refresh_status)
+        self._safe_after(2000, self._refresh_status)
 
     # ── Log helpers ───────────────────────────────────────
     def _write_log(self, msg: str, tag: str = "", is_end: bool = False):
@@ -257,7 +282,7 @@ class ServerManager(tk.Tk):
             self._log.see("end")
             self._log.config(state="disabled")
 
-        self.after(0, _do)
+        self._safe_after(0, _do)
 
     def _clear_log(self):
         self._log.config(state="normal")
@@ -284,6 +309,7 @@ class ServerManager(tk.Tk):
         self.controller.wait_for_server_ready(port)
 
     def destroy(self):
+        self._closing = True
         if self._is_running():
             try:
                 if self.server_process:

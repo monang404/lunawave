@@ -47,7 +47,7 @@ echo -e "${CYAN}[*]${RESET} Initializing Environment Variables..."
 
 echo -e "${CYAN}[*]${RESET} Checking Python Dependencies..."
 MISSING_DEPS=0
-if ! python -c "import aiohttp, aiosqlite, yt_dlp, syncedlyrics, structlog, prometheus_client, opentelemetry" &> /dev/null 2>&1; then
+if ! python -c "import sys, importlib.util; missing = [m for m in ['aiohttp', 'aiosqlite', 'yt_dlp', 'syncedlyrics', 'structlog', 'prometheus_client', 'opentelemetry'] if importlib.util.find_spec(m) is None]; sys.exit(1 if missing else 0)" &> /dev/null; then
     echo -e "    ${RED}[-]${RESET} Ada modul yang belum terinstall."
     echo -e "        Jalankan: ${BOLD}pip install -r requirements.txt${RESET}"
     MISSING_DEPS=1

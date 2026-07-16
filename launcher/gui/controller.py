@@ -106,7 +106,7 @@ class ServerController:
                     self.app.BG_CARD,
                 )
 
-            self.app.after(0, _show_popup)
+            self.app._safe_after(0, _show_popup)
         else:
             if not self.app._is_running():
                 self.app._write_log("Server process terminated unexpectedly.", "err")
@@ -139,7 +139,7 @@ class ServerController:
                 if self.app.server_process:
                     self.app.server_process.stop()
             time.sleep(0.8)
-            self.app.after(0, self.on_start)
+            self.app._safe_after(0, self.on_start)
 
         threading.Thread(target=_do, daemon=True).start()
 

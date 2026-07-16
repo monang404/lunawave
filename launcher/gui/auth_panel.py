@@ -8,7 +8,7 @@ Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - core.security
+    None
 
 Subscribes to:
     None
@@ -111,24 +111,17 @@ def _reset_password(
     border,
 ):
     try:
-        try:
-            from core.security import hash_password
-        except ImportError:
-            import base64
-            import hashlib
-
-            def hash_password(password: str) -> str:
-                salt = secrets.token_bytes(16)
-                key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100000)
-                return f"pbkdf2:sha256:100000${base64.b64encode(salt).decode('utf-8')}${base64.b64encode(key).decode('utf-8')}"
-
         raw_password = secrets.token_urlsafe(12)
-        hashed_password = hash_password(raw_password)
-
+        # NOTE: the file on disk MUST hold the raw plaintext password, not a
+        # hash. config.py's loader (and config_security.generate_admin_password())
+        # both read this file as raw plaintext and hash it themselves on every
+        # startup — writing a pre-hashed string here caused config.py to hash
+        # an already-hashed value, silently invalidating the password shown
+        # to the user (PATCH-2026-07-16-001).
         password_file = base_dir / "cache" / "admin_password.txt"
         password_file.parent.mkdir(parents=True, exist_ok=True)
         with open(password_file, "w", encoding="utf-8") as f:
-            f.write(hashed_password)
+            f.write(raw_password)
         try:
             import stat
 
@@ -137,7 +130,7 @@ def _reset_password(
             pass
 
         if is_first_run:
-            app_instance.after(
+            app_instance._safe_after(
                 500,
                 lambda: show_new_password_dialog(
                     app_instance,
