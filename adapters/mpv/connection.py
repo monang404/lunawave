@@ -77,6 +77,13 @@ class MpvConnection:
         ]
 
         if os.name == "nt":
+            import socket
+
+            # Find a free dynamic port to avoid TIME_WAIT issues on reconnect
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", 0))
+                self.tcp_port = str(s.getsockname()[1])
+
             cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
             if ytdl_arg:
                 cmd.insert(1, ytdl_arg)
