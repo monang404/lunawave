@@ -257,7 +257,7 @@ async def main():
     # 7.5 MPV auto-reconnect checker
     async def mpv_reconnect_checker():
         while True:
-            await asyncio.sleep(30)  # 5→30 det: reconnect check cukup sekali per 30 detik
+            await asyncio.sleep(5)  # Satu-satunya jalur reconnect+restore sekarang; poll lebih sering
             if (
                 getattr(mpv, "is_available", True)
                 and not getattr(mpv, "is_connected", False)

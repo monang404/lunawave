@@ -45,7 +45,7 @@ async def test_websocket_flow(app_client):
 
     # Assert auth success
     while True:
-        auth_resp = await ws.receive_json()
+        auth_resp = await asyncio.wait_for(ws.receive_json(), timeout=5.0)
         if auth_resp.get("type") == "auth_status":
             assert auth_resp["data"]["success"] is True
             break
@@ -87,8 +87,8 @@ async def test_websocket_flow(app_client):
         except TimeoutError:
             continue
 
-    assert (
-        received_track_started
-    ), "Did not receive state_update with loading/playing status after sending play command"
+    assert received_track_started, (
+        "Did not receive state_update with loading/playing status after sending play command"
+    )
 
     await ws.close()
