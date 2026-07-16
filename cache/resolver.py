@@ -31,7 +31,7 @@ import structlog
 from config import STREAM_URL_TTL_SEC
 from core.latency_window import LatencyWindow
 from core.observability import RESOLVE_LATENCY
-from core.ports import MediaExtractorPort, TrackRepositoryPort
+from core.ports import DatabasePort, MediaExtractorPort
 from core.state import TrackInfo
 
 logger = structlog.get_logger(__name__)
@@ -45,7 +45,7 @@ class CacheResolver:
     3. Stale -> fetch new stream URL from yt-dlp, save to DB, return it
     """
 
-    def __init__(self, db: TrackRepositoryPort, ytdlp: MediaExtractorPort):
+    def __init__(self, db: DatabasePort, ytdlp: MediaExtractorPort):
         self.db = db
         self.ytdlp = ytdlp
         self.latency_window = LatencyWindow()

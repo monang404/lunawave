@@ -33,7 +33,7 @@ echo  [*] Initializing Environment Variables...
 
 echo  [*] Checking Python Dependencies...
 set "DEPS_OK=1"
-python -c "import aiohttp, aiosqlite, yt_dlp, syncedlyrics, structlog, prometheus_client, opentelemetry" > nul 2>&1
+python -c "import sys, importlib.util; missing = [m for m in ['aiohttp', 'aiosqlite', 'yt_dlp', 'syncedlyrics', 'structlog', 'prometheus_client', 'opentelemetry'] if importlib.util.find_spec(m) is None]; sys.exit(1 if missing else 0)" > nul 2>&1
 if errorlevel 1 (
     echo      [-] Ada modul yang belum terinstall.
     echo          Jalankan: pip install -r requirements.txt
@@ -64,7 +64,9 @@ if %ERRORLEVEL% neq 0 (
 
 echo  [*] Cleaning Up Previous Sessions...
 taskkill /F /IM mpv.exe > nul 2>&1
-powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort %LUNAWAVE_PORT% -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force" > nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| find ":%LUNAWAVE_PORT% "') do (
+    if not "%%a"=="0" taskkill /F /PID %%a > nul 2>&1
+)
 
 :: ----------------------------------------------------------
 ::  ADMIN ACCESS INFO
