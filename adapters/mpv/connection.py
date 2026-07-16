@@ -35,7 +35,12 @@ async def _open_pipe_connection(pipe_name: str):
     loop = asyncio.get_running_loop()
     reader = asyncio.StreamReader(limit=2**16, loop=loop)
     protocol = asyncio.StreamReaderProtocol(reader, loop=loop)
-    transport, _ = await loop.create_pipe_connection(lambda: protocol, pipe_name)
+    # create_pipe_connection exists on Windows' ProactorEventLoop for named-pipe
+    # IPC, but isn't part of the generic AbstractEventLoop typeshed that
+    # asyncio.get_running_loop() returns, so mypy can't see it.
+    transport, _ = await loop.create_pipe_connection(  # type: ignore[attr-defined]
+        lambda: protocol, pipe_name
+    )
     writer = asyncio.StreamWriter(transport, protocol, reader, loop)
     return reader, writer
 
@@ -45,8 +50,8 @@ class MpvConnection:
 
     def __init__(self, socket_path: str = None, tcp_port: str = None):  # type: ignore
         self.socket_path = socket_path or MPV_SOCKET
-        self._reader = None
-        self._writer = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self.is_connected = False
         self._reconnect_lock = asyncio.Lock()
         self._mpv_process = None
@@ -130,7 +135,8 @@ class MpvConnection:
                     )
                 else:
                     self._reader, self._writer = await asyncio.wait_for(
-                        asyncio.open_unix_connection(self.socket_path), timeout=1.0
+                        asyncio.open_unix_connection(self.socket_path),
+                        timeout=1.0,  # type: ignore[attr-defined]
                     )
 
                 self.is_connected = True

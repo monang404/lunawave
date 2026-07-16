@@ -32,6 +32,7 @@ data/*.db-wal
 *.mp3
 *.webm
 *.m4a
+*.opus
 secrets.json
 config.local.py
 

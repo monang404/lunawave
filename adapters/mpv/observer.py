@@ -87,35 +87,16 @@ class MpvObserver:
             self._conn.is_connected = False
             self._ipc.cancel_all_pending()
             logger.warning("mpv observer loop ended - connection lost.")
-
-            if not getattr(self._conn, "shutting_down", False):
-                # Coba reconnect ke mpv yang mungkin masih hidup (misal socket terputus sesaat)
-                reconnected = False
-                for attempt in range(3):
-                    backoff = 2**attempt  # 1s, 2s, 4s
-                    logger.info(
-                        f"Mencoba reconnect ke mpv (attempt {attempt + 1}/3) dalam {backoff}s..."
-                    )
-                    await asyncio.sleep(backoff)
-                    if getattr(self._conn, "shutting_down", False):
-                        break
-                    try:
-                        connected = await self._conn.reconnect()
-                        if connected:
-                            self._task = safe_create_task(self._observe_loop(), name="mpv-observer")
-                            logger.info(f"Reconnect ke mpv berhasil (attempt {attempt + 1})")
-                            reconnected = True
-                            break
-                    except (ConnectionError, OSError, FileNotFoundError, Exception) as e:
-                        logger.warning(f"Reconnect attempt {attempt + 1} gagal: {e}")
-
-                if not reconnected:
-                    logger.error("Semua percobaan reconnect ke mpv gagal.")
-                    try:
-                        loop = asyncio.get_running_loop()
-                        loop.create_task(self._bus.publish(TrackEndedEvent(reason="error")))
-                    except RuntimeError:
-                        pass
+            # NOTE: reconnect + playback-state restore (reload track, seek
+            # position, volume, gain) is intentionally NOT done here anymore.
+            # It used to race with main.py's mpv_reconnect_checker: this loop
+            # reconnected the raw socket almost instantly (1-4s backoff) but
+            # never restored playback, while the checker (every 30s) was the
+            # only one that did -- and its guard skips work once is_connected
+            # is already True. Net effect: playback silently stayed idle, or
+            # resumed from a stale state.position when the race went the
+            # other way. main.py's checker is now the single source of truth
+            # for both detecting the drop and restoring playback.
 
     async def _handle_event(self, msg: dict):
         if "request_id" in msg:
