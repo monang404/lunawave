@@ -261,7 +261,7 @@ async def main():
                         row = await db.get_track(state.current_track.video_id)
                         gain_db = 0.0
                         if row and row.loudness_lufs is not None:
-                            gain_db = compute_gain_db(row.loudness_lufs)
+                            gain_db = compute_gain_db(row.loudness_lufs, row.true_peak_dbtp)
                         state.current_track_gain_db = gain_db
 
                         if getattr(state, "loudness_normalization_enabled", False):

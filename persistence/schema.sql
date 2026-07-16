@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     last_played  INTEGER,        -- Unix timestamp
     is_favorite  INTEGER DEFAULT 0, -- 1 if liked, 0 otherwise
     loudness_lufs REAL,          -- NULL = belum dianalisis; integrated loudness (LUFS)
+    true_peak_dbtp REAL,         -- NULL = belum dianalisis; true peak (dBTP), dari ffmpeg loudnorm
     last_position REAL DEFAULT 0.0, -- position resume
     created_at   INTEGER DEFAULT (strftime('%s','now'))
 );
@@ -72,3 +73,8 @@ CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);
 CREATE INDEX IF NOT EXISTS idx_songs_youtube_id ON songs(youtube_id);
 
 CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);
+
+-- Migration: tambah kolom true_peak_dbtp untuk DB yang sudah ada (idempotent via IF NOT EXISTS).
+-- SQLite tidak mendukung "ADD COLUMN IF NOT EXISTS" secara native, tapi persistence/__init__.py
+-- menjalankan ini lewat blok try/except yang mengabaikan "duplicate column" — aman diulang.
+ALTER TABLE tracks ADD COLUMN true_peak_dbtp REAL;

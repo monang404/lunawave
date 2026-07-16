@@ -60,6 +60,7 @@ class TrackInfo:
     last_played: int | None = None
     is_favorite: int | None = 0
     loudness_lufs: float | None = None
+    true_peak_dbtp: float | None = None  # dBTP, dari ffmpeg loudnorm; None = belum dianalisis
     last_position: float | None = 0.0
 
 

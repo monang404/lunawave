@@ -39,10 +39,25 @@ logger = structlog.get_logger(__name__)
 _JSON_BLOCK_RE = re.compile(r"\{[^{}]*\"input_i\"[^{}]*\}", re.DOTALL)
 
 
-class LoudnessAnalyzer:
-    """measure(uri) -> LUFS terukur, atau None kalau gagal/timeout."""
+from typing import NamedTuple
 
-    def measure_sync(self, uri: str) -> float | None:
+
+class LoudnessMeasurement(NamedTuple):
+    """Result of a loudness analysis pass."""
+
+    lufs: float  # integrated loudness (LUFS)
+    true_peak: float  # true peak in dBTP (0.0 = 0dBFS ceiling)
+
+
+class LoudnessAnalyzer:
+    """measure_sync(uri) -> LoudnessMeasurement | None.
+
+    Returns both integrated LUFS *and* true peak (dBTP) so callers can apply
+    headroom-safe gain without a separate analysis pass.
+    Caller must invoke via run_in_executor — this is blocking.
+    """
+
+    def measure_sync(self, uri: str) -> "LoudnessMeasurement | None":
         """Dipanggil lewat run_in_executor -- BLOCKING, jangan panggil langsung
         dari event loop."""
         cmd = [
@@ -78,7 +93,12 @@ class LoudnessAnalyzer:
 
         try:
             data = json.loads(match.group(0))
-            return float(data["input_i"])
+            lufs = float(data["input_i"])
+            # input_tp is already computed by ffmpeg at zero extra cost.
+            # -inf string (silence) is treated as a very low peak (no clipping risk).
+            raw_tp = data.get("input_tp", "-inf")
+            true_peak = float(raw_tp) if raw_tp != "-inf" else -120.0
+            return LoudnessMeasurement(lufs=lufs, true_peak=true_peak)
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             logger.warning(f"Loudness analysis: gagal parse JSON: {e}")
             return None

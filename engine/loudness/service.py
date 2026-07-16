@@ -46,17 +46,17 @@ class LoudnessService:
 
     async def analyze_and_store(self, video_id: str, uri: str) -> None:
         """Idempotent -- aman dipanggil tiap kali track dimuat. Kalau sudah
-        pernah dianalisis, langsung return tanpa kerja tambahan."""
+        pernah dianalisis (both lufs AND true_peak tersedia), langsung return."""
         row = await self.db.get_track(video_id)
-        if row and row.loudness_lufs is not None:
-            return  # Sudah pernah diukur, tidak perlu ulang
+        if row and row.loudness_lufs is not None and row.true_peak_dbtp is not None:
+            return  # Sudah pernah diukur lengkap, tidak perlu ulang
 
         loop = asyncio.get_running_loop()
-        lufs = await loop.run_in_executor(self._executor, self.analyzer.measure_sync, uri)
-        if lufs is None:
+        measurement = await loop.run_in_executor(self._executor, self.analyzer.measure_sync, uri)
+        if measurement is None:
             return  # Analisis gagal -- diam saja, coba lagi di play berikutnya
 
         try:
-            await self.db.set_loudness(video_id, lufs)
+            await self.db.set_loudness(video_id, measurement.lufs, measurement.true_peak)
         except Exception as e:
             logger.warning(f"Gagal simpan loudness untuk {video_id}: {e}")

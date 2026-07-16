@@ -22,7 +22,6 @@ Thread Safety:
 
 import asyncio
 import os
-import shutil
 
 import structlog
 
@@ -66,19 +65,17 @@ class MpvConnection:
             return await self._do_connect()
 
     async def _do_connect(self) -> bool:
-        ytdl_path = shutil.which("yt-dlp")
-        ytdl_arg = f"--script-opts=ytdl_hook-ytdl_path={ytdl_path}" if ytdl_path else ""
-
         common_args = [
             "--no-video",
             "--idle",
-            "--ytdl-format=bestaudio/best",
+            "--ytdl=no",  # M-1: App always passes resolved CDN URLs, never youtube:// — ytdl_hook is dead code and a dangerous uncontrolled fallback.
             "--audio-pitch-correction=yes",
             "--cache=yes",
             "--demuxer-readahead-secs=20",
             "--demuxer-max-bytes=30MiB",
             "--cache-pause=yes",
             "--network-timeout=15",
+            "--gapless-audio=weak",  # M-3: Reduce gap/click between tracks (safe, no downside).
         ]
 
         if os.name == "nt":
@@ -92,8 +89,6 @@ class MpvConnection:
                     self.tcp_port = str(s.getsockname()[1])
 
             cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
-            if ytdl_arg:
-                cmd.insert(1, ytdl_arg)
         else:
             os.makedirs(os.path.dirname(self.socket_path), exist_ok=True)
             if os.path.exists(self.socket_path):
@@ -102,8 +97,6 @@ class MpvConnection:
                 except OSError:
                     pass
             cmd = ["mpv"] + common_args + [f"--input-ipc-server={self.socket_path}"]
-            if ytdl_arg:
-                cmd.insert(1, ytdl_arg)
 
         try:
             self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore

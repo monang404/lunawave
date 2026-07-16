@@ -89,7 +89,7 @@ class TrackLoader:
             if row and row.loudness_lufs is not None:
                 from engine.loudness.gain_calculator import compute_gain_db
 
-                gain_db = compute_gain_db(row.loudness_lufs)
+                gain_db = compute_gain_db(row.loudness_lufs, row.true_peak_dbtp)
             if getattr(self.state, "loudness_normalization_enabled", False):
                 safe_create_task(
                     self.loudness_service.analyze_and_store(track.video_id, uri),
