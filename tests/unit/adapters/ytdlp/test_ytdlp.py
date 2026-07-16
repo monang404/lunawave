@@ -223,7 +223,9 @@ class TestPickAudioUrl:
             ],
         }
         result = resolver._pick_audio_url(info)
-        assert result == "http://fallback.url"
+        # No audio-only format exists, so it falls back to the muxed
+        # (audio+video) format instead of failing outright.
+        assert result == "http://muxed.url"
 
 
 # ---------------------------------------------------------------------------
