@@ -46,13 +46,6 @@ function initTransportEvents() {
         }
     });
 
-    if (dom.btnNext) {
-        dom.btnNext.addEventListener("click", () => {
-            if (store.userRole !== "admin") return;
-            wsSend("next");
-        });
-    }
-
     if (dom.btnRepeat) {
         dom.btnRepeat.addEventListener("click", () => {
             if (store.userRole !== "admin") return;
