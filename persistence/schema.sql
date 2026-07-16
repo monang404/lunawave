@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_songs_youtube_id ON songs(youtube_id);
 
 CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);
 
--- Migration: tambah kolom true_peak_dbtp untuk DB yang sudah ada (idempotent via IF NOT EXISTS).
--- SQLite tidak mendukung "ADD COLUMN IF NOT EXISTS" secara native, tapi persistence/__init__.py
--- menjalankan ini lewat blok try/except yang mengabaikan "duplicate column" — aman diulang.
-ALTER TABLE tracks ADD COLUMN true_peak_dbtp REAL;
+-- Migration untuk kolom-kolom yang ditambahkan bertahap dikelola di persistence/__init__.py
+-- via loop ALTER TABLE dengan try/except yang mengabaikan "duplicate column name".
+-- Jangan tambahkan ALTER TABLE di sini — executescript() tidak punya error handling
+-- dan akan crash dengan OperationalError jika kolom sudah ada di DB lama.

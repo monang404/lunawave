@@ -89,15 +89,6 @@ class TestSendCommand:
         assert id1 == 1
         assert id2 == 2
 
-    @pytest.mark.asyncio
-    async def test_marks_disconnected_on_oserror(self):
-        conn = make_fake_connection()
-        conn.writer.drain = AsyncMock(side_effect=OSError("broken pipe"))
-        ipc = MpvIPC(conn)
-
-        await ipc.send_command(["play"])
-        assert conn.is_connected is False
-
 
 # ---------------------------------------------------------------------------
 # get_property

@@ -86,7 +86,7 @@ class MpvObserver:
         finally:
             self._conn.is_connected = False
             self._ipc.cancel_all_pending()
-            logger.warning("mpv observer loop ended — connection lost.")
+            logger.warning("mpv observer loop ended - connection lost.")
 
             if not getattr(self._conn, "shutting_down", False):
                 # Coba reconnect ke mpv yang mungkin masih hidup (misal socket terputus sesaat)

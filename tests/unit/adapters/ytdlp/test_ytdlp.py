@@ -205,7 +205,6 @@ class TestPickAudioUrl:
 
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
-            "url": "http://fallback.url",
             "formats": [
                 {"acodec": "mp4a.40.2", "vcodec": "avc1", "url": "http://video.url"},
                 {"acodec": "mp4a.40.2", "vcodec": "none", "url": "http://audio.url"},
@@ -219,7 +218,6 @@ class TestPickAudioUrl:
 
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
-            "url": "http://fallback.url",
             "formats": [
                 {"acodec": "mp4a.40.2", "vcodec": "avc1", "url": "http://muxed.url"},
             ],

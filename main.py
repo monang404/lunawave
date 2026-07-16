@@ -83,14 +83,20 @@ from plugins.sponsorblock import SponsorBlockHandler
 async def main():
     state = AppState()
 
-    # 1. Inisialisasi DB dan MPV secara paralel untuk mempersingkat startup
-    print("  [1/5] Membuka database + menghubungkan audio player (paralel)...")
+    # Event untuk koordinasi: _resume_last_track menunggu MPV selesai connect
+    # tanpa memblok run_server — browser bisa akses UI sementara kedua task jalan.
+    _mpv_ready_event = asyncio.Event()
+
+    # 1. Inisialisasi DB (server membutuhkan DB, jadi ini tetap blocking)
+    print("  [1/5] Membuka database...")
     db = Database()
     mpv = MpvController()
+    await db.init()
 
     async def _init_mpv():
         try:
             await mpv.connect()
+            _mpv_ready_event.set()  # beri sinyal ke _resume_last_track bahwa MPV siap
         except Exception as e:
             structlog.get_logger(__name__).error(f"mpv not available: {e}")
             state.error_msg = (
@@ -98,14 +104,14 @@ async def main():
                 "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
             )
             state.status = PlayerStatus.ERROR
-
-    await asyncio.gather(db.init(), _init_mpv())
+            _mpv_ready_event.set()  # set juga saat error agar resume tidak hang
 
     # 2. Initialize Core Engine (YtDlpClient ringan — hanya buat ThreadPoolExecutor)
     print("  [2/5] Menginisialisasi YT-DLP Engine...")
     ytdlp = YtDlpClient()
 
     print("  [3/5] Menyiapkan layanan playback...")
+    print("  (Audio player dihubungkan di background — server akan listen duluan)")
 
     # 3. Shared HTTP session
     http_session = aiohttp.ClientSession()
@@ -171,25 +177,41 @@ async def main():
     connectivity_task = safe_create_task(check_connectivity(), name="connectivity_checker")
     tasks = [connectivity_task]
 
-    # Resume last playback
-    try:
-        async with db.conn.execute(
-            "SELECT video_id, last_position FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT 1"
-        ) as cursor:
-            row = await cursor.fetchone()
-            if row and row["video_id"]:
-                vid = row["video_id"]
-                last_pos = float(row["last_position"] or 0.0)
-                track = await db.get_track(vid)
-                if track and last_pos > 0:
-                    await playback_controller.play_track(
-                        track, start_position=last_pos, start_paused=True
-                    )
-                    structlog.get_logger(__name__).info(
-                        f"Resumed last track: {track.title} at {last_pos}s"
-                    )
-    except Exception as e:
-        structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
+    # MPV connect dijalankan sebagai background task — server tidak perlu menunggu.
+    # _mpv_ready_event akan di-set oleh _init_mpv() saat koneksi selesai (sukses/gagal).
+    tasks.append(safe_create_task(_init_mpv(), name="mpv_initial_connect"))
+
+    # Resume last playback — dijalankan sebagai background task agar tidak memblok
+    # run_server(). Menunggu MPV siap via _mpv_ready_event (tanpa timeout) sebelum
+    # memanggil play_track(), sehingga browser sudah bisa connect ke UI sementara
+    # resume (dan kemungkinan network call yt-dlp) masih diproses di belakang layar.
+    async def _resume_last_track():
+        # Tunggu MPV siap sebelum resume — tanpa timeout agar resume tidak di-skip
+        # di hardware lambat (Termux/Android). Karena ini background task, menunggu
+        # di sini tidak memblok server sama sekali.
+        await _mpv_ready_event.wait()
+        if state.status == PlayerStatus.ERROR:
+            # MPV gagal start, tidak ada gunanya mencoba resume
+            return
+        try:
+            async with db.conn.execute(
+                "SELECT video_id, last_position FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT 1"
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row and row["video_id"]:
+                    last_pos = float(row["last_position"] or 0.0)
+                    track = await db.get_track(row["video_id"])
+                    if track and last_pos > 0:
+                        await playback_controller.play_track(
+                            track, start_position=last_pos, start_paused=True
+                        )
+                        structlog.get_logger(__name__).info(
+                            f"Resumed last track: {track.title} at {last_pos}s"
+                        )
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
+
+    tasks.append(safe_create_task(_resume_last_track(), name="resume_last_track"))
 
     # DB Maintenance: eviction track stale + cleanup session expired.
     async def db_maintenance():
@@ -315,7 +337,7 @@ async def main():
             print("|                                                   |")
             print("|   Kredensial Mode Admin:                          |")
             print(f"|   User: {ADMIN_USERNAME:<40} |")
-            print("|   Pass: (lihat file di bawah — dibuat saat first-run) |")
+            print("|   Pass: (lihat file di bawah - dibuat saat first-run) |")
             print("|   File: cache/admin_password.txt                  |")
         print("=====================================================")
 

@@ -301,7 +301,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 **File:** `engine/loudness/analyzer.py`
 **Fungsi:** Ukur integrated loudness (LUFS) sebuah track via satu-pass ffmpeg `loudnorm` filter mode measure-only (tidak re-encode, tidak menyimpan file baru).
-**Class:** `LoudnessAnalyzer`
+**Class:** `LoudnessMeasurement(NamedTuple)`, `LoudnessAnalyzer`
 **Function utama:** `measure_sync()`
 **Digunakan oleh:** `engine/loudness/service`
 **Menggunakan:** `config`
@@ -310,7 +310,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 ---
 
 **File:** `engine/loudness/gain_calculator.py`
-**Fungsi:** Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS).
+**Fungsi:** Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS) dan true peak (dBTP).
 **Class:** â€”
 **Function utama:** `compute_gain_db()`, `build_af_filter()`
 **Digunakan oleh:** â€”
