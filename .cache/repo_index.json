@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1784174957.911729,
+    "generated_at": 1784176524.5840235,
     "source_mtimes": {
       "main.py": 1784170467.0,
       "config.py": 1784170467.0,
@@ -9,7 +9,7 @@
       "server/serializers.py": 1784170467.0,
       "server/__init__.py": 1784170467.0,
       "server/middleware.py": 1784170467.0,
-      "server/connection_manager.py": 1784170467.0,
+      "server/connection_manager.py": 1784176439.043697,
       "server/app.py": 1784170467.0,
       "server/services/broadcast_service.py": 1784170467.0,
       "server/services/stream_prefetch.py": 1784170467.0,
@@ -332,7 +332,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 70,
+      "loc": 79,
       "docstring_purpose": "Manages active WebSocket connections and broadcasts events to connected clients.",
       "reverse_deps": [
         "server/app.py",

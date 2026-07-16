@@ -56,13 +56,22 @@ class ConnectionManager:
         if not self.active_connections:
             return
         data = json.dumps(message, ensure_ascii=False)
+        # Pin ONE snapshot and reuse it for both send_str() and the
+        # zip() pairing below. Re-reading self.active_connections after
+        # the `await asyncio.gather(...)` (as the old code did) is unsafe:
+        # a concurrent connect()/disconnect() during that await can change
+        # the list's contents/order, so pairing `results` against a
+        # freshly re-fetched list misattributes send results to the wrong
+        # ws — confirmed via reproduction to wrongly disconnect a healthy
+        # client that connected mid-broadcast (PATCH-2026-07-16-065).
+        snapshot = list(self.active_connections)
         results = await asyncio.gather(
-            *[ws.send_str(data) for ws in list(self.active_connections)],
+            *[ws.send_str(data) for ws in snapshot],
             return_exceptions=True,
         )
         dead = [
             ws
-            for ws, result in zip(list(self.active_connections), results, strict=False)
+            for ws, result in zip(snapshot, results, strict=False)
             if isinstance(result, Exception)
         ]
         for ws in dead:

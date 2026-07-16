@@ -172,18 +172,21 @@ function _renderProgressCore(posOverride) {
     dom.pbTimePos.textContent = formatTime(pos);
     dom.pbTimeDur.textContent = formatTime(dur);
 
-    if (window.audio && store.audio_output === "browser") {
-        if (store.crossfade_enabled && dur > 0) {
-            const remaining = dur - pos;
-            let fadeVol = store.volume / 100;
-            if (remaining <= 2.0 && remaining > 0) {
-                fadeVol = Math.max(0, fadeVol * (remaining / 2.0));
-            } else if (pos <= 2.0) {
-                fadeVol = Math.max(0, fadeVol * (pos / 2.0));
+    if (store.audio_output === "browser" && typeof getOrInitAudio === "function") {
+        const _audioEl = getOrInitAudio();
+        if (_audioEl) {
+            if (store.crossfade_enabled && dur > 0) {
+                const remaining = dur - pos;
+                let fadeVol = store.volume / 100;
+                if (remaining <= 2.0 && remaining > 0) {
+                    fadeVol = Math.max(0, fadeVol * (remaining / 2.0));
+                } else if (pos <= 2.0) {
+                    fadeVol = Math.max(0, fadeVol * (pos / 2.0));
+                }
+                _audioEl.volume = fadeVol;
+            } else if (!window.isDraggingVol) {
+                _audioEl.volume = Math.max(0, Math.min(1, store.volume / 100));
             }
-            window.audio.volume = fadeVol;
-        } else {
-            window.audio.volume = store.volume / 100;
         }
     }
 

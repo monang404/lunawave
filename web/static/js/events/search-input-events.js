@@ -32,18 +32,22 @@ function initSearchInputEvents() {
     const STORAGE_KEY = "lunawave_search_history";
     function getSearchHistory() {
         try {
-            return JSON.parse(window.safeStorage.getItem(STORAGE_KEY)) || [];
+            return JSON.parse(window.safeStorage.get(STORAGE_KEY)) || [];
         } catch {
             return [];
         }
     }
     function saveSearchHistory(query) {
         if (!query) return;
-        let history = getSearchHistory();
-        history = history.filter(q => q.toLowerCase() !== query.toLowerCase());
-        history.unshift(query);
-        if (history.length > 10) history = history.slice(0, 10);
-        window.safeStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        try {
+            let history = getSearchHistory();
+            history = history.filter(q => q.toLowerCase() !== query.toLowerCase());
+            history.unshift(query);
+            if (history.length > 10) history = history.slice(0, 10);
+            window.safeStorage.set(STORAGE_KEY, JSON.stringify(history));
+        } catch (e) {
+            console.warn("Failed to save search history:", e);
+        }
     }
 
     function renderSearchHistory() {
@@ -55,9 +59,9 @@ function initSearchInputEvents() {
         }
         dom.searchHistoryContainer.style.display = "block";
         dom.searchHistoryList.innerHTML = history.map(q => `
-            <div class="search-history-item" style="padding: 10px; border-radius: 8px; background: var(--bg-elevated); cursor: pointer; display: flex; align-items: center; gap: 10px;" data-query="${q.replace(/"/g, '&quot;')}">
+            <div class="search-history-item" style="padding: 10px; border-radius: 8px; background: var(--bg-elevated); cursor: pointer; display: flex; align-items: center; gap: 10px;" data-query="${escapeHtml(q)}">
                 <i class="ti ti-history" style="color: var(--text-3);"></i>
-                <span style="color: var(--text-1); font-size: 14px;">${q}</span>
+                <span style="color: var(--text-1); font-size: 14px;">${escapeHtml(q)}</span>
             </div>
         `).join("");
     }
@@ -84,7 +88,7 @@ function initSearchInputEvents() {
 
     if (dom.searchHistoryClear) {
         dom.searchHistoryClear.addEventListener("click", () => {
-            window.safeStorage.removeItem(STORAGE_KEY);
+            window.safeStorage.remove(STORAGE_KEY);
             renderSearchHistory();
         });
     }

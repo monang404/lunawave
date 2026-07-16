@@ -5,18 +5,19 @@
             // Jangan intercept saat user mengetik di input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+            // NOTE: 'Space' sengaja tidak ditangani di sini -- sudah ditangani secara
+            // global (admin-gated) oleh events/keyboard-shortcut-events.js. Menangani
+            // Space di sini juga akan jadi duplicate listener untuk tombol yang sama.
             switch (e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    if (typeof cmd === 'function') cmd('play'); // Toggle play/pause
-                    break;
                 case 'ArrowRight':
+                    if (store.userRole !== 'admin') return;
                     e.preventDefault();
-                    if (typeof cmd === 'function') cmd('next');
+                    if (typeof wsSend === 'function') wsSend('next');
                     break;
                 case 'ArrowLeft':
+                    if (store.userRole !== 'admin') return;
                     e.preventDefault();
-                    if (typeof cmd === 'function') cmd('prev');
+                    if (typeof wsSend === 'function') wsSend('prev');
                     break;
             }
         });
