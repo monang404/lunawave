@@ -46,6 +46,7 @@ class TrackRepository:
                 is_fav = row["is_favorite"] or 0
             loudness = row["loudness_lufs"] if "loudness_lufs" in row.keys() else None
             last_position = row["last_position"] if "last_position" in row.keys() else 0.0
+            true_peak = row["true_peak_dbtp"] if "true_peak_dbtp" in row.keys() else None
             return TrackInfo(
                 video_id=row["video_id"],
                 title=row["title"],
@@ -61,6 +62,7 @@ class TrackRepository:
                 is_favorite=is_fav,
                 loudness_lufs=loudness,
                 last_position=last_position,
+                true_peak_dbtp=true_peak,
             )
 
     async def upsert_track(
@@ -166,12 +168,20 @@ class TrackRepository:
             row = await cursor.fetchone()
             return int(row["is_favorite"] or 0) if row else 0
 
-    async def set_loudness(self, video_id: str, lufs: float) -> None:
-        """Simpan hasil pengukuran integrated loudness (LUFS)."""
-        await self._conn.execute(
-            "UPDATE tracks SET loudness_lufs = ? WHERE video_id = ?",
-            (lufs, video_id),
-        )
+    async def set_loudness(
+        self, video_id: str, lufs: float, true_peak: float | None = None
+    ) -> None:
+        """Simpan hasil pengukuran integrated loudness (LUFS) dan opsional true peak (dBTP)."""
+        if true_peak is not None:
+            await self._conn.execute(
+                "UPDATE tracks SET loudness_lufs = ?, true_peak_dbtp = ? WHERE video_id = ?",
+                (lufs, true_peak, video_id),
+            )
+        else:
+            await self._conn.execute(
+                "UPDATE tracks SET loudness_lufs = ? WHERE video_id = ?",
+                (lufs, video_id),
+            )
         await self._conn.commit()
 
     async def set_last_position(self, video_id: str, position: float) -> None:

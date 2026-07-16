@@ -68,6 +68,7 @@ class Database:
             "ALTER TABLE artists ADD COLUMN reward_beta INTEGER DEFAULT 1",
             "ALTER TABLE tracks ADD COLUMN loudness_lufs REAL",
             "ALTER TABLE tracks ADD COLUMN last_position REAL DEFAULT 0.0",
+            "ALTER TABLE tracks ADD COLUMN true_peak_dbtp REAL",  # H-3: true peak dari ffmpeg loudnorm
         ]:
             try:
                 await self._db.conn.execute(sql)
