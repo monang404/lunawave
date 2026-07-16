@@ -74,14 +74,20 @@ def create_tables(cursor):
     """)
 
     # Tabel Songs
+    # youtube_id unik PER-ARTIST (bukan global): lagu kolaborasi/duet
+    # sah dimiliki oleh lebih dari satu artis (mis. "Separuh Aku" oleh
+    # Peterpan/NOAH/Ariel NOAH). Constraint global sebelumnya diam-diam
+    # membuang lagu itu dari katalog semua artis kecuali yang pertama
+    # ditemukan di JSON.
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS songs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         artist_id INTEGER,
         judul TEXT NOT NULL,
-        youtube_id TEXT UNIQUE NOT NULL,
+        youtube_id TEXT NOT NULL,
         duration INTEGER DEFAULT 0,
-        FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+        FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
+        UNIQUE (artist_id, youtube_id)
     )
     """)
 
@@ -154,7 +160,9 @@ def main():
             youtube_id = lagu.get("youtube_id")
             if youtube_id:  # Hanya masukkan yang punya ID YouTube valid
                 duration = lagu.get("durasi_detik", 0)
-                # Insert lagu (IGNORE jika youtube_id sudah ada, karena kolom tersebut UNIQUE)
+                # Insert lagu (IGNORE jika (artist_id, youtube_id) sudah ada —
+                # kolom ini unik per-artis, bukan global, supaya lagu
+                # kolaborasi tetap muncul di katalog tiap artis pemiliknya)
                 cursor.execute(
                     """
                 INSERT OR IGNORE INTO songs (artist_id, judul, youtube_id, duration)
@@ -167,12 +175,12 @@ def main():
                 if cursor.rowcount > 0:
                     total_songs += 1
                 else:
-                    # Jika lagu sudah ada (IGNORE trigger), kita perlu UPDATE durasinya jika tadinya 0!
+                    # Jika lagu sudah ada utk artis ini (IGNORE trigger), UPDATE durasinya jika tadinya 0!
                     cursor.execute(
                         """
-                    UPDATE songs SET duration = ? WHERE youtube_id = ? AND duration = 0
+                    UPDATE songs SET duration = ? WHERE artist_id = ? AND youtube_id = ? AND duration = 0
                     """,
-                        (duration, youtube_id),
+                        (duration, artist_id, youtube_id),
                     )
 
     # Simpan semua perubahan ke database (Commit)

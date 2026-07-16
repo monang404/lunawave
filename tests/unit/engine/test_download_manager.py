@@ -128,6 +128,38 @@ class TestOnDownloadGuards:
 
         assert any("sedang berjalan" in m.message for m in received)
 
+    async def test_rapid_double_trigger_only_downloads_once(self, tmp_path):
+        """Regresi: dua trigger download() beruntun cepat (mis. double-klik atau
+        klik + shortcut keyboard) SEBELUM task pertama sempat jalan & acquire
+        lock, dulu bisa lolos cek `.locked()` dua-duanya dan men-download file
+        yang sama dua kali secara berurutan. `_download_scheduled` flag yang
+        di-set sinkron mencegah ini."""
+        track = make_track()
+        bus, state, ytdlp = make_env(current_track=track)
+        ytdlp.download_paths["vid1"] = str(tmp_path / "vid1.mp3")
+        (tmp_path / "vid1.mp3").write_bytes(b"audio")
+        isolated = CommandBus()
+
+        async def fake_dl(video_id, on_progress=None):
+            ytdlp.call_log.append(("download_mp3", video_id))
+            return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
+
+        ytdlp.download_mp3 = fake_dl
+        mgr = make_manager(bus, state, ytdlp, isolated)
+
+        with (
+            patch("shutil.move"),
+            patch("pathlib.Path.mkdir"),
+            patch("pathlib.Path.exists", return_value=False),
+        ):
+            # Dua trigger beruntun TANPA sleep di antaranya, sebelum task
+            # pertama (dijadwalkan via safe_create_task) sempat berjalan.
+            await mgr._on_download(None)
+            await mgr._on_download(None)
+            await asyncio.sleep(0.1)
+
+        assert len(ytdlp.call_log) == 1
+
     async def test_uses_explicit_track_arg_over_current_track(self):
         """When an explicit track is passed, it takes priority over current_track."""
         explicit_track = make_track(video_id="explicit")
