@@ -49,6 +49,7 @@ from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackI
 from core.task_utils import safe_create_task
 from engine.playback.mode_ops import ModeOps
 from engine.playback.queue_ops import QueueOps
+from engine.playback.track_ended_ops import TrackEndedOps, poll_duration
 from engine.playback.track_loader import TrackLoader
 from engine.queue_manager import QueueMode
 from engine.radio_engine import RadioMode
@@ -83,9 +84,11 @@ class PlaybackController:
         self._play_lock = asyncio.Lock()
         self._queue_ops = QueueOps(self.state, self.bus, self._lock)
         self._mode_ops = ModeOps(self.state, self.bus, self._lock, self.mpv, self.radio_mode)
+        self._track_ended_ops = TrackEndedOps(self)
         self._retry_count = 0
         self._loading = False
         self._last_position_save = 0.0
+        self._last_play_start_ts = 0.0
 
         # Subscribe events
         self.bus.subscribe(TrackEndedEvent, lambda e: safe_create_task(self._on_track_ended(e)))
@@ -123,6 +126,7 @@ class PlaybackController:
                 loaded = await self.track_loader.load_track(track)
                 uri = loaded.uri
                 self._loading = True
+                self._last_play_start_ts = asyncio.get_event_loop().time()
                 await self.mpv.play(uri)
                 await asyncio.sleep(0.15)
 
@@ -200,17 +204,7 @@ class PlaybackController:
                         )
 
     async def _poll_duration(self, track: TrackInfo):
-        for delay in [2, 5]:
-            await asyncio.sleep(delay)
-            if self.state.current_track != track:
-                return
-            dur = await self.mpv.get_duration()
-            if dur > 0:
-                self.state.duration = dur
-                track.duration = int(dur)
-                safe_create_task(self.resolver.db.upsert_track(track), name="upsert_duration")
-                await self.bus.publish(QueueUpdatedEvent())
-                return
+        await poll_duration(self.state, self.mpv, self.resolver, self.bus, track)
 
     async def _on_cmd_play_track(self, track: TrackInfo):
         async with self._lock:
@@ -221,47 +215,7 @@ class PlaybackController:
             await self.play_track(track)
 
     async def _on_track_ended(self, event: TrackEndedEvent):
-        reason = event.reason
-        logger.info(f"[AUTOPLAY] Track ended with reason: {reason}")
-
-        # Build payload for next to prevent double-skip if track changes concurrently
-        next_data = {}
-        if self.state.current_track:
-            next_data["video_id"] = self.state.current_track.video_id
-
-        if reason == "eof":
-            await asyncio.sleep(0.35)
-            await self._on_next(next_data)
-        elif reason == "stop":
-            if self._loading:
-                logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition")
-                return
-            # RACE-FIX: event 'stop' dari mpv untuk track LAMA bisa nyampe telat
-            # (setelah _loading sudah balik False) kalau device lambat, karena
-            # mpv.play() ke track baru internally stop dulu track lama sebelum
-            # load yang baru. Tanpa grace period, status bisa ke-overwrite jadi
-            # IDLE padahal track baru sudah sukses PLAYING -> playback macet.
-            # Kasih waktu yang sama seperti reason=="eof" (0.35s) supaya
-            # play_track (kalau memang sedang jalan) sempat selesai set status.
-            await asyncio.sleep(0.35)
-            if self.state.status == PlayerStatus.PLAYING:
-                logger.info(
-                    "[AUTOPLAY] Ignoring stale 'stop' event -- track baru sudah PLAYING"
-                )
-                return
-            if self.state.status not in (PlayerStatus.IDLE,):
-                self.state.status = PlayerStatus.IDLE
-        elif reason == "error":
-            self.state.status = PlayerStatus.ERROR
-            await self.bus.publish(LogMessageEvent(message="Terjadi kesalahan pemutaran"))
-            await asyncio.sleep(2)
-            # Batalkan autoplay jika user sudah stop atau ganti lagu selama sleep
-            if self.state.status == PlayerStatus.IDLE:
-                return
-            current_vid = getattr(self.state.current_track, "video_id", None)
-            if next_data.get("video_id") and current_vid != next_data["video_id"]:
-                return
-            await self._on_next(next_data)
+        await self._track_ended_ops.on_track_ended(event)
 
     async def _on_track_progress(self, event: TrackProgressEvent):
         self.state.position = event.position

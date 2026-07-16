@@ -214,6 +214,29 @@ class TestOnTrackEnded:
         await controller._on_track_ended(TrackEndedEvent(reason="stop"))
         assert state.status == PlayerStatus.IDLE
 
+    async def test_stale_stop_within_grace_window_after_transition_is_ignored(
+        self, controller, state
+    ):
+        # Simulasikan track baru baru saja mulai play_track() (mis. mpv.play sudah
+        # dipanggil), lalu event 'stop' basi dari track LAMA nyampe telat setelah
+        # _loading balik False tapi masih dalam grace window transisi.
+        controller._last_play_start_ts = asyncio.get_event_loop().time()
+        controller._loading = False
+        state.status = PlayerStatus.PLAYING
+        await controller._on_track_ended(TrackEndedEvent(reason="stop"))
+        # Karena masih dalam grace window & status sudah PLAYING lagi (track baru),
+        # stop basi ini harus diabaikan, bukan meng-overwrite jadi IDLE.
+        assert state.status == PlayerStatus.PLAYING
+
+    async def test_stop_long_after_transition_sets_idle_immediately(self, controller, state):
+        # Stop yang datang jauh di luar grace window (tidak ada transisi baru
+        # yang relevan) harus langsung IDLE tanpa nunggu sleep 0.35s.
+        controller._last_play_start_ts = asyncio.get_event_loop().time() - 10.0
+        controller._loading = False
+        state.status = PlayerStatus.PLAYING
+        await controller._on_track_ended(TrackEndedEvent(reason="stop"))
+        assert state.status == PlayerStatus.IDLE
+
     async def test_error_sets_status_error_and_advances_after_sleep(
         self, controller, state, queue_mode, bus
     ):
