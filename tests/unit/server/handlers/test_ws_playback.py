@@ -9,6 +9,7 @@ from core.command_bus import (
     CMD_PREV,
     CMD_RADIO_RANDOMIZE,
     CMD_SEEK,
+    CMD_SET_LOUDNESS_NORMALIZATION,
     CMD_SET_MODE,
     CMD_SET_OUTPUT,
     CMD_SET_SPONSORBLOCK,
@@ -60,6 +61,20 @@ async def test_handle_playback_command_play_track_invalid(mock_dict_to_track, mo
 async def test_handle_playback_command_set_sponsorblock(mock_execute):
     await handle_playback_command("set_sponsorblock", {"enabled": False})
     mock_execute.assert_called_once_with(CMD_SET_SPONSORBLOCK, False)
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.ws_playback.command_bus.execute", new_callable=AsyncMock)
+async def test_handle_playback_command_set_loudness_normalization(mock_execute):
+    await handle_playback_command("set_loudness_normalization", {"enabled": True})
+    mock_execute.assert_called_once_with(CMD_SET_LOUDNESS_NORMALIZATION, True)
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.ws_playback.command_bus.execute", new_callable=AsyncMock)
+async def test_handle_playback_command_set_loudness_normalization_default_false(mock_execute):
+    await handle_playback_command("set_loudness_normalization", {})
+    mock_execute.assert_called_once_with(CMD_SET_LOUDNESS_NORMALIZATION, False)
 
 
 @pytest.mark.asyncio

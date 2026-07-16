@@ -32,6 +32,7 @@ from core.command_bus import (
     CMD_RADIO_RANDOMIZE,
     CMD_SEEK,
     CMD_SET_CROSSFADE,
+    CMD_SET_LOUDNESS_NORMALIZATION,
     CMD_SET_MODE,
     CMD_SET_OUTPUT,
     CMD_SET_SPONSORBLOCK,
@@ -123,3 +124,7 @@ async def handle_playback_command(action: str, data: dict):
 
         mode = data.get("mode", "off")
         await command_bus.execute(CMD_SET_LOOP, {"mode": mode})
+
+    elif action == "set_loudness_normalization":
+        enabled = data.get("enabled", False)
+        await command_bus.execute(CMD_SET_LOUDNESS_NORMALIZATION, bool(enabled))

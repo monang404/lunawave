@@ -129,6 +129,18 @@ class ModeOps:
 
     async def toggle_loudness_normalization(self, enabled: bool):
         self.state.loudness_normalization_enabled = enabled
+
+        # BUGFIX: sebelumnya toggle ini cuma ganti state, tidak pernah manggil mpv.set_af().
+        # Filter gain cuma di-apply ulang di play_track() (saat load lagu baru), jadi UI
+        # keliatan ON/OFF tapi audio tidak berubah sampai lagu berikutnya. Kalau ada track
+        # yang sedang berjalan, re-apply `af` filter sekarang juga memakai gain_db yang
+        # sudah dihitung untuk track itu (disimpan di state.current_track_gain_db saat load).
+        if self.state.current_track is not None:
+            from engine.loudness.gain_calculator import build_af_filter
+
+            gain_db = self.state.current_track_gain_db if enabled else 0.0
+            await self.mpv.set_af(build_af_filter(gain_db))
+
         status_msg = "ON" if enabled else "OFF"
         await self.bus.publish(LogMessageEvent(message=f"Loudness Normalization: {status_msg}"))
         await self.bus.publish(QueueUpdatedEvent())

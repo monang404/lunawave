@@ -75,7 +75,9 @@ class PlaybackController:
         self.resolver = resolver
         self.queue_mode = queue_mode
         self.radio_mode = radio_mode
-        self.track_loader = TrackLoader(resolver, sponsorblock, lyrics_fetcher, loudness_service)
+        self.track_loader = TrackLoader(
+            resolver, sponsorblock, lyrics_fetcher, loudness_service, state
+        )
 
         self._lock = asyncio.Lock()
         self._play_lock = asyncio.Lock()
@@ -127,7 +129,13 @@ class PlaybackController:
                 # Loudness Normalization (Phase 6/7)
                 from engine.loudness.gain_calculator import build_af_filter
 
-                if getattr(self.state, "loudness_normalization_enabled", True):
+                # BUGFIX: simpan gain_db track ini di state supaya toggle_loudness_normalization()
+                # (mode_ops.py) bisa langsung re-apply `af` filter ke track yang sedang berjalan,
+                # tanpa nunggu track berikutnya di-load. Sebelumnya toggle di tengah lagu tidak
+                # berefek audio sampai lagu selanjutnya.
+                self.state.current_track_gain_db = loaded.gain_db
+
+                if getattr(self.state, "loudness_normalization_enabled", False):
                     await self.mpv.set_af(build_af_filter(loaded.gain_db))
                 else:
                     await self.mpv.set_af(build_af_filter(0.0))
@@ -227,6 +235,19 @@ class PlaybackController:
         elif reason == "stop":
             if self._loading:
                 logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition")
+                return
+            # RACE-FIX: event 'stop' dari mpv untuk track LAMA bisa nyampe telat
+            # (setelah _loading sudah balik False) kalau device lambat, karena
+            # mpv.play() ke track baru internally stop dulu track lama sebelum
+            # load yang baru. Tanpa grace period, status bisa ke-overwrite jadi
+            # IDLE padahal track baru sudah sukses PLAYING -> playback macet.
+            # Kasih waktu yang sama seperti reason=="eof" (0.35s) supaya
+            # play_track (kalau memang sedang jalan) sempat selesai set status.
+            await asyncio.sleep(0.35)
+            if self.state.status == PlayerStatus.PLAYING:
+                logger.info(
+                    "[AUTOPLAY] Ignoring stale 'stop' event -- track baru sudah PLAYING"
+                )
                 return
             if self.state.status not in (PlayerStatus.IDLE,):
                 self.state.status = PlayerStatus.IDLE

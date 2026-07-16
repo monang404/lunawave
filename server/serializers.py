@@ -56,7 +56,7 @@ def state_to_dict(state: AppState, include_lyrics: bool = True) -> dict:
         "crossfade_enabled": getattr(state, "crossfade_enabled", False),
         "audio_output": getattr(state, "audio_output", AudioOutput.DEVICE).value,
         "sponsorblock_active": state.sponsorblock_active,
-        "loudness_normalization_enabled": getattr(state, "loudness_normalization_enabled", True),
+        "loudness_normalization_enabled": getattr(state, "loudness_normalization_enabled", False),
         "queue": [track_to_dict(t) for t in state.queue],
         "radio_queue": [track_to_dict(t) for t in state.radio_queue],
         "history_count": len(state.history),

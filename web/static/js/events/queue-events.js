@@ -79,6 +79,12 @@ function initQueueEvents() {
             if (rmBtn) {
                 e.stopPropagation();
                 wsSend("queue_remove", { index: parseInt(rmBtn.dataset.index) });
+                return;
+            }
+            if (e.target.closest(".qi-drag")) return;
+            const item = e.target.closest(".queue-item[data-index]");
+            if (item) {
+                wsSend("queue_select", { index: parseInt(item.dataset.index) });
             }
         });
     }

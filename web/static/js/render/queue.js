@@ -87,6 +87,7 @@ function createQueueItemTemplate(isRadio) {
     } else {
         div.className = "queue-item";
         div.innerHTML = `
+            <span class="qi-drag">⋮⋮</span>
             <span class="qi-index"></span>
             <div class="qi-info">
                 <div class="qi-title"></div>
@@ -145,11 +146,14 @@ function updateQueueItem(div, track, index, isCurrent, isRadio) {
         div.querySelector(".qi-dur").textContent = track.artist + " · " + formatTime(track.duration);
 
         const rmBtn = div.querySelector(".qi-remove");
+        const dragHandle = div.querySelector(".qi-drag");
         if (isCurrent) {
             rmBtn.style.display = "none";
+            if (dragHandle) dragHandle.style.display = "none";
         } else {
             rmBtn.style.display = "block";
             rmBtn.dataset.index = index;
+            if (dragHandle) dragHandle.style.display = "";
         }
     }
 }

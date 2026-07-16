@@ -77,8 +77,9 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
 
                 # Update discover
                 ds = DiscoverService(db)
-                recent, cached, featured_artists, featured_genres = await asyncio.gather(
+                recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
                     ds.get_recent(15),
+                    ds.get_favorites(15),
                     ds.get_cached(15),
                     ds.get_featured_artists(100),
                     ds.get_featured_genres(100),
@@ -88,6 +89,7 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                         "type": "discover_data",
                         "data": {
                             "recent": [track_to_dict(t) for t in recent],
+                            "favorites": [track_to_dict(t) for t in favorites],
                             "cached_tracks": [track_to_dict(t) for t in cached],
                             "featured_artists": featured_artists,
                             "featured_genres": featured_genres,

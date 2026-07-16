@@ -341,6 +341,30 @@
 
 
 
+                <!-- Recent -->
+                <div class="section-label">Baru Diputar</div>
+                <div id="discover-recent" style="display:flex; flex-direction:column;">
+                    <div class="sr-item">
+                        <div class="sr-thumb skeleton-box" style="border-radius:6px;"></div>
+                        <div class="sr-info">
+                            <div class="sr-title skeleton-box" style="width:60%; height:14px; margin-bottom:6px;"></div>
+                            <div class="sr-meta skeleton-box" style="width:40%; height:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites -->
+                <div class="section-label">Favorit</div>
+                <div id="discover-favorites" style="display:flex; flex-direction:column;">
+                    <div class="sr-item">
+                        <div class="sr-thumb skeleton-box" style="border-radius:6px;"></div>
+                        <div class="sr-info">
+                            <div class="sr-title skeleton-box" style="width:60%; height:14px; margin-bottom:6px;"></div>
+                            <div class="sr-meta skeleton-box" style="width:40%; height:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Cache -->
                 <div class="section-label">Tersimpan Lokal</div>
                 <div id="discover-cached" style="display:flex; flex-direction:column; padding-bottom:80px;">
@@ -449,6 +473,19 @@
                     </div>
                 </div>
                 <button class="ss-toggle" id="crossfade-toggle" data-on="false" aria-label="Toggle Crossfade">
+                    <div class="toggle-dot"></div>
+                </button>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
+                    <i class="ti ti-wave-sine" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Loudness Normalization</div>
+                        <div class="ss-label-sub">Samakan volume antar lagu</div>
+                    </div>
+                </div>
+                <button class="ss-toggle" id="loudness-toggle" data-on="false" aria-label="Toggle Loudness Normalization">
                     <div class="toggle-dot"></div>
                 </button>
             </div>

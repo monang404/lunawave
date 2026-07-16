@@ -75,9 +75,13 @@ class AppState:
     position: float = 0.0
     duration: float = 0.0
     volume: int = 80
-    sponsorblock_active: bool = False
+    sponsorblock_active: bool = True
     crossfade_enabled: bool = False
     loudness_normalization_enabled: bool = False
+    # Gain (dB) yang dihitung untuk current_track saat di-load (lihat TrackLoader.load_track).
+    # Disimpan di state supaya toggle_loudness_normalization() bisa langsung re-apply
+    # filter `af` ke track yang sedang berjalan, tanpa perlu reload/re-resolve track.
+    current_track_gain_db: float = 0.0
 
     # Queue (hanya aktif di QUEUE mode)
     queue: deque = field(default_factory=deque)

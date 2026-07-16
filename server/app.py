@@ -79,7 +79,7 @@ def create_app(
 
 
 async def run_server(app: web.Application, host: str = "0.0.0.0", port: int = 8765):
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
