@@ -120,7 +120,6 @@ class TestPickAudioUrl:
     def test_returns_audio_only_format_url(self):
         client = YtDlpClient()
         info = {
-            "url": "https://fallback.url",
             "formats": [
                 {"acodec": "none", "vcodec": "h264", "url": "https://video.url"},
                 {"acodec": "opus", "vcodec": "none", "url": "https://audio.url"},
@@ -131,7 +130,6 @@ class TestPickAudioUrl:
     def test_falls_back_to_top_level_url_when_no_audio_only_format(self):
         client = YtDlpClient()
         info = {
-            "url": "https://fallback.url",
             "formats": [
                 {"acodec": "mp4a", "vcodec": "h264", "url": "https://av.url"},
             ],
@@ -142,7 +140,6 @@ class TestPickAudioUrl:
         """_pick_audio_url iterates reversed(formats), so last audio-only wins."""
         client = YtDlpClient()
         info = {
-            "url": "https://fallback.url",
             "formats": [
                 {"acodec": "mp4a", "vcodec": "none", "url": "https://audio1.url"},
                 {"acodec": "opus", "vcodec": "none", "url": "https://audio2.url"},
@@ -276,26 +273,26 @@ class TestGetStreamUrl:
 
 
 # ---------------------------------------------------------------------------
-# download_mp3()
+# download_audio()
 # ---------------------------------------------------------------------------
 
 
-class TestDownloadMp3:
+class TestDownloadAudio:
     async def test_returns_expected_mp3_path(self, tmp_path, monkeypatch):
         client = YtDlpClient()
 
         with patch.object(client._downloader, "_download_sync", return_value=None):
             monkeypatch.setattr("adapters.ytdlp.downloader.CACHE_DIR", tmp_path)
-            path = await client.download_mp3("abc123")
+            path = await client.download_audio("abc123")
 
-        assert path == str(tmp_path / "abc123.mp3")
+        assert path == str(tmp_path / "abc123.opus")
 
     async def test_sanitizes_video_id_in_output_path(self, tmp_path, monkeypatch):
         client = YtDlpClient()
 
         with patch.object(client._downloader, "_download_sync", return_value=None):
             monkeypatch.setattr("adapters.ytdlp.downloader.CACHE_DIR", tmp_path)
-            path = await client.download_mp3("bad/id:here")
+            path = await client.download_audio("bad/id:here")
 
         # Slashes and colons become underscores
         assert "/" not in path.split("/")[-1]
@@ -306,7 +303,7 @@ class TestDownloadMp3:
 
         with patch.object(client._downloader, "_download_sync", return_value=None):
             monkeypatch.setattr("adapters.ytdlp.downloader.CACHE_DIR", tmp_path)
-            await client.download_mp3("v1")
+            await client.download_audio("v1")
 
         assert client._downloader.is_cancelled is False
 

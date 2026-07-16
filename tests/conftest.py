@@ -50,7 +50,7 @@ def pytest_unconfigure(config):
             f"\n[WARNING] Zombie non-daemon threads detected: {non_daemon_threads}. Force exiting to prevent CI hang!",
             file=sys.stderr,
         )
-        os._exit(_pytest_exit_status)
+        pass
 
 
 # Make sure the repo root (parent of tests/) is importable as top-level

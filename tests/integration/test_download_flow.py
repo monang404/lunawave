@@ -58,23 +58,23 @@ async def test_download_flow(integration_app):
     track = TrackInfo(video_id="jNQXAC9IVRw", title="Me at the zoo", artist="jawed", duration=19)
 
     # Dispatch download command
-    await command_bus.dispatch(CMD_DOWNLOAD, track)
+    await command_bus.execute(CMD_DOWNLOAD, track)
 
     # Wait for completion event
     # yt-dlp download takes a few seconds
     completed = False
-    for _ in range(200):  # max 20 seconds
+    for _ in range(400):  # max 20 seconds
         await asyncio.sleep(0.1)
         if any(isinstance(e, DownloadCompleteEvent) for e in events):
             completed = True
             break
 
-    assert completed, "Download did not complete within 20 seconds"
+    assert completed, "Download did not complete within 40 seconds"
 
     # Get the file path from the event
     completion_event = next(e for e in events if isinstance(e, DownloadCompleteEvent))
 
     # File should exist on disk
-    path = Path(completion_event.file_path)
+    path = Path(completion_event.track.local_path)
     assert path.exists(), f"Downloaded file does not exist at {path}"
     assert path.stat().st_size > 0, "Downloaded file is empty"

@@ -80,6 +80,9 @@ async def integration_app(tmp_path, monkeypatch):
     # We must reset EventBus state if we want to run multiple tests cleanly,
     # but EventBus is a singleton. For integration tests, we can just clear listeners.
     bus._subscribers.clear()
+    from core.command_bus import command_bus
+
+    command_bus._handlers.clear()
 
     state = AppState()
 

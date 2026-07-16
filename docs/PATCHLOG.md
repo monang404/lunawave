@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-16-066
+latest_patch_id: PATCH-2026-07-16-068
 
-total_entries: 66
+total_entries: 68
 
 ---
 
@@ -23,6 +23,49 @@ total_entries: 66
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-16] Migration to Windows Named Pipes IPC & Integration Test Stabilization
+**ID:** `PATCH-2026-07-16-068`
+**Tanggal:** 2026-07-16
+**Ringkasan:**
+1. Mengubah mekanisme IPC dari TCP Sockets menjadi Windows Named Pipes (`\\.\pipe\mpv-lunawave`) untuk meningkatkan reliabilitas koneksi dengan proses MPV di OS Windows, menghilangkan limitasi socket exhaustion, dan mengurangi latensi.
+2. Memperbaiki *regression* (Zombie non-daemon threads / Timeout) dan *flakiness* di dalam suite tes integrasi akibat perubahan *interface*, serta menyesuaikan timeout ekspektasi dari `yt-dlp`.
+
+- **Fix 1 (Pipes IPC):** `MpvConnection` kini melakukan inisialisasi pada `\\.\pipe\mpv-lunawave` alih-alih port TCP `6666`. `MpvObserver` disesuaikan untuk membaca dari pipe yang sama. Seluruh parameter setup TCP di `run_server()` dihilangkan.
+- **Fix 2 (Integration Test Setup):** `tests/integration/conftest.py` ditambahkan command `command_bus._handlers.clear()` untuk menghindari `RuntimeError` duplikasi handler pada tes yang dijalankan secara berurutan.
+- **Fix 3 (Test Syncs):** Penyesuaian nama metode (`download_mp3` -> `download_audio`), penambahan field `artist` pada objek `TrackInfo`, perubahan field `file_path` pada `DownloadCompleteEvent` menjadi `track.local_path`, serta update ID video yang *geo-restricted* ke video yang stabil (`jNQXAC9IVRw` - Me at the zoo).
+
+**File Terdampak:**
+- `adapters/mpv/connection.py`
+- `adapters/mpv/ipc.py`
+- `adapters/mpv/observer.py`
+- `adapters/ytdlp/__init__.py`
+- `tests/integration/conftest.py`
+- `tests/integration/test_download_flow.py`
+- `tests/integration/test_playback_flow.py`
+- `tests/integration/test_radio_flow.py`
+- `tests/integration/test_websocket_flow.py`
+- `tests/unit/adapters/mpv/test_connection.py`
+- `tests/unit/adapters/mpv/test_ipc.py`
+
+---
+
+## [2026-07-16] Startup Latency Optimization — 3 Fix: MPV Non-Blocking, Resume Background Task, Windows TCP Polling
+**ID:** `PATCH-2026-07-16-067`
+**Tanggal:** 2026-07-16
+**Ringkasan:** Tiga perbaikan startup latency berurutan berdasarkan analisis mendalam 5-tahap chain dari GUI klik "Start" sampai browser dapat diakses. Total estimasi gain: **1.5–25+ detik** tergantung kondisi.
+- **Fix 1 (Dampak terbesar, 1–20+ detik):** "Resume last playback" dipindah dari critical path ke background task (`safe_create_task`). Sebelumnya, kalau stream URL track terakhir sudah expired >6 jam, `main.py` akan melakukan network request ke YouTube via `yt-dlp` (max 25 detik timeout) *sebelum* `run_server()` dipanggil. Sekarang resume berjalan concurrently — browser bisa connect ke UI sementara resume masih diproses di background.
+- **Fix 2 (0.3–2 detik):** `mpv.connect()` dipindah dari `asyncio.gather()` blocking ke background task. Web server kini bisa bind port dan menerima koneksi tanpa menunggu MPV spawn + IPC handshake. Koordinasi lewat `asyncio.Event _mpv_ready_event` — resume task menunggu MPV siap (tanpa timeout) sebelum memanggil `play_track()`, tanpa memblok server.
+- **Fix 3 (0–1 detik, selalu di Windows):** Ganti `await asyncio.sleep(1.0)` blind wait di Windows dengan polling TCP port aktif (50 iterasi × 100ms = max 5 detik, keluar lebih awal begitu MPV siap). Best-case selesai dalam ~100ms, bukan selalu 1000ms.
+- **Tests:** Update 4 test lama di `test_connection.py` (assertion call count disesuaikan dengan polling behavior baru), tambah 2 test baru untuk polling Windows, tambah 1 test baru `test_run_server_not_blocked_by_mpv` dengan event-based coordination. 11/11 test pass.
+
+**File Terdampak:**
+- `main.py`
+- `adapters/mpv/connection.py`
+- `tests/unit/adapters/mpv/test_connection.py`
+- `tests/unit/test_main.py`
 
 ---
 
