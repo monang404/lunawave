@@ -37,6 +37,7 @@ import structlog
 from core.event_bus import EventBus
 from core.events import (
     LogMessageEvent,
+    MpvReconnectedEvent,
     QueueUpdatedEvent,
     TrackDurationEvent,
     TrackEndedEvent,
@@ -97,6 +98,9 @@ class PlaybackController:
         )
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
+        self.bus.subscribe(
+            MpvReconnectedEvent, lambda e: safe_create_task(self._on_mpv_reconnected(e))
+        )
 
     async def _on_track_duration(self, event: TrackDurationEvent):
         if event.duration and self.state.duration == 0:
@@ -109,6 +113,48 @@ class PlaybackController:
                     name="upsert_track_duration",
                 )
             await self.bus.publish(QueueUpdatedEvent())
+
+    async def _on_mpv_reconnected(self, _event: MpvReconnectedEvent):
+        """mpv dropped and MpvObserver just reconnected it -- the underlying
+        process is fresh/idle, so if we were mid-playback we need to reload
+        the current track and put mpv back where the user left off."""
+        if self.state.status not in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
+            return
+        if not self.state.current_track:
+            return
+        track = self.state.current_track
+        position = self.state.position
+        try:
+            loaded = await self.track_loader.load_track(track)
+            await self.mpv.play(loaded.uri)
+            await asyncio.sleep(0.15)
+
+            from engine.loudness.gain_calculator import build_af_filter
+
+            self.state.current_track_gain_db = loaded.gain_db
+            if getattr(self.state, "loudness_normalization_enabled", False):
+                await self.mpv.set_af(build_af_filter(loaded.gain_db))
+            else:
+                await self.mpv.set_af(build_af_filter(0.0))
+
+            if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
+                await self.mpv.set_volume(0)
+            else:
+                await self.mpv.set_volume(self.state.volume)
+
+            if position > 0:
+                await self.mpv.seek(position)
+
+            if self.state.status == PlayerStatus.PAUSED:
+                await self.mpv.pause()
+            else:
+                await self.mpv.resume()
+
+            await self.bus.publish(LogMessageEvent(message="MPV reconnect: playback dipulihkan."))
+        except Exception as e:
+            logger.error(f"Gagal memulihkan playback setelah mpv reconnect: {e}", exc_info=True)
+            self.state.status = PlayerStatus.ERROR
+            self.state.error_msg = f"Gagal memulihkan playback: {e}"
 
     async def play_track(
         self, track: TrackInfo, start_position: float = 0.0, start_paused: bool = False

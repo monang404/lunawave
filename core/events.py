@@ -81,3 +81,14 @@ class LogMessageEvent(DomainEvent):
 @dataclass
 class TrackPauseChangedEvent(DomainEvent):
     is_paused: bool = False
+
+
+@dataclass
+class MpvReconnectedEvent(DomainEvent):
+    """Published once MpvObserver successfully re-establishes the mpv IPC
+    connection after an unexpected drop. The mpv process behind the new
+    connection is freshly spawned/idle, so whoever cares about playback
+    continuity (PlaybackController) is responsible for reloading the current
+    track, seeking, and reapplying volume/gain in reaction to this."""
+
+    pass

@@ -134,7 +134,9 @@ class TestPickAudioUrl:
                 {"acodec": "mp4a", "vcodec": "h264", "url": "https://av.url"},
             ],
         }
-        assert client._resolver._pick_audio_url(info) == "https://fallback.url"
+        # No audio-only format exists, so it falls back to the muxed
+        # (audio+video) format instead of failing outright.
+        assert client._resolver._pick_audio_url(info) == "https://av.url"
 
     def test_prefers_last_audio_only_format_reversed(self):
         """_pick_audio_url iterates reversed(formats), so last audio-only wins."""

@@ -254,56 +254,28 @@ async def main():
 
     tasks.append(safe_create_task(db_maintenance(), name="db_maintenance"))
 
-    # 7.5 MPV auto-reconnect checker
-    async def mpv_reconnect_checker():
+    # 7.5 MPV watchdog: no longer polls/reconnects itself. MpvObserver now
+    # owns reconnect (immediate, bounded retries) so there is a single
+    # reconnect path instead of two racing ones. This watchdog only handles
+    # the case where mpv never comes back at all (observer gave up after its
+    # own retries): it surfaces that as a visible error state instead of
+    # silently leaving playback stuck, without spawning yet another mpv
+    # process or reloading/seeking the track itself.
+    async def mpv_watchdog():
         while True:
-            await asyncio.sleep(5)  # Satu-satunya jalur reconnect+restore sekarang; poll lebih sering
+            await asyncio.sleep(10)
             if (
                 getattr(mpv, "is_available", True)
                 and not getattr(mpv, "is_connected", False)
-                and state.status != PlayerStatus.ERROR
+                and state.status not in (PlayerStatus.ERROR, PlayerStatus.IDLE)
             ):
-                structlog.get_logger(__name__).warning("MPV terputus! Mencoba reconnect...")
-                try:
-                    await mpv.close()
-                except Exception:
-                    pass
-                try:
-                    await mpv.connect()
-                    if (
-                        state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED)
-                        and state.current_track
-                    ):
-                        uri = await resolver.resolve(state.current_track)
-                        await mpv.play(uri)
-                        await mpv.seek(state.position)
+                structlog.get_logger(__name__).error(
+                    "MPV masih terputus setelah reconnect otomatis gagal."
+                )
+                state.status = PlayerStatus.ERROR
+                state.error_msg = "Koneksi ke MPV terputus dan gagal reconnect."
 
-                        from engine.loudness.gain_calculator import build_af_filter, compute_gain_db
-
-                        row = await db.get_track(state.current_track.video_id)
-                        gain_db = 0.0
-                        if row and row.loudness_lufs is not None:
-                            gain_db = compute_gain_db(row.loudness_lufs, row.true_peak_dbtp)
-                        state.current_track_gain_db = gain_db
-
-                        if getattr(state, "loudness_normalization_enabled", False):
-                            await mpv.set_af(build_af_filter(gain_db))
-                        else:
-                            await mpv.set_af(build_af_filter(0.0))
-
-                        if (
-                            getattr(state, "audio_output", AudioOutput.DEVICE)
-                            == AudioOutput.BROWSER
-                        ):
-                            await mpv.set_volume(0)
-                        else:
-                            await mpv.set_volume(state.volume)
-                        if state.status == PlayerStatus.PLAYING:
-                            await mpv.resume()
-                except Exception as e:
-                    structlog.get_logger(__name__).error(f"MPV reconnect failed: {e}")
-
-    tasks.append(safe_create_task(mpv_reconnect_checker(), name="mpv_reconnect_checker"))
+    tasks.append(safe_create_task(mpv_watchdog(), name="mpv_watchdog"))
 
     # 8. Start Web Server
     try:

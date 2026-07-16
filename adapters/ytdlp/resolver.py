@@ -80,10 +80,22 @@ class YtDlpResolver:
         if url:
             return url
         # Fallback: if for any reason top-level url is absent, pick best
-        # audio-only format explicitly sorted by abr descending.
+        # audio-only format explicitly sorted by abr descending. Iterate in
+        # reverse so that, when abr is missing/tied, the last-listed (usually
+        # highest-itag / most-recent) format wins instead of the first one.
         formats = info.get("formats", [])
-        audio_only = [f for f in formats if f.get("acodec") != "none" and f.get("vcodec") == "none"]
+        audio_only = [
+            f for f in reversed(formats) if f.get("acodec") != "none" and f.get("vcodec") == "none"
+        ]
         if audio_only:
             best = max(audio_only, key=lambda f: f.get("abr") or 0)
+            return best["url"]
+        # Last resort: no dedicated audio-only stream at all, only muxed
+        # (audio+video) formats. Still usable — mpv is launched with
+        # --no-video, so the video stream is simply discarded — better than
+        # failing the whole playback outright.
+        muxed = [f for f in reversed(formats) if f.get("acodec") != "none"]
+        if muxed:
+            best = max(muxed, key=lambda f: f.get("abr") or 0)
             return best["url"]
         raise RuntimeError("yt-dlp returned no usable audio format")

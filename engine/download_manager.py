@@ -109,9 +109,9 @@ class DownloadManager:
                 import shutil
                 from pathlib import Path
 
-                from config import BASE_DIR
+                from config import DOWNLOAD_DIR
 
-                downloads_dir = BASE_DIR / "downloads"
+                downloads_dir = DOWNLOAD_DIR
                 downloads_dir.mkdir(parents=True, exist_ok=True)
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", track.title)
