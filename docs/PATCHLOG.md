@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-17-072
+latest_patch_id: PATCH-2026-07-17-073
 
-total_entries: 72
+total_entries: 73
 
 ---
 
@@ -26,6 +26,25 @@ total_entries: 72
 
 ---
 
+
+## [2026-07-17] UI/UX revamp tab discover (progressive disclosure hashtag/list, role-gate access, keyboard accessibility, filter scope)
+
+**ID:** `PATCH-2026-07-17-073`
+
+**Tanggal:** 2026-07-17
+
+**Ringkasan:** UI/UX revamp tab discover (progressive disclosure hashtag/list, role-gate access, keyboard accessibility, filter scope)
+
+**File Terdampak:**
+
+- `server/handlers/ws_discovery.py`
+- `web/static/js/render/discover-tab.js`
+- `web/static/js/events/click-delegation-events.js`
+- `web/static/index.html`
+- `web/static/css/components/discover-cards.css`
+- `web/static/js/render/discover-personalize.js`
+
+---
 ## [2026-07-17] Patch — Sinkronisasi Referensi automation/
 **ID:** `PATCH-2026-07-17-072`
 **Tanggal:** 2026-07-17

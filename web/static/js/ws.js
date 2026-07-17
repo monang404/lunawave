@@ -266,9 +266,23 @@ function handleServerMessage(msg) {
             showLogToast("Error: " + msg.data);
             break;
         case "download_progress":
+            const prevProgress = store.download_progress;
             store.download_progress = msg.data;
             if (typeof renderPlayerBar === "function") renderPlayerBar();
             if (typeof renderSettingsSheet === "function") renderSettingsSheet();
+
+            if (prevProgress == null || prevProgress >= 1.0) {
+                if (msg.data >= 0 && msg.data < 1.0) {
+                    if (typeof showLogToast === "function") showLogToast("⬇ Mulai mengunduh lagu...");
+                }
+            }
+            if (msg.data >= 1.0 && prevProgress !== 1.0) {
+                if (typeof showLogToast === "function") showLogToast("✅ Unduhan selesai! Tersedia di Tersimpan Lokal");
+                setTimeout(() => {
+                    store.download_progress = null;
+                    if (typeof renderPlayerBar === "function") renderPlayerBar();
+                }, 3000);
+            }
             break;
         case "cache_size":
             if (dom.ssCacheSub) {

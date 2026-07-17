@@ -13,10 +13,11 @@ function genreColor(name) {
 let _discActiveKategori = "all";
 let _discActiveDecade = "all";
 
-function formatDecadeLabel(tahun) {
-    if (!tahun) return tahun;
-    const m = String(tahun).match(/^(\d{3,4})s?$/i);
-    return m ? m[1] + "an" : String(tahun);
+function getDecade(year) {
+    if (!year) return null;
+    const y = parseInt(year, 10);
+    if (isNaN(y)) return null;
+    return Math.floor(y / 10) * 10;
 }
 
 function renderTasteSpectrum() {
@@ -37,10 +38,15 @@ function renderTasteSpectrum() {
 
 function buildDecadeChips(allArtists) {
     if (!dom.decadeChips) return;
-    const decades = [...new Set(allArtists.map(a => a.tahun_aktif).filter(Boolean))].sort();
-    const chips = ['<button class="chip' + (_discActiveDecade === "all" ? " active" : "") + '" data-decade="all" type="button">Semua Era</button>']
-        .concat(decades.map(d => `<button class="chip${_discActiveDecade === d ? " active" : ""}" data-decade="${escapeHtml(d)}" type="button">${escapeHtml(formatDecadeLabel(d))}</button>`));
-    dom.decadeChips.innerHTML = chips.join('');
+    const decadesSet = new Set();
+    allArtists.forEach(a => {
+        const dec = getDecade(a.tahun_aktif);
+        if (dec) decadesSet.add(dec);
+    });
+    const decades = [...decadesSet].sort();
+    const items = [`<button class="custom-dropdown-item${_discActiveDecade === 'all' ? ' active' : ''}" data-value="all">Semua Era</button>`]
+        .concat(decades.map(d => `<button class="custom-dropdown-item${_discActiveDecade === String(d) ? ' active' : ''}" data-value="${d}">${d}an</button>`));
+    dom.decadeChips.innerHTML = items.join('');
 }
 
 function artistCardHTML(a, opts) {
@@ -51,10 +57,14 @@ function artistCardHTML(a, opts) {
     let badge = '';
     if (opts.badge === 'match' && typeof a.match_pct === 'number') badge = `<span class="badge badge-match">${a.match_pct}%</span>`;
     if (opts.badge === 'new') badge = '<span class="badge badge-new">Baru</span>';
+
+    const dec = getDecade(a.tahun_aktif);
+    const decadeBadge = dec ? `<span class="badge-decade">${dec}an</span>` : '';
+
     const genreTag = (a.genres && a.genres[0]) || a.kategori || '';
     return `<button class="artist-card${opts.undiscovered ? ' undiscovered' : ''}" data-artist="${escapeHtml(a.nama)}" data-kategori="${escapeHtml(a.kategori || '')}" data-decade="${escapeHtml(a.tahun_aktif || '')}">
-        <div class="artist-card-art">${cover}${badge}</div>
-        <div class="artist-card-name">${escapeHtml(a.nama)}</div>
+        <div class="artist-card-art">${cover}${badge}${decadeBadge}</div>
+        <div class="artist-card-name" title="${escapeHtml(a.nama)}">${escapeHtml(a.nama)}</div>
         <div class="artist-card-meta">${escapeHtml(genreTag)}</div>
     </button>`;
 }
@@ -62,7 +72,7 @@ function artistCardHTML(a, opts) {
 function filterArtists(list) {
     return (list || []).filter(a =>
         (_discActiveKategori === "all" || a.kategori === _discActiveKategori) &&
-        (_discActiveDecade === "all" || a.tahun_aktif === _discActiveDecade)
+        (_discActiveDecade === "all" || String(getDecade(a.tahun_aktif)) === _discActiveDecade)
     );
 }
 
@@ -118,13 +128,30 @@ function initDiscoverFilterEvents() {
             applyDiscoverFilters();
         };
     }
+    const dropdownBtn = document.getElementById('decade-dropdown-btn');
+    const dropdownContainer = document.getElementById('decade-dropdown-container');
+    if (dropdownBtn && dropdownContainer) {
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownContainer.classList.toggle('open');
+        });
+        document.addEventListener('click', () => {
+            dropdownContainer.classList.remove('open');
+        });
+    }
+
     if (dom.decadeChips) {
         dom.decadeChips.onclick = (e) => {
-            const btn = e.target.closest('button');
+            const btn = e.target.closest('.custom-dropdown-item');
             if (!btn) return;
-            dom.decadeChips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            dom.decadeChips.querySelectorAll('.custom-dropdown-item').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            _discActiveDecade = btn.dataset.decade;
+            _discActiveDecade = btn.dataset.value;
+
+            if (dropdownBtn) {
+                dropdownBtn.innerHTML = `${btn.textContent} <i class="ti ti-chevron-down"></i>`;
+            }
+
             applyDiscoverFilters();
         };
     }

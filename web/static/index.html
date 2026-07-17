@@ -341,10 +341,12 @@
                         <button data-kategori="individu" type="button">Solo</button>
                         <button data-kategori="band" type="button">Band</button>
                     </div>
-                    <div class="chip-row" id="decade-chips">
-                        <button class="chip active" data-decade="all" type="button">Semua Era</button>
+                    <div class="custom-dropdown" id="decade-dropdown-container">
+                        <button class="custom-dropdown-btn" id="decade-dropdown-btn">Semua Era <i class="ti ti-chevron-down"></i></button>
+                        <div class="custom-dropdown-menu" id="decade-chips"></div>
                     </div>
                 </div>
+                <div class="filter-scope-hint">Filter berlaku untuk rekomendasi di bawah ini</div>
 
                 <!-- Untuk Kamu (bandit-ranked) -->
                 <div class="section-label-row" id="row-for-you-label-row">
@@ -395,32 +397,11 @@
 
 
 
-                <!-- Recent -->
-                <div class="section-label">Baru Diputar</div>
-                <div id="discover-recent" style="display:flex; flex-direction:column;">
-                    <div class="sr-item">
-                        <div class="sr-thumb skeleton-box" style="border-radius:6px;"></div>
-                        <div class="sr-info">
-                            <div class="sr-title skeleton-box" style="width:60%; height:14px; margin-bottom:6px;"></div>
-                            <div class="sr-meta skeleton-box" style="width:40%; height:12px;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Favorites -->
-                <div class="section-label">Favorit</div>
-                <div id="discover-favorites" style="display:flex; flex-direction:column;">
-                    <div class="sr-item">
-                        <div class="sr-thumb skeleton-box" style="border-radius:6px;"></div>
-                        <div class="sr-info">
-                            <div class="sr-title skeleton-box" style="width:60%; height:14px; margin-bottom:6px;"></div>
-                            <div class="sr-meta skeleton-box" style="width:40%; height:12px;"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Cache -->
-                <div class="section-label">Tersimpan Lokal</div>
+                <div class="section-label-row">
+                    <span class="label-text">Tersimpan Lokal</span>
+                    <span class="label-sub">Musik yang siap didengarkan offline</span>
+                </div>
                 <div id="discover-cached" style="display:flex; flex-direction:column; padding-bottom:80px;">
                     <div class="sr-item">
                         <div class="sr-thumb skeleton-box" style="border-radius:6px;"></div>
@@ -848,6 +829,7 @@
     <script src="/static/js/events/queue-events.js?v=3" defer></script>
     <script src="/static/js/events/lyrics-events.js" defer></script>
     <script src="/static/js/events/settings-events.js" defer></script>
+    <script src="/static/js/events/drag-scroll-events.js" defer></script>
     <script src="/static/js/events/index.js" defer></script>
     <script src="/static/js/portal.js" defer></script>
     <script src="/static/js/platform/viewport.js" defer></script>

@@ -108,24 +108,77 @@
 
 /* ── Section Label ── */
 .section-label {
-  font-size: var(--t-xs); font-weight: var(--w-semibold);
-  color: var(--text-2); letter-spacing: 0.6px;
+  font-size: var(--t-xl); font-weight: var(--w-bold);
+  color: var(--text-1); letter-spacing: 0.4px;
   padding: var(--s5) var(--s5) var(--s2);
 }
 
 .section-label-row {
   display: flex; align-items: center;
   justify-content: space-between;
-  padding: var(--s5) var(--s5) var(--s2);
+  padding: var(--s6) var(--s5) var(--s2);
+  margin-top: var(--s6);
+  border-top: 1px solid var(--border-2);
+  position: relative;
+}
+.section-label-row::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 5%;
+  width: 90%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+}
+.section-label-row::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: var(--s5);
+  width: 40px;
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  opacity: 0.8;
+}
+#row-for-you-label-row {
+  margin-top: var(--s2);
+  border-top: none;
+}
+#row-for-you-label-row::before, #row-for-you-label-row::after {
+  display: none;
+}
+.section-label-row .section-title-group {
+  display: flex; flex-direction: column;
 }
 .section-label-row .label-text {
-  font-size: var(--t-xs); font-weight: var(--w-semibold);
-  color: var(--text-2); letter-spacing: 0.6px;
+  font-size: var(--t-xl); font-weight: var(--w-bold);
+  color: var(--text-1); letter-spacing: 0.4px;
+}
+.section-label-row .label-sub {
+  font-size: var(--t-sm); color: var(--text-3);
+  margin-top: 4px; font-weight: var(--w-regular);
 }
 .section-label-row .label-link {
-  font-size: var(--t-xs); color: var(--accent);
+  font-size: var(--t-sm); color: var(--accent);
   font-weight: var(--w-medium); cursor: pointer;
   text-decoration: none;
+}
+.section-label-row .section-link-btn {
+  background: transparent;
+  border: none;
+  font-size: var(--t-sm);
+  color: var(--accent);
+  font-weight: var(--w-medium);
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: -8px;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.section-label-row .section-link-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* SVG Icon overrides */

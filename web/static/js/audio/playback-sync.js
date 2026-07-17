@@ -33,6 +33,18 @@ function getOrInitAudio() {
                 if (typeof syncLocalLyrics === "function") syncLocalLyrics();
             }
         });
+        localAudio.addEventListener("pause", () => {
+            if (store.status === "PLAYING" && !window.audioBlocked && !localAudio.ended) {
+                console.log("[audio] Native pause detected, syncing state to server...");
+                if (typeof wsSend === "function") wsSend("pause");
+            }
+        });
+        localAudio.addEventListener("play", () => {
+            if (store.status !== "PLAYING" && !window.audioBlocked) {
+                console.log("[audio] Native play detected, syncing state to server...");
+                if (typeof wsSend === "function") wsSend("play");
+            }
+        });
     }
     return localAudio;
 }

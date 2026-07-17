@@ -1,6 +1,6 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md Batch 0-4.2)
 ---
 
@@ -33,7 +33,7 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 | `web/static/index.html` | SPA monolith **862 baris** (naik dari 677 — markup taste spectrum/filter bar/3 card-row + artist detail sheet ditambah, `PATCH-2026-07-17-071`) | Tetap 1 file (tidak dipecah) | — | ✅ Final |
 | `web/static/js/` | **33 file, 3472 baris** (naik 1 file — `render/discover-personalize.js` baru, 185 baris, `PATCH-2026-07-17-071`). Catatan: angka "24 file" sebelumnya di baris ini sudah stale relatif terhadap isi repo aktual sebelum sesi ini juga; jumlah di atas adalah hasil hitung langsung `find`. | ~32 file | Sprint 9 | ❄️ Frozen (v1.0.0 Baseline) |
 | `web/static/css/` | **23 file, 3722 baris** (naik 1 file — `components/discover-cards.css` baru, `PATCH-2026-07-17-071`) | ~24-26 file | Sprint 10 | ❄️ Frozen (v1.0.0 Baseline) |
-| `web/static/js/render/discover-tab.js` | **Tidak disentuh** di `PATCH-2026-07-17-071` (285 baris, sudah lewat ambang 200 — tetap fokus recent/favorites/cached/hashtag-cloud) | Tetap terpisah dari personalisasi | — | ⚠️ Waspada (di atas ambang, tidak diperparah) |
+| `web/static/js/render/discover-tab.js` | Disentuh di `PATCH-2026-07-17-073` untuk mengimplementasi progressive disclosure (jumlah baris sekarang ~286). | Tetap terpisah dari personalisasi | — | ⚠️ Waspada (di atas ambang, namun sudah diperbaiki UI/UX-nya) |
 
 ## Data & Infra
 

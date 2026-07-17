@@ -32,9 +32,9 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | Total class (Python) | 83 |
 | Total function/method (Python) | 462 |
 | Total baris Python | 10,738 |
-| Total baris JS (web/) | 3,627 |
-| Total baris CSS (web/) | 3,732 |
-| Ukuran DB utama (`data/lunawave.db`) | 804 KB (+ WAL 2068 KB) |
+| Total baris JS (web/) | 3,597 |
+| Total baris CSS (web/) | 3,749 |
+| Ukuran DB utama (`data/lunawave.db`) | 208 KB |
 | Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
 
 ### File Python Terbesar

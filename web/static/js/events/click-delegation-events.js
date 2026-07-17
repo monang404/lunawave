@@ -1,3 +1,16 @@
+function handleSrItemActivate(srItem) {
+    const trackStr = srItem.dataset.trackStr || srItem.dataset.searchTrackStr;
+    if (!trackStr) return;
+    try {
+        const track = JSON.parse(trackStr);
+        if (store.userRole === "admin") {
+            wsSend("play_track", track);
+        } else if (typeof showLogToast === "function") {
+            showLogToast("Hanya admin yang bisa memutar musik");
+        }
+    } catch (err) { console.error(err); }
+}
+
 function initClickDelegationEvents() {
     document.addEventListener("click", (e) => {
         // 1. Clicks on 3-dots button (.sr-more-btn)
@@ -19,15 +32,7 @@ function initClickDelegationEvents() {
         // 2. Clicks on the sr-item row itself -> Play track
         const srItem = e.target.closest(".sr-item");
         if (srItem) {
-            const trackStr = srItem.dataset.trackStr || srItem.dataset.searchTrackStr;
-            if (trackStr) {
-                try {
-                    const track = JSON.parse(trackStr);
-                    if (store.userRole === "admin") {
-                        wsSend("play_track", track);
-                    }
-                } catch (err) { console.error(err); }
-            }
+            handleSrItemActivate(srItem);
             return;
         }
 
@@ -52,6 +57,15 @@ function initClickDelegationEvents() {
             }
             if (track && typeof showActionModal === "function") showActionModal(track);
             return;
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const srItem = e.target.closest(".sr-item");
+        if (srItem) {
+            e.preventDefault();
+            handleSrItemActivate(srItem);
         }
     });
 }
