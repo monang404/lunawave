@@ -32,25 +32,14 @@ function renderFullState() {
     if (typeof updateSearchPlayingState === "function") updateSearchPlayingState();
     if (typeof updateDiscoverPlayingState === "function") updateDiscoverPlayingState();
 
-    // Dynamic Title & Media Session API
+    // Dynamic Title
     const track = store.current_track;
     if (track) {
         document.title = `${track.title} - ${track.artist}`;
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: track.title,
-                artist: track.artist,
-                album: 'LunaWave',
-                artwork: [
-                    { src: track.cover || '/static/img/default-cover.jpg', sizes: '512x512', type: 'image/jpeg' }
-                ]
-            });
-            navigator.mediaSession.setActionHandler('play', () => { if(typeof wsSend==="function") wsSend("play"); });
-            navigator.mediaSession.setActionHandler('pause', () => { if(typeof wsSend==="function") wsSend("pause"); });
-            navigator.mediaSession.setActionHandler('previoustrack', () => { if(typeof wsSend==="function") wsSend("prev"); });
-            navigator.mediaSession.setActionHandler('nexttrack', () => { if(typeof wsSend==="function") wsSend("next"); });
-        }
     } else {
         document.title = "LunaWave — Midnight Audio Experience";
     }
+
+    // Media Session (fungsi ada di playback-sync.js)
+    if (typeof updateMediaSession === "function") updateMediaSession();
 }

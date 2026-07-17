@@ -189,7 +189,21 @@ function handleServerMessage(msg) {
                     if (!_inToggleGrace) {
                         const diff = Math.abs(audio.currentTime - msg.data.position);
                         if (diff > 5 && msg.data.position > 2) {
-                            audio.currentTime = msg.data.position;
+                            audio.oncanplay = () => {
+                                audio.oncanplay = null;
+                                // Jangan gunakan store.position dari lagu sebelumnya — hanya seek
+                                // jika posisi memang milik lagu ini (bukan sisa dari lagu sebelumnya)
+                                // Lagu baru harusnya mulai dari 0 kecuali resume di tengah-tengah
+                                const positionIsForThisTrack = store.position > 5 &&
+                                    store.current_track && store.current_track.video_id === track.video_id;
+                                if (positionIsForThisTrack && Math.abs(audio.currentTime - store.position) > 5) {
+                                    audio.currentTime = store.position;
+                                }
+                                if (forcePlay || store.status === "PLAYING") {
+                                    console.log("[audio] canplay → play:", track.video_id);
+                                    _resumeAndPlay(audio);
+                                }
+                            };
                             if (typeof setPositionAnchor === "function") {
                                 setPositionAnchor(msg.data.position);
                             } else {
@@ -265,7 +279,7 @@ function handleServerMessage(msg) {
         case "error":
             showLogToast("Error: " + msg.data);
             break;
-        case "download_progress":
+        case "download_progress": {
             const prevProgress = store.download_progress;
             store.download_progress = msg.data;
             if (typeof renderPlayerBar === "function") renderPlayerBar();
@@ -284,6 +298,7 @@ function handleServerMessage(msg) {
                 }, 3000);
             }
             break;
+        }
         case "cache_size":
             if (dom.ssCacheSub) {
                 const mb = (msg.data.size_bytes / (1024 * 1024)).toFixed(2);
