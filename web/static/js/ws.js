@@ -189,21 +189,20 @@ function handleServerMessage(msg) {
                     if (!_inToggleGrace) {
                         const diff = Math.abs(audio.currentTime - msg.data.position);
                         if (diff > 5 && msg.data.position > 2) {
-                            audio.oncanplay = () => {
-                                audio.oncanplay = null;
-                                // Jangan gunakan store.position dari lagu sebelumnya — hanya seek
-                                // jika posisi memang milik lagu ini (bukan sisa dari lagu sebelumnya)
-                                // Lagu baru harusnya mulai dari 0 kecuali resume di tengah-tengah
-                                const positionIsForThisTrack = store.position > 5 &&
-                                    store.current_track && store.current_track.video_id === track.video_id;
-                                if (positionIsForThisTrack && Math.abs(audio.currentTime - store.position) > 5) {
-                                    audio.currentTime = store.position;
-                                }
-                                if (forcePlay || store.status === "PLAYING") {
-                                    console.log("[audio] canplay → play:", track.video_id);
-                                    _resumeAndPlay(audio);
-                                }
-                            };
+                            // Audio sudah aktif & ter-load (readyState cukup karena
+                            // _browserAudioActive true), jadi seek bisa langsung tanpa
+                            // nunggu event 'canplay' -- yang di kondisi ini kemungkinan
+                            // besar TIDAK PERNAH fire lagi (canplay hanya muncul lagi
+                            // kalau ada reload/stall, bukan tiap kali kita ganti
+                            // currentTime pada audio yang sudah playing). Sebelumnya
+                            // anchor (angka yang ditampilkan) diubah duluan lewat
+                            // setPositionAnchor(), sedangkan audio.currentTime baru
+                            // menyusul di dalam oncanplay yang gak jalan -- itu sebabnya
+                            // progress bar keliatan "loncat ke posisi server, lalu balik
+                            // lagi" begitu timeupdate berikutnya menimpa balik ke posisi
+                            // audio yang sebenarnya. Sekarang keduanya diset bareng,
+                            // di tick yang sama, jadi tidak ada jeda visual.
+                            audio.currentTime = msg.data.position;
                             if (typeof setPositionAnchor === "function") {
                                 setPositionAnchor(msg.data.position);
                             } else {

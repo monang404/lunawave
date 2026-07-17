@@ -13,7 +13,16 @@
 /* ══════════════════════════════════════
    GLOBAL OVERRIDES & UTILITIES
    ══════════════════════════════════════ */
-#btn-shuffle, #btn-repeat { display: none !important; }
+/* WIP: shuffle belum ada handler/backend. Tetap ditampilkan (biar user tau
+   fiturnya ada/coming soon) tapi dipudarkan & di-nonaktifkan -- pointer-events:none
+   supaya gak bisa diklik (gak akan ngapa-ngapain kalau ditekan), opacity rendah
+   + grayscale biar keliatan jelas ini "disabled", bukan tombol aktif yang rusak. */
+#btn-shuffle {
+    pointer-events: none !important;
+    opacity: 0.35 !important;
+    filter: grayscale(1) !important;
+    cursor: default !important;
+}
 
 /* ══════════════════════════════════════
    DESKTOP LAYOUT — Phase 5

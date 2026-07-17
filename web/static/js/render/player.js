@@ -81,8 +81,10 @@ function renderPlayerBar() {
 function renderPlayBtn() {
     if (store.status === "PLAYING") {
         dom.btnPlay.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M14,19H18V5H14M6,19H10V5H6V19Z"></path></svg>';
+        if (typeof startProgressClock === "function") startProgressClock();
     } else {
         dom.btnPlay.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"></path></svg>';
+        if (typeof stopProgressClock === "function") stopProgressClock();
     }
 }
 
@@ -145,6 +147,13 @@ function startProgressClock() {
         _renderProgressCore(getInterpolatedPosition());
     }
     _progressRafId = requestAnimationFrame(tick);
+}
+
+function stopProgressClock() {
+    if (_progressRafId) {
+        cancelAnimationFrame(_progressRafId);
+        _progressRafId = null;
+    }
 }
 
 function renderProgress() {

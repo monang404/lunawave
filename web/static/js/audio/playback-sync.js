@@ -37,10 +37,16 @@ function getOrInitAudio() {
             }
         });
         localAudio.addEventListener("pause", () => {
+            // _updateMediaSessionState HARUS selalu jalan (di luar guard) supaya
+            // navigator.mediaSession.playbackState selalu cerminan audio yang
+            // sebenarnya — kalau ini ikut di-skip pas _mediaSessionHandling true,
+            // OS/headset masih nganggep status "playing" dan notifikasi macet
+            // nunjukin tombol pause padahal audio sudah berhenti.
+            _updateMediaSessionState("paused");
             if (_mediaSessionHandling || window.audioBlocked || localAudio.ended) return;
             // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
             // pause ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
-            // Jangan kirim toggle_pause lagi, cukup update MediaSession state saja.
+            // Jangan kirim toggle_pause lagi.
             const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
             if (!_inUIGrace && store.status === "PLAYING") {
                 console.log("[audio] Native pause (headset/OS), syncing to server...");
@@ -52,13 +58,15 @@ function getOrInitAudio() {
                     if (typeof wsSend === "function") wsSend("toggle_pause");
                 }
             }
-            _updateMediaSessionState("paused");
         });
         localAudio.addEventListener("play", () => {
+            // Sama seperti di atas: selalu sinkronkan state media session dulu,
+            // baru cek guard buat keputusan kirim toggle_pause ke server atau tidak.
+            _updateMediaSessionState("playing");
             if (_mediaSessionHandling || window.audioBlocked) return;
             // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
             // play ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
-            // Jangan kirim toggle_pause lagi, cukup update MediaSession state saja.
+            // Jangan kirim toggle_pause lagi.
             const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
             if (!_inUIGrace && store.status !== "PLAYING") {
                 console.log("[audio] Native play (headset/OS), syncing to server...");
@@ -71,7 +79,6 @@ function getOrInitAudio() {
                     if (typeof wsSend === "function") wsSend("toggle_pause");
                 }
             }
-            _updateMediaSessionState("playing");
         });
     }
     return localAudio;
@@ -339,7 +346,8 @@ function updateMediaSession() {
                 store.status = "LOADING";
                 if (typeof renderNowPlaying === "function") renderNowPlaying();
                 if (typeof renderPlayerBar === "function") renderPlayerBar();
-                if (typeof wsSend === "function") wsSend("prev");
+                const data = (store.current_track && store.current_track.video_id) ? { video_id: store.current_track.video_id } : {};
+                if (typeof wsSend === "function") wsSend("prev", data);
             }
         });
         navigator.mediaSession.setActionHandler('nexttrack', () => {

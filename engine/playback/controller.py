@@ -372,8 +372,17 @@ class PlaybackController:
         else:
             await self.radio_mode.next(self)
 
-    async def _on_prev(self, _data=None):
+    async def _on_prev(self, data=None):
         async with self._lock:
+            if data and isinstance(data, dict) and "video_id" in data:
+                if (
+                    not self.state.current_track
+                    or self.state.current_track.video_id != data["video_id"]
+                ):
+                    logger.info(
+                        f"Ignoring prev: requested from {data['video_id']} != current {getattr(self.state.current_track, 'video_id', None)}"
+                    )
+                    return
             if self.state.history:
                 track = self.state.history.pop()
                 self.state.current_track = None
