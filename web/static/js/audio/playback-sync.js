@@ -38,7 +38,11 @@ function getOrInitAudio() {
         });
         localAudio.addEventListener("pause", () => {
             if (_mediaSessionHandling || window.audioBlocked || localAudio.ended) return;
-            if (store.status === "PLAYING") {
+            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
+            // pause ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
+            // Jangan kirim toggle_pause lagi, cukup update MediaSession state saja.
+            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            if (!_inUIGrace && store.status === "PLAYING") {
                 console.log("[audio] Native pause (headset/OS), syncing to server...");
                 if (store.userRole === "admin") {
                     store.status = "PAUSED";
@@ -52,7 +56,11 @@ function getOrInitAudio() {
         });
         localAudio.addEventListener("play", () => {
             if (_mediaSessionHandling || window.audioBlocked) return;
-            if (store.status !== "PLAYING") {
+            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
+            // play ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
+            // Jangan kirim toggle_pause lagi, cukup update MediaSession state saja.
+            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            if (!_inUIGrace && store.status !== "PLAYING") {
                 console.log("[audio] Native play (headset/OS), syncing to server...");
                 if (store.userRole === "admin") {
                     store.status = "PLAYING";
