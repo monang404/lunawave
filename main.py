@@ -83,14 +83,20 @@ from plugins.sponsorblock import SponsorBlockHandler
 async def main():
     state = AppState()
 
-    # 1. Inisialisasi DB dan MPV secara paralel untuk mempersingkat startup
-    print("  [1/5] Membuka database + menghubungkan audio player (paralel)...")
+    # Event untuk koordinasi: _resume_last_track menunggu MPV selesai connect
+    # tanpa memblok run_server — browser bisa akses UI sementara kedua task jalan.
+    _mpv_ready_event = asyncio.Event()
+
+    # 1. Inisialisasi DB (server membutuhkan DB, jadi ini tetap blocking)
+    print("  [1/5] Membuka database...")
     db = Database()
     mpv = MpvController()
+    await db.init()
 
     async def _init_mpv():
         try:
             await mpv.connect()
+            _mpv_ready_event.set()  # beri sinyal ke _resume_last_track bahwa MPV siap
         except Exception as e:
             structlog.get_logger(__name__).error(f"mpv not available: {e}")
             state.error_msg = (
@@ -98,14 +104,14 @@ async def main():
                 "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
             )
             state.status = PlayerStatus.ERROR
-
-    await asyncio.gather(db.init(), _init_mpv())
+            _mpv_ready_event.set()  # set juga saat error agar resume tidak hang
 
     # 2. Initialize Core Engine (YtDlpClient ringan — hanya buat ThreadPoolExecutor)
     print("  [2/5] Menginisialisasi YT-DLP Engine...")
     ytdlp = YtDlpClient()
 
     print("  [3/5] Menyiapkan layanan playback...")
+    print("  (Audio player dihubungkan di background — server akan listen duluan)")
 
     # 3. Shared HTTP session
     http_session = aiohttp.ClientSession()
@@ -171,25 +177,41 @@ async def main():
     connectivity_task = safe_create_task(check_connectivity(), name="connectivity_checker")
     tasks = [connectivity_task]
 
-    # Resume last playback
-    try:
-        async with db.conn.execute(
-            "SELECT video_id, last_position FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT 1"
-        ) as cursor:
-            row = await cursor.fetchone()
-            if row and row["video_id"]:
-                vid = row["video_id"]
-                last_pos = float(row["last_position"] or 0.0)
-                track = await db.get_track(vid)
-                if track and last_pos > 0:
-                    await playback_controller.play_track(
-                        track, start_position=last_pos, start_paused=True
-                    )
-                    structlog.get_logger(__name__).info(
-                        f"Resumed last track: {track.title} at {last_pos}s"
-                    )
-    except Exception as e:
-        structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
+    # MPV connect dijalankan sebagai background task — server tidak perlu menunggu.
+    # _mpv_ready_event akan di-set oleh _init_mpv() saat koneksi selesai (sukses/gagal).
+    tasks.append(safe_create_task(_init_mpv(), name="mpv_initial_connect"))
+
+    # Resume last playback — dijalankan sebagai background task agar tidak memblok
+    # run_server(). Menunggu MPV siap via _mpv_ready_event (tanpa timeout) sebelum
+    # memanggil play_track(), sehingga browser sudah bisa connect ke UI sementara
+    # resume (dan kemungkinan network call yt-dlp) masih diproses di belakang layar.
+    async def _resume_last_track():
+        # Tunggu MPV siap sebelum resume — tanpa timeout agar resume tidak di-skip
+        # di hardware lambat (Termux/Android). Karena ini background task, menunggu
+        # di sini tidak memblok server sama sekali.
+        await _mpv_ready_event.wait()
+        if state.status == PlayerStatus.ERROR:
+            # MPV gagal start, tidak ada gunanya mencoba resume
+            return
+        try:
+            async with db.conn.execute(
+                "SELECT video_id, last_position FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT 1"
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row and row["video_id"]:
+                    last_pos = float(row["last_position"] or 0.0)
+                    track = await db.get_track(row["video_id"])
+                    if track and last_pos > 0:
+                        await playback_controller.play_track(
+                            track, start_position=last_pos, start_paused=True
+                        )
+                        structlog.get_logger(__name__).info(
+                            f"Resumed last track: {track.title} at {last_pos}s"
+                        )
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
+
+    tasks.append(safe_create_task(_resume_last_track(), name="resume_last_track"))
 
     # DB Maintenance: eviction track stale + cleanup session expired.
     async def db_maintenance():
@@ -232,56 +254,28 @@ async def main():
 
     tasks.append(safe_create_task(db_maintenance(), name="db_maintenance"))
 
-    # 7.5 MPV auto-reconnect checker
-    async def mpv_reconnect_checker():
+    # 7.5 MPV watchdog: no longer polls/reconnects itself. MpvObserver now
+    # owns reconnect (immediate, bounded retries) so there is a single
+    # reconnect path instead of two racing ones. This watchdog only handles
+    # the case where mpv never comes back at all (observer gave up after its
+    # own retries): it surfaces that as a visible error state instead of
+    # silently leaving playback stuck, without spawning yet another mpv
+    # process or reloading/seeking the track itself.
+    async def mpv_watchdog():
         while True:
-            await asyncio.sleep(30)  # 5→30 det: reconnect check cukup sekali per 30 detik
+            await asyncio.sleep(10)
             if (
                 getattr(mpv, "is_available", True)
                 and not getattr(mpv, "is_connected", False)
-                and state.status != PlayerStatus.ERROR
+                and state.status not in (PlayerStatus.ERROR, PlayerStatus.IDLE)
             ):
-                structlog.get_logger(__name__).warning("MPV terputus! Mencoba reconnect...")
-                try:
-                    await mpv.close()
-                except Exception:
-                    pass
-                try:
-                    await mpv.connect()
-                    if (
-                        state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED)
-                        and state.current_track
-                    ):
-                        uri = await resolver.resolve(state.current_track)
-                        await mpv.play(uri)
-                        await mpv.seek(state.position)
+                structlog.get_logger(__name__).error(
+                    "MPV masih terputus setelah reconnect otomatis gagal."
+                )
+                state.status = PlayerStatus.ERROR
+                state.error_msg = "Koneksi ke MPV terputus dan gagal reconnect."
 
-                        from engine.loudness.gain_calculator import build_af_filter, compute_gain_db
-
-                        row = await db.get_track(state.current_track.video_id)
-                        gain_db = 0.0
-                        if row and row.loudness_lufs is not None:
-                            gain_db = compute_gain_db(row.loudness_lufs)
-                        state.current_track_gain_db = gain_db
-
-                        if getattr(state, "loudness_normalization_enabled", False):
-                            await mpv.set_af(build_af_filter(gain_db))
-                        else:
-                            await mpv.set_af(build_af_filter(0.0))
-
-                        if (
-                            getattr(state, "audio_output", AudioOutput.DEVICE)
-                            == AudioOutput.BROWSER
-                        ):
-                            await mpv.set_volume(0)
-                        else:
-                            await mpv.set_volume(state.volume)
-                        if state.status == PlayerStatus.PLAYING:
-                            await mpv.resume()
-                except Exception as e:
-                    structlog.get_logger(__name__).error(f"MPV reconnect failed: {e}")
-
-    tasks.append(safe_create_task(mpv_reconnect_checker(), name="mpv_reconnect_checker"))
+    tasks.append(safe_create_task(mpv_watchdog(), name="mpv_watchdog"))
 
     # 8. Start Web Server
     try:
@@ -315,7 +309,7 @@ async def main():
             print("|                                                   |")
             print("|   Kredensial Mode Admin:                          |")
             print(f"|   User: {ADMIN_USERNAME:<40} |")
-            print("|   Pass: (lihat file di bawah — dibuat saat first-run) |")
+            print("|   Pass: (lihat file di bawah - dibuat saat first-run) |")
             print("|   File: cache/admin_password.txt                  |")
         print("=====================================================")
 
@@ -334,15 +328,21 @@ async def main():
                     print(f"\n[FATAL ERROR] App crashed due to task failure: {exc}")
                     traceback.print_exception(type(exc), exc, exc.__traceback__)
 
-        # Cancel remaining tasks
+        # Cancel remaining tasks and WAIT for them to actually finish.
+        # cancel() hanya menjadwalkan CancelledError, tidak menunggu task selesai.
+        # PATCH-2026-07-16-001: tanpa await ini, background loop task
+        # (mpv_watchdog, db_maintenance, connectivity_checker) bisa masih
+        # pending-cancellation saat proses exit, berpotensi menyebabkan hang.
         for t in tasks:
             t.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         # Cleanup resources
         await nowplaying.cleanup()
         try:
             await mpv.close()
-        except:
+        except Exception:
             pass
         lyrics_fetcher.cleanup()
         sponsorblock.cleanup()

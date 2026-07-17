@@ -80,8 +80,22 @@ async def integration_app(tmp_path, monkeypatch):
     # We must reset EventBus state if we want to run multiple tests cleanly,
     # but EventBus is a singleton. For integration tests, we can just clear listeners.
     bus._subscribers.clear()
+    from core.command_bus import command_bus
+
+    command_bus.reset()
 
     state = AppState()
+
+    # 0. Fast-skip checks FIRST, before opening any real resource (DB
+    # connection, MPV subprocess, HTTP session). Doing this before db.init()
+    # matters: this is a generator-based fixture, so pytest.skip() raised
+    # before `yield` means the teardown after `yield` never runs -- if the
+    # DB were opened first, its connection worker thread would leak as a
+    # zombie non-daemon thread on every skipped run.
+    if not shutil.which("mpv"):
+        pytest.skip("mpv not available in test environment, skipping integration test.")
+    if not shutil.which("yt-dlp"):
+        pytest.skip("yt-dlp not available in test environment, skipping integration test.")
 
     # 1. Initialize real DB in memory
     db = Database(db_path=Path(":memory:"))
@@ -96,11 +110,10 @@ async def integration_app(tmp_path, monkeypatch):
     try:
         await mpv.connect()
     except Exception:
+        await db.close()
         pytest.skip("MPV not available in test environment, skipping integration test.")
 
     # 3. YtDlpClient
-    if not shutil.which("yt-dlp"):
-        pytest.skip("yt-dlp not available in test environment, skipping integration test.")
     ytdlp = YtDlpClient()
 
     http_session = aiohttp.ClientSession()

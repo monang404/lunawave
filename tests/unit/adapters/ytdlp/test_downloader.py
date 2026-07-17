@@ -33,7 +33,7 @@ def mock_executor():
 
 
 @pytest.mark.asyncio
-async def test_download_mp3_success(mock_executor, tmp_path):
+async def test_download_audio_success(mock_executor, tmp_path):
     downloader = YtDlpDownloader(mock_executor)
 
     def mock_download_sync(video_id, on_progress):
@@ -46,12 +46,12 @@ async def test_download_mp3_success(mock_executor, tmp_path):
                 run_in_executor=AsyncMock(return_value=mock_download_sync("abc123_", None))
             ),
         ):
-            file_path = await downloader.download_mp3("abc123_")
-            assert "abc123_.mp3" in file_path
+            file_path = await downloader.download_audio("abc123_")
+            assert "abc123_.opus" in file_path
 
 
 @pytest.mark.asyncio
-async def test_download_mp3_handles_cancellation(mock_executor):
+async def test_download_audio_handles_cancellation(mock_executor):
     downloader = YtDlpDownloader(mock_executor)
     downloader.cancel_download()
 

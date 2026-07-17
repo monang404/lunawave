@@ -109,6 +109,26 @@ function initDOM() {
         discFavorites: $("discover-favorites"),
         discCached: $("discover-cached"),
         discArtists: $("discover-artists"),
-        discGenres: $("discover-genres")
+        discGenres: $("discover-genres"),
+        tasteBlock: $("taste-block"),
+        tasteBar: $("taste-bar"),
+        tasteLegend: $("taste-legend"),
+        tasteCaption: $("taste-caption"),
+        filterBar: $("discover-filter-bar"),
+        kategoriToggle: $("kategori-toggle"),
+        decadeChips: $("decade-chips"),
+        rowForYou: $("row-for-you"),
+        rowForYouLabel: $("row-for-you-label-row"),
+        rowGenreAffinity: $("row-genre-affinity"),
+        rowGenreAffinityLabel: $("row-genre-affinity-label"),
+        rowGenreAffinitySub: $("row-genre-affinity-sub"),
+        rowUnheard: $("row-unheard"),
+        artistDetailSheet: $("artist-detail-sheet"),
+        adsCoverImg: $("ads-cover-img"),
+        adsName: $("ads-name"),
+        adsTags: $("ads-tags"),
+        adsPlayAll: $("ads-play-all"),
+        adsTrackList: $("ads-track-list"),
+        adsCloseBtn: $("ads-close-btn")
     });
 }

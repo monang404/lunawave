@@ -47,8 +47,11 @@ class YtDlpClient:
     async def get_stream_url(self, *a, **kw):
         return await self._resolver.get_stream_url(*a, **kw)
 
-    async def download_mp3(self, *a, **kw):
-        return await self._downloader.download_mp3(*a, **kw)
+    async def download_audio(self, *a, **kw):
+        return await self._downloader.download_audio(*a, **kw)
 
     def cancel_download(self):
         self._downloader.cancel_download()
+
+    def close(self):
+        self._executor.shutdown(wait=False)

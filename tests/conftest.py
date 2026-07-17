@@ -50,7 +50,7 @@ def pytest_unconfigure(config):
             f"\n[WARNING] Zombie non-daemon threads detected: {non_daemon_threads}. Force exiting to prevent CI hang!",
             file=sys.stderr,
         )
-        os._exit(_pytest_exit_status)
+        pass
 
 
 # Make sure the repo root (parent of tests/) is importable as top-level
@@ -99,3 +99,23 @@ async def memory_db():
     await conn.executescript(schema)
     yield conn
     await conn.close()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_executors(monkeypatch):
+    """Automatically track and shutdown ThreadPoolExecutor instances created during tests."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    created_executors = []
+    original_init = ThreadPoolExecutor.__init__
+
+    def tracked_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        created_executors.append(self)
+
+    monkeypatch.setattr(ThreadPoolExecutor, "__init__", tracked_init)
+
+    yield
+
+    for exc in created_executors:
+        exc.shutdown(wait=False)

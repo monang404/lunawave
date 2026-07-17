@@ -52,17 +52,19 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                     except Exception as e:
                         logger.error(f"Gagal menghapus file lokal {db_track.local_path}: {e}")
 
-                # Fallback legacy: hapus juga dari folder downloads jika dulu file tersimpan ganda
+                # Fallback legacy: coba hapus dari downloads/ dengan berbagai ekstensi
+                # (dulu .mp3, sekarang bisa .opus/.m4a/dll setelah C-1 fix)
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", db_track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", db_track.title)
-                from config import BASE_DIR
+                from config import DOWNLOAD_DIR
 
-                user_path = BASE_DIR / "downloads" / f"{safe_artist} - {safe_title}.mp3"
-                if user_path.exists() and str(user_path) != db_track.local_path:
-                    try:
-                        os.remove(str(user_path))
-                    except:
-                        pass
+                for ext in (".mp3", ".opus", ".m4a", ".webm", ".ogg"):
+                    user_path = DOWNLOAD_DIR / f"{safe_artist} - {safe_title}{ext}"
+                    if user_path.exists() and str(user_path) != db_track.local_path:
+                        try:
+                            os.remove(str(user_path))
+                        except Exception:
+                            pass
 
                 # Update DB
                 db_track.local_path = None

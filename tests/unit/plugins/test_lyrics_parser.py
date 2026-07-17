@@ -56,3 +56,24 @@ def test_parse_lrc_invalid():
     assert result[0] == (0.0, "[invalid]")
     assert result[1] == (0.0, "Just text")
     assert result[2] == (10.0, "Valid line")
+
+
+def test_parse_lrc_multi_timestamp_chorus_line():
+    """PATCH-2026-07-16-001 regression: satu baris LRC bisa punya beberapa
+    tag timestamp sekaligus untuk baris yang berulang (mis. chorus), harus
+    menghasilkan satu entry per timestamp dengan teks yang sama."""
+    lrc = "[00:12.00][00:36.00]Chorus line here"
+    result = LyricsParser.parse_lrc(lrc)
+    assert result == [(12.0, "Chorus line here"), (36.0, "Chorus line here")]
+
+
+def test_parse_lrc_skips_metadata_tags():
+    """PATCH-2026-07-16-001 regression: tag metadata seperti [ar:Artist]
+    atau [ti:Title] tidak boleh dianggap sebagai baris lirik teks biasa."""
+    lrc = """
+    [ar:Some Artist]
+    [ti:Some Title]
+    [00:05.00]First real lyric line
+    """
+    result = LyricsParser.parse_lrc(lrc)
+    assert result == [(5.0, "First real lyric line")]

@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â€” JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-16 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-17 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** â€” perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -66,7 +66,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `core/command_bus.py`
 **Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.
 **Class:** `CommandBus`
-**Function utama:** `register()`, `unregister()`
+**Function utama:** `register()`, `unregister()`, `reset()`
 **Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, `server/handlers/ws_download`, _2 lainnya_
 **Menggunakan:** `core/commands`, `core/observability`
 
@@ -95,7 +95,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 **File:** `core/events.py`
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
-**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`
+**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** â€”
 **Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/mode_ops`, _11 lainnya_
 **Menggunakan:** `core/state`
@@ -229,7 +229,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `adapters/ytdlp/__init__.py`
 **Fungsi:** Unified client for interacting with yt-dlp for search, extraction, and downloading.
 **Class:** `YtDlpClient`
-**Function utama:** `cancel_download()`
+**Function utama:** `cancel_download()`, `close()`
 **Digunakan oleh:** â€”
 **Menggunakan:** `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `adapters/ytdlp/searcher`
 
@@ -301,7 +301,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 **File:** `engine/loudness/analyzer.py`
 **Fungsi:** Ukur integrated loudness (LUFS) sebuah track via satu-pass ffmpeg `loudnorm` filter mode measure-only (tidak re-encode, tidak menyimpan file baru).
-**Class:** `LoudnessAnalyzer`
+**Class:** `LoudnessMeasurement(NamedTuple)`, `LoudnessAnalyzer`
 **Function utama:** `measure_sync()`
 **Digunakan oleh:** `engine/loudness/service`
 **Menggunakan:** `config`
@@ -310,7 +310,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 ---
 
 **File:** `engine/loudness/gain_calculator.py`
-**Fungsi:** Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS).
+**Fungsi:** Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS) dan true peak (dBTP).
 **Class:** â€”
 **Function utama:** `compute_gain_db()`, `build_af_filter()`
 **Digunakan oleh:** â€”
@@ -342,7 +342,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/playback/controller.py`
 **Fungsi:** Orchestrate all playback logic: track loading, queue/radio advancement, pause/seek, and mode switching via CommandBus commands.
 **Class:** `PlaybackController`
-**Function utama:** â€”
+**Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
 **Menggunakan:** `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`, `engine/playback/mode_ops`, _5 lainnya_
 
@@ -452,7 +452,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/radio/prefetcher.py`
 **Fungsi:** Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode.
 **Class:** `RadioPrefetcher`
-**Function utama:** `cancel_tasks()`, `clear_standby()`, `trigger_build_standby()`, `check_prefetch()`
+**Function utama:** `cancel_tasks()`, `trigger_build_standby()`, `check_prefetch()`
 **Digunakan oleh:** `engine/radio/engine`
 **Menggunakan:** `config`, `core/state`, `engine/radio/common`
 
@@ -464,7 +464,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TrackFilter`
 **Function utama:** `filter_tracks()`
 **Digunakan oleh:** `engine/radio/artist_selector`
-**Menggunakan:** `core/state`
+**Menggunakan:** `core/state`, `engine/radio/track_interleaver`
 
 
 ---
@@ -472,8 +472,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/radio/track_interleaver.py`
 **Fungsi:** Interleaves tracks from different artists to create a balanced radio queue.
 **Class:** â€”
-**Function utama:** `interleave_by_artist()`
-**Digunakan oleh:** `engine/radio/artist_selector`
+**Function utama:** `normalize_title()`, `interleave_by_artist()`
+**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/track_filter`
 **Menggunakan:** â€”
 
 
@@ -527,7 +527,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `Database`
 **Function utama:** `conn()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, `persistence/track_repo`
+**Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, _1 lainnya_
 
 
 ---
@@ -548,6 +548,26 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `config`
+
+
+---
+
+**File:** `persistence/discover_enrich.py`
+**Fungsi:** Shared batch-enrichment helper for Discover personalization queries. Given a list of artist rows, attach a cover thumbnail and genre tag list to each one using two queries total for the whole batch (never per-artist), so `discover_repo.py` doesn't run into N+1 query fan-out when enriching a page of results.
+**Class:** â€”
+**Function utama:** `enrich_artists()`
+**Digunakan oleh:** `persistence/discover_repo`
+**Menggunakan:** â€”
+
+
+---
+
+**File:** `persistence/discover_repo.py`
+**Fungsi:** Repository for Discover-tab personalization queries: bandit-ranked "Untuk Kamu" artists, "Belum Pernah Kamu Dengar" (unheard) artists, genre taste spectrum, genre affinity, and artist detail lookup.
+**Class:** `DiscoverRepository`
+**Function utama:** â€”
+**Digunakan oleh:** `persistence/__init__`
+**Menggunakan:** `persistence/discover_enrich`
 
 
 ---
@@ -731,7 +751,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `server/middleware.py`
 **Fungsi:** Enforce per-IP command rate limiting for WebSocket clients.
 **Class:** â€”
-**Function utama:** `check_rate_limit_sync()`, `check_rate_limit()`
+**Function utama:** `check_rate_limit()`
 **Digunakan oleh:** `server/handlers/websocket`
 **Menggunakan:** â€”
 
@@ -1257,9 +1277,18 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 ---
 
 
+## âš ï¸ File Besar (>400 baris)
+
+
+| File | Baris | Catatan |
+|---|---|---|
+
+| `engine/playback/controller.py` | 464 | Perlu dipecah |
+
+
 ## ðŸ“‹ Checklist Dokumentasi Docstring
 
-**117/117** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**119/119** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi ðŸŽ‰)_

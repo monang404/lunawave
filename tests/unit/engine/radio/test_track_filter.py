@@ -88,3 +88,59 @@ def test_filter_artist_quota():
     filtered = tf.filter_tracks(candidates)
     assert len(filtered) == 2
     assert [t.video_id for t in filtered] == ["c1", "c3"]
+
+
+def test_filter_dedup_by_normalized_title_different_video_ids():
+    """PATCH-2026-07-16-001: dua video_id beda tapi title sama secara
+    semantik (upload duplikat) harus di-dedup lewat normalized title,
+    bukan cuma video_id."""
+    state = AppState()
+    state.history = deque(
+        [TrackInfo(video_id="h1", title="Song (Official Video)", artist="A", duration=100)]
+    )
+
+    tf = TrackFilter(state)
+
+    candidates = [
+        TrackInfo(video_id="v_new", title="Song (Lyrics)", artist="A", duration=100),
+        TrackInfo(video_id="v_ok", title="Another Song", artist="B", duration=100),
+    ]
+
+    filtered = tf.filter_tracks(candidates)
+    assert [t.video_id for t in filtered] == ["v_ok"]
+
+
+def test_filter_dedup_title_within_candidate_batch():
+    """Dua kandidat dalam batch yang sama, title semantik sama tapi
+    video_id beda -- hanya yang pertama yang lolos."""
+    state = AppState()
+    tf = TrackFilter(state)
+
+    candidates = [
+        TrackInfo(video_id="v1", title="Song (Official Music Video)", artist="A", duration=100),
+        TrackInfo(video_id="v2", title="Song (Lyric Video)", artist="A", duration=100),
+        TrackInfo(video_id="v3", title="Different Track", artist="B", duration=100),
+    ]
+
+    filtered = tf.filter_tracks(candidates)
+    assert [t.video_id for t in filtered] == ["v1", "v3"]
+
+
+def test_filter_does_not_cross_exclude_empty_normalized_titles():
+    """Guard: title yang jadi string kosong setelah normalize (semua kata
+    adalah noise word, mis. "Acoustic Cover") TIDAK boleh saling exclude
+    satu sama lain -- itu bukan lagu yang sama, cuma kebetulan title-nya
+    tidak punya kata bermakna."""
+    state = AppState()
+    state.history = deque(
+        [TrackInfo(video_id="h1", title="Acoustic Cover", artist="A", duration=100)]
+    )
+
+    tf = TrackFilter(state)
+
+    candidates = [
+        TrackInfo(video_id="v_new", title="Live Performance", artist="B", duration=100),
+    ]
+
+    filtered = tf.filter_tracks(candidates)
+    assert [t.video_id for t in filtered] == ["v_new"]

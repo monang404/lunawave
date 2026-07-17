@@ -65,7 +65,11 @@ class FakeTrackRepository:
         if video_id in self._tracks:
             self._tracks[video_id].play_count = (self._tracks[video_id].play_count or 0) + 1
 
-    async def set_loudness(self, video_id: str, lufs: float) -> None:
-        self.call_log.append(("set_loudness", video_id, lufs))
+    async def set_loudness(
+        self, video_id: str, lufs: float, true_peak: float | None = None
+    ) -> None:
+        self.call_log.append(("set_loudness", video_id, lufs, true_peak))
         if video_id in self._tracks:
             self._tracks[video_id].loudness_lufs = lufs
+            if true_peak is not None:
+                self._tracks[video_id].true_peak_dbtp = true_peak

@@ -44,9 +44,11 @@ async def test_websocket_flow(app_client):
     )
 
     # Assert auth success
-    auth_resp = await ws.receive_json()
-    assert auth_resp.get("type") == "auth_status"
-    assert auth_resp["data"]["success"] is True
+    while True:
+        auth_resp = await asyncio.wait_for(ws.receive_json(), timeout=5.0)
+        if auth_resp.get("type") == "auth_status":
+            assert auth_resp["data"]["success"] is True
+            break
 
     # Flush any initial state broadcasts that happen right after connect
     while True:
@@ -57,13 +59,14 @@ async def test_websocket_flow(app_client):
 
     # 3. Send Play command
     # Kita butuh URL pendek dan aman untuk test MPV.
-    # Karena kita ingin command bus ter-trigger, kita dispatch lewat WS.
+    # Dispatch play via WS
     await ws.send_json(
         {
             "type": "command",
+            "id": "req-2",
             "data": {
                 "action": "play",
-                "url": "https://www.youtube.com/watch?v=BaW_jenozKc",  # video pendek (joma tech/etc) atau video aman
+                "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
             },
         }
     )

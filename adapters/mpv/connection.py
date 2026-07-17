@@ -22,7 +22,6 @@ Thread Safety:
 
 import asyncio
 import os
-import shutil
 
 import structlog
 
@@ -32,19 +31,27 @@ from core.exceptions import MpvConnectionError
 logger = structlog.get_logger(__name__)
 
 
+async def _open_pipe_connection(pipe_name: str):
+    loop = asyncio.get_running_loop()
+    reader = asyncio.StreamReader(limit=2**16, loop=loop)
+    protocol = asyncio.StreamReaderProtocol(reader, loop=loop)
+    # create_pipe_connection exists on Windows' ProactorEventLoop for named-pipe
+    # IPC, but isn't part of the generic AbstractEventLoop typeshed that
+    # asyncio.get_running_loop() returns, so mypy can't see it.
+    transport, _ = await loop.create_pipe_connection(  # type: ignore[attr-defined]
+        lambda: protocol, pipe_name
+    )
+    writer = asyncio.StreamWriter(transport, protocol, reader, loop)
+    return reader, writer
+
+
 class MpvConnection:
     """Handle buka/tutup/reconnect socket ke MPV. Tidak tahu tentang playback."""
 
     def __init__(self, socket_path: str = None, tcp_port: str = None):  # type: ignore
         self.socket_path = socket_path or MPV_SOCKET
-        env_port = os.environ.get("YT_PLAYER_MPV_PORT")
-        self.tcp_port = tcp_port or env_port or "12345"
-        # A port is "pinned" (must survive dynamic-port auto-selection) if the
-        # caller passed one explicitly, or set it via env var. Only the
-        # hardcoded fallback default is eligible for dynamic replacement.
-        self._port_pinned = bool(tcp_port or env_port)
-        self._reader = None
-        self._writer = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self.is_connected = False
         self._reconnect_lock = asyncio.Lock()
         self._mpv_process = None
@@ -66,44 +73,28 @@ class MpvConnection:
             return await self._do_connect()
 
     async def _do_connect(self) -> bool:
-        ytdl_path = shutil.which("yt-dlp")
-        ytdl_arg = f"--script-opts=ytdl_hook-ytdl_path={ytdl_path}" if ytdl_path else ""
-
         common_args = [
             "--no-video",
             "--idle",
-            "--ytdl-format=bestaudio/best",
+            "--ytdl=no",  # M-1: App always passes resolved CDN URLs, never youtube:// — ytdl_hook is dead code and a dangerous uncontrolled fallback.
             "--audio-pitch-correction=yes",
             "--cache=yes",
             "--demuxer-readahead-secs=20",
             "--demuxer-max-bytes=30MiB",
             "--cache-pause=yes",
             "--network-timeout=15",
+            "--gapless-audio=weak",  # M-3: Reduce gap/click between tracks (safe, no downside).
         ]
 
-        if os.name == "nt":
-            if not self._port_pinned:
-                import socket
-
-                # Find a free dynamic port to avoid TIME_WAIT issues on reconnect.
-                # Only do this when the caller didn't pin a specific port.
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(("127.0.0.1", 0))
-                    self.tcp_port = str(s.getsockname()[1])
-
-            cmd = ["mpv"] + common_args + [f"--input-ipc-server=tcp://127.0.0.1:{self.tcp_port}"]
-            if ytdl_arg:
-                cmd.insert(1, ytdl_arg)
-        else:
+        if os.name != "nt":
             os.makedirs(os.path.dirname(self.socket_path), exist_ok=True)
             if os.path.exists(self.socket_path):
                 try:
                     os.remove(self.socket_path)
                 except OSError:
                     pass
-            cmd = ["mpv"] + common_args + [f"--input-ipc-server={self.socket_path}"]
-            if ytdl_arg:
-                cmd.insert(1, ytdl_arg)
+
+        cmd = ["mpv"] + common_args + [f"--input-ipc-server={self.socket_path}"]
 
         try:
             self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore
@@ -119,19 +110,33 @@ class MpvConnection:
                     if os.path.exists(self.socket_path):
                         break
             else:
-                await asyncio.sleep(1.0)
+                for _ in range(50):
+                    await asyncio.sleep(0.1)
+                    try:
+                        _tmp_r, _tmp_w = await asyncio.wait_for(
+                            _open_pipe_connection(self.socket_path), timeout=1.0
+                        )
+                        _tmp_w.close()
+                        try:
+                            await _tmp_w.wait_closed()
+                        except OSError:
+                            pass
+                        break  # MPV sudah siap, keluar dari polling
+                    except (TimeoutError, ConnectionRefusedError, OSError, FileNotFoundError):
+                        continue  # belum siap, tunggu lagi
         except OSError as e:
             logger.error(f"Failed to spawn mpv process: {e}")
 
         for attempt in range(10):
             try:
                 if os.name == "nt":
-                    self._reader, self._writer = await asyncio.open_connection(  # type: ignore
-                        "127.0.0.1", int(self.tcp_port)
+                    self._reader, self._writer = await asyncio.wait_for(
+                        _open_pipe_connection(self.socket_path), timeout=1.0
                     )
                 else:
-                    self._reader, self._writer = await asyncio.open_unix_connection(  # type: ignore
-                        self.socket_path
+                    self._reader, self._writer = await asyncio.wait_for(
+                        asyncio.open_unix_connection(self.socket_path),  # type: ignore[attr-defined]
+                        timeout=1.0,
                     )
 
                 self.is_connected = True
@@ -147,10 +152,10 @@ class MpvConnection:
                 return True
             except MpvConnectionError:
                 raise
-            except (ConnectionError, OSError, FileNotFoundError):
+            except (TimeoutError, ConnectionError, OSError, FileNotFoundError):
                 await asyncio.sleep(0.5)
         raise MpvConnectionError(
-            f"Cannot connect to mpv socket after 10 attempts (TCP: {self.tcp_port}, Unix: {self.socket_path})"
+            f"Cannot connect to mpv socket after 10 attempts (Unix/Pipe: {self.socket_path})"
         )
 
     async def disconnect(self):
@@ -178,8 +183,23 @@ class MpvConnection:
         async with self._reconnect_lock:
             if self.is_connected:
                 return True
-            # We don't call disconnect() here because we might want to just retry socket connection
-            # But in do_connect it restarts the process anyway.
-            # For simplicity, just disconnect and connect.
+
             self.is_connected = False
+            if self._writer:
+                try:
+                    self._writer.close()
+                    await self._writer.wait_closed()
+                except OSError:
+                    pass
+
+            if self._mpv_process:
+                try:
+                    self._mpv_process.terminate()
+                    try:
+                        await asyncio.wait_for(self._mpv_process.wait(), timeout=1.0)
+                    except TimeoutError:
+                        self._mpv_process.kill()
+                except OSError:
+                    pass
+
             return await self._do_connect()

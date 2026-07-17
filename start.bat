@@ -1,5 +1,8 @@
 @echo off
 color 0B
+chcp 65001 > nul
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
 
 echo.
 echo  _      _    _  _   _   ___   __    __   ___  __      __ _____

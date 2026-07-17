@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-16-066
+latest_patch_id: PATCH-2026-07-17-071
 
-total_entries: 66
+total_entries: 71
 
 ---
 
@@ -23,6 +23,268 @@ total_entries: 66
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-17] Discover Tab revamp — frontend wiring (taste spectrum, filter bar, 3 card-row, artist detail sheet)
+**ID:** `PATCH-2026-07-17-071`
+**Tanggal:** 2026-07-17
+**Ringkasan:**
+Melanjutkan `PATCH-2026-07-17-070` (backend-only) sesuai
+`discover-tab-frontend-handoff.md`. Semua data personalisasi yang sudah
+dikirim backend kini benar-benar sampai ke UI dan bisa dipakai user.
+
+1. **`server/handlers/websocket.py`** — izin eksplisit diberikan user
+   (file ini *restricted* per `AI_CONTEXT.md`). Ditambah 1 baris:
+   `"get_artist_detail"` ke `DISCOVERY_CMDS`, sehingga action yang sudah
+   diimplementasi di `ws_discovery.py` sejak PATCH-070 kini benar-benar
+   reachable dari client.
+2. **`web/static/js/store.js`** — tambah default `discover_for_you`,
+   `discover_unheard`, `discover_genre_affinity_genre`,
+   `discover_genre_affinity_artists`, `discover_taste_spectrum`.
+3. **`web/static/js/ws.js`** — `case "discover_data"` sekarang menyimpan
+   5 field baru dari payload + memanggil `renderDiscoverPersonalization()`.
+   Tambah `case "artist_detail"` baru (sebelumnya di-drop diam-diam karena
+   tidak ada `default:` case).
+4. **`web/static/js/dom.js`** — register elemen baru: taste bar/legend,
+   filter bar (segmented + chip row), 3 card-row (`rowForYou`,
+   `rowGenreAffinity`, `rowUnheard`), sheet `artistDetailSheet` +
+   cover/nama/tag/track-list/tombol di dalamnya.
+5. **`web/static/js/render/discover-personalize.js` (baru, 185 baris).**
+   Semua logic render + interaksi personalisasi: taste bar dari
+   `discover_taste_spectrum` (dengan fallback "Dengarkan beberapa lagu
+   dulu..." kalau kosong), kartu artis generik (cover + nama + genre tag,
+   badge `match_pct` untuk "Untuk Kamu", badge "Baru" + varian
+   `.undiscovered` untuk "Belum Pernah Kamu Dengar"), filter kategori +
+   dekade client-side (dekade dibangun dari nilai `tahun_aktif` aktual yang
+   ada di data, bukan hard-coded), handler tap kartu →
+   `wsSend('get_artist_detail', ...)` → isi & buka sheet saat
+   `handleArtistDetail()` dipanggil dari `ws.js`, tombol "Putar Semua" →
+   reuse `enqueue_artist_songs` dengan role-gate (`store.userRole !==
+   'admin'` → toast) konsisten dengan pola Discover lain.
+   `discover-tab.js` (sudah lewat ambang 200 baris) **tidak disentuh sama
+   sekali** — tetap fokus ke recent/favorites/cached/hashtag-cloud.
+6. **`web/static/css/components/discover-cards.css` (baru).** `.taste-bar`/
+   `.taste-legend`, `.filter-bar`/`.segmented`/`.chip`, `.artist-card` (+
+   varian `.undiscovered`), styling konten `.ads-*` untuk artist detail
+   sheet. Genre tag pakai palet kecil kurasi (`--g-pop`, `--g-rock`, dst,
+   didefinisikan lokal di file ini) bukan `hsl(random)`. Tidak ada CSS baru
+   untuk shell sheet — reuse `.settings-sheet` yang sudah ada.
+7. **`web/static/index.html`** — markup taste spectrum + filter bar +
+   3 card-row disisipkan di bawah header Discover, sebelum "Jelajahi
+   Artis"/"Jelajahi Genre" yang sudah ada. Sheet baru
+   `<div class="settings-sheet" id="artist-detail-sheet">` (reuse pola
+   `#action-sheet`/`#help-sheet` + `#main-overlay`). Ditambah 1 link CSS
+   (`discover-cards.css`) dan 1 script tag
+   (`render/discover-personalize.js`).
+8. **`web/static/js/events/settings-events.js`** — `closeMainOverlay()`
+   ditambah 1 baris supaya `artistDetailSheet` ikut ketutup saat backdrop
+   di-tap, konsisten dengan sheet lain.
+9. **`web/static/js/events/index.js`** — daftarkan
+   `initDiscoverFilterEvents()` di urutan init yang sama dengan
+   `initSettingsEvents()` dkk.
+
+**Verifikasi otomatis:** `automation/doctor.py`,
+`generate_file_index.py`, `generate_report.py` dijalankan bersih untuk
+file yang disentuh sesi ini (2 FAIL yang tersisa — `engine/playback/controller.py`
+464 baris & `.gitignore` hilang — sudah ada sebelum sesi ini, tidak
+disentuh/diperparah oleh patch ini).
+
+**File Terdampak:**
+- `server/handlers/websocket.py`
+- `web/static/js/store.js`
+- `web/static/js/ws.js`
+- `web/static/js/dom.js`
+- `web/static/js/render/discover-personalize.js` (baru)
+- `web/static/css/components/discover-cards.css` (baru)
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+- `web/static/js/events/index.js`
+
+---
+
+## [2026-07-17] Discover Tab revamp — backend saja (personalisasi: bandit ranking, unheard artists, taste spectrum, genre affinity, artist detail)
+**ID:** `PATCH-2026-07-17-070`
+**Tanggal:** 2026-07-17
+**Ringkasan:**
+Eksekusi bagian backend dari `discover-tab-implementation-plan-v2.md` (v2
+dipakai, bukan v1 — lihat alasan di bawah). **Frontend sengaja belum
+disentuh sama sekali** — task ini eksplisit diminta backend-only, siap
+dilanjutkan sesi lain oleh frontend designer/programmer. Lihat
+`docs/STATUS.md` §"Discover Tab Personalization — Backend" untuk ringkasan
+siap-pakai yang ditujukan buat sesi lanjutan itu.
+
+1. **`persistence/discover_enrich.py` (baru, 78 baris).** `enrich_artists(conn, rows)`
+   — helper bersama: attach `cover` (thumbnail YouTube dari lagu pertama
+   artis, `MIN(id)` bukan `RANDOM()` supaya deterministic/tidak flicker)
+   + `genres` (list tag) ke sekumpulan artist row sekaligus. 2 query total
+   untuk berapa pun jumlah artis (hindari N+1).
+2. **`persistence/discover_repo.py` (baru, 242 baris).** `class
+   DiscoverRepository` — **keputusan v2, bukan v1**: v1 rencananya nambah
+   method ini ke `artist_repo.py`/`genre_repo.py` (116/97 baris saat itu),
+   tapi itu akan mendorong keduanya ke zona Waspada (>150 baris) padahal
+   tanggung jawab aslinya cuma click/reward tracking, bukan personalisasi.
+   Jadi repo terpisah, sejajar `LibraryRepository`. Method:
+   `get_bandit_ranked_artists(limit)` ("Untuk Kamu", ranking posterior mean
+   `alpha/(alpha+beta)`, exclude artis yang belum tersentuh bandit sama
+   sekali), `get_unheard_artists(limit)` ("Belum Pernah Kamu Dengar", filter
+   `alpha=beta=1 AND click_count=0`), `get_taste_spectrum(limit=6)`
+   (agregasi genre dari `tracks.play_count + is_favorite*3`, dinormalisasi
+   ke persentase + bucket "Lainnya" untuk sisa genre di luar top-N; `[]`
+   kalau histori kosong), `get_top_genre()` (elemen pertama taste
+   spectrum atau `None`), `get_genre_artists_enriched(genre, limit)`,
+   `get_artist_detail(nama)` (info + genre + hingga 10 lagu, urut by id
+   bukan random, untuk detail sheet yang stabil antar-buka).
+   File ini masuk zona **Waspada** (242 baris, ambang 150-300) — bukan
+   pelanggaran, tapi kalau nanti ada section Discover baru lagi,
+   pertimbangkan pecah per jenis query dulu sebelum tembus 300.
+3. **`persistence/__init__.py`:** import + instansiasi `DiscoverRepository`
+   (`self._discover`), delegasi 6 method baru di atas — pola sama persis
+   dengan repo lain yang sudah ada.
+4. **`services/discover_service.py`** (161 → 208 baris, tetap zona Waspada
+   tapi belum "wajib pecah"): 5 wrapper method baru —
+   `get_for_you`, `get_unheard`, `get_genre_affinity` (return
+   `{genre, artists}`, `genre=None` kalau histori kosong), `get_taste_spectrum`,
+   `get_artist_detail` — semua delegasi ke facade `Database` seperti method
+   lain di file ini, guard `getattr(self.db, "conn", None)` konsisten
+   dengan pola existing.
+5. **`server/handlers/ws_discovery.py`:** action `discover` — `asyncio.gather`
+   diperluas dari 5 jadi 9 query paralel, payload `discover_data` nambah 5
+   field (`for_you`, `unheard`, `genre_affinity_genre`,
+   `genre_affinity_artists`, `taste_spectrum`). Action baru `get_artist_detail`
+   diimplementasikan lengkap (terima `{artist: nama}`, balas
+   `{type: "artist_detail", data: {...} | null}`).
+6. **`server/handlers/websocket.py` — SENGAJA TIDAK DISENTUH.** File ini
+   *restricted* di `AI_CONTEXT.md` ("tidak boleh disentuh tanpa izin
+   eksplisit"). Perubahan yang dibutuhkan cuma 1 baris (tambah
+   `"get_artist_detail"` ke `DISCOVERY_CMDS`), tapi izin eksplisit belum
+   diminta/didapat di sesi ini — jadi **action `get_artist_detail` sudah
+   diimplementasikan di `ws_discovery.py` tapi belum bisa dipanggil sama
+   sekali** lewat WS asli sampai baris itu ditambah. Action `discover` yang
+   sudah diperluas TIDAK terpengaruh blocker ini (sudah ada di
+   `DISCOVERY_CMDS` sebelumnya).
+7. **Test (mirror per Prinsip #2):** `tests/unit/persistence/test_discover_repo.py`
+   (baru, 14 test, mencakup semua method + edge case histori
+   kosong/artist tidak ditemukan/cap 10 lagu). `test_discover_service.py`
+   (+12 test untuk 5 wrapper baru). `test_ws_discovery.py` (+4 test:
+   payload personalisasi lengkap, `get_artist_detail` sukses, `get_artist_detail`
+   dengan nama kosong tidak memanggil service — plus 1 test lama diupdate
+   supaya tidak break setelah `gather` diperluas dari 5→9 query).
+8. **Automation:** `generate_file_index.py` + `generate_report.py`
+   dijalankan ulang (file baru: `discover_repo.py`, `discover_enrich.py`,
+   `test_discover_repo.py`). `doctor.py` bersih untuk semua yang diubah di
+   patch ini — satu-satunya FAIL yang tersisa (`engine/playback/controller.py`
+   464 baris) adalah temuan pre-existing dari sesi sebelumnya, tidak
+   disentuh atau diperparah oleh patch ini.
+
+**Hasil test:** 522 unit test lulus (naik dari 508 baseline), 0 gagal.
+`tests/unit/launcher/gui/*` tidak ikut collect di environment eksekusi ini
+(`ModuleNotFoundError: tkinter`, pre-existing keterbatasan environment,
+bukan regresi dari patch ini).
+
+**File Terdampak:**
+- `persistence/discover_enrich.py` (baru)
+- `persistence/discover_repo.py` (baru)
+- `persistence/__init__.py`
+- `services/discover_service.py`
+- `server/handlers/ws_discovery.py`
+- `tests/unit/persistence/test_discover_repo.py` (baru)
+- `tests/unit/services/test_discover_service.py`
+- `tests/unit/server/handlers/test_ws_discovery.py`
+- `docs/STATUS.md`
+- `docs/discover-tab-frontend-handoff.md` (baru — laporan handoff detail utk sesi frontend berikutnya: kontrak payload, gap ws.js/store.js yang tidak disebut di implementation-plan-v2.md, urutan pengerjaan, checklist)
+- `docs/FILE_INDEX.md` (auto-generated)
+- `docs/REPORT.md` (auto-generated)
+
+**Belum disentuh (menunggu sesi frontend + izin eksplisit untuk `websocket.py`):**
+- `server/handlers/websocket.py` (butuh izin eksplisit, 1 baris)
+- `web/static/js/dom.js`, `web/static/index.html`,
+  `web/static/js/render/discover-personalize.js` (baru, belum dibuat),
+  `web/static/css/components/discover-cards.css` (baru, belum dibuat)
+
+---
+
+## [2026-07-16] Eksekusi implementation-plan.md (Batch 0–4.2): CI hang, timing side-channel, race condition crossfade, SponsorBlock window, parser LRC, lifecycle EventBus/CommandBus
+**ID:** `PATCH-2026-07-16-069`
+**Tanggal:** 2026-07-16
+**Ringkasan:**
+Eksekusi penuh `implementation-plan.md` (hasil verifikasi `summary-1.md`, 16 Juli 2026), batch demi batch. Beberapa item (#1 dedup title radio, #2 race crossfade, #4 metrics token compare, #11 sebagian dead code) ternyata **sudah** diperbaiki sebelumnya di codebase (kemungkinan patch manual terpisah) — diverifikasi ulang, tidak diubah lagi. Item yang benar-benar dieksekusi di sesi ini:
+1. **Batch 0 (CI hang):** Tambah `pytest-timeout` (jaring pengaman, 60s/thread) di `pytest.ini` + `requirements-dev.txt`. `main.py` shutdown: `task.cancel()` sekarang diikuti `await asyncio.gather(*tasks, return_exceptions=True)`. `adapters/mpv/observer.py.stop()`: await task sampai tuntas setelah cancel. **Terverifikasi lewat eksekusi nyata** (bukan cuma analisis): baseline suite sebelumnya meninggalkan zombie non-daemon thread (`conftest.py` sampai perlu `os._exit()` paksa); setelah fix, suite exit bersih tanpa paksaan.
+2. **Batch 1:** (#3) fast-skip `shutil.which("mpv")` dipindah SEBELUM `db.init()` di `tests/integration/conftest.py` — ditemukan lewat testing bahwa urutan lama (db.init() sebelum skip check) bikin fixture generator skip sebelum `yield`, jadi teardown `db.close()` tidak pernah jalan -> connection thread leak (root cause zombie thread kedua, di luar dugaan awal plan). (#5) `persistence/db.py.close()`: ganti `asyncio.sleep(0.01)` dengan `asyncio.to_thread(worker_thread.join, timeout=1.0)` -- join asli, bukan tebak-tebakan delay. (#4) `server/handlers/auth.py`: hilangkan short-circuit `and` yang skip `verify_password` kalau username salah (celah timing side-channel enumerasi username) — sekarang `verify_password` selalu jalan. (#11) hapus `clear_standby()` (stub `pass`, tak terpakai) di `engine/radio/prefetcher.py`; `check_rate_limit_sync()` & `secrets.compare_digest()` di `http.py` ternyata sudah dibersihkan sebelumnya. `controller.py._last_position_save` ternyata sudah tersambung benar (bukan dead code seperti dugaan plan, tidak diubah). (#12) `main.py:339` bare `except:` -> `except Exception:`.
+3. **Batch 2.3 (#7):** `plugins/sponsorblock.py` — ganti window deteksi sempit (`start <= pos <= start+0.6`) yang bisa terlewat kalau progress event melompat, dengan one-directional check (`start <= pos < end`) + flag `_skipped_segments` per-track (direset tiap `fetch_segments`). Perbaiki docstring throttle interval yang salah ("~0.5s" -> "~1.0s").
+4. **Batch 3:** Test baru `tests/unit/engine/playback/test_track_ended_ops.py` (modul sebelumnya nol coverage) — grace-window `_handle_stop()`, dispatch eof/stop/error, `poll_duration`.
+5. **Batch 4.1 (#8):** `plugins/lyrics_parser.py` — parser LRC diganti total: dukung multi-timestamp per baris (chorus berulang), skip tag metadata (`[ar:...]`, `[ti:...]`) alih-alih dianggap teks lirik biasa.
+6. **Batch 4.2 (#6):** `core/command_bus.py` tambah `reset()` resmi (ganti akses langsung `_handlers.clear()` di `tests/integration/conftest.py`). `engine/playback/controller.py` tambah `dispose()` — unsubscribe 5 handler (termasuk 3 lambda closure yang referensinya kini disimpan sebagai atribut instance agar bisa di-unsubscribe balik), cancel `_fade_task` pending. Didokumentasikan eksplisit kenapa 3 lambda itu sengaja strong-ref (bukan bug WeakMethod).
+7. **Bonus (ditemukan saat eksekusi, di luar 12 temuan awal):** `automation/patchlog.py.parse_entries()` — regex tunggal dengan beberapa `.*?` + `re.DOTALL` di-scan ke seluruh file (35KB, 28 entry berulang) menyebabkan catastrophic backtracking, hang tak terhingga (dikonfirmasi lewat eksekusi langsung dengan timeout). Diganti dengan split per-entry (separator `\n\n---\n\n`) dulu, baru regex sederhana per-chunk.
+8. **Tidak dieksekusi (sesuai arahan plan sendiri):** #10 (tombol "prev" / forward-stack) — butuh keputusan produk dulu, belum diajukan ke user di sesi ini. `test_radio_flow.py` mock network (0.4, opsional/prioritas rendah) — tidak disentuh.
+
+**Hasil akhir:** 508 passed, 6 skipped (naik dari baseline 475 passed, 6 skipped) — unit + integration (integration tetap skip karena `mpv`/`yt-dlp` tidak terpasang di sandbox). `ruff check` bersih, `mypy` bersih (10 file diubah), `bandit` tanpa temuan baru, coverage total 88%.
+
+**File Terdampak:**
+- `pytest.ini`
+- `requirements-dev.txt`
+- `main.py`
+- `adapters/mpv/observer.py`
+- `tests/integration/conftest.py`
+- `persistence/db.py`
+- `tests/unit/persistence/test_db.py`
+- `server/handlers/auth.py`
+- `tests/unit/server/handlers/test_auth.py`
+- `engine/radio/prefetcher.py`
+- `plugins/sponsorblock.py`
+- `tests/unit/plugins/test_sponsorblock.py`
+- `plugins/lyrics_parser.py`
+- `tests/unit/plugins/test_lyrics_parser.py`
+- `core/command_bus.py`
+- `tests/unit/core/test_command_bus.py`
+- `engine/playback/controller.py`
+- `tests/unit/engine/playback/test_controller.py`
+- `tests/unit/engine/playback/test_track_ended_ops.py`
+- `automation/patchlog.py`
+- `docs/PATCHLOG.md`
+
+---
+
+## [2026-07-16] Migration to Windows Named Pipes IPC & Integration Test Stabilization
+**ID:** `PATCH-2026-07-16-068`
+**Tanggal:** 2026-07-16
+**Ringkasan:**
+1. Mengubah mekanisme IPC dari TCP Sockets menjadi Windows Named Pipes (`\\.\pipe\mpv-lunawave`) untuk meningkatkan reliabilitas koneksi dengan proses MPV di OS Windows, menghilangkan limitasi socket exhaustion, dan mengurangi latensi.
+2. Memperbaiki *regression* (Zombie non-daemon threads / Timeout) dan *flakiness* di dalam suite tes integrasi akibat perubahan *interface*, serta menyesuaikan timeout ekspektasi dari `yt-dlp`.
+
+- **Fix 1 (Pipes IPC):** `MpvConnection` kini melakukan inisialisasi pada `\\.\pipe\mpv-lunawave` alih-alih port TCP `6666`. `MpvObserver` disesuaikan untuk membaca dari pipe yang sama. Seluruh parameter setup TCP di `run_server()` dihilangkan.
+- **Fix 2 (Integration Test Setup):** `tests/integration/conftest.py` ditambahkan command `command_bus._handlers.clear()` untuk menghindari `RuntimeError` duplikasi handler pada tes yang dijalankan secara berurutan.
+- **Fix 3 (Test Syncs):** Penyesuaian nama metode (`download_mp3` -> `download_audio`), penambahan field `artist` pada objek `TrackInfo`, perubahan field `file_path` pada `DownloadCompleteEvent` menjadi `track.local_path`, serta update ID video yang *geo-restricted* ke video yang stabil (`jNQXAC9IVRw` - Me at the zoo).
+
+**File Terdampak:**
+- `adapters/mpv/connection.py`
+- `adapters/mpv/ipc.py`
+- `adapters/mpv/observer.py`
+- `adapters/ytdlp/__init__.py`
+- `tests/integration/conftest.py`
+- `tests/integration/test_download_flow.py`
+- `tests/integration/test_playback_flow.py`
+- `tests/integration/test_radio_flow.py`
+- `tests/integration/test_websocket_flow.py`
+- `tests/unit/adapters/mpv/test_connection.py`
+- `tests/unit/adapters/mpv/test_ipc.py`
+
+---
+
+## [2026-07-16] Startup Latency Optimization — 3 Fix: MPV Non-Blocking, Resume Background Task, Windows TCP Polling
+**ID:** `PATCH-2026-07-16-067`
+**Tanggal:** 2026-07-16
+**Ringkasan:** Tiga perbaikan startup latency berurutan berdasarkan analisis mendalam 5-tahap chain dari GUI klik "Start" sampai browser dapat diakses. Total estimasi gain: **1.5–25+ detik** tergantung kondisi.
+- **Fix 1 (Dampak terbesar, 1–20+ detik):** "Resume last playback" dipindah dari critical path ke background task (`safe_create_task`). Sebelumnya, kalau stream URL track terakhir sudah expired >6 jam, `main.py` akan melakukan network request ke YouTube via `yt-dlp` (max 25 detik timeout) *sebelum* `run_server()` dipanggil. Sekarang resume berjalan concurrently — browser bisa connect ke UI sementara resume masih diproses di background.
+- **Fix 2 (0.3–2 detik):** `mpv.connect()` dipindah dari `asyncio.gather()` blocking ke background task. Web server kini bisa bind port dan menerima koneksi tanpa menunggu MPV spawn + IPC handshake. Koordinasi lewat `asyncio.Event _mpv_ready_event` — resume task menunggu MPV siap (tanpa timeout) sebelum memanggil `play_track()`, tanpa memblok server.
+- **Fix 3 (0–1 detik, selalu di Windows):** Ganti `await asyncio.sleep(1.0)` blind wait di Windows dengan polling TCP port aktif (50 iterasi × 100ms = max 5 detik, keluar lebih awal begitu MPV siap). Best-case selesai dalam ~100ms, bukan selalu 1000ms.
+- **Tests:** Update 4 test lama di `test_connection.py` (assertion call count disesuaikan dengan polling behavior baru), tambah 2 test baru untuk polling Windows, tambah 1 test baru `test_run_server_not_blocked_by_mpv` dengan event-based coordination. 11/11 test pass.
+
+**File Terdampak:**
+- `main.py`
+- `adapters/mpv/connection.py`
+- `tests/unit/adapters/mpv/test_connection.py`
+- `tests/unit/test_main.py`
 
 ---
 

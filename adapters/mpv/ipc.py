@@ -47,8 +47,8 @@ class MpvIPC:
             try:
                 self._conn.writer.write(payload.encode())
                 await self._conn.writer.drain()
-            except OSError:
-                self._conn.is_connected = False
+            except OSError as e:
+                logger.warning(f"Failed to send command (OSError): {e}")
         return req_id
 
     async def get_property(self, prop: str):

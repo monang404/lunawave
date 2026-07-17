@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="/static/css/components/settings-sheet.css">
     <link rel="stylesheet" href="/static/css/components/lyrics.css">
     <link rel="stylesheet" href="/static/css/components/cards.css">
+    <link rel="stylesheet" href="/static/css/components/discover-cards.css">
     <link rel="stylesheet" href="/static/css/components/toasts.css">
     <link rel="stylesheet" href="/static/css/portal.css">
 
@@ -318,6 +319,59 @@
                     <p class="discover-sub">Find your next favorite song</p>
                 </div>
 
+
+                <!-- Selera Kamu (Taste Spectrum) -->
+                <div class="taste-block" id="taste-block">
+                    <div class="taste-eyebrow-row">
+                        <div>
+                            <div class="taste-eyebrow">Selera Kamu</div>
+                            <div class="taste-caption" id="taste-caption">Dari riwayat putar kamu</div>
+                        </div>
+                    </div>
+                    <div class="taste-bar-wrap">
+                        <div class="taste-bar" id="taste-bar"></div>
+                        <div class="taste-legend" id="taste-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Sticky filter bar (kategori + dekade, client-side) -->
+                <div class="filter-bar" id="discover-filter-bar">
+                    <div class="segmented" id="kategori-toggle">
+                        <button class="active" data-kategori="all" type="button">Semua</button>
+                        <button data-kategori="individu" type="button">Solo</button>
+                        <button data-kategori="band" type="button">Band</button>
+                    </div>
+                    <div class="chip-row" id="decade-chips">
+                        <button class="chip active" data-decade="all" type="button">Semua Era</button>
+                    </div>
+                </div>
+
+                <!-- Untuk Kamu (bandit-ranked) -->
+                <div class="section-label-row" id="row-for-you-label-row">
+                    <div class="section-title-group">
+                        <span class="label-text">Untuk Kamu</span>
+                        <span class="label-sub">Yang paling sering kamu dengarkan sampai habis</span>
+                    </div>
+                </div>
+                <div class="card-row" id="row-for-you"></div>
+
+                <!-- Karena Kamu Suka [Genre] -->
+                <div class="section-label-row" id="row-genre-affinity-label">
+                    <div class="section-title-group">
+                        <span class="label-text" id="row-genre-affinity-sub">Karena Kamu Suka</span>
+                        <span class="label-sub">Genre yang paling sering kamu putar</span>
+                    </div>
+                </div>
+                <div class="card-row" id="row-genre-affinity"></div>
+
+                <!-- Belum Pernah Kamu Dengar -->
+                <div class="section-label-row">
+                    <div class="section-title-group">
+                        <span class="label-text">Belum Pernah Kamu Dengar</span>
+                        <span class="label-sub">Keluar dari kebiasaan, coba sesuatu yang baru</span>
+                    </div>
+                </div>
+                <div class="card-row" id="row-unheard"></div>
 
                 <!-- Artis Indonesia (Featured Artists) -->
                 <div class="section-label-row">
@@ -698,6 +752,24 @@
                 style="width: 100%; padding: 12px; font-size: 14px;">Tutup</button>
         </div>
 
+        <!-- ═══ Artist Detail Sheet ═══ -->
+        <div class="settings-sheet" id="artist-detail-sheet" role="dialog" aria-modal="true" aria-label="Detail Artis">
+            <div class="ss-handle"></div>
+            <div class="ads-cover">
+                <img id="ads-cover-img" src="" alt="">
+                <div class="ads-title-block">
+                    <div class="ads-name" id="ads-name"></div>
+                    <div class="ads-tags" id="ads-tags"></div>
+                </div>
+            </div>
+            <div class="ads-body">
+                <button class="btn-play-all" id="ads-play-all" type="button"><i class="ti ti-player-play-filled"></i> Putar Semua</button>
+                <div class="ads-track-list" id="ads-track-list"></div>
+            </div>
+            <button id="ads-close-btn" class="ss-out-btn"
+                style="width: 100%; padding: 12px; font-size: 14px; margin: 0 16px 16px;">Tutup</button>
+        </div>
+
         <!-- ═══ Main Overlay ═══ -->
         <div id="main-overlay" class="overlay"></div>
 
@@ -762,6 +834,7 @@
     <script src="/static/js/render/now-playing.js" defer></script>
     <script src="/static/js/render/queue.js?v=3" defer></script>
     <script src="/static/js/render/discover-tab.js?v=6" defer></script>
+    <script src="/static/js/render/discover-personalize.js" defer></script>
     <script src="/static/js/render/radio-tab.js?v=6" defer></script>
     <script src="/static/js/render/full-state.js" defer></script>
     <script src="/static/js/render/lyrics.js" defer></script>

@@ -178,6 +178,38 @@ class TestHandleAuthCredentials:
         assert "token" in sent["data"]
 
     @pytest.mark.asyncio
+    async def test_wrong_username_still_runs_password_verification(self):
+        """PATCH-2026-07-16-001 regression: verify_password (via
+        run_in_executor) must always run, even when the username is wrong,
+        so response timing can't be used to enumerate valid usernames."""
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        db = make_db(session_valid=False)
+
+        with (
+            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
+            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
+            patch("asyncio.get_running_loop") as mock_loop,
+        ):
+            executor_mock = AsyncMock(return_value=True)
+            mock_loop.return_value.run_in_executor = executor_mock
+            await handle_auth(
+                ws,
+                {"username": "not_admin", "password": "whatever"},
+                mgr,
+                "127.0.0.1",
+                db,
+                now=1000,
+            )
+
+        executor_mock.assert_awaited_once()
+        assert ws not in mgr.authenticated_connections
+        sent = json.loads(ws.send_str.call_args[0][0])
+        assert sent["data"]["success"] is False
+
+    @pytest.mark.asyncio
     async def test_wrong_credentials_send_failure_and_record_attempt(self):
         from server.handlers.auth import handle_auth
 

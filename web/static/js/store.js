@@ -27,6 +27,11 @@ function createStore() {
         discover_recent: [],
         discover_favorites: [],
         discover_cached: [],
+        discover_for_you: [],
+        discover_unheard: [],
+        discover_genre_affinity_genre: null,
+        discover_genre_affinity_artists: [],
+        discover_taste_spectrum: [],
         search_results: [],
         server_ts: 0
     };

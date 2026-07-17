@@ -122,6 +122,33 @@ async def test_serve_metrics_forbids_external_without_token(mock_request):
 
 
 @pytest.mark.asyncio
+async def test_serve_metrics_allows_external_with_valid_token(mock_request, monkeypatch):
+    """PATCH-2026-07-16-001 regression: token compare pindah ke
+    secrets.compare_digest(), pastikan token valid tetap diterima."""
+    monkeypatch.setenv("LUNAWAVE_METRICS_TOKEN", "s3cr3t-token")
+    mock_request.remote = "192.168.1.5"
+    mock_request.headers = {"X-Metrics-Token": "s3cr3t-token"}
+
+    with patch("server.handlers.http.get_metrics_content") as mock_get_metrics:
+        mock_get_metrics.return_value = (b"metrics", "text/plain; version=0.0.4")
+        resp = await serve_metrics(mock_request)
+
+    assert isinstance(resp, web.Response)
+    assert resp.body == b"metrics"
+
+
+@pytest.mark.asyncio
+async def test_serve_metrics_forbids_external_with_wrong_token(mock_request, monkeypatch):
+    monkeypatch.setenv("LUNAWAVE_METRICS_TOKEN", "s3cr3t-token")
+    mock_request.remote = "192.168.1.5"
+    mock_request.headers = {"X-Metrics-Token": "wrong-token"}
+
+    resp = await serve_metrics(mock_request)
+
+    assert isinstance(resp, web.HTTPForbidden)
+
+
+@pytest.mark.asyncio
 @patch("server.handlers.http._STREAM_ID_RE")
 async def test_serve_stream_path_traversal(mock_regex, mock_request):
     mock_regex.match.return_value = True

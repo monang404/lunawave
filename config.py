@@ -36,6 +36,12 @@ BASE_DIR = Path(
 )
 
 CACHE_DIR = BASE_DIR / "cache" / "mp3"
+# User-facing "Download" feature (CMD_DOWNLOAD / download_manager.py) moves
+# the finished file OUT of CACHE_DIR into here -- this is a separate,
+# permanent folder from the transient streaming cache above, and is what the
+# Settings UI's "Ukuran Cache" / clear-cache action should actually measure,
+# since CACHE_DIR is emptied again right after each download completes.
+DOWNLOAD_DIR = BASE_DIR / "downloads"
 DB_PATH = BASE_DIR / "data" / "lunawave.db"
 
 # Handle Windows compatibility for Unix Sockets

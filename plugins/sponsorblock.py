@@ -56,6 +56,13 @@ class SponsorBlockHandler:
         self.mpv = mpv
         self.state = state
         self.segments: list[tuple[float, float]] = []
+        # PATCH-2026-07-16-001: segment yang sudah pernah di-skip, direset
+        # tiap track baru (lihat fetch_segments). Dipakai agar deteksi seek
+        # tidak lagi bergantung pada window sempit (start..start+0.6) yang
+        # bisa terlewat kalau progress event "melompat" (mis. posisi loncat
+        # dari start-0.1 ke start+0.9 dalam satu event, terutama kalau
+        # progress event throttle-nya lebih lambat dari 0.6s).
+        self._skipped_segments: set[tuple[float, float]] = set()
         self._session = session
         # TASK-3.5: Injected per-room bus (fallback ke global jika belum direfactor)
         if event_bus is None:
@@ -71,6 +78,7 @@ class SponsorBlockHandler:
     async def fetch_segments(self, video_id: str):
         """Fetches skip segments and stores them in memory for the current track."""
         self.segments = []
+        self._skipped_segments = set()
         # HIGH-02 fix: Use json.dumps instead of str().replace()
         params = {
             "videoID": video_id,
@@ -97,15 +105,19 @@ class SponsorBlockHandler:
             logger.debug(f"SponsorBlock fetch failed: {e}")
 
     async def _on_progress(self, event: TrackProgressEvent):
-        """Called every ~0.5s by MpvController. Seeks past sponsored segments."""
+        """Called every ~1.0s (throttled) by MpvController. Seeks past sponsored segments."""
         current_pos = event.position
         if not getattr(self.state, "sponsorblock_active", True):
             return
         if not self.segments or not isinstance(current_pos, (int, float)):
             return
 
-        for start, end in self.segments:
-            if start <= current_pos <= start + 0.6:
+        for seg in self.segments:
+            start, end = seg
+            if seg in self._skipped_segments:
+                continue
+            if start <= current_pos < end:
+                self._skipped_segments.add(seg)
                 await self.mpv.seek(end)
                 await self._bus.publish(
                     LogMessageEvent(message=f"Melewati sponsor ({int(start)}s - {int(end)}s)")

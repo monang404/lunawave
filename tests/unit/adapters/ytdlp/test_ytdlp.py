@@ -205,7 +205,6 @@ class TestPickAudioUrl:
 
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
-            "url": "http://fallback.url",
             "formats": [
                 {"acodec": "mp4a.40.2", "vcodec": "avc1", "url": "http://video.url"},
                 {"acodec": "mp4a.40.2", "vcodec": "none", "url": "http://audio.url"},
@@ -219,13 +218,14 @@ class TestPickAudioUrl:
 
         resolver = YtDlpResolver(executor=MagicMock())
         info = {
-            "url": "http://fallback.url",
             "formats": [
                 {"acodec": "mp4a.40.2", "vcodec": "avc1", "url": "http://muxed.url"},
             ],
         }
         result = resolver._pick_audio_url(info)
-        assert result == "http://fallback.url"
+        # No audio-only format exists, so it falls back to the muxed
+        # (audio+video) format instead of failing outright.
+        assert result == "http://muxed.url"
 
 
 # ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     last_played  INTEGER,        -- Unix timestamp
     is_favorite  INTEGER DEFAULT 0, -- 1 if liked, 0 otherwise
     loudness_lufs REAL,          -- NULL = belum dianalisis; integrated loudness (LUFS)
+    true_peak_dbtp REAL,         -- NULL = belum dianalisis; true peak (dBTP), dari ffmpeg loudnorm
     last_position REAL DEFAULT 0.0, -- position resume
     created_at   INTEGER DEFAULT (strftime('%s','now'))
 );
@@ -72,3 +73,8 @@ CREATE INDEX IF NOT EXISTS idx_artists_kategori ON artists(kategori);
 CREATE INDEX IF NOT EXISTS idx_songs_youtube_id ON songs(youtube_id);
 
 CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);
+
+-- Migration untuk kolom-kolom yang ditambahkan bertahap dikelola di persistence/__init__.py
+-- via loop ALTER TABLE dengan try/except yang mengabaikan "duplicate column name".
+-- Jangan tambahkan ALTER TABLE di sini — executescript() tidak punya error handling
+-- dan akan crash dengan OperationalError jika kolom sudah ada di DB lama.

@@ -106,6 +106,21 @@ def test_cache_dir_and_db_path_are_derived_from_base_dir(tmp_path):
     assert lines[1] == str(tmp_path / "data" / "lunawave.db")
 
 
+def test_download_dir_is_derived_from_base_dir_and_distinct_from_cache_dir(tmp_path):
+    # Regression: the Settings UI's "Ukuran Cache" used to read CACHE_DIR
+    # (cache/mp3), which is emptied right after every download finishes, so
+    # it always showed 0.00 MB even with files present in downloads/.
+    result = run_config_snippet(
+        "print(config.DOWNLOAD_DIR); print(config.DOWNLOAD_DIR == config.CACHE_DIR)",
+        {"LUNAWAVE_ADMIN_PASS": "x"},
+        tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.strip().splitlines()
+    assert lines[0] == str(tmp_path / "downloads")
+    assert lines[1] == "False"
+
+
 def test_default_volume_falls_back_to_80(tmp_path):
     result = run_config_snippet(
         "print(config.DEFAULT_VOLUME)", {"LUNAWAVE_ADMIN_PASS": "x"}, tmp_path

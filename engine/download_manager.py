@@ -101,20 +101,23 @@ class DownloadManager:
                             percent = downloaded_bytes / total_bytes
                             loop.call_soon_threadsafe(self._update_progress, percent)
 
-                local_path = await self.ytdlp.download_mp3(
+                local_path = await self.ytdlp.download_audio(
                     track.video_id, on_progress=sync_progress_hook
                 )
 
                 import re
                 import shutil
+                from pathlib import Path
 
-                from config import BASE_DIR
+                from config import DOWNLOAD_DIR
 
-                downloads_dir = BASE_DIR / "downloads"
+                downloads_dir = DOWNLOAD_DIR
                 downloads_dir.mkdir(parents=True, exist_ok=True)
                 safe_artist = re.sub(r'[\\/*?:"<>|]', "", track.artist)
                 safe_title = re.sub(r'[\\/*?:"<>|]', "", track.title)
-                user_path = downloads_dir / f"{safe_artist} - {safe_title}.mp3"
+                # Preserve real extension (may be .opus, .m4a, .webm, etc.)
+                real_ext = Path(local_path).suffix  # e.g. ".opus" or ".m4a"
+                user_path = downloads_dir / f"{safe_artist} - {safe_title}{real_ext}"
 
                 if user_path.exists():
                     try:

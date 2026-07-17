@@ -41,8 +41,10 @@ def mock_subprocess():
 
 
 @pytest.fixture
-def mock_open_connection():
-    with patch("asyncio.open_connection", new_callable=AsyncMock) as mock_conn:
+def mock_open_pipe_connection():
+    with patch(
+        "adapters.mpv.connection._open_pipe_connection", new_callable=AsyncMock
+    ) as mock_conn:
         reader = AsyncMock()
         writer = AsyncMock()
         writer.close = MagicMock()
@@ -64,8 +66,8 @@ def mock_open_unix_connection():
 
 @pytest.mark.asyncio
 @patch("os.name", "nt")
-async def test_mpv_connection_connect_windows(mock_subprocess, mock_open_connection):
-    conn = MpvConnection(tcp_port="12345")
+async def test_mpv_connection_connect_windows(mock_subprocess, mock_open_pipe_connection):
+    conn = MpvConnection()
 
     success = await conn.connect()
 
@@ -73,44 +75,9 @@ async def test_mpv_connection_connect_windows(mock_subprocess, mock_open_connect
     assert conn.is_connected is True
     assert conn.shutting_down is False
     mock_subprocess.assert_called_once()
-    mock_open_connection.assert_called_once_with("127.0.0.1", 12345)
-
-
-@pytest.mark.asyncio
-@patch("os.name", "nt")
-async def test_mpv_connection_windows_default_port_still_dynamic(
-    mock_subprocess, mock_open_connection
-):
-    """When no tcp_port is pinned (constructor arg or env var), Windows should
-    still auto-select a free dynamic port to avoid TIME_WAIT reconnect issues."""
-    conn = MpvConnection()
-    assert conn._port_pinned is False
-
-    success = await conn.connect()
-
-    assert success is True
-    called_port = mock_open_connection.call_args.args[1]
-    # The dynamically bound port must not equal the hardcoded fallback default,
-    # confirming dynamic selection still ran for the unpinned case.
-    assert conn.tcp_port != "12345"
-    assert called_port == int(conn.tcp_port)
-
-
-@pytest.mark.asyncio
-@patch("os.name", "nt")
-@patch.dict("os.environ", {"YT_PLAYER_MPV_PORT": "23456"})
-async def test_mpv_connection_windows_env_pinned_port_survives(
-    mock_subprocess, mock_open_connection
-):
-    """A port pinned via the YT_PLAYER_MPV_PORT env var must also survive
-    the dynamic-port auto-selection on Windows, not just constructor args."""
-    conn = MpvConnection()
-    assert conn._port_pinned is True
-
-    success = await conn.connect()
-
-    assert success is True
-    mock_open_connection.assert_called_once_with("127.0.0.1", 23456)
+    # Polling probe + retry loop: open_pipe_connection dipanggil minimal 1x
+    mock_open_pipe_connection.assert_called_with(conn.socket_path)
+    assert mock_open_pipe_connection.call_count >= 1
 
 
 @pytest.mark.asyncio
@@ -140,22 +107,23 @@ async def test_mpv_connection_already_connected(mock_subprocess):
 
 @pytest.mark.asyncio
 @patch("os.name", "nt")
-async def test_mpv_connection_fails_after_10_attempts(mock_subprocess, mock_open_connection):
-    # Make open_connection always fail
-    mock_open_connection.side_effect = ConnectionError("Mock error")
+async def test_mpv_connection_fails_after_10_attempts(mock_subprocess, mock_open_pipe_connection):
+    # Make _open_pipe_connection always fail — baik untuk probe polling maupun retry loop
+    mock_open_pipe_connection.side_effect = ConnectionError("Mock error")
 
-    conn = MpvConnection(tcp_port="12345")
+    conn = MpvConnection()
 
     with pytest.raises(MpvConnectionError):
         await conn.connect()
 
-    assert mock_open_connection.call_count == 10
+    # Polling: 50 probe attempts + retry loop: 10 attempts = 60 total
+    assert mock_open_pipe_connection.call_count == 60
     assert conn.is_connected is False
 
 
 @pytest.mark.asyncio
 @patch("os.name", "nt")
-async def test_mpv_connection_disconnect(mock_subprocess, mock_open_connection):
+async def test_mpv_connection_disconnect(mock_subprocess, mock_open_pipe_connection):
     conn = MpvConnection()
     await conn.connect()
 
@@ -169,6 +137,55 @@ async def test_mpv_connection_disconnect(mock_subprocess, mock_open_connection):
 
     assert conn.is_connected is False
     assert conn.shutting_down is True
-    writer_mock.close.assert_called_once()
-    writer_mock.wait_closed.assert_awaited_once()
+    writer_mock.close.assert_called()
+    writer_mock.wait_closed.assert_awaited()
     process_mock.terminate.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("os.name", "nt")
+async def test_windows_polling_exits_early_when_port_ready(
+    mock_subprocess, mock_open_pipe_connection
+):
+    conn = MpvConnection()
+
+    probe_call_count = 0
+    original_side_effect = mock_open_pipe_connection.side_effect
+
+    async def side_effect_probe(pipe_name):
+        nonlocal probe_call_count
+        probe_call_count += 1
+        if probe_call_count <= 2:
+            raise FileNotFoundError("not ready yet")
+        reader = AsyncMock()
+        writer = AsyncMock()
+        writer.close = MagicMock()
+        writer.wait_closed = AsyncMock()
+        return reader, writer
+
+    mock_open_pipe_connection.side_effect = side_effect_probe
+
+    success = await conn.connect()
+
+    assert success is True
+    assert conn.is_connected is True
+    # Probe gagal 2x + probe sukses 1x + koneksi final 1x = 4 total
+    assert probe_call_count <= 10
+
+
+@pytest.mark.asyncio
+@patch("os.name", "nt")
+async def test_windows_polling_fallthrough_to_retry_loop(mock_subprocess):
+    # Semua upaya koneksi gagal — polling exhausted, retry loop juga gagal
+    with patch(
+        "adapters.mpv.connection._open_pipe_connection", new_callable=AsyncMock
+    ) as mock_conn:
+        mock_conn.side_effect = FileNotFoundError("never ready")
+
+        conn = MpvConnection()
+
+        with pytest.raises(MpvConnectionError):
+            await conn.connect()
+
+        # Polling (50 attempts) + retry loop (10 attempts) = 60 total calls
+        assert mock_conn.call_count == 60

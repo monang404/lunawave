@@ -10,6 +10,7 @@ Responsibilities:
 Depends on:
     - persistence.artist_repo
     - persistence.db
+    - persistence.discover_repo
     - persistence.genre_repo
     - persistence.library_repo
     - persistence.session_repo
@@ -33,6 +34,7 @@ logger = structlog.get_logger(__name__)
 
 from persistence.artist_repo import ArtistRepository
 from persistence.db import DatabaseConnection
+from persistence.discover_repo import DiscoverRepository
 from persistence.genre_repo import GenreRepository
 from persistence.library_repo import LibraryRepository
 from persistence.session_repo import SessionRepository
@@ -54,6 +56,7 @@ class Database:
         self._artists: ArtistRepository = None
         self._genres: GenreRepository = None
         self._library: LibraryRepository = None
+        self._discover: DiscoverRepository = None
 
     async def init(self):
         schema_path = Path(__file__).parent / "schema.sql"
@@ -68,6 +71,7 @@ class Database:
             "ALTER TABLE artists ADD COLUMN reward_beta INTEGER DEFAULT 1",
             "ALTER TABLE tracks ADD COLUMN loudness_lufs REAL",
             "ALTER TABLE tracks ADD COLUMN last_position REAL DEFAULT 0.0",
+            "ALTER TABLE tracks ADD COLUMN true_peak_dbtp REAL",  # H-3: true peak dari ffmpeg loudnorm
         ]:
             try:
                 await self._db.conn.execute(sql)
@@ -87,6 +91,7 @@ class Database:
         self._artists = ArtistRepository(self._db.conn)
         self._genres = GenreRepository(self._db.conn)
         self._library = LibraryRepository(self._db.conn)
+        self._discover = DiscoverRepository(self._db.conn)
 
     async def _migrate_songs_unique_constraint(self) -> None:
         """PATCH-2026-07-16-048: `songs.youtube_id` used to be globally UNIQUE,
@@ -217,3 +222,22 @@ class Database:
 
     async def set_last_position(self, *a, **kw):
         return await self._tracks.set_last_position(*a, **kw)
+
+    # --- Discover personalization (PATCH-2026-07-17-070) ---
+    async def get_bandit_ranked_artists(self, *a, **kw):
+        return await self._discover.get_bandit_ranked_artists(*a, **kw)
+
+    async def get_unheard_artists(self, *a, **kw):
+        return await self._discover.get_unheard_artists(*a, **kw)
+
+    async def get_taste_spectrum(self, *a, **kw):
+        return await self._discover.get_taste_spectrum(*a, **kw)
+
+    async def get_top_genre(self, *a, **kw):
+        return await self._discover.get_top_genre(*a, **kw)
+
+    async def get_genre_artists_enriched(self, *a, **kw):
+        return await self._discover.get_genre_artists_enriched(*a, **kw)
+
+    async def get_artist_detail(self, *a, **kw):
+        return await self._discover.get_artist_detail(*a, **kw)

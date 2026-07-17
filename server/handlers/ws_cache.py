@@ -26,7 +26,7 @@ import os
 
 import structlog
 
-from config import CACHE_DIR
+from config import DOWNLOAD_DIR
 
 logger = structlog.get_logger(__name__)
 
@@ -34,8 +34,8 @@ logger = structlog.get_logger(__name__)
 async def handle_cache_command(action: str, data: dict, ws, db, manager, state):
     if action == "get_cache_size":
         size = 0
-        if CACHE_DIR.exists():
-            for root, dirs, files in os.walk(str(CACHE_DIR)):
+        if DOWNLOAD_DIR.exists():
+            for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
                 for f in files:
                     fp = os.path.join(root, f)
                     try:
@@ -44,8 +44,8 @@ async def handle_cache_command(action: str, data: dict, ws, db, manager, state):
                         pass
         await ws.send_str(json.dumps({"type": "cache_size", "data": {"size_bytes": size}}))
     elif action == "clear_cache":
-        if CACHE_DIR.exists():
-            for root, dirs, files in os.walk(str(CACHE_DIR)):
+        if DOWNLOAD_DIR.exists():
+            for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
                 for f in files:
                     fp = os.path.join(root, f)
                     try:

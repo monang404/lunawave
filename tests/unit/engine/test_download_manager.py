@@ -1,6 +1,6 @@
 """tests/unit/engine/test_download_manager.py — mirrors engine/download_manager.py
 
-Semua I/O (shutil.move, Path.mkdir, ytdlp.download_mp3) di-mock agar
+Semua I/O (shutil.move, Path.mkdir, ytdlp.download_audio) di-mock agar
 test berjalan tanpa filesystem nyata dan tanpa yt-dlp.
 
 Purpose:
@@ -141,10 +141,10 @@ class TestOnDownloadGuards:
         isolated = CommandBus()
 
         async def fake_dl(video_id, on_progress=None):
-            ytdlp.call_log.append(("download_mp3", video_id))
+            ytdlp.call_log.append(("download_audio", video_id))
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
-        ytdlp.download_mp3 = fake_dl
+        ytdlp.download_audio = fake_dl
         mgr = make_manager(bus, state, ytdlp, isolated)
 
         with (
@@ -195,7 +195,7 @@ class TestDoDownload:
         (tmp_path / "vid1.mp3").write_bytes(b"audio")
         isolated = CommandBus()
 
-        # Override download_mp3 to call progress hook with a proper yt-dlp dict
+        # Override download_audio to call progress hook with a proper yt-dlp dict
         async def fake_dl(video_id, on_progress=None):
             if on_progress:
                 on_progress(
@@ -207,7 +207,7 @@ class TestDoDownload:
                 )
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
-        ytdlp.download_mp3 = fake_dl
+        ytdlp.download_audio = fake_dl
         mgr = make_manager(bus, state, ytdlp, isolated)
 
         received = []
@@ -228,7 +228,7 @@ class TestDoDownload:
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
-        ytdlp.download_mp3 = fake_dl
+        ytdlp.download_audio = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
 
@@ -249,7 +249,7 @@ class TestDoDownload:
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
-        ytdlp.download_mp3 = fake_dl
+        ytdlp.download_audio = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
 
@@ -267,7 +267,7 @@ class TestDoDownload:
         async def fake_dl(video_id, on_progress=None):
             return ytdlp.download_paths.get(video_id, f"/tmp/{video_id}.mp3")
 
-        ytdlp.download_mp3 = fake_dl
+        ytdlp.download_audio = fake_dl
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
 
@@ -282,11 +282,11 @@ class TestDoDownload:
         isolated = CommandBus()
         mgr = make_manager(bus, state, ytdlp, isolated)
 
-        # Make download_mp3 raise
+        # Make download_audio raise
         async def bad_download(*_a, **_kw):
             raise RuntimeError("yt-dlp broke")
 
-        ytdlp.download_mp3 = bad_download
+        ytdlp.download_audio = bad_download
 
         received = []
         bus.subscribe(LogMessageEvent, received.append)
@@ -305,7 +305,7 @@ class TestDoDownload:
         async def bad_download(*_a, **_kw):
             raise RuntimeError("fail")
 
-        ytdlp.download_mp3 = bad_download
+        ytdlp.download_audio = bad_download
 
         with patch("pathlib.Path.mkdir"):
             await mgr._do_download(track)

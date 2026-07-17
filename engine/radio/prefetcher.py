@@ -70,11 +70,6 @@ class RadioPrefetcher:
                 return tracks
             return None
 
-    def clear_standby(self):
-        # We don't await the lock here if we just want to replace it.
-        # But let's do it safely in an async method.
-        pass
-
     async def async_clear_standby(self):
         async with self._standby_lock:
             self._standby = []

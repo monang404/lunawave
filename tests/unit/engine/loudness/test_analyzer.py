@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from engine.loudness.analyzer import LoudnessAnalyzer
+from engine.loudness.analyzer import LoudnessAnalyzer, LoudnessMeasurement
 
 
 @patch("engine.loudness.analyzer.subprocess.run")
@@ -25,7 +25,9 @@ def test_measure_sync_success(mock_run):
     mock_run.return_value = mock_result
 
     result = analyzer.measure_sync("dummy_uri")
-    assert result == -16.5
+    assert isinstance(result, LoudnessMeasurement)
+    assert result.lufs == -16.5
+    assert result.true_peak == -2.0
     assert mock_run.called
 
 

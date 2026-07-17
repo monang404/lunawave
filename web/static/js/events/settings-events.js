@@ -52,6 +52,7 @@ function closeMainOverlay() {
     if (dom.settingsSheet) dom.settingsSheet.classList.remove("open");
     if (dom.actionSheet) dom.actionSheet.classList.remove("open");
     if (dom.helpSheet) dom.helpSheet.classList.remove("open");
+    if (dom.artistDetailSheet) dom.artistDetailSheet.classList.remove("open");
 }
 
 function initSettingsEvents() {
