@@ -37,11 +37,16 @@ function getOrInitAudio() {
             }
         });
         localAudio.addEventListener("pause", () => {
-            // Jangan kirim WS jika pause dipicu oleh kode kita sendiri atau sudah ditangani mediaSession
             if (_mediaSessionHandling || window.audioBlocked || localAudio.ended) return;
             if (store.status === "PLAYING") {
                 console.log("[audio] Native pause (headset/OS), syncing to server...");
-                if (typeof wsSend === "function") wsSend("toggle_pause");
+                if (store.userRole === "admin") {
+                    store.status = "PAUSED";
+                    window.lastToggleTime = Date.now();
+                    if (typeof renderPlayBtn === "function") renderPlayBtn();
+                    if (typeof renderNowPlaying === "function") renderNowPlaying();
+                    if (typeof wsSend === "function") wsSend("toggle_pause");
+                }
             }
             _updateMediaSessionState("paused");
         });
@@ -49,7 +54,14 @@ function getOrInitAudio() {
             if (_mediaSessionHandling || window.audioBlocked) return;
             if (store.status !== "PLAYING") {
                 console.log("[audio] Native play (headset/OS), syncing to server...");
-                if (typeof wsSend === "function") wsSend("toggle_pause");
+                if (store.userRole === "admin") {
+                    store.status = "PLAYING";
+                    window.lastToggleTime = Date.now();
+                    if (typeof resetAnchorClock === "function") resetAnchorClock();
+                    if (typeof renderPlayBtn === "function") renderPlayBtn();
+                    if (typeof renderNowPlaying === "function") renderNowPlaying();
+                    if (typeof wsSend === "function") wsSend("toggle_pause");
+                }
             }
             _updateMediaSessionState("playing");
         });
@@ -301,16 +313,18 @@ function updateMediaSession() {
 
         // Pasang action handler — gunakan nama action yang sesuai dengan backend Python
         navigator.mediaSession.setActionHandler('play', () => {
+            if (store.status === "PLAYING") return; // Cegah double toggle jika sudah play
             _mediaSessionHandling = true;
             _optimisticToggle(true);
             if (typeof wsSend === "function") wsSend("toggle_pause");
-            setTimeout(() => { _mediaSessionHandling = false; }, 200);
+            setTimeout(() => { _mediaSessionHandling = false; }, 300);
         });
         navigator.mediaSession.setActionHandler('pause', () => {
+            if (store.status !== "PLAYING") return; // Cegah double toggle jika sudah pause
             _mediaSessionHandling = true;
             _optimisticToggle(false);
             if (typeof wsSend === "function") wsSend("toggle_pause");
-            setTimeout(() => { _mediaSessionHandling = false; }, 200);
+            setTimeout(() => { _mediaSessionHandling = false; }, 300);
         });
         navigator.mediaSession.setActionHandler('previoustrack', () => {
             if (store.userRole === "admin") {
