@@ -87,8 +87,8 @@ async def test_websocket_flow(app_client):
         except TimeoutError:
             continue
 
-    assert received_track_started, (
-        "Did not receive state_update with loading/playing status after sending play command"
-    )
+    assert (
+        received_track_started
+    ), "Did not receive state_update with loading/playing status after sending play command"
 
     await ws.close()

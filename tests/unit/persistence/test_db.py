@@ -43,6 +43,26 @@ async def test_init_is_idempotent_when_called_twice_on_a_file_backed_db(tmp_path
     await database2.close()
 
 
+async def test_close_joins_connection_worker_thread(tmp_path):
+    """PATCH-2026-07-16-001 regression: close() must actually join the
+    aiosqlite connection worker thread, not just sleep(0.01) and hope. A
+    thread left alive after close() is a non-daemon zombie thread that
+    prevents the process from exiting cleanly (root cause of the CI hang
+    investigated in implementation-plan.md Batch 0)."""
+    from persistence import Database
+
+    path = tmp_path / "close_joins_thread.db"
+    database = Database(db_path=path)
+    await database.init()
+
+    worker_thread = database.conn._thread
+    assert worker_thread.is_alive()
+
+    await database.close()
+
+    assert not worker_thread.is_alive()
+
+
 async def test_songs_migration_recovers_collaboration_song_on_old_schema(tmp_path):
     """PATCH-2026-07-16-048 regression: a pre-existing DB created under the
     old schema (youtube_id globally UNIQUE) must be migrated in-place to a

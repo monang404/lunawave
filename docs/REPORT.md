@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-15
+last_verified: 2026-07-16
 sprint: 3.2
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-15
+> **Tanggal Scan:** 2026-07-16
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,20 +19,20 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-15 oleh `automation/generate_report.py`  
+> **Auto-generated:** 2026-07-16 oleh `automation/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 60 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 135 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 61 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 136 |
 | Total file `.js` (ekskl. `.min.js`) | 34 |
 | Total file `.css` (ekskl. `.min.css`) | 21 |
-| Total class (Python) | 81 |
-| Total function/method (Python) | 541 |
-| Total baris Python | 13,972 |
-| Total baris JS (web/) | 3,395 |
+| Total class (Python) | 84 |
+| Total function/method (Python) | 558 |
+| Total baris Python | 14,597 |
+| Total baris JS (web/) | 3,406 |
 | Total baris CSS (web/) | 3,262 |
 | Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
@@ -41,9 +41,9 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 406 ⚠️ |
+| `engine/playback/controller.py` | 464 ⚠️ |
 | `automation/generate_file_index.py` | 370 |
-| `main.py` | 359 |
+| `main.py` | 360 |
 | `automation/architecture_lint.py` | 359 |
 | `launcher/gui/ui_builder.py` | 355 |
 <!-- END:GENERATED -->

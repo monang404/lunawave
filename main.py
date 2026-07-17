@@ -328,15 +328,21 @@ async def main():
                     print(f"\n[FATAL ERROR] App crashed due to task failure: {exc}")
                     traceback.print_exception(type(exc), exc, exc.__traceback__)
 
-        # Cancel remaining tasks
+        # Cancel remaining tasks and WAIT for them to actually finish.
+        # cancel() hanya menjadwalkan CancelledError, tidak menunggu task selesai.
+        # PATCH-2026-07-16-001: tanpa await ini, background loop task
+        # (mpv_watchdog, db_maintenance, connectivity_checker) bisa masih
+        # pending-cancellation saat proses exit, berpotensi menyebabkan hang.
         for t in tasks:
             t.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         # Cleanup resources
         await nowplaying.cleanup()
         try:
             await mpv.close()
-        except:
+        except Exception:
             pass
         lyrics_fetcher.cleanup()
         sponsorblock.cleanup()

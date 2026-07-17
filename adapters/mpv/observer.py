@@ -65,8 +65,16 @@ class MpvObserver:
             self._task = safe_create_task(self._observe_loop(), name="mpv-observer")
 
     async def stop(self):
+        # PATCH-2026-07-16-001: cancel() saja tidak menunggu task selesai;
+        # await eksplisit di sini agar caller (adapters/mpv/__init__.py) tahu
+        # observer benar-benar berhenti sebelum lanjut, mencegah task
+        # menggantung di background saat shutdown.
         if self._task:
             self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
 
     async def _subscribe_properties(self):
         await asyncio.gather(

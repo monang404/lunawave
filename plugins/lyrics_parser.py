@@ -22,7 +22,8 @@ Thread Safety:
 
 import re
 
-_LRC_LINE_RE = re.compile(r"\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)")
+_LRC_TAG_RE = re.compile(r"\[(\d+):(\d+(?:\.\d+)?)\]")
+_LRC_METADATA_RE = re.compile(r"^\[[a-zA-Z]+:.*\]$")
 
 
 class LyricsParser:
@@ -31,14 +32,15 @@ class LyricsParser:
         result = []
         for line in lrc_text.splitlines():
             line = line.strip()
-            if not line:
+            if not line or _LRC_METADATA_RE.match(line):
                 continue
-            m = _LRC_LINE_RE.match(line)
-            if m:
-                minutes, seconds, text = m.groups()
-                timestamp = int(minutes) * 60 + float(seconds)
-                result.append((timestamp, text.strip()))
+            tags = list(_LRC_TAG_RE.finditer(line))
+            if tags:
+                text = line[tags[-1].end() :].strip()
+                for m in tags:
+                    minutes, seconds = m.groups()
+                    timestamp = int(minutes) * 60 + float(seconds)
+                    result.append((timestamp, text))
             else:
-                if line:
-                    result.append((0.0, line))
+                result.append((0.0, line))
         return sorted(result, key=lambda x: x[0])
