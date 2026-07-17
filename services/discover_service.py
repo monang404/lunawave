@@ -8,6 +8,8 @@ Purpose:
 Responsibilities:
     - Expose async methods for each discover data category.
     - Return empty lists gracefully when the DB connection is unavailable.
+    - Expose personalization wrappers (for_you, unheard, genre_affinity,
+      taste_spectrum, artist_detail) backed by persistence.discover_repo.
 
 Depends on:
     - core.ports
@@ -159,3 +161,48 @@ class DiscoverService:
         except Exception as e:
             print(f"Error in get_featured_genres: {e}")
         return genres
+
+    # --- Discover personalization (PATCH-2026-07-17-070) ---
+    # Delegates to persistence.discover_repo.DiscoverRepository through the
+    # Database facade — this service doesn't need to know the split exists.
+
+    async def get_for_you(self, n: int) -> list[dict]:
+        """ "Untuk Kamu": artis top hasil bandit ranking. Kosong kalau
+        bandit belum pernah belajar apapun (semua artis masih alpha=beta=1)
+        — caller/frontend fallback ke featured/random seperti sekarang."""
+        if not getattr(self.db, "conn", None):
+            return []
+        return await self.db.get_bandit_ranked_artists(n)
+
+    async def get_unheard(self, n: int) -> list[dict]:
+        """ "Belum Pernah Kamu Dengar": artis yang benar-benar belum
+        tersentuh (bandit maupun click)."""
+        if not getattr(self.db, "conn", None):
+            return []
+        return await self.db.get_unheard_artists(n)
+
+    async def get_genre_affinity(self, n: int) -> dict:
+        """ "Karena Kamu Suka [Genre]": genre teratas dari taste spectrum +
+        artis lain di genre itu. `genre=None` kalau histori putar kosong
+        (user baru) — caller menampilkan fallback UI, bukan section kosong."""
+        if not getattr(self.db, "conn", None):
+            return {"genre": None, "artists": []}
+        genre = await self.db.get_top_genre()
+        if not genre:
+            return {"genre": None, "artists": []}
+        artists = await self.db.get_genre_artists_enriched(genre, n)
+        return {"genre": genre, "artists": artists}
+
+    async def get_taste_spectrum(self) -> list[dict]:
+        """Breakdown genre dari histori putar, dinormalisasi ke persentase.
+        [] kalau histori kosong."""
+        if not getattr(self.db, "conn", None):
+            return []
+        return await self.db.get_taste_spectrum()
+
+    async def get_artist_detail(self, nama: str) -> dict | None:
+        """Detail lengkap satu artis (untuk artist detail sheet). None
+        kalau artis tidak ditemukan."""
+        if not getattr(self.db, "conn", None):
+            return None
+        return await self.db.get_artist_detail(nama)

@@ -247,8 +247,17 @@ function handleServerMessage(msg) {
             store.discover_cached   = msg.data.cached_tracks || [];
             store.discover_featured_artists = msg.data.featured_artists || [];
             store.discover_featured_genres = msg.data.featured_genres || [];
+            store.discover_for_you = msg.data.for_you || [];
+            store.discover_unheard = msg.data.unheard || [];
+            store.discover_genre_affinity_genre = msg.data.genre_affinity_genre || null;
+            store.discover_genre_affinity_artists = msg.data.genre_affinity_artists || [];
+            store.discover_taste_spectrum = msg.data.taste_spectrum || [];
             renderDiscoverTab();
             renderRecentRow();
+            if (typeof renderDiscoverPersonalization === "function") renderDiscoverPersonalization();
+            break;
+        case "artist_detail":
+            if (typeof handleArtistDetail === "function") handleArtistDetail(msg.data);
             break;
         case "log":
             showLogToast(msg.data);

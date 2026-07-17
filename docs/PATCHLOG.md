@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-16-069
+latest_patch_id: PATCH-2026-07-17-071
 
-total_entries: 69
+total_entries: 71
 
 ---
 
@@ -23,6 +23,184 @@ total_entries: 69
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-17] Discover Tab revamp — frontend wiring (taste spectrum, filter bar, 3 card-row, artist detail sheet)
+**ID:** `PATCH-2026-07-17-071`
+**Tanggal:** 2026-07-17
+**Ringkasan:**
+Melanjutkan `PATCH-2026-07-17-070` (backend-only) sesuai
+`discover-tab-frontend-handoff.md`. Semua data personalisasi yang sudah
+dikirim backend kini benar-benar sampai ke UI dan bisa dipakai user.
+
+1. **`server/handlers/websocket.py`** — izin eksplisit diberikan user
+   (file ini *restricted* per `AI_CONTEXT.md`). Ditambah 1 baris:
+   `"get_artist_detail"` ke `DISCOVERY_CMDS`, sehingga action yang sudah
+   diimplementasi di `ws_discovery.py` sejak PATCH-070 kini benar-benar
+   reachable dari client.
+2. **`web/static/js/store.js`** — tambah default `discover_for_you`,
+   `discover_unheard`, `discover_genre_affinity_genre`,
+   `discover_genre_affinity_artists`, `discover_taste_spectrum`.
+3. **`web/static/js/ws.js`** — `case "discover_data"` sekarang menyimpan
+   5 field baru dari payload + memanggil `renderDiscoverPersonalization()`.
+   Tambah `case "artist_detail"` baru (sebelumnya di-drop diam-diam karena
+   tidak ada `default:` case).
+4. **`web/static/js/dom.js`** — register elemen baru: taste bar/legend,
+   filter bar (segmented + chip row), 3 card-row (`rowForYou`,
+   `rowGenreAffinity`, `rowUnheard`), sheet `artistDetailSheet` +
+   cover/nama/tag/track-list/tombol di dalamnya.
+5. **`web/static/js/render/discover-personalize.js` (baru, 185 baris).**
+   Semua logic render + interaksi personalisasi: taste bar dari
+   `discover_taste_spectrum` (dengan fallback "Dengarkan beberapa lagu
+   dulu..." kalau kosong), kartu artis generik (cover + nama + genre tag,
+   badge `match_pct` untuk "Untuk Kamu", badge "Baru" + varian
+   `.undiscovered` untuk "Belum Pernah Kamu Dengar"), filter kategori +
+   dekade client-side (dekade dibangun dari nilai `tahun_aktif` aktual yang
+   ada di data, bukan hard-coded), handler tap kartu →
+   `wsSend('get_artist_detail', ...)` → isi & buka sheet saat
+   `handleArtistDetail()` dipanggil dari `ws.js`, tombol "Putar Semua" →
+   reuse `enqueue_artist_songs` dengan role-gate (`store.userRole !==
+   'admin'` → toast) konsisten dengan pola Discover lain.
+   `discover-tab.js` (sudah lewat ambang 200 baris) **tidak disentuh sama
+   sekali** — tetap fokus ke recent/favorites/cached/hashtag-cloud.
+6. **`web/static/css/components/discover-cards.css` (baru).** `.taste-bar`/
+   `.taste-legend`, `.filter-bar`/`.segmented`/`.chip`, `.artist-card` (+
+   varian `.undiscovered`), styling konten `.ads-*` untuk artist detail
+   sheet. Genre tag pakai palet kecil kurasi (`--g-pop`, `--g-rock`, dst,
+   didefinisikan lokal di file ini) bukan `hsl(random)`. Tidak ada CSS baru
+   untuk shell sheet — reuse `.settings-sheet` yang sudah ada.
+7. **`web/static/index.html`** — markup taste spectrum + filter bar +
+   3 card-row disisipkan di bawah header Discover, sebelum "Jelajahi
+   Artis"/"Jelajahi Genre" yang sudah ada. Sheet baru
+   `<div class="settings-sheet" id="artist-detail-sheet">` (reuse pola
+   `#action-sheet`/`#help-sheet` + `#main-overlay`). Ditambah 1 link CSS
+   (`discover-cards.css`) dan 1 script tag
+   (`render/discover-personalize.js`).
+8. **`web/static/js/events/settings-events.js`** — `closeMainOverlay()`
+   ditambah 1 baris supaya `artistDetailSheet` ikut ketutup saat backdrop
+   di-tap, konsisten dengan sheet lain.
+9. **`web/static/js/events/index.js`** — daftarkan
+   `initDiscoverFilterEvents()` di urutan init yang sama dengan
+   `initSettingsEvents()` dkk.
+
+**Verifikasi otomatis:** `automation/doctor.py`,
+`generate_file_index.py`, `generate_report.py` dijalankan bersih untuk
+file yang disentuh sesi ini (2 FAIL yang tersisa — `engine/playback/controller.py`
+464 baris & `.gitignore` hilang — sudah ada sebelum sesi ini, tidak
+disentuh/diperparah oleh patch ini).
+
+**File Terdampak:**
+- `server/handlers/websocket.py`
+- `web/static/js/store.js`
+- `web/static/js/ws.js`
+- `web/static/js/dom.js`
+- `web/static/js/render/discover-personalize.js` (baru)
+- `web/static/css/components/discover-cards.css` (baru)
+- `web/static/index.html`
+- `web/static/js/events/settings-events.js`
+- `web/static/js/events/index.js`
+
+---
+
+## [2026-07-17] Discover Tab revamp — backend saja (personalisasi: bandit ranking, unheard artists, taste spectrum, genre affinity, artist detail)
+**ID:** `PATCH-2026-07-17-070`
+**Tanggal:** 2026-07-17
+**Ringkasan:**
+Eksekusi bagian backend dari `discover-tab-implementation-plan-v2.md` (v2
+dipakai, bukan v1 — lihat alasan di bawah). **Frontend sengaja belum
+disentuh sama sekali** — task ini eksplisit diminta backend-only, siap
+dilanjutkan sesi lain oleh frontend designer/programmer. Lihat
+`docs/STATUS.md` §"Discover Tab Personalization — Backend" untuk ringkasan
+siap-pakai yang ditujukan buat sesi lanjutan itu.
+
+1. **`persistence/discover_enrich.py` (baru, 78 baris).** `enrich_artists(conn, rows)`
+   — helper bersama: attach `cover` (thumbnail YouTube dari lagu pertama
+   artis, `MIN(id)` bukan `RANDOM()` supaya deterministic/tidak flicker)
+   + `genres` (list tag) ke sekumpulan artist row sekaligus. 2 query total
+   untuk berapa pun jumlah artis (hindari N+1).
+2. **`persistence/discover_repo.py` (baru, 242 baris).** `class
+   DiscoverRepository` — **keputusan v2, bukan v1**: v1 rencananya nambah
+   method ini ke `artist_repo.py`/`genre_repo.py` (116/97 baris saat itu),
+   tapi itu akan mendorong keduanya ke zona Waspada (>150 baris) padahal
+   tanggung jawab aslinya cuma click/reward tracking, bukan personalisasi.
+   Jadi repo terpisah, sejajar `LibraryRepository`. Method:
+   `get_bandit_ranked_artists(limit)` ("Untuk Kamu", ranking posterior mean
+   `alpha/(alpha+beta)`, exclude artis yang belum tersentuh bandit sama
+   sekali), `get_unheard_artists(limit)` ("Belum Pernah Kamu Dengar", filter
+   `alpha=beta=1 AND click_count=0`), `get_taste_spectrum(limit=6)`
+   (agregasi genre dari `tracks.play_count + is_favorite*3`, dinormalisasi
+   ke persentase + bucket "Lainnya" untuk sisa genre di luar top-N; `[]`
+   kalau histori kosong), `get_top_genre()` (elemen pertama taste
+   spectrum atau `None`), `get_genre_artists_enriched(genre, limit)`,
+   `get_artist_detail(nama)` (info + genre + hingga 10 lagu, urut by id
+   bukan random, untuk detail sheet yang stabil antar-buka).
+   File ini masuk zona **Waspada** (242 baris, ambang 150-300) — bukan
+   pelanggaran, tapi kalau nanti ada section Discover baru lagi,
+   pertimbangkan pecah per jenis query dulu sebelum tembus 300.
+3. **`persistence/__init__.py`:** import + instansiasi `DiscoverRepository`
+   (`self._discover`), delegasi 6 method baru di atas — pola sama persis
+   dengan repo lain yang sudah ada.
+4. **`services/discover_service.py`** (161 → 208 baris, tetap zona Waspada
+   tapi belum "wajib pecah"): 5 wrapper method baru —
+   `get_for_you`, `get_unheard`, `get_genre_affinity` (return
+   `{genre, artists}`, `genre=None` kalau histori kosong), `get_taste_spectrum`,
+   `get_artist_detail` — semua delegasi ke facade `Database` seperti method
+   lain di file ini, guard `getattr(self.db, "conn", None)` konsisten
+   dengan pola existing.
+5. **`server/handlers/ws_discovery.py`:** action `discover` — `asyncio.gather`
+   diperluas dari 5 jadi 9 query paralel, payload `discover_data` nambah 5
+   field (`for_you`, `unheard`, `genre_affinity_genre`,
+   `genre_affinity_artists`, `taste_spectrum`). Action baru `get_artist_detail`
+   diimplementasikan lengkap (terima `{artist: nama}`, balas
+   `{type: "artist_detail", data: {...} | null}`).
+6. **`server/handlers/websocket.py` — SENGAJA TIDAK DISENTUH.** File ini
+   *restricted* di `AI_CONTEXT.md` ("tidak boleh disentuh tanpa izin
+   eksplisit"). Perubahan yang dibutuhkan cuma 1 baris (tambah
+   `"get_artist_detail"` ke `DISCOVERY_CMDS`), tapi izin eksplisit belum
+   diminta/didapat di sesi ini — jadi **action `get_artist_detail` sudah
+   diimplementasikan di `ws_discovery.py` tapi belum bisa dipanggil sama
+   sekali** lewat WS asli sampai baris itu ditambah. Action `discover` yang
+   sudah diperluas TIDAK terpengaruh blocker ini (sudah ada di
+   `DISCOVERY_CMDS` sebelumnya).
+7. **Test (mirror per Prinsip #2):** `tests/unit/persistence/test_discover_repo.py`
+   (baru, 14 test, mencakup semua method + edge case histori
+   kosong/artist tidak ditemukan/cap 10 lagu). `test_discover_service.py`
+   (+12 test untuk 5 wrapper baru). `test_ws_discovery.py` (+4 test:
+   payload personalisasi lengkap, `get_artist_detail` sukses, `get_artist_detail`
+   dengan nama kosong tidak memanggil service — plus 1 test lama diupdate
+   supaya tidak break setelah `gather` diperluas dari 5→9 query).
+8. **Automation:** `generate_file_index.py` + `generate_report.py`
+   dijalankan ulang (file baru: `discover_repo.py`, `discover_enrich.py`,
+   `test_discover_repo.py`). `doctor.py` bersih untuk semua yang diubah di
+   patch ini — satu-satunya FAIL yang tersisa (`engine/playback/controller.py`
+   464 baris) adalah temuan pre-existing dari sesi sebelumnya, tidak
+   disentuh atau diperparah oleh patch ini.
+
+**Hasil test:** 522 unit test lulus (naik dari 508 baseline), 0 gagal.
+`tests/unit/launcher/gui/*` tidak ikut collect di environment eksekusi ini
+(`ModuleNotFoundError: tkinter`, pre-existing keterbatasan environment,
+bukan regresi dari patch ini).
+
+**File Terdampak:**
+- `persistence/discover_enrich.py` (baru)
+- `persistence/discover_repo.py` (baru)
+- `persistence/__init__.py`
+- `services/discover_service.py`
+- `server/handlers/ws_discovery.py`
+- `tests/unit/persistence/test_discover_repo.py` (baru)
+- `tests/unit/services/test_discover_service.py`
+- `tests/unit/server/handlers/test_ws_discovery.py`
+- `docs/STATUS.md`
+- `docs/discover-tab-frontend-handoff.md` (baru — laporan handoff detail utk sesi frontend berikutnya: kontrak payload, gap ws.js/store.js yang tidak disebut di implementation-plan-v2.md, urutan pengerjaan, checklist)
+- `docs/FILE_INDEX.md` (auto-generated)
+- `docs/REPORT.md` (auto-generated)
+
+**Belum disentuh (menunggu sesi frontend + izin eksplisit untuk `websocket.py`):**
+- `server/handlers/websocket.py` (butuh izin eksplisit, 1 baris)
+- `web/static/js/dom.js`, `web/static/index.html`,
+  `web/static/js/render/discover-personalize.js` (baru, belum dibuat),
+  `web/static/css/components/discover-cards.css` (baru, belum dibuat)
 
 ---
 

@@ -17,7 +17,9 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 | `cache/resolver.py` | Di `cache/`, masih aktif | Pindah ke `persistence/resolver.py` | Sprint 5 | ❄️ Frozen (v1.0.0 Baseline) |
 | `engine/mpv_controller.py` | ✅ Sudah dipisah ke `adapters/mpv/` | Pindah ke `adapters/mpv/` | Sprint 4 | ✅ Done |
 | `engine/ytdlp_client.py` | ✅ Sudah dipisah ke `adapters/ytdlp/` | Pindah ke `adapters/ytdlp/` | Sprint 4 | ✅ Done |
-| `server/handlers/websocket.py` | Monolith **354 baris** (naik dari 317 setelah Batch 9, `PATCH-2026-07-11-018` — parallel broadcast + parallel Discover query, diizinkan eksplisit sbg file *restricted*) | Pisah `ConnectionManager` ke file sendiri | Sprint 4 | ❄️ Frozen (v1.0.0 Baseline) |
+| `server/handlers/websocket.py` | Monolith **355 baris** (naik dari 354). Izin eksplisit **diberikan** user pada `PATCH-2026-07-17-071` untuk perubahan 1 baris (`"get_artist_detail"` ditambahkan ke `DISCOVERY_CMDS`) — action itu kini reachable dari client, lihat §Discover Tab Personalization di bawah. | Pisah `ConnectionManager` ke file sendiri | Sprint 4 | ❄️ Frozen (v1.0.0 Baseline) |
+| `persistence/discover_repo.py` | **Baru**, `PATCH-2026-07-17-070`. 242 baris — zona Waspada (>150), belum "wajib pecah" (<300). Kalau nanti nambah section baru, pertimbangkan pecah per-jenis query (`bandit.py` / `taste.py`) sebelum lewat 300. | 1 file = query personalisasi Discover | — | 🆕 Baru, siap dipakai backend |
+| `persistence/discover_enrich.py` | **Baru**, `PATCH-2026-07-17-070`. 78 baris — aman. | Helper cover+genre batch, dipakai `discover_repo.py` | — | 🆕 Baru, siap dipakai backend |
 | `config.py` | ✅ Sudah dipisah ke `config_security.py` | Pisah ke `config_security.py` | Sprint 4 | ✅ Done |
 | `core/command_bus.py` | ✅ Sudah dipisah ke `core/commands.py` | Pisah CMD ke `core/commands.py` | Sprint 4 | ✅ Done |
 | `engine/playback/controller.py` | 464 baris, closure kompleks (naik dari 420 setelah `PATCH-2026-07-16-069` — tambah `dispose()` + simpan referensi lambda subscription, diizinkan eksplisit sbg file *restricted*) | Pecah `queue_ops.py` + `mode_ops.py` (lihat MIGRATION_GUIDE Tahap 6) | Sprint 4 | ❄️ Frozen (v1.0.0 Baseline) |
@@ -28,9 +30,10 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 
 | File | Kondisi Aktual | Kondisi Target | Sprint Target | Status |
 |------|---------------|----------------|---------------|--------|
-| `web/static/index.html` | SPA monolith 677 baris | Tetap 1 file (tidak dipecah) | — | ✅ Final |
-| `web/static/js/` | **24 file, 3118 baris** (naik dari 21 file/2813 baris) | ~32 file | Sprint 9 | ❄️ Frozen (v1.0.0 Baseline) |
-| `web/static/css/` | 22 file, 3274 baris | ~24-26 file | Sprint 10 | ❄️ Frozen (v1.0.0 Baseline) |
+| `web/static/index.html` | SPA monolith **862 baris** (naik dari 677 — markup taste spectrum/filter bar/3 card-row + artist detail sheet ditambah, `PATCH-2026-07-17-071`) | Tetap 1 file (tidak dipecah) | — | ✅ Final |
+| `web/static/js/` | **33 file, 3472 baris** (naik 1 file — `render/discover-personalize.js` baru, 185 baris, `PATCH-2026-07-17-071`). Catatan: angka "24 file" sebelumnya di baris ini sudah stale relatif terhadap isi repo aktual sebelum sesi ini juga; jumlah di atas adalah hasil hitung langsung `find`. | ~32 file | Sprint 9 | ❄️ Frozen (v1.0.0 Baseline) |
+| `web/static/css/` | **23 file, 3722 baris** (naik 1 file — `components/discover-cards.css` baru, `PATCH-2026-07-17-071`) | ~24-26 file | Sprint 10 | ❄️ Frozen (v1.0.0 Baseline) |
+| `web/static/js/render/discover-tab.js` | **Tidak disentuh** di `PATCH-2026-07-17-071` (285 baris, sudah lewat ambang 200 — tetap fokus recent/favorites/cached/hashtag-cloud) | Tetap terpisah dari personalisasi | — | ⚠️ Waspada (di atas ambang, tidak diperparah) |
 
 ## Data & Infra
 
@@ -72,3 +75,35 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 | Bonus: `patchlog.py` catastrophic regex backtracking | `automation/patchlog.py` | ✅ Done, ditemukan saat mencoba log patch ini sendiri |
 
 **Hasil test:** 508 passed, 6 skipped (naik dari baseline 475 passed sebelum sesi ini). `ruff`/`mypy`/`bandit` bersih untuk semua file yang diubah. Coverage total 88%.
+
+## Discover Tab Personalization — Backend + Frontend (2026-07-17)
+
+> Detail lengkap: `PATCH-2026-07-17-070` (backend) dan `PATCH-2026-07-17-071`
+> (frontend) di `PATCHLOG.md`. Referensi desain: `discover-tab-redesign.html`.
+> Rencana asli: `discover-tab-implementation-plan-v2.md` (v2 dipakai, bukan
+> v1 — repo baru `discover_repo.py`, bukan nambah ke
+> `artist_repo.py`/`genre_repo.py`, karena God File Threshold).
+
+**Status: selesai end-to-end.** Backend (522 unit test lulus) dan frontend
+(§Frontend JS/CSS di atas) sudah terhubung penuh.
+
+| Layer | File | Isi |
+|---|---|---|
+| Query | `persistence/discover_enrich.py` | `enrich_artists()` — batch cover+genre, no N+1 |
+| Query | `persistence/discover_repo.py` | `DiscoverRepository`: `get_bandit_ranked_artists`, `get_unheard_artists`, `get_taste_spectrum`, `get_top_genre`, `get_genre_artists_enriched`, `get_artist_detail` |
+| Facade | `persistence/__init__.py` | Delegasi 6 method di atas ke `self._discover` |
+| Service | `services/discover_service.py` | Wrapper: `get_for_you`, `get_unheard`, `get_genre_affinity`, `get_taste_spectrum`, `get_artist_detail` |
+| WS | `server/handlers/ws_discovery.py` | Action `discover` kirim `for_you`, `unheard`, `genre_affinity_genre`, `genre_affinity_artists`, `taste_spectrum`; action `get_artist_detail` |
+| WS router | `server/handlers/websocket.py` | `"get_artist_detail"` ada di `DISCOVERY_CMDS` (izin eksplisit diberikan, `PATCH-2026-07-17-071`) — **blocker lama sudah tidak ada**, action ini reachable end-to-end |
+| Store | `web/static/js/store.js` | Default untuk 5 field personalisasi baru |
+| WS client | `web/static/js/ws.js` | `discover_data` menyimpan 5 field baru + panggil `renderDiscoverPersonalization()`; `artist_detail` case baru |
+| DOM | `web/static/js/dom.js` | Elemen taste bar, filter bar, 3 card-row, artist detail sheet |
+| Render | `web/static/js/render/discover-personalize.js` (baru, 185 baris) | Taste bar + fallback, filter kategori/dekade client-side, kartu artis + badge, sheet detail artis, role-gate tombol "Putar Semua" |
+| Style | `web/static/css/components/discover-cards.css` (baru) | Semua komponen visual personalisasi + genre palette kurasi |
+| Markup | `web/static/index.html` | Section taste spectrum/filter bar/3 card-row + `#artist-detail-sheet` (reuse `.settings-sheet`) |
+
+**Belum ditest manual di browser sungguhan** (lingkungan sesi ini tidak
+punya akses jaringan/display) — checklist manual dari
+`discover-tab-frontend-handoff.md` §5 masih perlu dijalankan oleh
+developer: user baru (histori kosong), bandit belum pernah update, filter
+sampai hasil 0, role non-admin, tap kartu → sheet, refresh halaman.

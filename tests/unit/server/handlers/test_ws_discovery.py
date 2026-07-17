@@ -24,15 +24,34 @@ async def test_handle_discovery_command_search():
     assert sent_data["data"] == [{"title": "Test"}]
 
 
+def _wire_discover_service_mock(mock_ds_instance, **overrides):
+    """Wires the standard set of AsyncMock returns for a `discover` gather
+    call, so each test only needs to override what it cares about."""
+    defaults = dict(
+        get_recent=[],
+        get_favorites=[],
+        get_cached=[],
+        get_featured_artists=[],
+        get_featured_genres=[],
+        get_for_you=[],
+        get_unheard=[],
+        get_genre_affinity={"genre": None, "artists": []},
+        get_taste_spectrum=[],
+    )
+    defaults.update(overrides)
+    for name, value in defaults.items():
+        setattr(mock_ds_instance, name, AsyncMock(return_value=value))
+
+
 @pytest.mark.asyncio
 @patch("server.handlers.ws_discovery.DiscoverService")
 async def test_handle_discovery_command_discover(mock_discover_service):
     mock_ds_instance = mock_discover_service.return_value
-    mock_ds_instance.get_recent = AsyncMock(return_value=[])
-    mock_ds_instance.get_favorites = AsyncMock(return_value=[])
-    mock_ds_instance.get_cached = AsyncMock(return_value=[])
-    mock_ds_instance.get_featured_artists = AsyncMock(return_value=["Artist 1"])
-    mock_ds_instance.get_featured_genres = AsyncMock(return_value=["Pop"])
+    _wire_discover_service_mock(
+        mock_ds_instance,
+        get_featured_artists=["Artist 1"],
+        get_featured_genres=["Pop"],
+    )
 
     mock_db = AsyncMock()
     mock_ws = AsyncMock()
@@ -50,6 +69,78 @@ async def test_handle_discovery_command_discover(mock_discover_service):
 
 
 @pytest.mark.asyncio
+@patch("server.handlers.ws_discovery.DiscoverService")
+async def test_handle_discovery_command_discover_includes_personalization(mock_discover_service):
+    """PATCH-2026-07-17-070: discover_data payload sekarang juga bawa
+    for_you, unheard, genre_affinity_genre/artists, taste_spectrum."""
+    mock_ds_instance = mock_discover_service.return_value
+    _wire_discover_service_mock(
+        mock_ds_instance,
+        get_for_you=[{"nama": "Bandit Fave"}],
+        get_unheard=[{"nama": "Fresh Artist"}],
+        get_genre_affinity={"genre": "rock", "artists": [{"nama": "Rock Artist"}]},
+        get_taste_spectrum=[{"genre": "rock", "pct": 100}],
+    )
+
+    mock_db = AsyncMock()
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command("discover", {}, None, mock_db, mock_ws)
+
+    mock_ds_instance.get_for_you.assert_called_once_with(15)
+    mock_ds_instance.get_unheard.assert_called_once_with(15)
+    mock_ds_instance.get_genre_affinity.assert_called_once_with(15)
+    mock_ds_instance.get_taste_spectrum.assert_called_once_with()
+
+    sent_data = json.loads(mock_ws.send_str.call_args[0][0])["data"]
+    assert sent_data["for_you"] == [{"nama": "Bandit Fave"}]
+    assert sent_data["unheard"] == [{"nama": "Fresh Artist"}]
+    assert sent_data["genre_affinity_genre"] == "rock"
+    assert sent_data["genre_affinity_artists"] == [{"nama": "Rock Artist"}]
+    assert sent_data["taste_spectrum"] == [{"genre": "rock", "pct": 100}]
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.ws_discovery.DiscoverService")
+async def test_handle_discovery_command_get_artist_detail(mock_discover_service):
+    """NOTE: this action is implemented but currently unreachable through
+    the real websocket router — 'get_artist_detail' has not been added to
+    DISCOVERY_CMDS in server/handlers/websocket.py yet (governance-gated,
+    see PATCHLOG PATCH-2026-07-17-070). This test only covers the handler
+    function in isolation, not end-to-end routing."""
+    mock_ds_instance = mock_discover_service.return_value
+    mock_ds_instance.get_artist_detail = AsyncMock(return_value={"nama": "Artist A"})
+
+    mock_db = AsyncMock()
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command(
+        "get_artist_detail", {"artist": "Artist A"}, None, mock_db, mock_ws
+    )
+
+    mock_ds_instance.get_artist_detail.assert_called_once_with("Artist A")
+    sent_data = json.loads(mock_ws.send_str.call_args[0][0])
+    assert sent_data["type"] == "artist_detail"
+    assert sent_data["data"] == {"nama": "Artist A"}
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.ws_discovery.DiscoverService")
+async def test_handle_discovery_command_get_artist_detail_blank_artist(mock_discover_service):
+    mock_ds_instance = mock_discover_service.return_value
+    mock_ds_instance.get_artist_detail = AsyncMock(return_value={"nama": "Should not be called"})
+
+    mock_db = AsyncMock()
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command("get_artist_detail", {"artist": "  "}, None, mock_db, mock_ws)
+
+    mock_ds_instance.get_artist_detail.assert_not_called()
+    sent_data = json.loads(mock_ws.send_str.call_args[0][0])
+    assert sent_data["data"] is None
+
+
+@pytest.mark.asyncio
 @patch("server.handlers.ws_discovery.track_to_dict", side_effect=lambda t: {"title": t})
 @patch("server.handlers.ws_discovery.DiscoverService")
 async def test_handle_discovery_command_discover_includes_favorites(
@@ -57,11 +148,7 @@ async def test_handle_discovery_command_discover_includes_favorites(
 ):
     """PATCH-061 regresi: get_favorites() diambil tapi dulu dibuang, tidak masuk payload."""
     mock_ds_instance = mock_discover_service.return_value
-    mock_ds_instance.get_recent = AsyncMock(return_value=[])
-    mock_ds_instance.get_favorites = AsyncMock(return_value=["Favorite Track"])
-    mock_ds_instance.get_cached = AsyncMock(return_value=[])
-    mock_ds_instance.get_featured_artists = AsyncMock(return_value=[])
-    mock_ds_instance.get_featured_genres = AsyncMock(return_value=[])
+    _wire_discover_service_mock(mock_ds_instance, get_favorites=["Favorite Track"])
 
     mock_db = AsyncMock()
     mock_ws = AsyncMock()
