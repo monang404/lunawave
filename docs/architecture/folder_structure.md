@@ -137,7 +137,7 @@ lunawave/
 │   ├── verify_structure.py              cek file besar & pending items
 │   ├── verify_docs/                     package: helpers, checks_*, render
 │   ├── shared/                          package: check_result, skip_dirs, generated_block
-│   └── archive/                         scripts lama (tidak aktif)
+│   └── archive/                         automation lama (tidak aktif)
 │
 ├── data/
 │   ├── artists_enriched.json            ✅  data statis, source of truth artis

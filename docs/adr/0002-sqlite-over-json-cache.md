@@ -23,10 +23,10 @@ JSON tidak mendukung query — untuk mencari track berdasarkan artist, genre, at
 - Schema migration perlu dikelola (saat ini via `schema.sql` yang dijalankan saat init)
 - File `data/lunawave.db` harus di-gitignore — ini runtime artifact
 - Test persistence layer menggunakan `:memory:` SQLite — cepat, tidak perlu cleanup
-- Artist database diimport sekali dari Wikidata CSV ke SQLite via `scripts/export_to_sqlite.py`
+- Artist database diimport sekali dari Wikidata CSV ke SQLite via `automation/export_to_sqlite.py`
 
 ## Referensi
 
 - Implementasi: `persistence/db.py`, `persistence/track_repo.py`, `persistence/artist_repo.py`
 - Test: `tests/unit/persistence/`
-- Import script: `scripts/export_to_sqlite.py`
+- Import script: `automation/export_to_sqlite.py`

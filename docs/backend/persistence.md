@@ -206,7 +206,7 @@ Digunakan oleh `discover_service.py` untuk rekomendasi dan `radio/artist_selecto
 
 ## Migrasi Skema
 
-Migrasi dilakukan via `scripts/export_to_sqlite.py` untuk data lama (dari format JSON cache).
+Migrasi dilakukan via `automation/export_to_sqlite.py` untuk data lama (dari format JSON cache).
 
 Untuk skema baru: tambahkan file `persistence/migrations/V{N}__description.sql` dan panggil dari `db.py` saat inisialisasi.
 

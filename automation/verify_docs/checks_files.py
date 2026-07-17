@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.checks_files
+Module: automation.verify_docs.checks_files
 
 Purpose:
     Implement large-file and empty-package checks for verify_docs.

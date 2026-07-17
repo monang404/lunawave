@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.run_all
+Module: automation.run_all
 
 Purpose:
     Run all documentation generators and the project health check in a

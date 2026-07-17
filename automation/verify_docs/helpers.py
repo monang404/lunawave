@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.helpers
+Module: automation.verify_docs.helpers
 
 Purpose:
     Provide shared constants, regex patterns, and I/O/filesystem utilities

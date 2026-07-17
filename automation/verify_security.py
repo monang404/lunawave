@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.verify_security
+Module: automation.verify_security
 
 Purpose:
     Verify that sensitive files are listed in .gitignore to prevent

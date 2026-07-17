@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-17-071
+latest_patch_id: PATCH-2026-07-17-072
 
-total_entries: 71
+total_entries: 72
 
 ---
 
@@ -23,6 +23,22 @@ total_entries: 71
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+## [2026-07-17] Patch — Sinkronisasi Referensi automation/
+**ID:** `PATCH-2026-07-17-072`
+**Tanggal:** 2026-07-17
+**Ringkasan:**
+Menyelaraskan nama direktori dan modul internal dari `scripts/` menjadi `automation/` di seluruh dokumentasi dan docstring file Python. Juga menghapus blok instruksi peringatan migrasi di `AI_CONTEXT.md` sesuai dengan instruksi yang tertera di sana.
+
+**File Terdampak:**
+- `AI_CONTEXT.md` — [MODIFIED] hapus catatan migrasi.
+- `automation/**/*.py` — [MODIFIED] update docstring Module dari `scripts.` menjadi `automation.`.
+- `automation/shared/skip_dirs.py` — [MODIFIED] update skip dirs `"scripts"` menjadi `"automation"`.
+- `automation/shared/arch_rules.py` — [MODIFIED] update arch rules.
+- `automation/find_owner.py` — [MODIFIED] update pemetaan folder.
+- `docs/*.md` — [MODIFIED] referensi `scripts/` di-update ke `automation/` (non-historical file).
 
 ---
 

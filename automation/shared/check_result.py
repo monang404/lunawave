@@ -1,5 +1,5 @@
 """
-Module: scripts.shared.check_result
+Module: automation.shared.check_result
 
 Purpose:
     Define the CheckResult dataclass and generic weighted-scoring helpers

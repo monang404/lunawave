@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.verify_docs
+Module: automation.verify_docs
 
 Purpose:
     Orchestrate all documentation health checks and report results as a
