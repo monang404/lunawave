@@ -125,11 +125,7 @@ window.loadLazyCovers = function() {
                     if (!vid) return;
 
                     const track = { video_id: vid, title: title, artist: artist, thumbnail: defaultThumb };
-                    window.getCoverArt(track).then(coverUrl => {
-                        if (coverUrl) {
-                            img.src = coverUrl;
-                        }
-                    });
+                    window.getCoverArtFast(img, track);
                 }
             });
         }, { rootMargin: '200px' });
@@ -139,6 +135,45 @@ window.loadLazyCovers = function() {
     images.forEach((img) => {
         img.classList.add('observed');
         _lazyCoverObserver.observe(img);
+    });
+};
+
+// PATCH-COVER-FAST-LOAD-01: tampilkan thumbnail YouTube instan dulu (sudah
+// tersedia tanpa network round-trip tambahan), baru upgrade ke artwork
+// iTunes di background begitu selesai. Sebelumnya <img> dibiarkan kosong
+// sampai fetch iTunes kelar, jadi cover terasa lambat muncul.
+window.getCoverArtFast = function(img, track) {
+    if (!track) return;
+    const ytFallback = track.thumbnail ||
+        (track.video_id ? `https://i.ytimg.com/vi/${track.video_id}/hqdefault.jpg` : '');
+
+    // Kalau sudah ada cache resolved (hi-res) yang masih valid, langsung pasang
+    // itu — nggak perlu flash ke YT thumbnail dulu tiap re-render.
+    if (track.video_id) {
+        const cacheKey = "cover_" + track.video_id;
+        const cachedStr = window.safeStorage.get(cacheKey);
+        if (cachedStr) {
+            try {
+                if (cachedStr.startsWith("{")) {
+                    const cached = JSON.parse(cachedStr);
+                    if (Date.now() - cached.ts < 7 * 24 * 60 * 60 * 1000) {
+                        img.src = cached.url;
+                        return;
+                    }
+                } else {
+                    img.src = cachedStr;
+                    return;
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Belum ada cache: pasang thumbnail YT dulu biar keliatan cepat...
+    if (ytFallback) img.src = ytFallback;
+
+    // ...lalu resolve artwork lebih bagus di background dan upgrade diam-diam.
+    window.getCoverArt(track).then(coverUrl => {
+        if (coverUrl && img.isConnected) img.src = coverUrl;
     });
 };
 

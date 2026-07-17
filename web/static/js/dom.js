@@ -59,6 +59,8 @@ function initDOM() {
         pbTimeDur: $("pb-time-dur"),
         pbProgressTrack: $("pb-progress-track"),
         pbProgressFill: $("pb-progress-fill"),
+        pbThumb: $("seek-thumb"),
+        playerBarEl: $("player-bar"),
         pbVolLabel: $("pb-vol-label"),
         volSlider: $("vol-slider"),
         btnShuffle: $("btn-shuffle"),

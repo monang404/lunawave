@@ -91,23 +91,10 @@ class PlaybackController:
         self._last_position_save = 0.0
         self._last_play_start_ts = 0.0
         # PATCH-2026-07-16-001: track fade-in task supaya bisa di-cancel
-        # kalau track baru mulai sebelum fade-in track sebelumnya selesai
-        # (race condition -- 2 fade task overlap, saling rebutan set_volume).
         self._fade_task: asyncio.Task | None = None
 
         # Subscribe events.
         # PATCH-2026-07-16-001: 3 lambda closure di bawah ini SENGAJA disimpan
-        # sebagai strong reference (bukan WeakMethod seperti method langsung).
-        # EventBus otomatis pakai weakref hanya untuk bound method
-        # (inspect.ismethod), sedangkan lambda/closure selalu strong ref
-        # (lihat catatan L-3 di core/event_bus.py). Ini pengecualian yang
-        # disengaja dari desain WeakMethod, bukan bug: controller ini hidup
-        # sepanjang proses (di-construct sekali saat startup, tidak pernah
-        # di-garbage-collect di tengah jalan kecuali lewat dispose() di
-        # bawah), jadi strong ref di sini tidak menyebabkan memory leak.
-        # Referensinya disimpan di bawah supaya dispose() bisa unsubscribe
-        # balik object lambda yang SAMA (bukan lambda baru yang == False
-        # terhadap yang lama).
         self._on_track_ended_sub = lambda e: safe_create_task(self._on_track_ended(e))
         self._on_track_progress_sub = lambda e: safe_create_task(self._on_track_progress(e))
         self._on_mpv_reconnected_sub = lambda e: safe_create_task(self._on_mpv_reconnected(e))
@@ -209,9 +196,6 @@ class PlaybackController:
                 from engine.loudness.gain_calculator import build_af_filter
 
                 # BUGFIX: simpan gain_db track ini di state supaya toggle_loudness_normalization()
-                # (mode_ops.py) bisa langsung re-apply `af` filter ke track yang sedang berjalan,
-                # tanpa nunggu track berikutnya di-load. Sebelumnya toggle di tengah lagu tidak
-                # berefek audio sampai lagu selanjutnya.
                 self.state.current_track_gain_db = loaded.gain_db
 
                 if getattr(self.state, "loudness_normalization_enabled", False):
@@ -229,10 +213,7 @@ class PlaybackController:
                     if getattr(self.state, "crossfade_enabled", False):
                         from engine.playback.crossfade import apply_crossfade_in
 
-                        # PATCH-2026-07-16-001: cancel fade-in task lama
-                        # sebelum spawn yang baru -- kalau track ganti cepat
-                        # berturut-turut, task lama dan baru bisa overlap dan
-                        # saling rebutan set_volume (race condition).
+                        # PATCH-2026-07-16-001
                         if self._fade_task and not self._fade_task.done():
                             self._fade_task.cancel()
                         self._fade_task = safe_create_task(
