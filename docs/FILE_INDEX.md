@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-16 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-17 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -527,7 +527,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `Database`
 **Function utama:** `conn()`
 **Digunakan oleh:** —
-**Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, `persistence/track_repo`
+**Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, _1 lainnya_
 
 
 ---
@@ -548,6 +548,26 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `config`
+
+
+---
+
+**File:** `persistence/discover_enrich.py`
+**Fungsi:** Shared batch-enrichment helper for Discover personalization queries. Given a list of artist rows, attach a cover thumbnail and genre tag list to each one using two queries total for the whole batch (never per-artist), so `discover_repo.py` doesn't run into N+1 query fan-out when enriching a page of results.
+**Class:** —
+**Function utama:** `enrich_artists()`
+**Digunakan oleh:** `persistence/discover_repo`
+**Menggunakan:** —
+
+
+---
+
+**File:** `persistence/discover_repo.py`
+**Fungsi:** Repository for Discover-tab personalization queries: bandit-ranked "Untuk Kamu" artists, "Belum Pernah Kamu Dengar" (unheard) artists, genre taste spectrum, genre affinity, and artist detail lookup.
+**Class:** `DiscoverRepository`
+**Function utama:** —
+**Digunakan oleh:** `persistence/__init__`
+**Menggunakan:** `persistence/discover_enrich`
 
 
 ---
@@ -1268,7 +1288,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**117/117** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**119/119** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi 🎉)_

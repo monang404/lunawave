@@ -76,4 +76,5 @@ function initEvents() {
     if (typeof initQueueDragDrop === "function") initQueueDragDrop();
     if (typeof initLyricsEvents === "function") initLyricsEvents();
     if (typeof initSettingsEvents === "function") initSettingsEvents();
+    if (typeof initDiscoverFilterEvents === "function") initDiscoverFilterEvents();
 }

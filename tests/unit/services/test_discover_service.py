@@ -223,3 +223,86 @@ class TestGetFeaturedGenres:
 
         result = await svc.get_featured_genres(5)
         assert result[0]["click_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Discover personalization (PATCH-2026-07-17-070)
+# ---------------------------------------------------------------------------
+
+
+class TestGetForYou:
+    async def test_returns_empty_when_bandit_untouched(self, svc, db):
+        await db.conn.execute(
+            "INSERT INTO artists (id, nama, reward_alpha, reward_beta) VALUES (1, 'A', 1, 1)"
+        )
+        await db.conn.commit()
+        assert await svc.get_for_you(10) == []
+
+    async def test_returns_ranked_artists(self, svc, db):
+        await db.conn.execute(
+            "INSERT INTO artists (id, nama, reward_alpha, reward_beta) VALUES (1, 'A', 8, 2)"
+        )
+        await db.conn.commit()
+        result = await svc.get_for_you(10)
+        assert len(result) == 1
+        assert result[0]["nama"] == "A"
+        assert result[0]["match_pct"] == 80
+
+
+class TestGetUnheard:
+    async def test_returns_untouched_unclicked_artists(self, svc, db):
+        await db.conn.execute(
+            "INSERT INTO artists (id, nama, reward_alpha, reward_beta, click_count) "
+            "VALUES (1, 'A', 1, 1, 0)"
+        )
+        await db.conn.commit()
+        result = await svc.get_unheard(10)
+        assert [r["nama"] for r in result] == ["A"]
+
+
+class TestGetGenreAffinity:
+    async def test_returns_none_genre_when_history_empty(self, svc):
+        result = await svc.get_genre_affinity(10)
+        assert result == {"genre": None, "artists": []}
+
+    async def test_returns_top_genre_and_its_artists(self, svc, db):
+        await db.conn.execute("INSERT INTO artists (id, nama) VALUES (1, 'A')")
+        await db.conn.execute("INSERT INTO genres (id, nama_genre) VALUES (1, 'rock')")
+        await db.conn.execute("INSERT INTO artist_genres (artist_id, genre_id) VALUES (1, 1)")
+        await db.conn.execute(
+            "INSERT INTO tracks (video_id, title, artist, duration, play_count) "
+            "VALUES ('v1', 'T', 'A', 180, 5)"
+        )
+        await db.conn.commit()
+        result = await svc.get_genre_affinity(10)
+        assert result["genre"] == "rock"
+        assert [a["nama"] for a in result["artists"]] == ["A"]
+
+
+class TestGetTasteSpectrum:
+    async def test_empty_history_returns_empty_list(self, svc):
+        assert await svc.get_taste_spectrum() == []
+
+    async def test_returns_normalized_spectrum(self, svc, db):
+        await db.conn.execute("INSERT INTO artists (id, nama) VALUES (1, 'A')")
+        await db.conn.execute("INSERT INTO genres (id, nama_genre) VALUES (1, 'rock')")
+        await db.conn.execute("INSERT INTO artist_genres (artist_id, genre_id) VALUES (1, 1)")
+        await db.conn.execute(
+            "INSERT INTO tracks (video_id, title, artist, duration, play_count) "
+            "VALUES ('v1', 'T', 'A', 180, 5)"
+        )
+        await db.conn.commit()
+        result = await svc.get_taste_spectrum()
+        assert result == [{"genre": "rock", "pct": 100}]
+
+
+class TestGetArtistDetail:
+    async def test_returns_none_for_unknown_artist(self, svc):
+        assert await svc.get_artist_detail("Nobody") is None
+
+    async def test_returns_detail_for_known_artist(self, svc, db):
+        await db.conn.execute("INSERT INTO artists (id, nama, kategori) VALUES (1, 'A', 'solo')")
+        await db.conn.commit()
+        result = await svc.get_artist_detail("A")
+        assert result["nama"] == "A"
+        assert result["songs"] == []
