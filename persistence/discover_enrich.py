@@ -47,24 +47,22 @@ async def enrich_artists(conn, artist_rows: list[dict[str, Any]]) -> list[dict[s
     placeholders = ",".join("?" for _ in artist_ids)
 
     covers: dict[int, str] = {}
-    cover_query = f"""
-        SELECT artist_id, youtube_id FROM songs
-        WHERE id IN (
-            SELECT MIN(id) FROM songs
-            WHERE artist_id IN ({placeholders})
-            GROUP BY artist_id
-        )
-    """
+    cover_query = (
+        "SELECT artist_id, youtube_id FROM songs "
+        "WHERE id IN (SELECT MIN(id) FROM songs "
+        f"WHERE artist_id IN ({placeholders}) "
+        "GROUP BY artist_id)"
+    )  # nosec B608
     async with conn.execute(cover_query, artist_ids) as cursor:
         async for row in cursor:
             covers[row["artist_id"]] = f"https://i.ytimg.com/vi/{row['youtube_id']}/mqdefault.jpg"
 
     genres: dict[int, list[str]] = {aid: [] for aid in artist_ids}
-    genre_query = f"""
-        SELECT ag.artist_id, g.nama_genre FROM artist_genres ag
-        JOIN genres g ON g.id = ag.genre_id
-        WHERE ag.artist_id IN ({placeholders})
-    """
+    genre_query = (
+        "SELECT ag.artist_id, g.nama_genre FROM artist_genres ag "
+        "JOIN genres g ON g.id = ag.genre_id "
+        f"WHERE ag.artist_id IN ({placeholders})"
+    )  # nosec B608
     async with conn.execute(genre_query, artist_ids) as cursor:
         async for row in cursor:
             genres.setdefault(row["artist_id"], []).append(row["nama_genre"])
