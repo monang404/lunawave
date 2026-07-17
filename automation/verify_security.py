@@ -55,6 +55,25 @@ def _read_gitignore(project_root: Path) -> str | None:
     return gitignore.read_text(encoding="utf-8", errors="replace")
 
 
+def _gitignore_lines(content: str) -> list[str]:
+    """Parse isi .gitignore jadi daftar baris pattern aktif (bukan komentar,
+    bukan baris kosong). PATCH-2026-07-16-001: sebelumnya kode ini pakai
+    substring match ke SELURUH isi file, jadi pattern yang cuma muncul di
+    dalam komentar (mis. `# TODO: ignore cache/admin_password.txt`) salah
+    dianggap PASS. Parsing baris-per-baris menutup celah itu."""
+    lines = []
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        lines.append(line)
+    return lines
+
+
+def _pattern_covered(patterns: tuple[str, ...], gitignore_lines: list[str]) -> bool:
+    return any(p in line for line in gitignore_lines for p in patterns)
+
+
 def check_credential_ignore(project_root: Path) -> CheckResult:
     content = _read_gitignore(project_root)
     if content is None:
@@ -63,7 +82,7 @@ def check_credential_ignore(project_root: Path) -> CheckResult:
             "FAIL",
             ".gitignore tidak ditemukan!",
         )
-    if any(p in content for p in ADMIN_PW_PATTERNS):
+    if _pattern_covered(ADMIN_PW_PATTERNS, _gitignore_lines(content)):
         return CheckResult(
             "Credential Ignore",
             "PASS",
@@ -84,7 +103,7 @@ def check_db_files_ignore(project_root: Path) -> CheckResult:
             "FAIL",
             ".gitignore tidak ditemukan!",
         )
-    if any(p in content for p in DB_PATTERNS):
+    if _pattern_covered(DB_PATTERNS, _gitignore_lines(content)):
         return CheckResult("DB Files Ignore", "PASS", "File .db di-ignore")
     return CheckResult(
         "DB Files Ignore",

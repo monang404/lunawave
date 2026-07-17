@@ -272,6 +272,34 @@ class TestOnPauseChanged:
         assert state.status == PlayerStatus.PLAYING
 
 
+class TestDispose:
+    async def test_dispose_unsubscribes_all_handlers(self, controller, bus, state):
+        """PATCH-2026-07-16-001: setelah dispose(), controller tidak lagi
+        bereaksi terhadap event apapun -- baik yang disubscribe lewat
+        lambda closure maupun lewat bound method langsung."""
+        controller.dispose()
+
+        state.status = PlayerStatus.PLAYING
+        await bus.publish(TrackPauseChangedEvent(is_paused=True))
+        # Kalau masih subscribed, _on_pause_changed akan set PAUSED.
+        assert state.status == PlayerStatus.PLAYING
+
+    async def test_dispose_cancels_pending_fade_task(self, controller):
+        async def never_finishes():
+            await asyncio.sleep(100)
+
+        controller._fade_task = asyncio.ensure_future(never_finishes())
+
+        controller.dispose()
+        await asyncio.sleep(0)
+
+        assert controller._fade_task.cancelled() or controller._fade_task.cancelling()
+
+    async def test_dispose_is_safe_to_call_when_no_fade_task(self, controller):
+        controller._fade_task = None
+        controller.dispose()  # should not raise
+
+
 class TestTogglePause:
     async def test_toggle_pause_ignored_during_loading(self, controller, state, player):
         state.status = PlayerStatus.LOADING

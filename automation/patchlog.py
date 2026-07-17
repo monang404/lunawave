@@ -33,24 +33,37 @@ if str(SCRIPT_DIR) not in sys.path:
 
 PATCHLOG = PROJECT_ROOT / "docs" / "PATCHLOG.md"
 
-ENTRY_RE = re.compile(
-    r"\*\*ID:\*\* `(?P<id>PATCH-[\d-]+)`.*?"
-    r"\*\*Tanggal:\*\* (?P<tanggal>[\d-]+).*?"
-    r"\*\*Ringkasan:\*\* (?P<ringkasan>.+?)\n.*?"
-    r"\*\*File Terdampak:\*\*.*?\n\n(?P<files>(?:- .+\n?)+)",
-    re.DOTALL,
-)
+ENTRY_ID_RE = re.compile(r"\*\*ID:\*\* `(?P<id>PATCH-[\d-]+)`")
+ENTRY_TANGGAL_RE = re.compile(r"\*\*Tanggal:\*\* (?P<tanggal>[\d-]+)")
+ENTRY_RINGKASAN_RE = re.compile(r"\*\*Ringkasan:\*\* (?P<ringkasan>.+)")
+ENTRY_FILES_BLOCK_RE = re.compile(r"\*\*File Terdampak:\*\*\n(?P<files>(?:- .+\n?)+)")
 
 
 def parse_entries(text: str) -> list[dict]:
+    # PATCH-2026-07-16-001: sebelumnya satu regex DOTALL raksasa (ID ->
+    # Tanggal -> Ringkasan -> File Terdampak, semuanya via `.*?` lazy)
+    # di-scan ke SELURUH file sekaligus. Dengan struktur berulang 68x
+    # entry yang mirip satu sama lain, ini catastrophic backtracking --
+    # dikonfirmasi hang tak terhingga di docs/PATCHLOG.md nyata (35KB).
+    # Fix: split per-entry dulu pakai separator baris "---", baru regex
+    # SEDERHANA (non-DOTALL-spanning-banyak-entry) per-chunk. Tiap chunk
+    # kecil (~500 byte) jadi tidak ada ruang untuk backtracking meledak.
     entries = []
-    for m in ENTRY_RE.finditer(text):
-        files = re.findall(r"- `([^`]+)`", m.group("files"))
+    for chunk in text.split("\n\n---\n\n"):
+        id_m = ENTRY_ID_RE.search(chunk)
+        if not id_m:
+            continue
+        tanggal_m = ENTRY_TANGGAL_RE.search(chunk)
+        ringkasan_m = ENTRY_RINGKASAN_RE.search(chunk)
+        files_m = ENTRY_FILES_BLOCK_RE.search(chunk)
+        if not (tanggal_m and ringkasan_m and files_m):
+            continue
+        files = re.findall(r"- `([^`]+)`", files_m.group("files"))
         entries.append(
             {
-                "id": m.group("id"),
-                "tanggal": m.group("tanggal"),
-                "ringkasan": m.group("ringkasan").strip(),
+                "id": id_m.group("id"),
+                "tanggal": tanggal_m.group("tanggal"),
+                "ringkasan": ringkasan_m.group("ringkasan").strip(),
                 "files": files,
             }
         )

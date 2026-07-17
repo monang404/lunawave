@@ -56,7 +56,7 @@ _TITLE_NOISE_WORDS = frozenset(
 )
 
 
-def _normalize_title(title: str) -> str:
+def normalize_title(title: str) -> str:
     if not title:
         return ""
     t = title.lower()
@@ -64,6 +64,11 @@ def _normalize_title(title: str) -> str:
     t = re.sub(r"[^a-z0-9\s]", " ", t)
     words = [w for w in t.split() if w not in _TITLE_NOISE_WORDS]
     return " ".join(words).strip()
+
+
+# Alias backward-compat: dulu private, sekarang dipakai lintas modul
+# (engine/radio/track_filter.py) untuk dedup title di radio queue.
+_normalize_title = normalize_title
 
 
 def interleave_by_artist(tracks: list) -> list:

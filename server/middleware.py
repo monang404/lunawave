@@ -22,10 +22,6 @@ Thread Safety:
 """
 
 
-def check_rate_limit_sync():
-    pass
-
-
 async def check_rate_limit(manager, client_ip: str, now: float) -> bool:
     async with manager.rl_lock:
         from collections import deque

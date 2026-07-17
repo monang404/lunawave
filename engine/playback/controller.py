@@ -90,17 +90,46 @@ class PlaybackController:
         self._loading = False
         self._last_position_save = 0.0
         self._last_play_start_ts = 0.0
+        # PATCH-2026-07-16-001: track fade-in task supaya bisa di-cancel
+        # kalau track baru mulai sebelum fade-in track sebelumnya selesai
+        # (race condition -- 2 fade task overlap, saling rebutan set_volume).
+        self._fade_task: asyncio.Task | None = None
 
-        # Subscribe events
-        self.bus.subscribe(TrackEndedEvent, lambda e: safe_create_task(self._on_track_ended(e)))
-        self.bus.subscribe(
-            TrackProgressEvent, lambda e: safe_create_task(self._on_track_progress(e))
-        )
+        # Subscribe events.
+        # PATCH-2026-07-16-001: 3 lambda closure di bawah ini SENGAJA disimpan
+        # sebagai strong reference (bukan WeakMethod seperti method langsung).
+        # EventBus otomatis pakai weakref hanya untuk bound method
+        # (inspect.ismethod), sedangkan lambda/closure selalu strong ref
+        # (lihat catatan L-3 di core/event_bus.py). Ini pengecualian yang
+        # disengaja dari desain WeakMethod, bukan bug: controller ini hidup
+        # sepanjang proses (di-construct sekali saat startup, tidak pernah
+        # di-garbage-collect di tengah jalan kecuali lewat dispose() di
+        # bawah), jadi strong ref di sini tidak menyebabkan memory leak.
+        # Referensinya disimpan di bawah supaya dispose() bisa unsubscribe
+        # balik object lambda yang SAMA (bukan lambda baru yang == False
+        # terhadap yang lama).
+        self._on_track_ended_sub = lambda e: safe_create_task(self._on_track_ended(e))
+        self._on_track_progress_sub = lambda e: safe_create_task(self._on_track_progress(e))
+        self._on_mpv_reconnected_sub = lambda e: safe_create_task(self._on_mpv_reconnected(e))
+
+        self.bus.subscribe(TrackEndedEvent, self._on_track_ended_sub)
+        self.bus.subscribe(TrackProgressEvent, self._on_track_progress_sub)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
-        self.bus.subscribe(
-            MpvReconnectedEvent, lambda e: safe_create_task(self._on_mpv_reconnected(e))
-        )
+        self.bus.subscribe(MpvReconnectedEvent, self._on_mpv_reconnected_sub)
+
+    def dispose(self):
+        """Unsubscribe semua handler yang didaftarkan di __init__.
+        Dipanggil saat controller benar-benar dihancurkan (mis. room
+        dibongkar) supaya EventBus tidak menyimpan strong ref ke lambda
+        closure controller ini selamanya."""
+        self.bus.unsubscribe(TrackEndedEvent, self._on_track_ended_sub)
+        self.bus.unsubscribe(TrackProgressEvent, self._on_track_progress_sub)
+        self.bus.unsubscribe(TrackPauseChangedEvent, self._on_pause_changed)
+        self.bus.unsubscribe(TrackDurationEvent, self._on_track_duration)
+        self.bus.unsubscribe(MpvReconnectedEvent, self._on_mpv_reconnected_sub)
+        if self._fade_task and not self._fade_task.done():
+            self._fade_task.cancel()
 
     async def _on_track_duration(self, event: TrackDurationEvent):
         if event.duration and self.state.duration == 0:
@@ -200,7 +229,15 @@ class PlaybackController:
                     if getattr(self.state, "crossfade_enabled", False):
                         from engine.playback.crossfade import apply_crossfade_in
 
-                        safe_create_task(apply_crossfade_in(self.mpv, self.state), name="fade_in")
+                        # PATCH-2026-07-16-001: cancel fade-in task lama
+                        # sebelum spawn yang baru -- kalau track ganti cepat
+                        # berturut-turut, task lama dan baru bisa overlap dan
+                        # saling rebutan set_volume (race condition).
+                        if self._fade_task and not self._fade_task.done():
+                            self._fade_task.cancel()
+                        self._fade_task = safe_create_task(
+                            apply_crossfade_in(self.mpv, self.state), name="fade_in"
+                        )
                     else:
                         await self.mpv.set_volume(self.state.volume)
 
@@ -281,8 +318,8 @@ class PlaybackController:
 
         import time
 
-        if time.time() - getattr(self, "_last_ps", 0.0) >= 10.0 and self.state.current_track:
-            self._last_ps = time.time()
+        if time.time() - self._last_position_save >= 10.0 and self.state.current_track:
+            self._last_position_save = time.time()
             safe_create_task(
                 self.resolver.db.set_last_position(
                     self.state.current_track.video_id, event.position

@@ -69,7 +69,11 @@ class DatabaseConnection:
             # thread di akhir test run dan memicu force-exit CI.
             # Join eksplisit di sini memberi jaminan nyata bahwa thread sudah
             # benar-benar terminate sebelum close() return ke caller.
+            # PATCH-2026-07-16-001: sleep(0.01) tidak menjamin apa-apa --
+            # cuma menunda, bukan menunggu. join() asli (di thread terpisah
+            # via to_thread agar tidak block event loop) adalah satu-satunya
+            # cara memastikan thread benar-benar selesai.
             if worker_thread is not None and worker_thread.is_alive():
                 import asyncio
 
-                await asyncio.sleep(0.01)
+                await asyncio.to_thread(worker_thread.join, timeout=1.0)

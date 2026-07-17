@@ -66,7 +66,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `core/command_bus.py`
 **Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.
 **Class:** `CommandBus`
-**Function utama:** `register()`, `unregister()`
+**Function utama:** `register()`, `unregister()`, `reset()`
 **Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, `server/handlers/ws_download`, _2 lainnya_
 **Menggunakan:** `core/commands`, `core/observability`
 
@@ -95,7 +95,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 **File:** `core/events.py`
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
-**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`
+**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** â€”
 **Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/mode_ops`, _11 lainnya_
 **Menggunakan:** `core/state`
@@ -229,7 +229,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `adapters/ytdlp/__init__.py`
 **Fungsi:** Unified client for interacting with yt-dlp for search, extraction, and downloading.
 **Class:** `YtDlpClient`
-**Function utama:** `cancel_download()`
+**Function utama:** `cancel_download()`, `close()`
 **Digunakan oleh:** â€”
 **Menggunakan:** `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `adapters/ytdlp/searcher`
 
@@ -342,7 +342,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/playback/controller.py`
 **Fungsi:** Orchestrate all playback logic: track loading, queue/radio advancement, pause/seek, and mode switching via CommandBus commands.
 **Class:** `PlaybackController`
-**Function utama:** â€”
+**Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
 **Menggunakan:** `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`, `engine/playback/mode_ops`, _5 lainnya_
 
@@ -452,7 +452,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/radio/prefetcher.py`
 **Fungsi:** Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode.
 **Class:** `RadioPrefetcher`
-**Function utama:** `cancel_tasks()`, `clear_standby()`, `trigger_build_standby()`, `check_prefetch()`
+**Function utama:** `cancel_tasks()`, `trigger_build_standby()`, `check_prefetch()`
 **Digunakan oleh:** `engine/radio/engine`
 **Menggunakan:** `config`, `core/state`, `engine/radio/common`
 
@@ -464,7 +464,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TrackFilter`
 **Function utama:** `filter_tracks()`
 **Digunakan oleh:** `engine/radio/artist_selector`
-**Menggunakan:** `core/state`
+**Menggunakan:** `core/state`, `engine/radio/track_interleaver`
 
 
 ---
@@ -472,8 +472,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `engine/radio/track_interleaver.py`
 **Fungsi:** Interleaves tracks from different artists to create a balanced radio queue.
 **Class:** â€”
-**Function utama:** `interleave_by_artist()`
-**Digunakan oleh:** `engine/radio/artist_selector`
+**Function utama:** `normalize_title()`, `interleave_by_artist()`
+**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/track_filter`
 **Menggunakan:** â€”
 
 
@@ -731,7 +731,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `server/middleware.py`
 **Fungsi:** Enforce per-IP command rate limiting for WebSocket clients.
 **Class:** â€”
-**Function utama:** `check_rate_limit_sync()`, `check_rate_limit()`
+**Function utama:** `check_rate_limit()`
 **Digunakan oleh:** `server/handlers/websocket`
 **Menggunakan:** â€”
 
@@ -1255,6 +1255,15 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 
 ---
+
+
+## âš ï¸ File Besar (>400 baris)
+
+
+| File | Baris | Catatan |
+|---|---|---|
+
+| `engine/playback/controller.py` | 464 | Perlu dipecah |
 
 
 ## ğŸ“‹ Checklist Dokumentasi Docstring

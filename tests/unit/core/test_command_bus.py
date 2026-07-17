@@ -64,6 +64,22 @@ def test_unregister_unknown_command_is_a_noop():
     bus.unregister("cmd.does.not.exist")  # must not raise
 
 
+def test_reset_clears_all_handlers():
+    """PATCH-2026-07-16-001: reset() adalah method resmi untuk bersihkan
+    semua handler (dipakai di test teardown), alih-alih akses langsung ke
+    _handlers.clear() dari luar kelas."""
+    bus = CommandBus()
+    bus.register("cmd.one", lambda data: None)
+    bus.register("cmd.two", lambda data: None)
+
+    bus.reset()
+
+    # Setelah reset, command lama tidak lagi terdaftar (harus bisa
+    # register ulang tanpa RuntimeError duplicate).
+    bus.register("cmd.one", lambda data: None)
+    bus.register("cmd.two", lambda data: None)
+
+
 async def test_execute_unknown_command_raises_runtime_error():
     bus = CommandBus()
     with pytest.raises(RuntimeError):

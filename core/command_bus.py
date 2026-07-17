@@ -51,6 +51,12 @@ class CommandBus:
         if command in self._handlers:
             del self._handlers[command]
 
+    def reset(self):
+        """Hapus semua handler terdaftar. Dipakai di teardown test agar
+        CommandBus singleton bersih antar test, tanpa akses langsung ke
+        _handlers (internal) dari luar kelas."""
+        self._handlers.clear()
+
     async def execute(self, command: str, data: Any = None) -> Any:
         if command not in self._handlers:
             raise RuntimeError(f"No handler registered for command '{command}'")

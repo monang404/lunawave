@@ -97,9 +97,15 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         # berhenti selama itu. Jalankan di thread executor agar event loop
         # tetap responsif untuk client lain selagi verifikasi berjalan.
         loop = asyncio.get_running_loop()
-        password_ok = username == ADMIN_USERNAME and await loop.run_in_executor(
+        # PATCH-2026-07-16-001: verify_password SELALU dipanggil, terlepas
+        # dari username, baru dicek username-nya setelah itu. Short-circuit
+        # `and` sebelumnya membuat response time berbeda antara username
+        # salah (instan) vs username benar+password salah (~60-180ms PBKDF2)
+        # -- celah timing side-channel yang bisa dipakai enumerasi username.
+        password_matches = await loop.run_in_executor(
             None, verify_password, password, ADMIN_PASSWORD
         )
+        password_ok = password_matches and username == ADMIN_USERNAME
         if password_ok:
             new_token = secrets.token_hex(16)
             if db:

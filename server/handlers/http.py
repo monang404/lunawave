@@ -186,6 +186,7 @@ async def serve_stream(request):
 
 async def serve_metrics(request):
     import os as _os
+    import secrets as _secrets
 
     client_ip = request.remote
     _localhost_ips = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
@@ -193,7 +194,11 @@ async def serve_metrics(request):
         "LUNAWAVE_METRICS_TOKEN", _os.environ.get("YTGUI_METRICS_TOKEN")
     )
     is_local = client_ip in _localhost_ips
-    has_valid_token = metrics_token and request.headers.get("X-Metrics-Token") == metrics_token
+    request_token = request.headers.get("X-Metrics-Token", "")
+    # PATCH-2026-07-16-001: secrets.compare_digest() alih-alih `==` untuk
+    # membandingkan token, mencegah timing attack yang bisa membocorkan
+    # token metrics byte demi byte.
+    has_valid_token = bool(metrics_token) and _secrets.compare_digest(request_token, metrics_token)
     if not is_local and not has_valid_token:
         return web.HTTPForbidden(
             text="Akses ditolak: metrics hanya untuk localhost atau gunakan X-Metrics-Token"

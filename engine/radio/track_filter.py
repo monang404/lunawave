@@ -24,6 +24,7 @@ Thread Safety:
 import logging
 
 from core.state import AppState, TrackInfo
+from engine.radio.track_interleaver import normalize_title
 
 _log = logging.getLogger(__name__)
 
@@ -44,15 +45,33 @@ class TrackFilter:
 
         # Build exclusion set from active queue and history
         exclude_ids = set()
+        # PATCH-2026-07-16-001: exclude berdasarkan title ternormalisasi juga,
+        # bukan cuma video_id -- menutup celah dua video_id beda tapi lagu
+        # sama (mis. "Song (Official Video)" vs "Song (Lyrics)") lolos dedup.
+        # Guard: title kosong-setelah-normalize (mis. "Acoustic Cover" yang
+        # semuanya noise word) TIDAK dimasukkan set exclude, supaya semua
+        # track dengan title kosong-setelah-normalize tidak saling exclude
+        # secara salah satu sama lain.
+        exclude_normalized_titles = set()
+
+        def _track_normalized(t) -> str:
+            normalized = normalize_title(t.title)
+            if normalized:
+                exclude_normalized_titles.add(normalized)
+            return normalized
+
         if self.state.current_track:
             exclude_ids.add(self.state.current_track.video_id)
+            _track_normalized(self.state.current_track)
 
         for t in self.state.radio_queue:
             exclude_ids.add(t.video_id)
+            _track_normalized(t)
 
         history_list = list(self.state.history)
         for t in history_list[-self.max_history_check :]:
             exclude_ids.add(t.video_id)
+            _track_normalized(t)
 
         # Build current artist quota from the queue
         artist_counts = {}  # type: ignore
@@ -67,6 +86,13 @@ class TrackFilter:
             if track.video_id in exclude_ids:
                 continue
 
+            # 1b. Filter out if title (normalized) matches something already
+            # in history/queue/current -- catches duplicate uploads of the
+            # same song under a different video_id.
+            normalized_title = normalize_title(track.title)
+            if normalized_title and normalized_title in exclude_normalized_titles:
+                continue
+
             # 2. Filter out duplicates within the candidate batch itself
             if track.video_id in seen_in_batch:
                 continue
@@ -79,6 +105,8 @@ class TrackFilter:
 
             # If it passes all filters, add to results and update trackers
             seen_in_batch.add(track.video_id)
+            if normalized_title:
+                exclude_normalized_titles.add(normalized_title)
             artist_counts[track.artist] = current_count + 1
             filtered.append(track)
 
