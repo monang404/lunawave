@@ -24,7 +24,7 @@ Operasi murni: cut-paste file ke lokasi baru, update import. Tidak ada logika ya
 
 | Perubahan | Dari | Ke | Catatan |
 |---|---|---|---|
-| Pindah script export | `data/export_to_sqlite.py` | `scripts/export_to_sqlite.py` | Update import jika ada |
+| Pindah script export | `data/export_to_sqlite.py` | `automation/export_to_sqlite.py` | Update import jika ada |
 | Pindah schema SQL | `cache/schema.sql` | `persistence/schema.sql` | Update path referensi |
 | Pisah konstanta command | `core/command_bus.py` | `core/commands.py` (baru) | Pindah konstanta saja, bukan logika |
 | Pisah connection manager | `server/websocket.py` | `server/connection_manager.py` (baru) | Cut-paste class saja |
@@ -104,7 +104,7 @@ Gunakan tabel ini untuk track status perubahan yang sedang dikerjakan:
 
 | Perubahan | Risiko | Status | Branch | Catatan |
 |---|---|---|---|---|
-| `data/export_to_sqlite.py` → `scripts/` | Nol | ⬜ Belum | — | |
+| `data/export_to_sqlite.py` → `automation/` | Nol | ⬜ Belum | — | |
 | `cache/schema.sql` → `persistence/` | Nol | ⬜ Belum | — | |
 | Pecah `server/websocket.py` | Rendah | ⬜ Belum | — | |
 | Buat `adapters/` | Sedang | ⬜ Belum | — | |

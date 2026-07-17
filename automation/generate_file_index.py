@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.generate_file_index
+Module: automation.generate_file_index
 
 Purpose:
     Generate and inject an auto-produced file index section into

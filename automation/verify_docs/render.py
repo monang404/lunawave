@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.render
+Module: automation.verify_docs.render
 
 Purpose:
     Render verify_docs check results as a human-readable terminal summary

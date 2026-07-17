@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.doctor
+Module: automation.doctor
 
 Purpose:
     Orchestrate all registered health checkers and display a consolidated

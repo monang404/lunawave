@@ -7,7 +7,7 @@ status: current
 
 ## Quick Navigation
 
-1. `AI_CONTEXT.md` → **baca ini dulu** — constraints, alur kerja AI, scripts
+1. `AI_CONTEXT.md` → **baca ini dulu** — constraints, alur kerja AI, automation
 2. `STATUS.md` → kondisi per-file & sprint target
 3. `PATCHLOG.md` → perubahan terakhir
 4. `REPORT.md` → analisis, temuan, statistik (auto-generated)

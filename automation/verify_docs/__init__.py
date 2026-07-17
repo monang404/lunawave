@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.__init__
+Module: automation.verify_docs.__init__
 
 Purpose:
     Provide __init__.py functionality.

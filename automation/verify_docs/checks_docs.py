@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.checks_docs
+Module: automation.verify_docs.checks_docs
 
 Purpose:
     Implement documentation structure, PATCHLOG integrity, frontmatter

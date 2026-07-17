@@ -1,5 +1,5 @@
 """
-Module: scripts.shared.skip_dirs
+Module: automation.shared.skip_dirs
 
 Purpose:
     Define SKIP_DIRS and walk_py_files() used by all scanner scripts to
@@ -40,12 +40,12 @@ SKIP_DIRS: frozenset[str] = frozenset(
         ".tox",
         "dist",
         "build",
-        "scripts",
+        "automation",
         "tests",
     }
 )
 
-SKIP_DIRS_FOR_OWNERSHIP: frozenset[str] = frozenset(SKIP_DIRS - {"tests", "scripts"})
+SKIP_DIRS_FOR_OWNERSHIP: frozenset[str] = frozenset(SKIP_DIRS - {"tests", "automation"})
 
 
 def walk_py_files(root: Path):

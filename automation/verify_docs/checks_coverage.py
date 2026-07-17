@@ -1,5 +1,5 @@
 """
-Module: scripts.verify_docs.checks_coverage
+Module: automation.verify_docs.checks_coverage
 
 Purpose:
     Implement FILE_INDEX sync, REPORT validation, module docstring coverage,

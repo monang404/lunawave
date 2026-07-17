@@ -85,12 +85,6 @@ wilayah manual — AI boleh edit, tapi harus prepend ke `PATCHLOG.md` setelahnya
 
 ## Automation Tools
 
-> **Catatan migrasi (hapus setelah Sprint 3.3):** folder utomation/ (sebelumnya scripts/) telah
-> di-rename pada 2026-07-14.
-> Jika menemukan referensi scripts/... di file lain yang belum ter-update, laporkan sebagai
-> dokumentasi stale — jangan asumsikan folder lama masih ada.
-
-
 Project ini punya tooling di `automation/` untuk membantu orientasi dan menjaga docs tetap sinkron.
 **Selalu gunakan ini sebelum membaca puluhan file secara manual.**
 

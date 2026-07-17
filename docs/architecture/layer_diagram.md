@@ -170,7 +170,7 @@ graph TD
     root --> plugins["plugins/ — optional features"]
     root --> launcher["launcher/ — GUI & process"]
     root --> cache["cache/ — file cache"]
-    root --> scripts["scripts/ — tooling"]
+    root --> scripts["automation/ — tooling"]
     root --> data["data/ — static data"]
     root --> tests["tests/ — all tests"]
     root --> web["web/static/ — frontend"]
