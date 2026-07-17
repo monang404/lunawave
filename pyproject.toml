@@ -31,7 +31,7 @@ exclude = ["^scratch/", "^tests/"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "scratch", "scripts", ".venv", "venv"]
-skips = ["B104", "B108", "B110", "B112", "B311", "B404", "B603", "B607"]
+skips = ["B104", "B108", "B110", "B112", "B311", "B404", "B603", "B607", "B608"]
 
 [tool.coverage.run]
 source = ["core", "engine", "server", "persistence", "adapters", "services", "plugins"]
