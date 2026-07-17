@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.generate_report
+Module: automation.generate_report
 
 Purpose:
     Generate and inject project statistics into the <!-- BEGIN:GENERATED -->

@@ -1,5 +1,5 @@
 """
-Module: scripts.shared.arch_rules
+Module: automation.shared.arch_rules
 
 Purpose:
     Auto-generated module docstring.
@@ -23,7 +23,7 @@ ALLOWED: dict[str, set[str] | None] = {
     "server": {"core", "engine", "services", "persistence"},
     "launcher": {"core", "server"},
     "data": None,
-    "scripts": None,
+    "automation": None,
     "cache": {"core", "persistence"},
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.find_owner
+Module: automation.find_owner
 
 Purpose:
     Display ownership, dependencies, and impact radius of a given module,
@@ -53,7 +53,7 @@ LAYER_DESCRIPTIONS = {
     "adapters": "Adapters (target) — external adapter implementations",
     "persistence": "Persistence (target) — repository pattern",
     "data": "Data & Scripts — one-time migration, static data",
-    "scripts": "Developer Scripts — generators, linters, tools",
+    "automation": "Developer Scripts — generators, linters, tools",
 }
 
 ADR_HINTS = {

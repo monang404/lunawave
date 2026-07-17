@@ -1,5 +1,5 @@
 """
-Module: scripts.shared.generated_block
+Module: automation.shared.generated_block
 
 Purpose:
     Provide replace_marker_block() to update <!-- BEGIN/END:GENERATED -->

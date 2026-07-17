@@ -1,5 +1,5 @@
 """
-Module: scripts.shared.__init__
+Module: automation.shared.__init__
 
 Purpose:
     Provide __init__.py functionality.

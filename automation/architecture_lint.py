@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.architecture_lint
+Module: automation.architecture_lint
 
 Purpose:
     Validate inter-layer import boundaries against the architecture rules

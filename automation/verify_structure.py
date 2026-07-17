@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module: scripts.verify_structure
+Module: automation.verify_structure
 
 Purpose:
     Validate project structure health: oversized Python files and

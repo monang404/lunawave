@@ -202,7 +202,7 @@ Detail → [backend/caching.md](../backend/caching.md)
 
 ---
 
-### `scripts/`
+### `automation/`
 
 | File | Tanggung Jawab |
 |---|---|
