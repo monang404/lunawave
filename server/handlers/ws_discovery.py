@@ -22,6 +22,7 @@ Thread Safety:
 
 import asyncio
 import json
+from typing import Any
 
 from server.serializers import track_to_dict
 from services.discover_service import DiscoverService
@@ -65,6 +66,10 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
             ds.get_genre_affinity(15),
             ds.get_taste_spectrum(),
         )
+        recent = list(recent)  # type: ignore
+        favorites = list(favorites)  # type: ignore
+        cached = list(cached)  # type: ignore
+        genre_affinity_data: dict[str, Any] = genre_affinity  # type: ignore
         await ws.send_str(
             json.dumps(
                 {
@@ -77,8 +82,8 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
                         "featured_genres": featured_genres,
                         "for_you": for_you,
                         "unheard": unheard,
-                        "genre_affinity_genre": genre_affinity["genre"],
-                        "genre_affinity_artists": genre_affinity["artists"],
+                        "genre_affinity_genre": genre_affinity_data["genre"],
+                        "genre_affinity_artists": genre_affinity_data["artists"],
                         "taste_spectrum": taste_spectrum,
                     },
                 },
