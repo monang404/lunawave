@@ -135,8 +135,8 @@ class MpvConnection:
                     )
                 else:
                     self._reader, self._writer = await asyncio.wait_for(
-                        asyncio.open_unix_connection(self.socket_path),
-                        timeout=1.0,  # type: ignore[attr-defined]
+                        asyncio.open_unix_connection(self.socket_path),  # type: ignore[attr-defined]
+                        timeout=1.0,
                     )
 
                 self.is_connected = True
