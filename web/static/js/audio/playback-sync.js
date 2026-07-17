@@ -284,22 +284,50 @@ function updateMediaSession() {
             ]
         });
 
+        // Helper untuk update instan sebelum menunggu respon server
+        const _optimisticToggle = (wantsPlay) => {
+            if (store.userRole !== "admin") return;
+            store.status = wantsPlay ? "PLAYING" : "PAUSED";
+            window.lastToggleTime = Date.now();
+            if (wantsPlay && typeof resetAnchorClock === "function") resetAnchorClock();
+            if (typeof renderPlayBtn === "function") renderPlayBtn();
+            if (typeof renderNowPlaying === "function") renderNowPlaying();
+            if (typeof renderQueue === "function") renderQueue();
+            if (store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
+                unlockBrowserAudio(wantsPlay);
+                syncBrowserAudio(wantsPlay);
+            }
+        };
+
         // Pasang action handler — gunakan nama action yang sesuai dengan backend Python
         navigator.mediaSession.setActionHandler('play', () => {
             _mediaSessionHandling = true;
+            _optimisticToggle(true);
             if (typeof wsSend === "function") wsSend("toggle_pause");
             setTimeout(() => { _mediaSessionHandling = false; }, 200);
         });
         navigator.mediaSession.setActionHandler('pause', () => {
             _mediaSessionHandling = true;
+            _optimisticToggle(false);
             if (typeof wsSend === "function") wsSend("toggle_pause");
             setTimeout(() => { _mediaSessionHandling = false; }, 200);
         });
         navigator.mediaSession.setActionHandler('previoustrack', () => {
-            if (typeof wsSend === "function") wsSend("prev");
+            if (store.userRole === "admin") {
+                store.status = "LOADING";
+                if (typeof renderNowPlaying === "function") renderNowPlaying();
+                if (typeof renderPlayerBar === "function") renderPlayerBar();
+                if (typeof wsSend === "function") wsSend("prev");
+            }
         });
         navigator.mediaSession.setActionHandler('nexttrack', () => {
-            if (typeof wsSend === "function") wsSend("next");
+            if (store.userRole === "admin") {
+                store.status = "LOADING";
+                if (typeof renderNowPlaying === "function") renderNowPlaying();
+                if (typeof renderPlayerBar === "function") renderPlayerBar();
+                const data = (store.current_track && store.current_track.video_id) ? { video_id: store.current_track.video_id } : {};
+                if (typeof wsSend === "function") wsSend("next", data);
+            }
         });
         navigator.mediaSession.setActionHandler('seekto', (details) => {
             if (typeof wsSend === "function") wsSend("seek", { position: details.seekTime });
