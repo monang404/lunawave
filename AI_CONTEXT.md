@@ -1,6 +1,6 @@
 ---
-last_verified: 2026-07-14
-sprint: 3.2 (selesai) — Batch 8–12 sudah jalan pasca-3.2, belum diberi nomor sprint resmi
+last_verified: 2026-07-18
+sprint: 3.3 (aktif) — lihat "Sprint Aktif" di bawah
 ---
 
 # AI_CONTEXT.md — Baca ini sebelum menyentuh kode apapun
@@ -91,8 +91,17 @@ Project ini punya tooling di `automation/` untuk membantu orientasi dan menjaga 
 ### Orientasi cepat — gunakan ini dulu sebelum baca kode
 
 ```bash
+# Peta relasi SELURUH repo dalam 1 file — baca ini SEKALI di awal sesi
+# supaya paham hubungan antar file tanpa panggil tool berkali-kali.
+# Regenerate dulu kalau sudah lama (bagian dari run_all.py):
+python automation/repo_map.py
+cat docs/DEPENDENCY_GRAPH.json    # nodes, edges (import graph), events, orphan candidates
+```
+
+```bash
 # Siapa yang bertanggung jawab atas sebuah modul, class, atau fungsi?
 # Jawab: layer arsitektur, callers, dependencies, status di STATUS.md, ADR terkait
+# Menerima path file, nama class, ATAU nama fungsi — resolusi otomatis.
 python automation/find_owner.py DownloadManager
 python automation/find_owner.py cache/db.py
 python automation/find_owner.py publish          # cari berdasarkan nama fungsi
@@ -173,18 +182,21 @@ itu ketika dipanggil oleh AI agent (bukan manusia interaktif).
 
 | Tugas | Tool | Mode AI (--json) |
 |---|---|---|
-| Cek kesehatan repo sebelum mulai |  utomation/doctor.py | belum ada agregasi JSON — panggil tiap checker satu-satu |
-| Cari owner/dependency file/class/fungsi |  utomation/find_owner.py | tersedia sejak task 0.4 |
-| Mendapatkan konteks lengkap file/fitur | `automation/context_pack.py` | Endpoint utama (agregasi 5 checker sekaligus) |
+| Peta relasi seluruh repo (1x per sesi) | `automation/repo_map.py` | Tulis `docs/DEPENDENCY_GRAPH.json` (baca langsung, tidak perlu `--json`) |
+| Cek kesehatan repo sebelum mulai | `automation/doctor.py` | `doctor.py --json` — agregasi SEMUA checker jadi 1 objek (`overall_status`, `aggregate_score`, `checkers[]`) |
+| Cari owner/dependency file/class/fungsi | `automation/find_owner.py` | `find_owner.py <target> --json` — path file, class, atau fungsi, dibaca dari index ter-cache (bukan rescan penuh) |
+| Mendapatkan konteks lengkap file/fitur | `automation/context_pack.py` | Endpoint utama (ownership + deps + reverse_deps + event flow + test + patchlog history + status notes sekaligus) |
+| Cek entry PATCHLOG.md gagal parse | `automation/patchlog.py verify` | Deteksi entry manual berformat rusak yang riwayatnya hilang dari context_pack/find_owner |
 | Cek satu aspek spesifik | `verify_docs.py --json`, dst. | sudah ada |
 
-Catatan: `doctor.py` saat ini hanya merender dashboard teks untuk manusia. Jika
-kamu (AI agent) butuh hasil gabungan dalam JSON, gunakan `context_pack.py --json`.
+Catatan: `doctor.py --json` dan `repo_map.py` ditambahkan di PATCH-2026-07-17-076
+untuk menghilangkan kebutuhan panggil tiap checker satu-satu.
 
 ## Pointer ke detail
 | Butuh info tentang | Cara tercepat |
 |--------------------|---------------|
 | File mana yang relevan untuk task ini | `python automation/find_owner.py <nama_class_atau_file>` |
+| Peta relasi seluruh file (import graph + event graph) | `docs/DEPENDENCY_GRAPH.json` ← auto-generated oleh `repo_map.py` |
 | Semua file & fungsinya | `docs/FILE_INDEX.md` ← auto-generated, selalu akurat |
 | Kondisi per-file & sprint target | `docs/STATUS.md` |
 | Struktur folder detail | `docs/architecture/folder_structure.md` |

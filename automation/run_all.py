@@ -44,6 +44,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 GENERATORS = [
     ("generate_file_index.py", "FILE_INDEX.md"),
     ("generate_report.py", "REPORT.md (statistik)"),
+    ("repo_map.py", "DEPENDENCY_GRAPH.json (peta relasi seluruh file)"),
 ]
 
 

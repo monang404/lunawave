@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1784304441.3258688,
+    "generated_at": 1784307677.4195116,
     "source_mtimes": {
       "config.py": 1784294771.9912038,
       "config_security.py": 1784294772.5032036,
@@ -47,7 +47,7 @@
       "engine/loudness/gain_calculator.py": 1784294772.2752037,
       "engine/loudness/service.py": 1784294772.2752037,
       "engine/playback/__init__.py": 1784294772.2552037,
-      "engine/playback/controller.py": 1784294772.2472038,
+      "engine/playback/controller.py": 1784305390.3090882,
       "engine/playback/crossfade.py": 1784294772.2552037,
       "engine/playback/mode_ops.py": 1784294772.2512038,
       "engine/playback/queue_ops.py": 1784294772.2472038,
@@ -1246,7 +1246,7 @@
         "TrackDurationEvent",
         "MpvReconnectedEvent"
       ],
-      "loc": 474,
+      "loc": 455,
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "main.py",

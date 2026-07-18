@@ -50,3 +50,40 @@ repos:
         entry: lint-imports
         language: python
         pass_filenames: false
+
+      # ---------------------------------------------------------------------------
+      # 4. Struktur Project (file besar, item pending)
+      #    Sebelumnya tidak dipasang di pre-commit maupun CI sama sekali —
+      #    hanya jalan kalau ada yang ingat menjalankan manual.
+      # ---------------------------------------------------------------------------
+      - id: verify-structure
+        name: "LunaWave — Project Structure Check"
+        entry: python automation/verify_structure.py
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # ---------------------------------------------------------------------------
+      # 5. Keamanan (.gitignore, credential/DB exposure)
+      #    Sama seperti #4, sebelumnya tidak ter-enforce di manapun.
+      # ---------------------------------------------------------------------------
+      - id: verify-security
+        name: "LunaWave — Security Check"
+        entry: python automation/verify_security.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # ---------------------------------------------------------------------------
+      # 6. PATCHLOG parseability
+      #    Cegah entry manual berformat rusak masuk ke docs/PATCHLOG.md tanpa
+      #    ketahuan — lihat PATCH-2026-07-17-074/075/076.
+      # ---------------------------------------------------------------------------
+      - id: patchlog-verify
+        name: "LunaWave — PATCHLOG Parseability Check"
+        entry: python automation/patchlog.py verify
+        language: system
+        files: ^docs/PATCHLOG\.md$
+        pass_filenames: false
+        stages: [pre-commit]

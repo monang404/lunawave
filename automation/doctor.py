@@ -203,6 +203,61 @@ def print_summary(results: list[tuple[str, str]]) -> int:
 # ---------------------------------------------------------------------------
 
 
+def build_json_report(outcomes: list[dict]) -> dict:
+    """Agregat semua checker jadi SATU objek JSON.
+
+    Sebelum ini, AI agent yang butuh status kesehatan gabungan harus
+    memanggil tiap checker satu-satu dengan --json masing-masing lalu
+    menggabungkannya sendiri (disebutkan eksplisit sebagai keterbatasan di
+    AI_CONTEXT.md). doctor.py --json menghilangkan langkah itu — 1
+    panggilan, 1 objek, sudah ada skor & status per-checker plus overall.
+    """
+    checkers = []
+    any_fail = False
+    any_warn = False
+    for outcome in outcomes:
+        data = outcome["data"]
+        if data is None:
+            any_fail = True
+            checkers.append(
+                {
+                    "script": outcome["script"],
+                    "title": outcome["title"],
+                    "status": "ERROR",
+                    "score": None,
+                    "error": "gagal parse JSON output",
+                    "raw": outcome["raw"][:2000],
+                }
+            )
+            continue
+
+        status = data.get("repository_status", "FAIL")
+        if status == "FAIL" or outcome["returncode"] != 0:
+            any_fail = True
+        elif status == "WARN":
+            any_warn = True
+
+        checkers.append(
+            {
+                "script": outcome["script"],
+                "title": outcome["title"],
+                "status": status,
+                "score": data.get("score"),
+                "checks": data.get("checks", []),
+            }
+        )
+
+    overall = "FAIL" if any_fail else ("WARN" if any_warn else "PASS")
+    scores = [c["score"] for c in checkers if isinstance(c.get("score"), (int, float))]
+    aggregate_score = round(sum(scores) / len(scores)) if scores else None
+
+    return {
+        "overall_status": overall,
+        "aggregate_score": aggregate_score,
+        "checkers": checkers,
+    }
+
+
 def main():
     import argparse
 
@@ -210,12 +265,23 @@ def main():
     parser.add_argument(
         "--strict", action="store_true", help="Exit 1 jika ada masalah apapun (termasuk ⚠️)"
     )
+    parser.add_argument(
+        "--json", action="store_true", dest="json_output", help="Agregat semua checker jadi 1 JSON"
+    )
     args = parser.parse_args()
+
+    outcomes = run_all_checkers()
+
+    if args.json_output:
+        report = build_json_report(outcomes)
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        rc = 1 if report["overall_status"] == "FAIL" else 0
+        if args.strict and report["overall_status"] != "PASS":
+            rc = 1
+        sys.exit(rc)
 
     print("🩺 LunaWave Doctor — Project Health Check")
     print(f"   Project root: {PROJECT_ROOT}")
-
-    outcomes = run_all_checkers()
 
     results: list[tuple[str, str]] = []
     for i, outcome in enumerate(outcomes, start=1):

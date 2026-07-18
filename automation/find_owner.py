@@ -27,9 +27,7 @@ Publishes:
 """
 
 import argparse
-import ast
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -40,7 +38,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from shared.constants import LARGE_FILE_THRESHOLD
-from shared.skip_dirs import SKIP_DIRS_FOR_OWNERSHIP
+from shared.repo_index import load_ownership_index
 
 LAYER_DESCRIPTIONS = {
     "core": "Foundation — shared primitives, tidak boleh import siapapun",
@@ -71,64 +69,21 @@ ADR_HINTS = {
 }
 
 
-def collect_py_files(root: Path) -> list[Path]:
-    result = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS_FOR_OWNERSHIP]
-        for fn in filenames:
-            if fn.endswith(".py"):
-                result.append(Path(dirpath) / fn)
-    return sorted(result)
-
-
-def extract_info(path: Path) -> dict:
-    try:
-        source = path.read_text(encoding="utf-8", errors="replace")
-        tree = ast.parse(source)
-    except SyntaxError:
-        return {"classes": [], "functions": [], "imports": [], "source": ""}
-
-    classes = []
-    functions = []
-    imports = []
-
-    for node in ast.iter_child_nodes(tree):
-        if isinstance(node, ast.ClassDef):
-            classes.append(node.name)
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            functions.append(node.name)
-        elif isinstance(node, ast.Import):
-            for alias in node.names:
-                imports.append(alias.name)
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.append(node.module)
-
-    return {"classes": classes, "functions": functions, "imports": imports, "source": source}
-
-
-def find_all_classes_and_functions(all_files: list[Path], root: Path) -> dict:
-    index = {}
-    for path in all_files:
-        info = extract_info(path)
-        rel = str(path.relative_to(root)).replace("\\", "/")
-        for cls in info["classes"]:
-            index[cls] = rel
-        for fn in info["functions"]:
-            if fn not in index:
-                index[fn] = rel
-    return index
-
-
-def build_reverse_index(all_files: list[Path], root: Path) -> dict[str, list[str]]:
-    rev: dict[str, list[str]] = {}
-    for path in all_files:
-        info = extract_info(path)
-        importer = str(path.relative_to(root)).replace("\\", "/").removesuffix(".py")
-        for imp in info["imports"]:
-            key = imp.replace(".", "/")
-            rev.setdefault(key, []).append(importer)
-    return rev
+def find_all_classes_and_functions(index: dict) -> dict[str, str]:
+    """Peta simbol (class/fungsi) -> rel path, dibangun dari index yang
+    sudah di-cache (bukan AST rescan). PATCH-2026-07-17-075: sebelumnya
+    fungsi ini (dan collect_py_files/extract_info/build_reverse_index di
+    atasnya) me-re-walk + re-parse AST SELURUH repo dari nol di setiap
+    panggilan find_owner.py — walau context_pack.py di baris lain pada
+    panggilan yang sama sudah punya index ter-cache. Sekarang keduanya
+    berbagi satu sumber (shared.repo_index.load_ownership_index)."""
+    symbols: dict[str, str] = {}
+    for rel, entry in index["files"].items():
+        for cls in entry.get("classes", []):
+            symbols[cls] = rel
+        for fn in entry.get("functions", []):
+            symbols.setdefault(fn, rel)
+    return symbols
 
 
 def read_status_for_file(rel_path: str, root: Path) -> str | None:
@@ -143,7 +98,9 @@ def read_status_for_file(rel_path: str, root: Path) -> str | None:
     return None
 
 
-def resolve_target(query: str, all_files: list[Path], root: Path) -> Path | None:
+def resolve_target(query: str, index: dict, root: Path) -> Path | None:
+    """Resolusi query ke path file: coba sebagai path file dulu, lalu
+    sebagai nama class/fungsi lewat index simbol ter-cache."""
     candidates = [
         root / query,
         root / (query + ".py"),
@@ -152,11 +109,23 @@ def resolve_target(query: str, all_files: list[Path], root: Path) -> Path | None
         if c.exists():
             return c
 
-    sym_index = find_all_classes_and_functions(all_files, root)
+    sym_index = find_all_classes_and_functions(index)
     if query in sym_index:
         return root / sym_index[query]
 
     return None
+
+
+def resolve_target_rel(query: str, index: dict, root: Path) -> str | None:
+    """Sama seperti resolve_target, tapi kembalikan rel path (str) yang
+    langsung cocok dengan key di index["files"] — dipakai context_pack.py
+    supaya deps/reverse_deps/event_flow tidak diam-diam kosong saat query
+    berupa nama class/fungsi, bukan path file persis. Lihat
+    PATCH-2026-07-17-075."""
+    target = resolve_target(query, index, root)
+    if target is None:
+        return None
+    return str(target.relative_to(root)).replace("\\", "/")
 
 
 def get_adr_hints(rel_path: str, classes: list[str]) -> list[str]:
@@ -170,41 +139,43 @@ def get_adr_hints(rel_path: str, classes: list[str]) -> list[str]:
 
 
 def get_owner_info(query: str, root: Path) -> dict | None:
-    all_files = collect_py_files(root)
-    target = resolve_target(query, all_files, root)
+    index = load_ownership_index(root)
+    target = resolve_target(query, index, root)
 
     if target is None:
         return None
 
     rel = str(target.relative_to(root)).replace("\\", "/")
-    info = extract_info(target)
-    rev = build_reverse_index(all_files, root)
+    entry = index["files"].get(rel)
+    if entry is None:
+        # File ada di disk tapi belum ter-index (kondisi balapan langka
+        # antara mtime check dan disk) — fallback rebuild sekali.
+        from shared.repo_index import build_ownership_index
+
+        index = build_ownership_index(root)
+        entry = index["files"].get(rel, {})
 
     top = rel.split("/")[0] if "/" in rel else "root"
     layer_desc = LAYER_DESCRIPTIONS.get(top, "—")
 
-    key = rel.removesuffix(".py")
-    callers = rev.get(key, [])
-    alt_key = key.replace("/", ".")
-    for c in rev.get(alt_key, []):
-        if c not in callers:
-            callers.append(c)
+    classes = entry.get("classes", [])
+    functions = entry.get("functions", [])
+    callers = list(entry.get("reverse_deps", []))
 
-    adrs = get_adr_hints(rel, info["classes"])
+    adrs = get_adr_hints(rel, classes)
     status_line = read_status_for_file(rel, root)
 
     internal_imports = []
-    for imp in info["imports"]:
+    for imp in entry.get("imports", []):
         imp_path = imp.replace(".", "/")
         if any((root / (imp_path + ext)).exists() for ext in [".py", "/__init__.py"]):
             internal_imports.append(imp_path)
 
-    lines = 0
+    lines = entry.get("loc", 0)
     size_kb = 0.0
     try:
-        lines = sum(1 for _ in target.open(encoding="utf-8", errors="replace"))
         size_kb = target.stat().st_size / 1024
-    except Exception:
+    except OSError:
         pass
 
     return {
@@ -212,8 +183,8 @@ def get_owner_info(query: str, root: Path) -> dict | None:
         "resolved_path": rel,
         "layer": top,
         "layer_description": layer_desc,
-        "classes": info["classes"],
-        "functions": info["functions"],
+        "classes": classes,
+        "functions": functions,
         "internal_imports": internal_imports,
         "callers": callers,
         "adr_hints": adrs,

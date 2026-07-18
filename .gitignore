@@ -1,76 +1,41 @@
-# Python artifacts
+# --- Python ---
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-
-# Virtual environments and secrets
-.env
-*.env
-.venv
-env/
-venv/
-ENV/
-node_modules/
-
-# App runtime — dibuat otomatis saat pertama run, jangan didistribusikan
-cache/mp3/
-cache/sockets/
-*.sock
-cache/*.db
-cache/*.db-shm
-cache/*.db-wal
-cache/admin_password.txt
-
-# Database utama (berisi session tokens — jangan commit)
-# Data artis di-seed ulang via: python data/import_artists.py
-data/lunawave.db
-data/*.db-shm
-data/*.db-wal
-
-*.log
-*.mp3
-*.webm
-*.m4a
-*.opus
-secrets.json
-config.local.py
-
-# Dokumen internal developer — bukan untuk user
-# (Catatan: docs/ dan tests/ SENGAJA DISERTAKAN ke git)
-agen_konteks.md
-arsitektur.md
-design.md
-refactor.MD
-refactor.md
-refactor.txt
-ui_*.md
-*.zip
-
-# Test artifacts (bukan test code — hanya output)
+*.egg-info/
+.mypy_cache/
 .pytest_cache/
-htmlcov/
-.coverage
-debug_*.py
+.ruff_cache/
+.tox/
+build/
+dist/
+.venv/
+venv/
 
-# File init kosong di widgets (tidak berguna)
-widgets/__init__.py
+# --- automation/ tooling cache ---
+# Index AST ter-cache (mtime-invalidated) dari shared/repo_index.py.
+# Regenerable dari source, tidak perlu di-commit — lihat audit soal ini
+# di PATCH-2026-07-17-076.
+.cache/
 
-# IDE / OS
+# --- Node / frontend ---
+node_modules/
+npm-debug.log*
+
+# --- Credential & runtime data (JANGAN commit) ---
+cache/admin_password.txt
+admin_password.txt
+*.db
+cache/library.db
+*.env
+.env.local
+
+# --- Editor / OS ---
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Windows artifacts
-desktop.ini
-data/lunawave.db
-
-node_modules/
-.ruff_cache/
-.mypy_cache/
-.import_linter_cache/
-
-# Local test runner scripts
-run_tests.py
-test.bat
+# --- Project scratch / logs ---
+scratch/
+mpv_out.txt
+*.log

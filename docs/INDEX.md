@@ -1,7 +1,7 @@
 ---
 title : LunaWave Documentation Index
-last_verified: 2026-07-13
-sprint: 3.2
+last_verified: 2026-07-18
+sprint: 3.3
 status: current
 ---
 
