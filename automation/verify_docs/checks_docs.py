@@ -11,7 +11,7 @@ Responsibilities:
 
 Depends on:
     - shared.check_result
-    - automation.verify_docs.helpers
+    - automation.verify_docs.doc_parsing_utils
     - automation.patchlog (verify() — deteksi entry gagal parse)
 
 Subscribes to:
@@ -33,7 +33,7 @@ from shared.check_result import CheckResult
 
 from patchlog import verify as patchlog_verify
 
-from .helpers import (
+from .doc_parsing_utils import (
     GENERATED_BEGIN_RE,
     GENERATED_END_RE,
     PATCH_ID_RE,

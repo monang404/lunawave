@@ -8,7 +8,7 @@ Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - adapters.ytdlp.common
+    - adapters.ytdlp.ydl_options
 
 Subscribes to:
     None
@@ -23,7 +23,7 @@ Thread Safety:
 import asyncio
 import logging
 
-from adapters.ytdlp.common import YDL_OPTS_INFO
+from adapters.ytdlp.ydl_options import YDL_OPTS_INFO
 from config import YTDLP_RESOLVE_TIMEOUT_SEC
 
 _log = logging.getLogger(__name__)

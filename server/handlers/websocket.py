@@ -35,6 +35,7 @@ import aiohttp
 import structlog
 from aiohttp import web
 
+from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
 from server.handlers.ws_discovery import handle_discovery_command
 from server.handlers.ws_download import handle_download_command
@@ -81,11 +82,11 @@ logger = structlog.get_logger(__name__)
 
 
 async def ws_handler(request):
-    request.app["playback_controller"]
-    state = request.app["state"]
-    manager = request.app["manager"]
-    db = request.app["db"]
-    ytdlp = request.app["ytdlp"]
+    get_playback_controller(request)
+    state = get_state(request)
+    manager = get_manager(request)
+    repos = get_repos(request)
+    ytdlp = get_ytdlp(request)
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -115,7 +116,7 @@ async def ws_handler(request):
                     data = json.loads(msg.data)
                 except json.JSONDecodeError:
                     continue
-                await handle_ws_message(data, ws, request.remote, state, ytdlp, manager, db)
+                await handle_ws_message(data, ws, request.remote, state, ytdlp, manager, repos)
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
     except Exception as e:
@@ -126,7 +127,7 @@ async def ws_handler(request):
     return ws
 
 
-async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, db):
+async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, repos):
     msg_type = msg.get("type")
     action = msg.get("action", "")
     data = msg.get("data", {})
@@ -136,7 +137,7 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
     now = time.time()
     if action == "auth":
-        await handle_auth(ws, data, manager, client_ip, db, now)
+        await handle_auth(ws, data, manager, client_ip, repos.sessions, now)
         return
 
     if not require_auth(manager, ws):
@@ -160,15 +161,15 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         if action in PLAYBACK_CMDS:
             await handle_playback_command(action, data)
         elif action in QUEUE_CMDS:
-            await handle_queue_command(action, data, db)
+            await handle_queue_command(action, data, repos.artists, repos.genres)
         elif action in DISCOVERY_CMDS:
-            await handle_discovery_command(action, data, ytdlp, db, ws)
+            await handle_discovery_command(action, data, ytdlp, repos.discover, ws)
         elif action in DOWNLOAD_CMDS:
-            await handle_download_command(action, data, db, manager, state)
+            await handle_download_command(action, data, repos.tracks, repos.discover, manager, state)
         elif action in CACHE_CMDS:
             from server.handlers.ws_cache import handle_cache_command
 
-            await handle_cache_command(action, data, ws, db, manager, state)
+            await handle_cache_command(action, data, ws, repos, manager, state)
     except Exception as e:
         logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
         try:

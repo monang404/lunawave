@@ -9,6 +9,7 @@ Responsibilities:
 
 Depends on:
     - server.serializers
+    - services.discover_service
 
 Subscribes to:
     None
@@ -28,7 +29,7 @@ from server.serializers import track_to_dict
 from services.discover_service import DiscoverService
 
 
-async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
+async def handle_discovery_command(action: str, data: dict, ytdlp, discover_repo, ws):
     if action == "search":
         query = data.get("query", "").strip()
         if query:
@@ -44,7 +45,7 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
             )
 
     elif action == "discover":
-        ds = DiscoverService(db)
+        ds = DiscoverService(discover_repo)
         (
             recent,
             favorites,
@@ -99,7 +100,7 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
         # izin eksplisit") and was intentionally NOT touched in this patch.
         # See docs/PATCHLOG.md PATCH-2026-07-17-070 for the one-line change
         # needed before this branch can ever be dispatched to.
-        ds = DiscoverService(db)
+        ds = DiscoverService(discover_repo)
         artist = data.get("artist", "").strip()
         detail = await ds.get_artist_detail(artist) if artist else None
         await ws.send_str(

@@ -32,23 +32,64 @@ def test_fake_media_extractor_has_all_media_extractor_port_methods():
         assert hasattr(FakeMediaExtractor, name), f"FakeMediaExtractor missing {name}()"
 
 
-def test_real_database_implements_track_and_session_repository_ports():
-    from cache.db import Database
+def test_track_repository_implements_track_repository_port():
+    from persistence.track_repo import TrackRepository
 
     required = [
         "upsert_track",
         "update_stream_url_only",
         "get_track",
         "increment_play_count",
-        "create_session",
-        "verify_session",
-        "delete_session",
-        "cleanup_sessions",
-        "init",
-        "close",
+        "set_loudness",
+        "set_last_position",
     ]
     for name in required:
-        assert hasattr(Database, name), f"Database missing {name}() required by DatabasePort"
+        assert hasattr(TrackRepository, name), (
+            f"TrackRepository missing {name}() required by TrackRepositoryPort"
+        )
+
+
+def test_session_repository_implements_session_repository_port():
+    from persistence.session_repo import SessionRepository
+
+    required = ["create_session", "verify_session", "delete_session", "cleanup_sessions"]
+    for name in required:
+        assert hasattr(SessionRepository, name), (
+            f"SessionRepository missing {name}() required by SessionRepositoryPort"
+        )
+
+
+def test_artist_repository_implements_artist_repository_port():
+    from persistence.artist_repo import ArtistRepository
+
+    required = [
+        "get_all_artists",
+        "get_artist_songs_strict",
+        "record_completion",
+        "record_skip",
+        "get_reward_stats",
+    ]
+    for name in required:
+        assert hasattr(ArtistRepository, name), (
+            f"ArtistRepository missing {name}() required by ArtistRepositoryPort"
+        )
+
+
+def test_discover_repository_implements_discover_repository_port():
+    from persistence.discover_repo import DiscoverRepository
+
+    required = [
+        "get_bandit_ranked_artists",
+        "get_unheard_artists",
+        "get_top_genre",
+        "get_genre_artists_enriched",
+        "get_taste_spectrum",
+        "get_artist_detail",
+    ]
+    for name in required:
+        assert hasattr(DiscoverRepository, name), (
+            f"DiscoverRepository missing {name}() required by DiscoverRepositoryPort"
+        )
 
 
 def test_ports_are_defined_as_protocol_classes():

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-18-075
+latest_patch_id: PATCH-2026-07-18-103
 
-total_entries: 75
+total_entries: 103
 
 ---
 
@@ -26,6 +26,533 @@ total_entries: 75
 
 ---
 
+
+## [2026-07-18] Rename nama generik: adapters/ytdlp/common.py -> ydl_options.py, engine/radio/common.py -> radio_config.py, automation/verify_docs/helpers.py -> doc_parsing_utils.py; sekalian perbaiki docstring 'Depends on' yang masih menyebut scripts.verify_docs.helpers (sisa lupa update dari PATCH-2026-07-17-072)
+
+**ID:** `PATCH-2026-07-18-103`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Rename nama generik: adapters/ytdlp/common.py -> ydl_options.py, engine/radio/common.py -> radio_config.py, automation/verify_docs/helpers.py -> doc_parsing_utils.py; sekalian perbaiki docstring 'Depends on' yang masih menyebut scripts.verify_docs.helpers (sisa lupa update dari PATCH-2026-07-17-072)
+
+**File Terdampak:**
+
+- `adapters/ytdlp/ydl_options.py`
+- `adapters/ytdlp/searcher.py`
+- `adapters/ytdlp/resolver.py`
+- `adapters/ytdlp/downloader.py`
+- `engine/radio/radio_config.py`
+- `engine/radio/artist_selector.py`
+- `engine/radio/engine.py`
+- `engine/radio/prefetcher.py`
+- `automation/verify_docs/doc_parsing_utils.py`
+- `automation/verify_docs/render.py`
+- `automation/verify_docs/checks_files.py`
+- `automation/verify_docs/checks_coverage.py`
+- `automation/verify_docs/checks_docs.py`
+- `automation/verify_docs.py`
+
+---
+
+## [2026-07-18] Rename file test yang menyimpang konvensi penamaan (tests/frontend/test_store.test.js -> store.test.js, test_ws-routing.test.js -> ws-routing.test.js, tests/unit/launcher/gui/test_app_lifecycle.py -> test_app.py); konsolidasi test_ytdlp.py + test_ytdlp_client.py jadi satu file test_ytdlp.py (kelas facade disuffix ViaYtDlpClient agar tidak bentrok nama, semua 42 assertion/test case dipertahankan, verified: 620 passed tetap sama)
+
+**ID:** `PATCH-2026-07-18-102`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Rename file test yang menyimpang konvensi penamaan (tests/frontend/test_store.test.js -> store.test.js, test_ws-routing.test.js -> ws-routing.test.js, tests/unit/launcher/gui/test_app_lifecycle.py -> test_app.py); konsolidasi test_ytdlp.py + test_ytdlp_client.py jadi satu file test_ytdlp.py (kelas facade disuffix ViaYtDlpClient agar tidak bentrok nama, semua 42 assertion/test case dipertahankan, verified: 620 passed tetap sama)
+
+**File Terdampak:**
+
+- `tests/frontend/store.test.js`
+- `tests/frontend/ws-routing.test.js`
+- `tests/unit/launcher/gui/test_app.py`
+- `tests/unit/adapters/ytdlp/test_ytdlp.py`
+- `docs/testing/README.md`
+- `docs/testing/frontend_testing.md`
+- `docs/architecture/folder_structure.md`
+
+---
+
+## [2026-07-18] Rename ADR 003-Crossfade.md ke konvensi 0007-crossfade.md, samakan judul internal jadi ADR-0007 (tidak ada referensi lain yang perlu diupdate selain entri historis di PATCHLOG.md yang sengaja dibiarkan sebagai catatan riwayat)
+
+**ID:** `PATCH-2026-07-18-101`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Rename ADR 003-Crossfade.md ke konvensi 0007-crossfade.md, samakan judul internal jadi ADR-0007 (tidak ada referensi lain yang perlu diupdate selain entri historis di PATCHLOG.md yang sengaja dibiarkan sebagai catatan riwayat)
+
+**File Terdampak:**
+
+- `docs/adr/0007-crossfade.md`
+
+---
+
+## [2026-07-18] Perluas .importlinter: kontrak automation dan data sebagai root package terisolasi (automation tidak boleh diimpor, data hanya boleh diimpor automation); dikonfirmasi cache/ sudah bukan python package sejak T2.6 sehingga tidak perlu entri forbidden_modules tambahan
+
+**ID:** `PATCH-2026-07-18-100`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Perluas .importlinter: kontrak automation dan data sebagai root package terisolasi (automation tidak boleh diimpor, data hanya boleh diimpor automation); dikonfirmasi cache/ sudah bukan python package sejak T2.6 sehingga tidak perlu entri forbidden_modules tambahan
+
+**File Terdampak:**
+
+- `.importlinter`
+
+---
+
+## [2026-07-18] Tambahkan accessor get_*() bertipe di server/handlers/__init__.py untuk semua key request.app[...] (repos, tracks, conn, state, manager, ytdlp, playback_controller) - rencana asli get_db() untuk request.app['db'] sudah tidak relevan sejak Database God Facade dipecah T2.2, diganti akses per-repo
+
+**ID:** `PATCH-2026-07-18-099`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Tambahkan accessor get_*() bertipe di server/handlers/__init__.py untuk semua key request.app[...] (repos, tracks, conn, state, manager, ytdlp, playback_controller) - rencana asli get_db() untuk request.app['db'] sudah tidak relevan sejak Database God Facade dipecah T2.2, diganti akses per-repo
+
+**File Terdampak:**
+
+- `server/handlers/__init__.py`
+- `server/handlers/http.py`
+- `server/handlers/websocket.py`
+- `server/handlers/audio_stream_handler.py`
+
+---
+
+## [2026-07-18] Tambahkan type hint DatabasePort ke constructor engine/ yang menerima db tanpa tipe
+
+**ID:** `PATCH-2026-07-18-098`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Tambahkan type hint DatabasePort ke constructor engine/ yang menerima db tanpa tipe
+
+**File Terdampak:**
+
+- `core/ports.py`
+- `engine/radio/artist_selector.py`
+- `engine/radio/engine.py`
+
+---
+
+## [2026-07-18] Audit data/: artists_enriched1.json TERNYATA BUKAN duplikat (854 vs 100 artis, beda substantif) - tidak dihapus, didokumentasikan di STATUS.md, butuh keputusan pemilik project. export_to_sqlite.py dikonfirmasi tetap di data/ (kontradiksi dengan rencana pindah ke automation/ di TASK_BREAKDOWN.md dibatalkan karena state riil sudah selesai)
+
+**ID:** `PATCH-2026-07-18-097`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Audit data/: artists_enriched1.json TERNYATA BUKAN duplikat (854 vs 100 artis, beda substantif) - tidak dihapus, didokumentasikan di STATUS.md, butuh keputusan pemilik project. export_to_sqlite.py dikonfirmasi tetap di data/ (kontradiksi dengan rencana pindah ke automation/ di TASK_BREAKDOWN.md dibatalkan karena state riil sudah selesai)
+
+**File Terdampak:**
+
+- `docs/STATUS.md`
+
+---
+
+## [2026-07-18] Pisah serve_stream (range-request) ke audio_stream_handler.py
+
+**ID:** `PATCH-2026-07-18-096`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pisah serve_stream (range-request) ke audio_stream_handler.py
+
+**File Terdampak:**
+
+- `server/handlers/audio_stream_handler.py`
+- `server/handlers/http.py`
+- `server/app.py`
+- `tests/unit/server/handlers/test_audio_stream_handler.py`
+- `tests/unit/server/handlers/test_http.py`
+
+---
+
+## [2026-07-18] Pisah skor rekomendasi (compute_match_pct, taste spectrum) ke services/discover_ranking.py, fungsi murni tanpa DB
+
+**ID:** `PATCH-2026-07-18-095`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pisah skor rekomendasi (compute_match_pct, taste spectrum) ke services/discover_ranking.py, fungsi murni tanpa DB
+
+**File Terdampak:**
+
+- `services/discover_ranking.py`
+- `persistence/discover_repo.py`
+- `services/discover_service.py`
+- `tests/unit/services/test_discover_ranking.py`
+- `tests/unit/persistence/test_discover_repo.py`
+
+---
+
+## [2026-07-18] Ekstrak auth_service.py dari auth_panel.py, pisah logic dari UI
+
+**ID:** `PATCH-2026-07-18-094`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Ekstrak auth_service.py dari auth_panel.py, pisah logic dari UI
+
+**File Terdampak:**
+
+- `launcher/auth_service.py`
+- `launcher/gui/auth_panel.py`
+
+---
+
+## [2026-07-18] Pecah build_ui() jadi 4 method privat di ui_builder.py
+
+**ID:** `PATCH-2026-07-18-093`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pecah build_ui() jadi 4 method privat di ui_builder.py
+
+**File Terdampak:**
+
+- `launcher/gui/ui_builder.py`
+
+---
+
+## [2026-07-18] Ekstrak ServerLifecycle (tanpa dependency Tkinter) dari ServerManager di launcher/gui/app.py
+
+**ID:** `PATCH-2026-07-18-092`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Ekstrak ServerLifecycle (tanpa dependency Tkinter) dari ServerManager di launcher/gui/app.py
+
+**File Terdampak:**
+
+- `launcher/gui/app.py`
+- `launcher/server_lifecycle.py`
+- `launcher/gui/log_view.py`
+- `tests/unit/launcher/test_server_lifecycle.py`
+
+---
+
+## [2026-07-18] Perbaiki typo/leftover text di docs/STATUS.md pada baris services/stream_prefetch.py (sisa draf tidak sengaja ke-commit).
+
+**ID:** `PATCH-2026-07-18-091`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Perbaiki typo/leftover text di docs/STATUS.md pada baris services/stream_prefetch.py (sisa draf tidak sengaja ke-commit).
+
+**File Terdampak:**
+
+- `docs/STATUS.md`
+
+---
+
+## [2026-07-18] T2.7: Satukan services/ (root) dan server/services/. stream_prefetch.py pindah ke services/stream_prefetch.py sesuai rencana (hanya impor config+core). broadcast_service.py TIDAK dipindah ke root services/ (deviasi dari rencana) melainkan ke server/broadcast_service.py, karena mengimpor server.connection_manager dan server.serializers (konstruksi web/wire layer) -- begitu bug .importlinter (PATCH-2026-07-18-089) diperbaiki, memindahkannya ke services/ akan melanggar kontrak 'services hanya boleh import core dan persistence'. Folder server/services/ dihapus. Update importer: server/handlers/event_listeners.py, server/app.py. Test dipindah: tests/unit/services/test_stream_prefetch.py, tests/unit/server/test_broadcast_service.py. Dokumentasi diupdate: docs/backend/services.md (keputusan+konvensi suffix), docs/backend/background_jobs.md, docs/testing/unit_testing.md, docs/INDEX.md, docs/architecture/backend.md, docs/architecture/data_flow.md, docs/adr/0005-websocket-single-channel.md. Verifikasi: pytest 594 passed 0 failed, lint-imports 7 kept 0 broken (verified real, bukan false positive), architecture_lint PASS, doctor PASS, wiring server/app.py dicek manual.
+
+**ID:** `PATCH-2026-07-18-090`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** T2.7: Satukan services/ (root) dan server/services/. stream_prefetch.py pindah ke services/stream_prefetch.py sesuai rencana (hanya impor config+core). broadcast_service.py TIDAK dipindah ke root services/ (deviasi dari rencana) melainkan ke server/broadcast_service.py, karena mengimpor server.connection_manager dan server.serializers (konstruksi web/wire layer) -- begitu bug .importlinter (PATCH-2026-07-18-089) diperbaiki, memindahkannya ke services/ akan melanggar kontrak 'services hanya boleh import core dan persistence'. Folder server/services/ dihapus. Update importer: server/handlers/event_listeners.py, server/app.py. Test dipindah: tests/unit/services/test_stream_prefetch.py, tests/unit/server/test_broadcast_service.py. Dokumentasi diupdate: docs/backend/services.md (keputusan+konvensi suffix), docs/backend/background_jobs.md, docs/testing/unit_testing.md, docs/INDEX.md, docs/architecture/backend.md, docs/architecture/data_flow.md, docs/adr/0005-websocket-single-channel.md. Verifikasi: pytest 594 passed 0 failed, lint-imports 7 kept 0 broken (verified real, bukan false positive), architecture_lint PASS, doctor PASS, wiring server/app.py dicek manual.
+
+**File Terdampak:**
+
+- `services/stream_prefetch.py`
+- `server/broadcast_service.py`
+- `server/handlers/event_listeners.py`
+- `server/app.py`
+- `tests/unit/services/test_stream_prefetch.py`
+- `tests/unit/server/test_broadcast_service.py`
+- `docs/backend/services.md`
+- `docs/backend/background_jobs.md`
+- `docs/testing/unit_testing.md`
+- `docs/INDEX.md`
+- `docs/architecture/backend.md`
+- `docs/architecture/data_flow.md`
+- `docs/adr/0005-websocket-single-channel.md`
+
+---
+
+## [2026-07-18] Perbaiki bug syntax .importlinter: forbidden_modules/source_modules pakai koma-satu-baris yang TIDAK di-parse import-linter (SetField hanya split per-baris, bukan per-koma) — 6 dari 7 kontrak selama ini silently no-op (selalu KEPT tanpa benar-benar cek apa pun). Diverifikasi langsung ke source import-linter (grimp.find_shortest_chains + ForbiddenContract.check). Diperbaiki jadi format list per-baris (sama seperti root_packages yang sudah benar). Baseline lint-imports pasca-perbaikan: 7 kept, 0 broken (genuinely verified, bukan false positive).
+
+**ID:** `PATCH-2026-07-18-089`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Perbaiki bug syntax .importlinter: forbidden_modules/source_modules pakai koma-satu-baris yang TIDAK di-parse import-linter (SetField hanya split per-baris, bukan per-koma) — 6 dari 7 kontrak selama ini silently no-op (selalu KEPT tanpa benar-benar cek apa pun). Diverifikasi langsung ke source import-linter (grimp.find_shortest_chains + ForbiddenContract.check). Diperbaiki jadi format list per-baris (sama seperti root_packages yang sudah benar). Baseline lint-imports pasca-perbaikan: 7 kept, 0 broken (genuinely verified, bukan false positive).
+
+**File Terdampak:**
+
+- `.importlinter`
+
+---
+
+## [2026-07-18] Perbaiki assertion salah di test_handle_playback_command_other_commands: CMD_PREV memang dikirim beserta data (simetris dengan CMD_NEXT, mendukung guard video_id opsional di _on_prev), bukan tanpa argumen. Baseline test suite sekarang 594 passed, 0 failed.
+
+**ID:** `PATCH-2026-07-18-088`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Perbaiki assertion salah di test_handle_playback_command_other_commands: CMD_PREV memang dikirim beserta data (simetris dengan CMD_NEXT, mendukung guard video_id opsional di _on_prev), bukan tanpa argumen. Baseline test suite sekarang 594 passed, 0 failed.
+
+**File Terdampak:**
+
+- `tests/unit/server/handlers/test_ws_playback.py`
+
+---
+
+## [2026-07-18] Gabungkan cache/resolver.py ke persistence/stream_cache.py, hapus folder cache/ (pb_html.txt statis dipindah ke data/, ws_cache.py tidak di-rename karena tidak terkait stream cache)
+
+**ID:** `PATCH-2026-07-18-087`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Gabungkan cache/resolver.py ke persistence/stream_cache.py, hapus folder cache/ (pb_html.txt statis dipindah ke data/, ws_cache.py tidak di-rename karena tidak terkait stream cache)
+
+**File Terdampak:**
+
+- `persistence/stream_cache.py`
+- `data/pb_html.txt`
+- `bootstrap/services.py`
+- `tests/integration/conftest.py`
+- `tests/unit/test_main.py`
+- `tests/unit/persistence/test_stream_cache.py`
+- `tests/unit/engine/playback/test_track_loader.py`
+- `tests/unit/engine/conftest.py`
+- `tests/unit/bootstrap/test_services.py`
+- `server/handlers/ws_cache.py`
+- `docs/backend/caching.md`
+- `cache/resolver.py`
+- `cache/__init__.py`
+- `cache/pb_html.txt`
+- `tests/unit/cache/test_resolver.py`
+
+---
+
+## [2026-07-18] Pecah main.py jadi bootstrap/ (services, startup_tasks, maintenance), main() jadi orkestrasi 4 langkah
+
+**ID:** `PATCH-2026-07-18-086`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pecah main.py jadi bootstrap/ (services, startup_tasks, maintenance), main() jadi orkestrasi 4 langkah
+
+**File Terdampak:**
+
+- `main.py`
+- `bootstrap/__init__.py`
+- `bootstrap/services.py`
+- `bootstrap/startup_tasks.py`
+- `bootstrap/maintenance.py`
+- `tests/unit/test_main.py`
+- `tests/unit/bootstrap/__init__.py`
+- `tests/unit/bootstrap/test_services.py`
+- `tests/unit/bootstrap/test_startup_tasks.py`
+- `tests/unit/bootstrap/test_maintenance.py`
+
+---
+
+## [2026-07-18] Pecah PlaybackController: ekstrak QueueController dan SettingsController, wiring delegasi via command_router
+
+**ID:** `PATCH-2026-07-18-085`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pecah PlaybackController: ekstrak QueueController dan SettingsController, wiring delegasi via command_router
+
+**File Terdampak:**
+
+- `engine/playback/controller.py`
+- `engine/playback/queue_controller.py`
+- `engine/playback/settings_controller.py`
+- `tests/unit/engine/playback/test_controller.py`
+- `tests/unit/engine/playback/test_queue_controller.py`
+- `tests/unit/engine/playback/test_settings_controller.py`
+
+---
+
+## [2026-07-18] T2.2e: hapus facade Database (God Facade) dari persistence/__init__.py. Diganti Repositories: container tipis 1 koneksi + 6 repo domain (tracks/sessions/artists/genres/library/discover) tanpa method delegasi. main.py wiring ulang: CacheResolver dapat ResolverDbCompat (gabungan TrackRepository+ArtistRepository+DiscoverRepository, cuma utk resolver.db yg dipakai lintas domain oleh controller/track_loader/track_ended_ops/event_listeners -- BUKAN facade baru, tidak ada logic sendiri), LoudnessService dapat repos.tracks langsung, RadioMode dapat repos.artists+repos.library. server/app.py: create_app terima Repositories, app dict simpan 'repos'+'conn'+'tracks' (bukan 'db' facade penuh). http.py health_check pakai app['conn']. websocket.py: db->repos, handle_download_command sekarang terima tracks+discover terpisah (bukan db penuh) - ws_download.py diperbaiki mengikuti. scratch/check_db.py diperbaiki (Database sudah tidak ada). Enam file test yang pakai db fixture dgn flat facade call (test_track_repo, test_session_repo, test_artist_repo, test_genre_repo, test_discover_repo, test_discover_service) di-sed ke db.<repo>.<method>. test_ports.py ditulis ulang per-repo (bukan cek 1 Database god object). test_db.py ditulis ulang menguji persistence.db.DatabaseConnection langsung (bukan lewat facade). test_main.py, test_app.py, test_http.py, test_ws_download.py disesuaikan ke wiring baru. Hasil: 558 passed (baseline T0.2 sama persis), 1 failed pre-existing (test_ws_playback, tidak terkait), import-linter 7 kept/0 broken.
+
+**ID:** `PATCH-2026-07-18-084`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** T2.2e: hapus facade Database (God Facade) dari persistence/__init__.py. Diganti Repositories: container tipis 1 koneksi + 6 repo domain (tracks/sessions/artists/genres/library/discover) tanpa method delegasi. main.py wiring ulang: CacheResolver dapat ResolverDbCompat (gabungan TrackRepository+ArtistRepository+DiscoverRepository, cuma utk resolver.db yg dipakai lintas domain oleh controller/track_loader/track_ended_ops/event_listeners -- BUKAN facade baru, tidak ada logic sendiri), LoudnessService dapat repos.tracks langsung, RadioMode dapat repos.artists+repos.library. server/app.py: create_app terima Repositories, app dict simpan 'repos'+'conn'+'tracks' (bukan 'db' facade penuh). http.py health_check pakai app['conn']. websocket.py: db->repos, handle_download_command sekarang terima tracks+discover terpisah (bukan db penuh) - ws_download.py diperbaiki mengikuti. scratch/check_db.py diperbaiki (Database sudah tidak ada). Enam file test yang pakai db fixture dgn flat facade call (test_track_repo, test_session_repo, test_artist_repo, test_genre_repo, test_discover_repo, test_discover_service) di-sed ke db.<repo>.<method>. test_ports.py ditulis ulang per-repo (bukan cek 1 Database god object). test_db.py ditulis ulang menguji persistence.db.DatabaseConnection langsung (bukan lewat facade). test_main.py, test_app.py, test_http.py, test_ws_download.py disesuaikan ke wiring baru. Hasil: 558 passed (baseline T0.2 sama persis), 1 failed pre-existing (test_ws_playback, tidak terkait), import-linter 7 kept/0 broken.
+
+**File Terdampak:**
+
+- `persistence/__init__.py`
+- `main.py`
+- `cache/resolver.py`
+- `server/app.py`
+- `server/handlers/http.py`
+- `server/handlers/websocket.py`
+- `server/handlers/ws_download.py`
+- `scratch/check_db.py`
+- `tests/conftest.py`
+- `tests/integration/conftest.py`
+- `tests/unit/core/test_ports.py`
+- `tests/unit/persistence/test_db.py`
+- `tests/unit/persistence/test_track_repo.py`
+- `tests/unit/persistence/test_session_repo.py`
+- `tests/unit/persistence/test_artist_repo.py`
+- `tests/unit/persistence/test_genre_repo.py`
+- `tests/unit/persistence/test_discover_repo.py`
+- `tests/unit/services/test_discover_service.py`
+- `tests/unit/test_main.py`
+- `tests/unit/server/test_app.py`
+- `tests/unit/server/handlers/test_http.py`
+- `tests/unit/server/handlers/test_ws_download.py`
+
+---
+
+## [2026-07-18] Migrasi discover_service dan ws_discovery ke DiscoverRepository langsung (T2.2d). DiscoverService kini menerima DiscoverRepository (bukan facade Database) via param 'discover'; tambah DiscoverRepositoryPort di core/ports.py dan property conn publik di DiscoverRepository (pola sama dgn artist_repo.py/library_repo.py T2.2c). handle_discovery_command di ws_discovery.py menerima discover_repo langsung. server/handlers/websocket.py disentuh 1 baris untuk wiring db.discover (melanjutkan izin eksplisit yg sama dgn T2.2c). Konsumen lain DiscoverService yang tadinya pass facade penuh (event_listeners.py, ws_download.py) ikut diperbaiki ke db.discover supaya tidak pecah runtime, walau di luar SOP-A target eksplisit task ini.
+
+**ID:** `PATCH-2026-07-18-083`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Migrasi discover_service dan ws_discovery ke DiscoverRepository langsung (T2.2d). DiscoverService kini menerima DiscoverRepository (bukan facade Database) via param 'discover'; tambah DiscoverRepositoryPort di core/ports.py dan property conn publik di DiscoverRepository (pola sama dgn artist_repo.py/library_repo.py T2.2c). handle_discovery_command di ws_discovery.py menerima discover_repo langsung. server/handlers/websocket.py disentuh 1 baris untuk wiring db.discover (melanjutkan izin eksplisit yg sama dgn T2.2c). Konsumen lain DiscoverService yang tadinya pass facade penuh (event_listeners.py, ws_download.py) ikut diperbaiki ke db.discover supaya tidak pecah runtime, walau di luar SOP-A target eksplisit task ini.
+
+**File Terdampak:**
+
+- `services/discover_service.py`
+- `server/handlers/ws_discovery.py`
+- `server/handlers/websocket.py`
+- `server/handlers/event_listeners.py`
+- `server/handlers/ws_download.py`
+- `persistence/discover_repo.py`
+- `core/ports.py`
+- `tests/unit/services/test_discover_service.py`
+
+---
+
+## [2026-07-18] T2.2c: migrasi konsumen domain session/artist/genre/library ke repository masing-masing langsung (session/artist/genre/library repo properties baru di facade Database: sessions, artists, genres, library). auth.py->SessionRepository, ws_queue.py->ArtistRepository+GenreRepository (mixed 2 domain dalam 1 file), artist_selector.py/RadioMode->ArtistRepository+LibraryRepository (mixed 2 domain). Tambah properti conn publik di ArtistRepository & LibraryRepository utk liveness-check yang sudah ada sebelumnya. websocket.py (sebelumnya frozen) diedit di call-site dispatch (izin eksplisit user, bukan spontan) utk narrow db->db.sessions / db.artists,db.genres. Discovery/download/cache command tetap pakai db penuh (butuh T2.2d).
+
+**ID:** `PATCH-2026-07-18-082`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** T2.2c: migrasi konsumen domain session/artist/genre/library ke repository masing-masing langsung (session/artist/genre/library repo properties baru di facade Database: sessions, artists, genres, library). auth.py->SessionRepository, ws_queue.py->ArtistRepository+GenreRepository (mixed 2 domain dalam 1 file), artist_selector.py/RadioMode->ArtistRepository+LibraryRepository (mixed 2 domain). Tambah properti conn publik di ArtistRepository & LibraryRepository utk liveness-check yang sudah ada sebelumnya. websocket.py (sebelumnya frozen) diedit di call-site dispatch (izin eksplisit user, bukan spontan) utk narrow db->db.sessions / db.artists,db.genres. Discovery/download/cache command tetap pakai db penuh (butuh T2.2d).
+
+**File Terdampak:**
+
+- `persistence/__init__.py`
+- `persistence/artist_repo.py`
+- `persistence/library_repo.py`
+- `engine/radio/artist_selector.py`
+- `engine/radio/engine.py`
+- `server/handlers/auth.py`
+- `server/handlers/ws_queue.py`
+- `server/handlers/websocket.py`
+- `main.py`
+- `tests/integration/conftest.py`
+- `tests/unit/engine/radio/test_artist_selector.py`
+- `tests/unit/engine/radio/test_engine.py`
+- `tests/unit/server/handlers/test_ws_queue.py`
+- `tests/unit/server/handlers/test_websocket.py`
+
+---
+
+## [2026-07-18] T2.2b: migrasi konsumen domain track yang aman (StreamPrefetchService, serve_stream di http.py) ke TrackRepository langsung via db.tracks property baru di facade Database. resolver.py/event_listeners.py/ws_download.py/track_loader.py/track_ended_ops.py TIDAK dinarrow di task ini — resolver.db dipakai lintas-domain (StreamResolverPort.db bertipe DatabasePort penuh, dipakai controller.py utk record_completion/record_skip [artis] dan event_listeners.py/ws_download.py utk instansiasi DiscoverService inline [discover]); narrow resolver.py baru aman setelah T2.2c (artist) dan T2.2d (discover) beres, dan controller.py sendiri frozen (butuh T2.3 utk disentuh).
+
+**ID:** `PATCH-2026-07-18-081`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** T2.2b: migrasi konsumen domain track yang aman (StreamPrefetchService, serve_stream di http.py) ke TrackRepository langsung via db.tracks property baru di facade Database. resolver.py/event_listeners.py/ws_download.py/track_loader.py/track_ended_ops.py TIDAK dinarrow di task ini — resolver.db dipakai lintas-domain (StreamResolverPort.db bertipe DatabasePort penuh, dipakai controller.py utk record_completion/record_skip [artis] dan event_listeners.py/ws_download.py utk instansiasi DiscoverService inline [discover]); narrow resolver.py baru aman setelah T2.2c (artist) dan T2.2d (discover) beres, dan controller.py sendiri frozen (butuh T2.3 utk disentuh).
+
+**File Terdampak:**
+
+- `persistence/__init__.py`
+- `server/services/stream_prefetch.py`
+- `server/app.py`
+- `server/handlers/http.py`
+- `tests/unit/server/handlers/test_http.py`
+
+---
+
+## [2026-07-18] T2.2a: Ekstrak lifecycle koneksi Database ke persistence/db.py (DatabaseConnection sudah ada sejak sebelumnya; pindahkan _migrate_songs_unique_constraint ke sana juga), Database jadi facade tipis
+
+**ID:** `PATCH-2026-07-18-080`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** T2.2a: Ekstrak lifecycle koneksi Database ke persistence/db.py (DatabaseConnection sudah ada sejak sebelumnya; pindahkan _migrate_songs_unique_constraint ke sana juga), Database jadi facade tipis
+
+**File Terdampak:**
+
+- `persistence/db.py`
+- `persistence/__init__.py`
+
+---
+
+## [2026-07-18] Hapus 6 file alias backward-compat setelah semua konsumen dipindah ke sumber asli
+
+**ID:** `PATCH-2026-07-18-079`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Hapus 6 file alias backward-compat setelah semua konsumen dipindah ke sumber asli
+
+**File Terdampak:**
+
+- `scratch/check_db.py`
+- `tests/conftest.py`
+- `tests/integration/conftest.py`
+- `tests/unit/core/test_ports.py`
+- `tests/unit/test_main.py`
+- `engine/radio_engine.py`
+- `engine/mpv_controller.py`
+- `engine/ytdlp_client.py`
+- `cache/db.py`
+- `plugins/lyrics.py`
+- `launcher/gui.py`
+
+---
+
+## [2026-07-18] Luruskan import di main.py dan controller.py ke sumber asli (persistence, adapters.mpv, adapters.ytdlp, engine.radio), file alias masih ada sebagai fallback
+
+**ID:** `PATCH-2026-07-18-078`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Luruskan import di main.py dan controller.py ke sumber asli (persistence, adapters.mpv, adapters.ytdlp, engine.radio), file alias masih ada sebagai fallback
+
+**File Terdampak:**
+
+- `main.py`
+- `engine/playback/controller.py`
+
+---
+
+## [2026-07-18] Pindahkan admin_password.txt ke instance/ (di luar tracking git) dan perluas .gitignore
+
+**ID:** `PATCH-2026-07-18-077`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Pindahkan admin_password.txt ke instance/ (di luar tracking git) dan perluas .gitignore
+
+**File Terdampak:**
+
+- `.gitignore`
+- `launcher/gui/auth_panel.py`
+- `tests/unit/launcher/gui/test_auth_panel.py`
+
+---
+
+## [2026-07-18] Fase 0 selesai: buat branch refactor/roadmap, catat baseline pytest (558 passed, 1 pre-existing failed, 6 skipped) dan baseline lint-imports (7 kept, 0 broken) di docs/STATUS.md
+
+**ID:** `PATCH-2026-07-18-076`
+
+**Tanggal:** 2026-07-18
+
+**Ringkasan:** Fase 0 selesai: buat branch refactor/roadmap, catat baseline pytest (558 passed, 1 pre-existing failed, 6 skipped) dan baseline lint-imports (7 kept, 0 broken) di docs/STATUS.md
+
+**File Terdampak:**
+
+- `docs/STATUS.md`
+
+---
 
 ## [2026-07-18] fix bug tools patchloh yang gagal mengurutkan patch dan membuat patch tidak increment jadi jadi 001 bukan meneruskan id yang ada
 

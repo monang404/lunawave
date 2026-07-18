@@ -77,7 +77,7 @@ def lyrics():
 
 @pytest.fixture
 def loader(repo, extractor, sponsorblock, lyrics):
-    from cache.resolver import CacheResolver
+    from persistence.stream_cache import CacheResolver
 
     resolver = CacheResolver(db=repo, ytdlp=extractor)
     return TrackLoader(resolver=resolver, sponsorblock=sponsorblock, lyrics_fetcher=lyrics)

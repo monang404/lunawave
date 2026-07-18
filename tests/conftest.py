@@ -77,13 +77,13 @@ def tmp_base_dir(tmp_path, monkeypatch):
 
 @pytest.fixture
 async def db():
-    """In-memory SQLite `cache.db.Database`, migrated and ready to use."""
-    from cache.db import Database
+    """In-memory SQLite `persistence.Repositories`, migrated and ready to use."""
+    from persistence import Repositories
 
-    database = Database(db_path=Path(":memory:"))
-    await database.init()
-    yield database
-    await database.close()
+    repos = Repositories(db_path=Path(":memory:"))
+    await repos.init()
+    yield repos
+    await repos.close()
 
 
 @pytest.fixture

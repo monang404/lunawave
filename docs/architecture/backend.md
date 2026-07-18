@@ -151,13 +151,7 @@ Detail → [backend/caching.md](../backend/caching.md)
 | `ws_discovery.py` 🆕 | Handle cmd search/discover | ✅ |
 | `ws_download.py` 🆕 | Handle cmd download/cancel | ✅ |
 | `ws_cache.py` 🆕 | Handle cmd get_cache_size / clear_cache | ✅ |
-
-#### `server/services/`
-
-| File | Tanggung Jawab | Testable |
-|---|---|---|
-| `broadcast_service.py` | Kirim state ke semua koneksi WS aktif | ✅ |
-| `stream_prefetch.py` | Prefetch URL stream sebelum dibutuhkan | ✅ |
+| `broadcast_service.py` (T2.7: dipindah dari `server/services/`) | Kirim state ke semua koneksi WS aktif | ✅ |
 
 ---
 
@@ -166,6 +160,7 @@ Detail → [backend/caching.md](../backend/caching.md)
 | File | Tanggung Jawab | Testable |
 |---|---|---|
 | `discover_service.py` | Logic discover (mix artis, trending) | ✅ |
+| `stream_prefetch.py` (T2.7: dipindah dari `server/services/`) | Prefetch URL stream sebelum dibutuhkan | ✅ |
 
 ---
 

@@ -11,7 +11,7 @@ Responsibilities:
 
 Depends on:
     - shared.check_result
-    - scripts.verify_docs.helpers
+    - automation.verify_docs.doc_parsing_utils
 
 Subscribes to:
     None
@@ -29,7 +29,7 @@ from pathlib import Path
 
 from shared.check_result import CheckResult
 
-from .helpers import (
+from .doc_parsing_utils import (
     DOCSTRING_REQUIRED_FIELDS,
     GENERATED_BEGIN_RE,
     GENERATED_END_RE,

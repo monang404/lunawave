@@ -9,7 +9,7 @@ Responsibilities:
 
 Depends on:
     - core.state
-    - engine.radio.common
+    - engine.radio.radio_config
     - engine.radio.track_filter
     - engine.radio.track_interleaver
 
@@ -26,8 +26,9 @@ Thread Safety:
 import logging
 import random
 
+from core.ports import ArtistRepositoryPort, LibraryRepositoryPort
 from core.state import AppState
-from engine.radio.common import ARTISTS_PER_BATCH, TRACKS_PER_ARTIST_TARGET
+from engine.radio.radio_config import ARTISTS_PER_BATCH, TRACKS_PER_ARTIST_TARGET
 from engine.radio.track_filter import TrackFilter
 from engine.radio.track_interleaver import interleave_by_artist
 
@@ -37,8 +38,14 @@ _log = logging.getLogger(__name__)
 class ArtistSelector:
     """Rotasi artis, seed selection, deduplication pool."""
 
-    def __init__(self, db, state: AppState):
-        self.db = db
+    def __init__(
+        self,
+        artists: ArtistRepositoryPort | None,
+        library: LibraryRepositoryPort | None,
+        state: AppState,
+    ):
+        self.artists = artists
+        self.library = library
         self.state = state
         self._seed_artists: list[str] = []
         self._artist_rotation: list[str] = []
@@ -47,8 +54,8 @@ class ArtistSelector:
         if self._seed_artists:
             return
         try:
-            if self.db and self.db.conn:
-                self._seed_artists = await self.db.get_all_artists()
+            if self.artists and self.artists.conn:
+                self._seed_artists = await self.artists.get_all_artists()
         except Exception as e:
             _log.warning(f"Gagal load artis dari DB: {e}")
 
@@ -74,9 +81,9 @@ class ArtistSelector:
         if not self._seed_artists:
             return None
         stats = {}
-        if self.db and getattr(self.db, "conn", None):
+        if self.artists and getattr(self.artists, "conn", None):
             try:
-                stats = await self.db.get_reward_stats()
+                stats = await self.artists.get_reward_stats()
             except Exception as e:
                 _log.warning(f"Gagal ambil reward stats: {e}")
         from engine.radio.artist_bandit import ArtistStat, sample_artists
@@ -97,10 +104,10 @@ class ArtistSelector:
         if not prioritized_artist and self._seed_artists:
             prioritized_artist = await self._sampled_seed_artist()
 
-        if self.db and getattr(self.db, "conn", None):  # Use getattr for safety
+        if self.library and getattr(self.library, "conn", None):  # Use getattr for safety
             try:
                 artists = [prioritized_artist] if prioritized_artist else None
-                tracks = await self.db.get_random_songs(
+                tracks = await self.library.get_random_songs(
                     limit=limit, exclude_ids=existing, artists=artists
                 )
                 track_filter = TrackFilter(self.state)

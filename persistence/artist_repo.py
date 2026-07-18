@@ -31,6 +31,10 @@ class ArtistRepository:
     def __init__(self, conn):
         self._conn = conn
 
+    @property
+    def conn(self):
+        return self._conn
+
     async def increment_artist_click(self, artist_name: str):
         if not self._conn:
             return

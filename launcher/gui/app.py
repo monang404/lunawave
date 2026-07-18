@@ -11,9 +11,10 @@ Responsibilities:
 
 Depends on:
     - launcher
+    - launcher.server_lifecycle
     - launcher.gui.auth_panel
-    - launcher.gui.controller
-    - launcher.gui.dep_checker
+    - launcher.gui.log_view
+    - launcher.gui.popups
     - launcher.gui.ui_builder
 
 Subscribes to:
@@ -29,8 +30,8 @@ Thread Safety:
 import os
 import sys
 import threading
-import time
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 
 from launcher import network
@@ -57,7 +58,6 @@ class ServerManager(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.server_process = None
         self._log_lock = threading.Lock()
         self._conflict_pid = None
         self._last_stdout_line = ""
@@ -76,13 +76,19 @@ class ServerManager(tk.Tk):
         self._deps_status = None
 
         self._port_var = tk.StringVar(value=str(SERVER_PORT))
-        from launcher.gui.controller import ServerController
 
-        self.controller = ServerController(self, BASE_DIR)
+        from launcher.server_lifecycle import ServerLifecycle
+
+        self.lifecycle = ServerLifecycle(
+            BASE_DIR,
+            on_log=self._write_log,
+            on_ready=self._on_server_ready,
+            on_deps_checked=self._on_deps_checked,
+        )
 
         self._build_window()
         self._build_ui()
-        self._run_dependency_check()
+        self.lifecycle.run_dependency_check()
         self._refresh_status()
         from launcher.gui.auth_panel import handle_first_run
 
@@ -163,36 +169,40 @@ class ServerManager(tk.Tk):
         except (RuntimeError, tk.TclError):
             pass
 
-    # ── Dependency Checker ─────────────────────────────────
-    def _run_dependency_check(self):
-        def _thread_fn():
-            from launcher.gui.dep_checker import DependencyChecker
-
-            checker = DependencyChecker()
-            missing, mpv_ok = checker.check_dependencies()
-            if not missing and mpv_ok:
-                status_text = "✓ Python Libraries: OK  ·  ✓ MPV Audio Player: OK"
-                color = GREEN
+    # ── Dependency Checker callback (check runs in ServerLifecycle) ────
+    def _on_deps_checked(self, missing, mpv_ok):
+        if not missing and mpv_ok:
+            status_text = "✓ Python Libraries: OK  ·  ✓ MPV Audio Player: OK"
+            color = GREEN
+        else:
+            parts = []
+            if missing:
+                parts.append(f"✗ Missing libraries: {', '.join(missing)}")
             else:
-                parts = []
-                if missing:
-                    parts.append(f"✗ Missing libraries: {', '.join(missing)}")
-                else:
-                    parts.append("✓ Python Libraries: OK")
-                if not mpv_ok:
-                    parts.append("✗ MPV Player missing from PATH")
-                else:
-                    parts.append("✓ MPV Player: OK")
-                status_text = "  ·  ".join(parts)
-                color = RED
+                parts.append("✓ Python Libraries: OK")
+            if not mpv_ok:
+                parts.append("✗ MPV Player missing from PATH")
+            else:
+                parts.append("✓ MPV Player: OK")
+            status_text = "  ·  ".join(parts)
+            color = RED
 
-            self._safe_after(0, lambda: self._deps_status.config(text=status_text, fg=color))
+        self._safe_after(0, lambda: self._deps_status.config(text=status_text, fg=color))
 
-        threading.Thread(target=_thread_fn, daemon=True).start()
+    # ── Server-ready callback (polling runs in ServerLifecycle) ────────
+    def _on_server_ready(self, port):
+        def _show_popup():
+            from launcher.gui.popups import show_server_ready_popup
+
+            show_server_ready_popup(
+                self, port, BG, ACCENT, TEXT_1, TEXT_2, GREEN, BORDER, BG_CARD
+            )
+
+        self._safe_after(0, _show_popup)
 
     # ── Status ────────────────────────────────────────────
     def _is_running(self) -> bool:
-        return self.server_process is not None and self.server_process.is_running()
+        return self.lifecycle.is_running()
 
     def _refresh_status(self):
         if self._closing:
@@ -203,7 +213,9 @@ class ServerManager(tk.Tk):
         if running:
             status = "RUNNING"
             color = GREEN
-            self._pid_label.config(text=f"PID {self.server_process.process.pid}  ·  :{port}")
+            self._pid_label.config(
+                text=f"PID {self.lifecycle.server_process.process.pid}  ·  :{port}"
+            )
             self._btn_start.config(state="disabled")
             self._btn_stop.config(state="normal")
             self._btn_restart.config(state="normal")
@@ -257,63 +269,41 @@ class ServerManager(tk.Tk):
 
     # ── Log helpers ───────────────────────────────────────
     def _write_log(self, msg: str, tag: str = "", is_end: bool = False):
-        def _do():
-            self._log.config(state="normal")
-            if is_end:
-                self._log.insert("end", msg.rstrip() + "\n", "dim")
-            else:
-                ts = time.strftime("%H:%M:%S")
-                self._log.insert("end", f"[{ts}] ", "dim")
-                _tag = tag
-                if not tag and not is_end:
-                    _tag = (
-                        "err"
-                        if any(
-                            w in msg.lower()
-                            for w in ("error", "exception", "traceback", "critical")
-                        )
-                        else "ok"
-                        if any(
-                            w in msg.lower() for w in ("started", "ready", "listening", "running")
-                        )
-                        else ""
-                    )
-                self._log.insert("end", msg.rstrip() + "\n", _tag or "")
-            self._log.see("end")
-            self._log.config(state="disabled")
+        from launcher.gui.log_view import write_log
 
-        self._safe_after(0, _do)
+        write_log(self._log, self._safe_after, msg, tag, is_end)
 
     def _clear_log(self):
-        self._log.config(state="normal")
-        self._log.delete("1.0", "end")
-        self._log.config(state="disabled")
+        from launcher.gui.log_view import clear_log
 
-    # ── Button handlers ───────────────────────────────────
+        clear_log(self._log)
+
+    # ── Button handlers (thin: delegate to ServerLifecycle, then
+    #    refresh the UI to reflect the new state) ──────────────────
     def _on_start(self):
-        self.controller.on_start()
+        self.lifecycle.start(self.server_port)
+        self._refresh_status()
 
     def _on_stop(self):
-        self.controller.on_stop()
+        self.lifecycle.stop()
+        self._refresh_status()
 
     def _on_restart(self):
-        self.controller.on_restart()
+        self.lifecycle.restart(self.server_port)
+        self._refresh_status()
 
     def _on_open(self):
-        self.controller.on_open()
+        webbrowser.open(f"http://localhost:{self.server_port}")
 
     def _on_kill_conflict(self):
-        self.controller.on_kill_conflict()
-
-    def _wait_for_server_ready(self, port):
-        self.controller.wait_for_server_ready(port)
+        self.lifecycle.kill_conflict(self.server_port)
+        self._refresh_status()
 
     def destroy(self):
         self._closing = True
         if self._is_running():
             try:
-                if self.server_process:
-                    self.server_process.stop()
+                self.lifecycle.server_process.stop()
             except Exception:
                 pass
         super().destroy()

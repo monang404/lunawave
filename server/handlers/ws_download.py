@@ -35,7 +35,7 @@ from services.discover_service import DiscoverService
 logger = structlog.get_logger(__name__)
 
 
-async def handle_download_command(action: str, data: dict, db, manager, state):
+async def handle_download_command(action: str, data: dict, tracks, discover, manager, state):
     if action == "download":
         track = dict_to_track(data) if data else None
         await command_bus.execute(CMD_DOWNLOAD, track)
@@ -43,7 +43,7 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
     elif action == "delete_download":
         track = dict_to_track(data) if data else None
         if track and track.video_id:
-            db_track = await db.get_track(track.video_id)
+            db_track = await tracks.get_track(track.video_id)
             if db_track and db_track.local_path:
                 # Hapus file utama yang terdaftar di DB (bisa berupa downloads/ atau cache/mp3/ lama)
                 if os.path.exists(db_track.local_path):
@@ -68,7 +68,7 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
 
                 # Update DB
                 db_track.local_path = None
-                await db.set_local_path(db_track.video_id, None)
+                await tracks.set_local_path(db_track.video_id, None)
 
                 # Update current state if playing this track
                 if state.current_track and state.current_track.video_id == db_track.video_id:
@@ -78,7 +78,7 @@ async def handle_download_command(action: str, data: dict, db, manager, state):
                     await manager.broadcast({"type": "state", "data": state_to_dict(state)})
 
                 # Update discover
-                ds = DiscoverService(db)
+                ds = DiscoverService(discover)
                 recent, favorites, cached, featured_artists, featured_genres = await asyncio.gather(
                     ds.get_recent(15),
                     ds.get_favorites(15),

@@ -35,23 +35,39 @@ def _make_cursor_mock():
     return cursor
 
 
+@pytest.fixture(autouse=True)
+def _reset_bootstrap_context():
+    """bootstrap.services.context is a module-level singleton shared across
+    all bootstrap stages — reset it in place (not by rebinding the module
+    attribute) before/after each test, since bootstrap.startup_tasks and
+    bootstrap.maintenance did `from bootstrap.services import context` and
+    hold their own reference to the same object; rebinding
+    `services.context` would not reach them. Mirrors the fresh locals
+    main() used to create on every call before T2.4."""
+    import bootstrap.services as services
+
+    services.context.__init__()
+    yield
+    services.context.__init__()
+
+
 @pytest.mark.asyncio
-@patch("main.Database")
-@patch("main.MpvController")
-@patch("main.YtDlpClient")
+@patch("bootstrap.services.Repositories")
+@patch("bootstrap.services.MpvController")
+@patch("bootstrap.services.YtDlpClient")
 @patch("engine.playback.controller.PlaybackController")
-@patch("main.DownloadManager")
-@patch("main.CommandRouter")
-@patch("main.TermuxNowPlaying")
-@patch("main.SponsorBlockHandler")
-@patch("main.LyricsFetcher")
-@patch("cache.resolver.CacheResolver")
+@patch("bootstrap.services.DownloadManager")
+@patch("bootstrap.services.CommandRouter")
+@patch("bootstrap.services.TermuxNowPlaying")
+@patch("bootstrap.services.SponsorBlockHandler")
+@patch("bootstrap.services.LyricsFetcher")
+@patch("persistence.stream_cache.CacheResolver")
 @patch("engine.queue_manager.QueueMode")
-@patch("engine.radio_engine.RadioMode")
+@patch("engine.radio.RadioMode")
 @patch("engine.volume_service.VolumeService")
 @patch("server.app.create_app")
 @patch("server.app.run_server", new_callable=AsyncMock)
-@patch("main.aiohttp.ClientSession")
+@patch("bootstrap.services.aiohttp.ClientSession")
 @patch("engine.loudness.service.LoudnessService")
 async def test_main_smoke(
     mock_loudness,
@@ -75,14 +91,19 @@ async def test_main_smoke(
     from main import main
 
     # Setup mocks
-    db_instance = mock_db.return_value
-    db_instance.init = AsyncMock()
-    db_instance.close = AsyncMock()
-    db_instance.evict_stale_tracks = AsyncMock(return_value=0)
-    db_instance.cleanup_sessions = AsyncMock()
-    db_instance.get_track = AsyncMock(return_value=None)
-    db_instance.conn = MagicMock()
-    db_instance.conn.execute = MagicMock(return_value=_make_cursor_mock())
+    repos_instance = mock_db.return_value
+    repos_instance.init = AsyncMock()
+    repos_instance.close = AsyncMock()
+    repos_instance.tracks = MagicMock()
+    repos_instance.tracks.evict_stale_tracks = AsyncMock(return_value=0)
+    repos_instance.tracks.get_track = AsyncMock(return_value=None)
+    repos_instance.sessions = MagicMock()
+    repos_instance.sessions.cleanup_sessions = AsyncMock()
+    repos_instance.artists = MagicMock()
+    repos_instance.library = MagicMock()
+    repos_instance.discover = MagicMock()
+    repos_instance.conn = MagicMock()
+    repos_instance.conn.execute = MagicMock(return_value=_make_cursor_mock())
 
     mpv_instance = mock_mpv.return_value
     mpv_instance.connect = AsyncMock()
@@ -111,7 +132,7 @@ async def test_main_smoke(
     await asyncio.sleep(0.1)
 
     # Assertions
-    db_instance.init.assert_awaited_once()
+    repos_instance.init.assert_awaited_once()
     mpv_instance.connect.assert_awaited_once()
     mock_create_app.assert_called_once()
     mock_run_server.assert_awaited_once()
@@ -123,22 +144,22 @@ async def test_main_smoke(
 
 
 @pytest.mark.asyncio
-@patch("main.Database")
-@patch("main.MpvController")
-@patch("main.YtDlpClient")
+@patch("bootstrap.services.Repositories")
+@patch("bootstrap.services.MpvController")
+@patch("bootstrap.services.YtDlpClient")
 @patch("engine.playback.controller.PlaybackController")
-@patch("main.DownloadManager")
-@patch("main.CommandRouter")
-@patch("main.TermuxNowPlaying")
-@patch("main.SponsorBlockHandler")
-@patch("main.LyricsFetcher")
-@patch("cache.resolver.CacheResolver")
+@patch("bootstrap.services.DownloadManager")
+@patch("bootstrap.services.CommandRouter")
+@patch("bootstrap.services.TermuxNowPlaying")
+@patch("bootstrap.services.SponsorBlockHandler")
+@patch("bootstrap.services.LyricsFetcher")
+@patch("persistence.stream_cache.CacheResolver")
 @patch("engine.queue_manager.QueueMode")
-@patch("engine.radio_engine.RadioMode")
+@patch("engine.radio.RadioMode")
 @patch("engine.volume_service.VolumeService")
 @patch("server.app.create_app")
 @patch("server.app.run_server", new_callable=AsyncMock)
-@patch("main.aiohttp.ClientSession")
+@patch("bootstrap.services.aiohttp.ClientSession")
 @patch("engine.loudness.service.LoudnessService")
 async def test_run_server_not_blocked_by_mpv(
     mock_loudness,
@@ -169,14 +190,19 @@ async def test_run_server_not_blocked_by_mpv(
     server_started = asyncio.Event()
     mpv_connect_finished = []
 
-    db_instance = mock_db.return_value
-    db_instance.init = AsyncMock()
-    db_instance.close = AsyncMock()
-    db_instance.evict_stale_tracks = AsyncMock(return_value=0)
-    db_instance.cleanup_sessions = AsyncMock()
-    db_instance.get_track = AsyncMock(return_value=None)
-    db_instance.conn = MagicMock()
-    db_instance.conn.execute = MagicMock(return_value=_make_cursor_mock())
+    repos_instance = mock_db.return_value
+    repos_instance.init = AsyncMock()
+    repos_instance.close = AsyncMock()
+    repos_instance.tracks = MagicMock()
+    repos_instance.tracks.evict_stale_tracks = AsyncMock(return_value=0)
+    repos_instance.tracks.get_track = AsyncMock(return_value=None)
+    repos_instance.sessions = MagicMock()
+    repos_instance.sessions.cleanup_sessions = AsyncMock()
+    repos_instance.artists = MagicMock()
+    repos_instance.library = MagicMock()
+    repos_instance.discover = MagicMock()
+    repos_instance.conn = MagicMock()
+    repos_instance.conn.execute = MagicMock(return_value=_make_cursor_mock())
 
     async def event_driven_mpv_connect():
         # MPV 'connect' hanya menunggu sinyal bahwa server sudah dipanggil.

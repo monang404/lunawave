@@ -1,26 +1,26 @@
 {
   "_meta": {
-    "generated_at": "2026-07-18T01:11:59",
+    "generated_at": "2026-07-18T16:13:46",
     "note": "Auto-generated oleh automation/repo_map.py — jangan edit manual. Refresh via `python automation/run_all.py` atau `python automation/repo_map.py`."
   },
   "summary": {
-    "total_files": 250,
-    "total_edges": 470,
+    "total_files": 260,
+    "total_edges": 529,
     "total_events": 11,
     "files_per_layer": {
-      "tests": 111,
+      "tests": 118,
       "automation": 31,
-      "engine": 27,
+      "engine": 26,
       "server": 17,
+      "launcher": 14,
       "core": 13,
-      "launcher": 13,
       "adapters": 10,
-      "persistence": 9,
-      "plugins": 7,
+      "persistence": 10,
+      "plugins": 6,
+      "bootstrap": 4,
       "root": 4,
-      "cache": 3,
+      "services": 4,
       "data": 2,
-      "services": 2,
       "scratch": 1
     },
     "orphan_candidates": 27
@@ -83,8 +83,8 @@
       "loc": 83,
       "deps": [],
       "reverse_deps": [
-        "tests/unit/adapters/mpv/test_ipc.py",
-        "adapters/mpv/__init__.py"
+        "adapters/mpv/__init__.py",
+        "tests/unit/adapters/mpv/test_ipc.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -134,21 +134,6 @@
       "subscribes": [],
       "purpose": "Unified client for interacting with yt-dlp for search, extraction, and downloading."
     },
-    "adapters/ytdlp/common.py": {
-      "layer": "adapters",
-      "classes": [],
-      "function_count": 0,
-      "loc": 32,
-      "deps": [],
-      "reverse_deps": [
-        "adapters/ytdlp/searcher.py",
-        "adapters/ytdlp/resolver.py",
-        "adapters/ytdlp/downloader.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Shared utilities and constants for yt-dlp integration."
-    },
     "adapters/ytdlp/downloader.py": {
       "layer": "adapters",
       "classes": [
@@ -157,16 +142,16 @@
       "function_count": 3,
       "loc": 105,
       "deps": [
-        "adapters/ytdlp/common.py",
+        "adapters/ytdlp/ydl_options.py",
         "config.py"
       ],
       "reverse_deps": [
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
         "tests/unit/adapters/ytdlp/test_downloader.py",
-        "adapters/ytdlp/__init__.py"
+        "adapters/ytdlp/__init__.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -180,14 +165,14 @@
       "function_count": 1,
       "loc": 102,
       "deps": [
-        "adapters/ytdlp/common.py",
+        "adapters/ytdlp/ydl_options.py",
         "config.py"
       ],
       "reverse_deps": [
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "adapters/ytdlp/__init__.py",
         "tests/unit/adapters/ytdlp/test_resolver.py",
-        "adapters/ytdlp/__init__.py"
+        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -201,17 +186,32 @@
       "function_count": 2,
       "loc": 117,
       "deps": [
-        "adapters/ytdlp/common.py",
+        "adapters/ytdlp/ydl_options.py",
         "core/state.py"
       ],
       "reverse_deps": [
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
         "tests/unit/adapters/ytdlp/test_searcher.py",
-        "adapters/ytdlp/__init__.py"
+        "adapters/ytdlp/__init__.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Performs metadata extraction and search operations via yt-dlp."
+    },
+    "adapters/ytdlp/ydl_options.py": {
+      "layer": "adapters",
+      "classes": [],
+      "function_count": 0,
+      "loc": 32,
+      "deps": [],
+      "reverse_deps": [
+        "adapters/ytdlp/searcher.py",
+        "adapters/ytdlp/resolver.py",
+        "adapters/ytdlp/downloader.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Shared utilities and constants for yt-dlp integration."
     },
     "automation/__init__.py": {
       "layer": "automation",
@@ -448,9 +448,9 @@
       "loc": 166,
       "deps": [],
       "reverse_deps": [
-        "tests/unit/automation/test_repo_index.py",
+        "tests/unit/automation/test_find_owner_and_context_pack.py",
         "tests/unit/automation/test_repo_map.py",
-        "tests/unit/automation/test_find_owner_and_context_pack.py"
+        "tests/unit/automation/test_repo_index.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -533,7 +533,7 @@
       "subscribes": [],
       "purpose": "Implement large-file and empty-package checks for verify_docs."
     },
-    "automation/verify_docs/helpers.py": {
+    "automation/verify_docs/doc_parsing_utils.py": {
       "layer": "automation",
       "classes": [],
       "function_count": 8,
@@ -577,60 +577,107 @@
       "subscribes": [],
       "purpose": "Validate project structure health: oversized Python files and     unimplemented stub items tracked in STATUS.md."
     },
-    "cache/__init__.py": {
-      "layer": "cache",
+    "bootstrap/__init__.py": {
+      "layer": "bootstrap",
       "classes": [],
       "function_count": 0,
-      "loc": 2,
+      "loc": 25,
       "deps": [],
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": ""
+      "purpose": "Startup subsystems for main.py, split out of the former God Function     `main()` (T2.4). Each stage lives in its own module and shares state via     the `BootstrapContext` singleton defined in `bootstrap.services`."
     },
-    "cache/db.py": {
-      "layer": "cache",
+    "bootstrap/maintenance.py": {
+      "layer": "bootstrap",
       "classes": [],
-      "function_count": 0,
-      "loc": 26,
+      "function_count": 4,
+      "loc": 122,
       "deps": [
-        "persistence/__init__.py"
+        "bootstrap/services.py",
+        "core/state.py",
+        "core/task_utils.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "tests/conftest.py",
-        "tests/integration/conftest.py",
-        "tests/unit/core/test_ports.py",
-        "scratch/check_db.py"
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "main.py"
       ],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Provides database caching mechanisms for quick access to frequently used data."
+      "purpose": "Stage 3 of application startup: schedule the periodic DB maintenance     loop and the MPV connection watchdog as background tasks. Extracted     from main.py's `main()` (T2.4) without changing call order."
     },
-    "cache/resolver.py": {
-      "layer": "cache",
+    "bootstrap/services.py": {
+      "layer": "bootstrap",
       "classes": [
-        "CacheResolver"
+        "BootstrapContext"
       ],
       "function_count": 1,
-      "loc": 84,
+      "loc": 200,
       "deps": [
-        "config.py",
-        "core/latency_window.py",
-        "core/observability.py",
-        "core/ports.py",
-        "core/state.py"
+        "adapters/mpv/__init__.py",
+        "adapters/ytdlp/__init__.py",
+        "core/event_bus.py",
+        "core/state.py",
+        "engine/command_router.py",
+        "engine/download_manager.py",
+        "persistence/__init__.py",
+        "plugins/lyrics_fetcher.py",
+        "plugins/notifications.py",
+        "plugins/sponsorblock.py",
+        "persistence/stream_cache.py",
+        "engine/loudness/service.py",
+        "engine/playback/controller.py",
+        "engine/queue_manager.py",
+        "engine/radio/__init__.py",
+        "engine/sleep_timer.py",
+        "engine/volume_service.py"
       ],
       "reverse_deps": [
+        "bootstrap/startup_tasks.py",
+        "tests/unit/test_main.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "tests/unit/bootstrap/test_maintenance.py",
         "main.py",
-        "tests/integration/conftest.py",
-        "tests/unit/cache/test_resolver.py",
-        "tests/unit/engine/conftest.py",
-        "tests/unit/engine/playback/test_track_loader.py"
+        "tests/unit/bootstrap/test_services.py",
+        "tests/unit/bootstrap/test_services.py",
+        "tests/unit/bootstrap/test_services.py",
+        "tests/unit/bootstrap/test_services.py",
+        "bootstrap/maintenance.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py"
       ],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Resolve the playback URI for a track using a priority-based cache     strategy: local file > cached stream URL > fresh yt-dlp extraction."
+      "purpose": "Stage 1 of application startup: open the DB, connect core adapters     (MPV, yt-dlp), and wire every domain service used by the rest of the     app (resolver, playback controller, radio, volume, sleep timer, etc).     Extracted from main.py's `main()` (T2.4, section \"1-6\" of the original     God Function) without changing call order."
+    },
+    "bootstrap/startup_tasks.py": {
+      "layer": "bootstrap",
+      "classes": [],
+      "function_count": 2,
+      "loc": 117,
+      "deps": [
+        "bootstrap/services.py",
+        "core/state.py",
+        "core/task_utils.py"
+      ],
+      "reverse_deps": [
+        "main.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py",
+        "tests/unit/bootstrap/test_startup_tasks.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Stage 2 of application startup: kick off the background tasks that     must not block the web server from listening — connectivity polling,     the initial MPV connect, and resuming the last-played track. Extracted     from main.py's `main()` (T2.4) without changing call order."
     },
     "config.py": {
       "layer": "root",
@@ -643,29 +690,29 @@
         "config_security.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "main.py",
-        "server/services/stream_prefetch.py",
-        "server/handlers/ws_cache.py",
-        "server/handlers/auth.py",
-        "server/handlers/http.py",
-        "server/handlers/ws_download.py",
-        "cache/resolver.py",
-        "persistence/__init__.py",
-        "persistence/db.py",
-        "engine/download_manager.py",
-        "engine/radio/prefetcher.py",
-        "engine/loudness/analyzer.py",
-        "tests/integration/conftest.py",
         "tests/unit/server/handlers/test_ws_cache.py",
-        "tests/unit/cache/test_resolver.py",
-        "core/log_config.py",
-        "adapters/ytdlp/resolver.py",
-        "adapters/ytdlp/downloader.py",
-        "adapters/mpv/connection.py",
-        "plugins/lyrics_fetcher.py",
+        "server/handlers/auth.py",
         "plugins/sponsorblock.py",
-        "plugins/notifications.py"
+        "server/handlers/ws_cache.py",
+        "plugins/notifications.py",
+        "adapters/ytdlp/resolver.py",
+        "persistence/__init__.py",
+        "adapters/ytdlp/downloader.py",
+        "engine/loudness/analyzer.py",
+        "adapters/mpv/connection.py",
+        "persistence/db.py",
+        "tests/integration/conftest.py",
+        "plugins/lyrics_fetcher.py",
+        "engine/radio/prefetcher.py",
+        "server/handlers/audio_stream_handler.py",
+        "engine/download_manager.py",
+        "services/stream_prefetch.py",
+        "main.py",
+        "main.py",
+        "core/log_config.py",
+        "persistence/stream_cache.py",
+        "server/handlers/ws_download.py",
+        "tests/unit/persistence/test_stream_cache.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -680,8 +727,8 @@
         "core/security.py"
       ],
       "reverse_deps": [
-        "config.py",
-        "tests/unit/test_config_security.py"
+        "tests/unit/test_config_security.py",
+        "config.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -710,28 +757,28 @@
         "core/observability.py"
       ],
       "reverse_deps": [
-        "server/handlers/ws_queue.py",
-        "server/handlers/ws_playback.py",
-        "server/handlers/ws_playback.py",
-        "server/handlers/ws_playback.py",
-        "server/handlers/ws_playback.py",
-        "server/handlers/ws_download.py",
-        "engine/download_manager.py",
-        "engine/sleep_timer.py",
         "engine/command_router.py",
         "engine/command_router.py",
-        "tests/integration/test_radio_flow.py",
         "tests/integration/test_download_flow.py",
-        "tests/integration/conftest.py",
-        "tests/integration/test_playback_flow.py",
-        "tests/unit/server/handlers/test_ws_download.py",
-        "tests/unit/server/handlers/test_ws_queue.py",
-        "tests/unit/server/handlers/test_ws_playback.py",
-        "tests/unit/engine/test_command_router.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/test_sleep_timer.py",
         "tests/unit/core/test_command_bus.py",
-        "plugins/notifications.py"
+        "tests/integration/test_radio_flow.py",
+        "tests/unit/engine/test_download_manager.py",
+        "plugins/notifications.py",
+        "tests/integration/test_playback_flow.py",
+        "tests/unit/server/handlers/test_ws_queue.py",
+        "tests/integration/conftest.py",
+        "engine/sleep_timer.py",
+        "tests/unit/server/handlers/test_ws_playback.py",
+        "server/handlers/ws_queue.py",
+        "tests/unit/engine/test_sleep_timer.py",
+        "tests/unit/engine/test_command_router.py",
+        "engine/download_manager.py",
+        "server/handlers/ws_playback.py",
+        "server/handlers/ws_playback.py",
+        "server/handlers/ws_playback.py",
+        "server/handlers/ws_playback.py",
+        "tests/unit/server/handlers/test_ws_download.py",
+        "server/handlers/ws_download.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -745,11 +792,11 @@
       "deps": [],
       "reverse_deps": [
         "engine/command_router.py",
-        "tests/integration/test_radio_flow.py",
         "tests/integration/test_download_flow.py",
+        "tests/unit/core/test_commands.py",
+        "tests/unit/core/test_commands.py",
+        "tests/integration/test_radio_flow.py",
         "tests/integration/test_playback_flow.py",
-        "tests/unit/core/test_commands.py",
-        "tests/unit/core/test_commands.py",
         "core/command_bus.py"
       ],
       "publishes": [],
@@ -769,32 +816,32 @@
         "core/task_utils.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "server/handlers/http.py",
-        "engine/download_manager.py",
-        "engine/volume_service.py",
-        "engine/playback/controller.py",
-        "tests/integration/test_radio_flow.py",
-        "tests/integration/test_download_flow.py",
-        "tests/integration/conftest.py",
-        "tests/integration/test_playback_flow.py",
-        "tests/unit/engine/test_volume_service.py",
         "tests/unit/engine/test_queue_manager.py",
-        "tests/unit/engine/conftest.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/playback/test_queue_ops.py",
-        "tests/unit/engine/playback/test_mode_ops.py",
-        "tests/unit/engine/radio/test_engine.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
+        "tests/integration/test_download_flow.py",
+        "plugins/sponsorblock.py",
+        "plugins/sponsorblock.py",
         "tests/unit/plugins/test_lyrics_sync.py",
+        "tests/integration/test_radio_flow.py",
+        "tests/unit/engine/test_download_manager.py",
+        "plugins/notifications.py",
+        "tests/unit/engine/radio/test_engine.py",
+        "tests/integration/test_playback_flow.py",
+        "tests/integration/conftest.py",
+        "tests/unit/engine/test_volume_service.py",
         "adapters/mpv/observer.py",
+        "plugins/lyrics_fetcher.py",
+        "plugins/lyrics_fetcher.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
         "adapters/mpv/__init__.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py"
+        "server/handlers/audio_stream_handler.py",
+        "bootstrap/services.py",
+        "engine/volume_service.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "tests/unit/engine/conftest.py",
+        "tests/unit/engine/playback/test_mode_ops.py",
+        "tests/unit/engine/playback/test_queue_ops.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -822,41 +869,42 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "server/handlers/http.py",
-        "server/handlers/event_listeners.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/sleep_timer.py",
-        "engine/volume_service.py",
-        "engine/queue_manager.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/radio/engine.py",
-        "tests/integration/test_radio_flow.py",
-        "tests/integration/test_download_flow.py",
-        "tests/integration/test_playback_flow.py",
-        "tests/unit/server/handlers/test_event_listeners.py",
-        "tests/unit/engine/test_volume_service.py",
+        "core/event_bus.py",
         "tests/unit/engine/test_queue_manager.py",
+        "tests/integration/test_download_flow.py",
+        "plugins/sponsorblock.py",
+        "tests/unit/plugins/test_lyrics_sync.py",
+        "engine/playback/track_ended_ops.py",
+        "plugins/lyrics_sync.py",
+        "tests/integration/test_radio_flow.py",
+        "engine/playback/settings_controller.py",
         "tests/unit/engine/test_download_manager.py",
         "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/playback/test_queue_ops.py",
+        "plugins/notifications.py",
+        "tests/unit/server/handlers/test_event_listeners.py",
+        "tests/unit/core/test_events.py",
+        "server/handlers/event_listeners.py",
+        "tests/integration/test_playback_flow.py",
+        "tests/unit/engine/test_volume_service.py",
+        "engine/sleep_timer.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/radio/engine.py",
+        "tests/unit/plugins/test_sponsorblock.py",
+        "adapters/mpv/observer.py",
+        "plugins/lyrics_fetcher.py",
+        "tests/unit/core/test_event_bus.py",
+        "engine/queue_manager.py",
         "tests/unit/engine/playback/test_track_ended_ops.py",
         "tests/unit/engine/playback/test_controller.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_events.py",
-        "tests/unit/plugins/test_sponsorblock.py",
-        "tests/unit/plugins/test_lyrics_sync.py",
-        "core/event_bus.py",
-        "adapters/mpv/observer.py",
-        "plugins/lyrics_sync.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py"
+        "server/handlers/audio_stream_handler.py",
+        "engine/playback/queue_ops.py",
+        "engine/volume_service.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "tests/unit/engine/playback/test_queue_ops.py",
+        "tests/unit/engine/playback/test_settings_controller.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -875,8 +923,8 @@
       "deps": [],
       "reverse_deps": [
         "tests/unit/core/test_exceptions.py",
-        "tests/unit/adapters/mpv/test_connection.py",
-        "adapters/mpv/connection.py"
+        "adapters/mpv/connection.py",
+        "tests/unit/adapters/mpv/test_connection.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -891,8 +939,8 @@
       "loc": 50,
       "deps": [],
       "reverse_deps": [
-        "cache/resolver.py",
-        "core/ports.py"
+        "core/ports.py",
+        "persistence/stream_cache.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -921,12 +969,12 @@
       "loc": 60,
       "deps": [],
       "reverse_deps": [
-        "server/connection_manager.py",
-        "server/handlers/http.py",
-        "cache/resolver.py",
-        "tests/unit/core/test_observability.py",
+        "core/event_bus.py",
         "core/command_bus.py",
-        "core/event_bus.py"
+        "server/handlers/http.py",
+        "tests/unit/core/test_observability.py",
+        "persistence/stream_cache.py",
+        "server/connection_manager.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -941,32 +989,36 @@
         "TrackRepositoryPort",
         "SessionRepositoryPort",
         "ArtistRepositoryPort",
+        "LibraryRepositoryPort",
+        "DiscoverRepositoryPort",
         "DatabasePort",
         "LyricsProvider",
         "SponsorBlockProvider"
       ],
-      "function_count": 48,
-      "loc": 114,
+      "function_count": 57,
+      "loc": 138,
       "deps": [
         "core/state.py",
         "core/latency_window.py"
       ],
       "reverse_deps": [
-        "server/app.py",
-        "server/services/stream_prefetch.py",
-        "cache/resolver.py",
-        "services/discover_service.py",
-        "engine/download_manager.py",
-        "engine/volume_service.py",
+        "plugins/sponsorblock.py",
         "engine/playback/track_loader.py",
-        "engine/playback/controller.py",
+        "services/discover_service.py",
         "engine/playback/mode_ops.py",
         "engine/radio/engine.py",
+        "engine/radio/artist_selector.py",
+        "tests/fakes/fake_lyrics_provider.py",
+        "tests/fakes/fake_sponsorblock_provider.py",
         "engine/loudness/service.py",
         "tests/unit/core/test_ports.py",
-        "tests/fakes/fake_sponsorblock_provider.py",
-        "tests/fakes/fake_lyrics_provider.py",
-        "plugins/sponsorblock.py"
+        "engine/volume_service.py",
+        "server/app.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "server/handlers/__init__.py",
+        "services/stream_prefetch.py",
+        "persistence/stream_cache.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -979,19 +1031,19 @@
       "loc": 51,
       "deps": [],
       "reverse_deps": [
-        "config.py",
-        "config.py",
-        "config_security.py",
         "server/handlers/auth.py",
-        "tests/config.py",
-        "tests/config.py",
-        "tests/unit/test_config.py",
-        "tests/unit/test_config.py",
-        "tests/unit/test_config.py",
-        "tests/unit/test_config.py",
         "tests/unit/test_config_security.py",
+        "config_security.py",
+        "tests/unit/core/test_security.py",
         "tests/unit/launcher/gui/test_auth_panel.py",
-        "tests/unit/core/test_security.py"
+        "tests/config.py",
+        "tests/config.py",
+        "tests/unit/test_config.py",
+        "tests/unit/test_config.py",
+        "tests/unit/test_config.py",
+        "tests/unit/test_config.py",
+        "config.py",
+        "config.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1010,73 +1062,82 @@
       "loc": 107,
       "deps": [],
       "reverse_deps": [
-        "main.py",
         "server/serializers.py",
-        "server/services/broadcast_service.py",
-        "server/handlers/ws_queue.py",
-        "server/handlers/ws_playback.py",
-        "cache/resolver.py",
-        "services/discover_service.py",
-        "persistence/genre_repo.py",
-        "persistence/library_repo.py",
-        "persistence/track_repo.py",
-        "persistence/artist_repo.py",
-        "engine/download_manager.py",
-        "engine/volume_service.py",
-        "engine/queue_manager.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/controller.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/playback/crossfade.py",
-        "engine/radio/artist_selector.py",
-        "engine/radio/track_filter.py",
-        "engine/radio/engine.py",
-        "engine/radio/prefetcher.py",
-        "tests/integration/test_radio_flow.py",
-        "tests/integration/test_download_flow.py",
-        "tests/integration/conftest.py",
-        "tests/integration/test_playback_flow.py",
-        "tests/unit/server/test_serializers.py",
-        "tests/unit/server/handlers/test_ws_queue.py",
-        "tests/unit/server/handlers/test_ws_playback.py",
-        "tests/unit/cache/test_resolver.py",
-        "tests/unit/services/test_discover_service.py",
-        "tests/unit/persistence/test_track_repo.py",
-        "tests/unit/engine/test_volume_service.py",
         "tests/unit/engine/test_queue_manager.py",
-        "tests/unit/engine/conftest.py",
+        "tests/integration/test_download_flow.py",
+        "adapters/ytdlp/searcher.py",
+        "plugins/sponsorblock.py",
+        "tests/unit/plugins/test_lyrics_sync.py",
+        "bootstrap/startup_tasks.py",
+        "engine/playback/crossfade.py",
+        "engine/playback/track_ended_ops.py",
+        "tests/unit/services/test_discover_service.py",
+        "tests/integration/test_radio_flow.py",
+        "engine/playback/settings_controller.py",
         "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/playback/test_queue_ops.py",
-        "tests/unit/engine/playback/test_track_loader.py",
+        "tests/unit/bootstrap/test_maintenance.py",
+        "plugins/notifications.py",
+        "engine/playback/track_loader.py",
+        "engine/playback/track_loader.py",
+        "tests/unit/core/test_events.py",
+        "server/broadcast_service.py",
+        "tests/unit/engine/radio/test_engine.py",
+        "tests/integration/test_playback_flow.py",
+        "tests/unit/server/handlers/test_ws_queue.py",
+        "tests/fakes/fake_track_repository.py",
+        "tests/integration/conftest.py",
+        "engine/radio/track_filter.py",
+        "tests/unit/engine/test_volume_service.py",
+        "services/discover_service.py",
+        "engine/playback/queue_controller.py",
+        "tests/unit/plugins/test_lyrics_fetcher.py",
+        "engine/playback/mode_ops.py",
+        "engine/radio/engine.py",
+        "engine/radio/artist_selector.py",
+        "tests/unit/plugins/test_sponsorblock.py",
+        "persistence/genre_repo.py",
+        "tests/unit/server/test_serializers.py",
+        "persistence/artist_repo.py",
+        "plugins/lyrics_fetcher.py",
+        "tests/unit/server/handlers/test_ws_playback.py",
+        "server/handlers/ws_queue.py",
+        "engine/queue_manager.py",
         "tests/unit/engine/playback/test_track_ended_ops.py",
         "tests/unit/engine/playback/test_controller.py",
         "tests/unit/engine/playback/test_controller.py",
-        "tests/unit/engine/playback/test_crossfade.py",
-        "tests/unit/engine/playback/test_mode_ops.py",
-        "tests/unit/engine/radio/test_track_filter.py",
-        "tests/unit/engine/radio/test_artist_selector.py",
-        "tests/unit/engine/radio/test_track_interleaver.py",
-        "tests/unit/engine/radio/test_engine.py",
-        "tests/unit/engine/radio/test_prefetcher.py",
-        "tests/unit/core/test_state.py",
-        "tests/unit/core/test_events.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp.py",
-        "tests/unit/adapters/ytdlp/test_ytdlp_client.py",
-        "tests/unit/plugins/test_sponsorblock.py",
-        "tests/unit/plugins/test_lyrics_fetcher.py",
-        "tests/unit/plugins/test_lyrics_sync.py",
-        "tests/fakes/fake_track_repository.py",
-        "tests/fakes/fake_media_extractor.py",
-        "core/ports.py",
-        "core/events.py",
-        "adapters/ytdlp/searcher.py",
+        "engine/radio/prefetcher.py",
         "scratch/check_db.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py"
+        "core/ports.py",
+        "tests/unit/engine/radio/test_artist_selector.py",
+        "tests/unit/engine/radio/test_prefetcher.py",
+        "tests/unit/engine/playback/test_track_loader.py",
+        "tests/unit/persistence/test_track_repo.py",
+        "persistence/library_repo.py",
+        "bootstrap/services.py",
+        "engine/playback/queue_ops.py",
+        "engine/volume_service.py",
+        "tests/unit/engine/playback/test_queue_controller.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "tests/unit/core/test_state.py",
+        "server/handlers/__init__.py",
+        "server/handlers/ws_playback.py",
+        "tests/unit/engine/conftest.py",
+        "tests/unit/engine/radio/test_track_interleaver.py",
+        "tests/unit/engine/playback/test_mode_ops.py",
+        "persistence/track_repo.py",
+        "tests/unit/engine/playback/test_queue_ops.py",
+        "tests/unit/bootstrap/test_services.py",
+        "core/events.py",
+        "tests/unit/engine/playback/test_crossfade.py",
+        "tests/unit/adapters/ytdlp/test_ytdlp.py",
+        "bootstrap/maintenance.py",
+        "tests/fakes/fake_media_extractor.py",
+        "tests/unit/engine/playback/test_settings_controller.py",
+        "persistence/stream_cache.py",
+        "tests/unit/persistence/test_stream_cache.py",
+        "tests/unit/engine/radio/test_track_filter.py",
+        "tests/unit/bootstrap/test_startup_tasks.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1089,17 +1150,19 @@
       "loc": 76,
       "deps": [],
       "reverse_deps": [
-        "main.py",
-        "server/handlers/event_listeners.py",
-        "engine/download_manager.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/radio/common.py",
-        "tests/unit/core/test_task_utils.py",
         "core/event_bus.py",
-        "adapters/mpv/observer.py"
+        "bootstrap/startup_tasks.py",
+        "engine/playback/track_ended_ops.py",
+        "engine/playback/settings_controller.py",
+        "engine/playback/track_loader.py",
+        "server/handlers/event_listeners.py",
+        "engine/playback/queue_controller.py",
+        "adapters/mpv/observer.py",
+        "tests/unit/core/test_task_utils.py",
+        "engine/radio/radio_config.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "bootstrap/maintenance.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1153,10 +1216,10 @@
         "core/commands.py"
       ],
       "reverse_deps": [
-        "main.py",
         "tests/integration/conftest.py",
         "tests/unit/engine/test_command_router.py",
-        "tests/unit/engine/test_command_router.py"
+        "tests/unit/engine/test_command_router.py",
+        "bootstrap/services.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1180,9 +1243,9 @@
         "config.py"
       ],
       "reverse_deps": [
-        "main.py",
+        "tests/unit/engine/test_download_manager.py",
         "tests/integration/conftest.py",
-        "tests/unit/engine/test_download_manager.py"
+        "bootstrap/services.py"
       ],
       "publishes": [
         "DownloadProgressEvent",
@@ -1209,8 +1272,8 @@
         "config.py"
       ],
       "reverse_deps": [
-        "engine/loudness/service.py",
-        "tests/unit/engine/loudness/test_analyzer.py"
+        "tests/unit/engine/loudness/test_analyzer.py",
+        "engine/loudness/service.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1224,11 +1287,11 @@
       "deps": [],
       "reverse_deps": [
         "engine/playback/track_loader.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
         "engine/playback/mode_ops.py",
-        "tests/unit/engine/playback/test_mode_ops.py",
-        "tests/unit/engine/loudness/test_gain_calculator.py"
+        "tests/unit/engine/loudness/test_gain_calculator.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
+        "tests/unit/engine/playback/test_mode_ops.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1246,29 +1309,13 @@
         "engine/loudness/analyzer.py"
       ],
       "reverse_deps": [
-        "main.py",
         "engine/playback/track_loader.py",
+        "bootstrap/services.py",
         "engine/playback/controller.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Orkestrasi analisis loudness: cek apakah track sudah pernah diukur,     kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB."
-    },
-    "engine/mpv_controller.py": {
-      "layer": "engine",
-      "classes": [],
-      "function_count": 0,
-      "loc": 28,
-      "deps": [
-        "adapters/mpv/__init__.py"
-      ],
-      "reverse_deps": [
-        "main.py",
-        "tests/integration/conftest.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Auto-generated purpose."
     },
     "engine/playback/__init__.py": {
       "layer": "engine",
@@ -1289,7 +1336,7 @@
         "PlaybackController"
       ],
       "function_count": 2,
-      "loc": 474,
+      "loc": 434,
       "deps": [
         "core/event_bus.py",
         "core/events.py",
@@ -1297,30 +1344,30 @@
         "core/state.py",
         "core/task_utils.py",
         "engine/playback/mode_ops.py",
+        "engine/playback/queue_controller.py",
         "engine/playback/queue_ops.py",
+        "engine/playback/settings_controller.py",
         "engine/playback/track_ended_ops.py",
         "engine/playback/track_loader.py",
         "engine/queue_manager.py",
-        "engine/radio_engine.py",
+        "engine/radio/__init__.py",
         "engine/loudness/service.py",
-        "core/events.py",
         "engine/loudness/gain_calculator.py",
-        "core/task_utils.py",
         "engine/loudness/gain_calculator.py",
         "engine/playback/crossfade.py",
         "engine/playback/crossfade.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "server/app.py",
-        "engine/playback/__init__.py",
         "tests/integration/conftest.py",
+        "engine/playback/__init__.py",
+        "bootstrap/services.py",
+        "server/app.py",
+        "server/handlers/__init__.py",
         "tests/unit/engine/conftest.py"
       ],
       "publishes": [
         "LogMessageEvent",
         "QueueUpdatedEvent",
-        "LyricsUpdatedEvent",
         "QueueUpdatedEvent",
         "LogMessageEvent",
         "TrackPauseChangedEvent",
@@ -1397,6 +1444,24 @@
       "subscribes": [],
       "purpose": "Handles playback mode switches, such as toggling radio mode or SponsorBlock."
     },
+    "engine/playback/queue_controller.py": {
+      "layer": "engine",
+      "classes": [
+        "QueueController"
+      ],
+      "function_count": 6,
+      "loc": 78,
+      "deps": [
+        "core/state.py",
+        "core/task_utils.py"
+      ],
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Menangani command CMD_QUEUE_* (select/remove/add/replace/reorder) dan     advance-to-next (lanjut ke lagu berikutnya, baik mode QUEUE maupun     RADIO). Diekstrak dari PlaybackController (roadmap IMPLEMENTATION_PLAN.md     §2.3, task T2.3.1) agar controller.py tetap ramping."
+    },
     "engine/playback/queue_ops.py": {
       "layer": "engine",
       "classes": [
@@ -1423,6 +1488,27 @@
       "subscribes": [],
       "purpose": "Manages queue operations including adding, removing, and reordering tracks."
     },
+    "engine/playback/settings_controller.py": {
+      "layer": "engine",
+      "classes": [
+        "SettingsController"
+      ],
+      "function_count": 6,
+      "loc": 78,
+      "deps": [
+        "core/state.py",
+        "core/task_utils.py",
+        "core/events.py"
+      ],
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ],
+      "publishes": [
+        "LyricsUpdatedEvent"
+      ],
+      "subscribes": [],
+      "purpose": "Menangani command CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK,     CMD_SET_LOUDNESS_NORMALIZATION, CMD_SET_MODE, CMD_RADIO_RANDOMIZE, dan     CMD_LYRICS_OFFSET. Diekstrak dari PlaybackController (roadmap     IMPLEMENTATION_PLAN.md §2.3, task T2.3.2) agar controller.py tetap     ramping."
+    },
     "engine/playback/track_ended_ops.py": {
       "layer": "engine",
       "classes": [
@@ -1436,8 +1522,8 @@
         "core/task_utils.py"
       ],
       "reverse_deps": [
-        "engine/playback/controller.py",
-        "tests/unit/engine/playback/test_track_ended_ops.py"
+        "tests/unit/engine/playback/test_track_ended_ops.py",
+        "engine/playback/controller.py"
       ],
       "publishes": [
         "LogMessageEvent",
@@ -1463,8 +1549,8 @@
         "engine/loudness/gain_calculator.py"
       ],
       "reverse_deps": [
-        "engine/playback/controller.py",
-        "tests/unit/engine/playback/test_track_loader.py"
+        "tests/unit/engine/playback/test_track_loader.py",
+        "engine/playback/controller.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1483,10 +1569,10 @@
         "engine/playback/__init__.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "engine/playback/controller.py",
+        "tests/unit/engine/test_queue_manager.py",
         "tests/integration/conftest.py",
-        "tests/unit/engine/test_queue_manager.py"
+        "bootstrap/services.py",
+        "engine/playback/controller.py"
       ],
       "publishes": [
         "QueueUpdatedEvent"
@@ -1529,10 +1615,11 @@
         "ArtistSelector"
       ],
       "function_count": 4,
-      "loc": 112,
+      "loc": 119,
       "deps": [
+        "core/ports.py",
         "core/state.py",
-        "engine/radio/common.py",
+        "engine/radio/radio_config.py",
         "engine/radio/track_filter.py",
         "engine/radio/track_interleaver.py",
         "engine/radio/artist_bandit.py"
@@ -1546,42 +1633,25 @@
       "subscribes": [],
       "purpose": "Selects and rotates artists intelligently to maintain variety in radio mode."
     },
-    "engine/radio/common.py": {
-      "layer": "engine",
-      "classes": [],
-      "function_count": 1,
-      "loc": 45,
-      "deps": [
-        "core/task_utils.py"
-      ],
-      "reverse_deps": [
-        "engine/radio/artist_selector.py",
-        "engine/radio/engine.py",
-        "engine/radio/prefetcher.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Common utilities and shared logic for the radio engine components."
-    },
     "engine/radio/engine.py": {
       "layer": "engine",
       "classes": [
         "RadioMode"
       ],
       "function_count": 4,
-      "loc": 212,
+      "loc": 217,
       "deps": [
         "core/events.py",
         "core/ports.py",
         "core/state.py",
         "engine/radio/artist_selector.py",
-        "engine/radio/common.py",
+        "engine/radio/radio_config.py",
         "engine/radio/prefetcher.py",
         "engine/playback/__init__.py"
       ],
       "reverse_deps": [
-        "engine/radio/__init__.py",
-        "tests/unit/engine/radio/test_engine.py"
+        "tests/unit/engine/radio/test_engine.py",
+        "engine/radio/__init__.py"
       ],
       "publishes": [
         "LogMessageEvent",
@@ -1612,7 +1682,7 @@
       "deps": [
         "config.py",
         "core/state.py",
-        "engine/radio/common.py",
+        "engine/radio/radio_config.py",
         "engine/playback/__init__.py",
         "engine/radio/artist_selector.py"
       ],
@@ -1623,6 +1693,23 @@
       "publishes": [],
       "subscribes": [],
       "purpose": "Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode."
+    },
+    "engine/radio/radio_config.py": {
+      "layer": "engine",
+      "classes": [],
+      "function_count": 1,
+      "loc": 45,
+      "deps": [
+        "core/task_utils.py"
+      ],
+      "reverse_deps": [
+        "engine/radio/engine.py",
+        "engine/radio/artist_selector.py",
+        "engine/radio/prefetcher.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Common utilities and shared logic for the radio engine components."
     },
     "engine/radio/track_filter.py": {
       "layer": "engine",
@@ -1650,30 +1737,13 @@
       "loc": 108,
       "deps": [],
       "reverse_deps": [
-        "engine/radio/artist_selector.py",
         "engine/radio/track_filter.py",
+        "engine/radio/artist_selector.py",
         "tests/unit/engine/radio/test_track_interleaver.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Interleaves tracks from different artists to create a balanced radio queue."
-    },
-    "engine/radio_engine.py": {
-      "layer": "engine",
-      "classes": [],
-      "function_count": 0,
-      "loc": 24,
-      "deps": [
-        "engine/radio/__init__.py"
-      ],
-      "reverse_deps": [
-        "main.py",
-        "engine/playback/controller.py",
-        "tests/integration/conftest.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Core logic for the radio mode engine, orchestrating playback when radio is active."
     },
     "engine/sleep_timer.py": {
       "layer": "engine",
@@ -1687,8 +1757,8 @@
         "core/events.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "tests/unit/engine/test_sleep_timer.py"
+        "tests/unit/engine/test_sleep_timer.py",
+        "bootstrap/services.py"
       ],
       "publishes": [
         "LogMessageEvent",
@@ -1712,31 +1782,15 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "main.py",
         "tests/integration/conftest.py",
-        "tests/unit/engine/test_volume_service.py"
+        "tests/unit/engine/test_volume_service.py",
+        "bootstrap/services.py"
       ],
       "publishes": [
         "LogMessageEvent"
       ],
       "subscribes": [],
       "purpose": "Handle volume-related commands and apply the correct volume to mpv     based on the active audio output mode."
-    },
-    "engine/ytdlp_client.py": {
-      "layer": "engine",
-      "classes": [],
-      "function_count": 0,
-      "loc": 28,
-      "deps": [
-        "adapters/ytdlp/__init__.py"
-      ],
-      "reverse_deps": [
-        "main.py",
-        "tests/integration/conftest.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Auto-generated purpose."
     },
     "launcher/__init__.py": {
       "layer": "launcher",
@@ -1762,19 +1816,32 @@
       "subscribes": [],
       "purpose": "Entry point for the LunaWave launcher when executed as a package."
     },
-    "launcher/gui.py": {
+    "launcher/auth_service.py": {
       "layer": "launcher",
       "classes": [],
-      "function_count": 0,
-      "loc": 13,
+      "function_count": 5,
+      "loc": 76,
+      "deps": [],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Non-UI logic for generating, persisting, and verifying the launcher's     admin password file. Extracted from launcher.gui.auth_panel (T3.2) so     the auth logic doesn't live inside the Tkinter dialog code."
+    },
+    "launcher/dep_checker.py": {
+      "layer": "launcher",
+      "classes": [
+        "DependencyChecker"
+      ],
+      "function_count": 1,
+      "loc": 49,
       "deps": [],
       "reverse_deps": [
-        "tests/unit/launcher/gui/test_app_lifecycle.py",
-        "tests/unit/launcher/gui/test_app_lifecycle.py"
+        "tests/unit/launcher/test_dep_checker.py",
+        "launcher/server_lifecycle.py"
       ],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Auto-generated purpose."
+      "purpose": "Utility to verify required system dependencies before launching the application."
     },
     "launcher/gui/__init__.py": {
       "layer": "launcher",
@@ -1793,13 +1860,15 @@
         "ServerManager"
       ],
       "function_count": 2,
-      "loc": 320,
+      "loc": 310,
       "deps": [
         "launcher/__init__.py",
-        "launcher/gui/controller.py",
+        "launcher/server_lifecycle.py",
         "launcher/gui/auth_panel.py",
         "launcher/gui/ui_builder.py",
-        "launcher/gui/dep_checker.py"
+        "launcher/gui/log_view.py",
+        "launcher/gui/log_view.py",
+        "launcher/gui/popups.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -1810,8 +1879,10 @@
       "layer": "launcher",
       "classes": [],
       "function_count": 4,
-      "loc": 278,
-      "deps": [],
+      "loc": 265,
+      "deps": [
+        "launcher/__init__.py"
+      ],
       "reverse_deps": [
         "launcher/gui/ui_builder.py",
         "launcher/gui/app.py",
@@ -1821,39 +1892,19 @@
       "subscribes": [],
       "purpose": "GUI component for user authentication, password reset, and first-run setup."
     },
-    "launcher/gui/controller.py": {
+    "launcher/gui/log_view.py": {
       "layer": "launcher",
-      "classes": [
-        "ServerController"
-      ],
-      "function_count": 7,
-      "loc": 170,
-      "deps": [
-        "launcher/__init__.py",
-        "launcher/gui/popups.py"
-      ],
+      "classes": [],
+      "function_count": 2,
+      "loc": 60,
+      "deps": [],
       "reverse_deps": [
+        "launcher/gui/app.py",
         "launcher/gui/app.py"
       ],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Controls the underlying server lifecycle from within the launcher GUI."
-    },
-    "launcher/gui/dep_checker.py": {
-      "layer": "launcher",
-      "classes": [
-        "DependencyChecker"
-      ],
-      "function_count": 1,
-      "loc": 49,
-      "deps": [],
-      "reverse_deps": [
-        "launcher/gui/app.py",
-        "tests/unit/launcher/gui/test_dep_checker.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Utility to verify required system dependencies before launching the application."
+      "purpose": "Render log lines and manage clearing of the launcher GUI's log widget."
     },
     "launcher/gui/popups.py": {
       "layer": "launcher",
@@ -1862,7 +1913,7 @@
       "loc": 116,
       "deps": [],
       "reverse_deps": [
-        "launcher/gui/controller.py"
+        "launcher/gui/app.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1874,7 +1925,7 @@
         "UIBuilder"
       ],
       "function_count": 8,
-      "loc": 356,
+      "loc": 364,
       "deps": [
         "launcher/gui/auth_panel.py"
       ],
@@ -1913,6 +1964,25 @@
       "subscribes": [],
       "purpose": "Manage OS-level lifecycle for the LunaWave server and mpv processes     from the desktop launcher."
     },
+    "launcher/server_lifecycle.py": {
+      "layer": "launcher",
+      "classes": [
+        "ServerLifecycle"
+      ],
+      "function_count": 7,
+      "loc": 165,
+      "deps": [
+        "launcher/__init__.py",
+        "launcher/dep_checker.py"
+      ],
+      "reverse_deps": [
+        "launcher/gui/app.py",
+        "tests/unit/launcher/test_server_lifecycle.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Own the LunaWave server process lifecycle (start/stop/restart, port     conflict resolution, readiness polling, dependency checks) independent     of any GUI toolkit."
+    },
     "launcher/updater.py": {
       "layer": "launcher",
       "classes": [],
@@ -1929,29 +1999,14 @@
     "main.py": {
       "layer": "root",
       "classes": [],
-      "function_count": 4,
-      "loc": 361,
+      "function_count": 2,
+      "loc": 158,
       "deps": [
-        "cache/db.py",
         "config.py",
-        "core/event_bus.py",
         "core/log_config.py",
-        "core/state.py",
-        "core/task_utils.py",
-        "engine/command_router.py",
-        "engine/download_manager.py",
-        "engine/mpv_controller.py",
-        "engine/ytdlp_client.py",
-        "plugins/notifications.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "cache/resolver.py",
-        "engine/loudness/service.py",
-        "engine/playback/controller.py",
-        "engine/queue_manager.py",
-        "engine/radio_engine.py",
-        "engine/volume_service.py",
-        "engine/sleep_timer.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/services.py",
+        "bootstrap/startup_tasks.py",
         "server/app.py",
         "config.py"
       ],
@@ -1966,10 +2021,10 @@
     "persistence/__init__.py": {
       "layer": "persistence",
       "classes": [
-        "Database"
+        "Repositories"
       ],
-      "function_count": 32,
-      "loc": 244,
+      "function_count": 3,
+      "loc": 110,
       "deps": [
         "persistence/artist_repo.py",
         "persistence/db.py",
@@ -1983,20 +2038,21 @@
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Database facade that aggregates all repositories into a unified data access layer."
+      "purpose": "Package entry point for the persistence layer: builds one DB connection     and the six domain repositories that use it. Domain logic itself lives     in each `*_repo.py` module (persistence.track_repo, .session_repo,     .artist_repo, .genre_repo, .library_repo, .discover_repo) — this module     only wires them up."
     },
     "persistence/artist_repo.py": {
       "layer": "persistence",
       "classes": [
         "ArtistRepository"
       ],
-      "function_count": 6,
-      "loc": 117,
+      "function_count": 7,
+      "loc": 121,
       "deps": [
         "core/state.py"
       ],
       "reverse_deps": [
-        "persistence/__init__.py"
+        "persistence/__init__.py",
+        "tests/unit/core/test_ports.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2008,12 +2064,15 @@
         "DatabaseConnection"
       ],
       "function_count": 3,
-      "loc": 80,
+      "loc": 134,
       "deps": [
         "config.py"
       ],
       "reverse_deps": [
-        "persistence/__init__.py"
+        "persistence/__init__.py",
+        "tests/unit/persistence/test_db.py",
+        "tests/unit/persistence/test_db.py",
+        "tests/unit/persistence/test_db.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2037,13 +2096,14 @@
       "classes": [
         "DiscoverRepository"
       ],
-      "function_count": 6,
-      "loc": 241,
+      "function_count": 7,
+      "loc": 255,
       "deps": [
         "persistence/discover_enrich.py"
       ],
       "reverse_deps": [
-        "persistence/__init__.py"
+        "persistence/__init__.py",
+        "tests/unit/core/test_ports.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2071,8 +2131,8 @@
       "classes": [
         "LibraryRepository"
       ],
-      "function_count": 1,
-      "loc": 91,
+      "function_count": 2,
+      "loc": 95,
       "deps": [
         "core/state.py"
       ],
@@ -2093,11 +2153,38 @@
       "loc": 56,
       "deps": [],
       "reverse_deps": [
-        "persistence/__init__.py"
+        "persistence/__init__.py",
+        "tests/unit/core/test_ports.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Manages authentication session tokens, verifying and cleaning up expired sessions."
+    },
+    "persistence/stream_cache.py": {
+      "layer": "persistence",
+      "classes": [
+        "ResolverDbCompat",
+        "CacheResolver"
+      ],
+      "function_count": 7,
+      "loc": 119,
+      "deps": [
+        "config.py",
+        "core/latency_window.py",
+        "core/observability.py",
+        "core/ports.py",
+        "core/state.py"
+      ],
+      "reverse_deps": [
+        "tests/integration/conftest.py",
+        "tests/unit/engine/playback/test_track_loader.py",
+        "bootstrap/services.py",
+        "tests/unit/engine/conftest.py",
+        "tests/unit/persistence/test_stream_cache.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Resolve the playback URI for a track using a priority-based cache     strategy: local file > cached stream URL > fresh yt-dlp extraction."
     },
     "persistence/track_repo.py": {
       "layer": "persistence",
@@ -2110,7 +2197,8 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "persistence/__init__.py"
+        "persistence/__init__.py",
+        "tests/unit/core/test_ports.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2126,17 +2214,6 @@
       "publishes": [],
       "subscribes": [],
       "purpose": ""
-    },
-    "plugins/lyrics.py": {
-      "layer": "plugins",
-      "classes": [],
-      "function_count": 0,
-      "loc": 22,
-      "deps": [],
-      "reverse_deps": [],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Expose lyrics fetching, parsing, and syncing functionality."
     },
     "plugins/lyrics_fetcher.py": {
       "layer": "plugins",
@@ -2155,9 +2232,9 @@
         "plugins/lyrics_parser.py"
       ],
       "reverse_deps": [
-        "main.py",
         "tests/integration/conftest.py",
-        "tests/unit/plugins/test_lyrics_fetcher.py"
+        "tests/unit/plugins/test_lyrics_fetcher.py",
+        "bootstrap/services.py"
       ],
       "publishes": [
         "LyricsUpdatedEvent",
@@ -2220,8 +2297,8 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "main.py",
-        "tests/unit/plugins/test_notifications.py"
+        "tests/unit/plugins/test_notifications.py",
+        "bootstrap/services.py"
       ],
       "publishes": [],
       "subscribes": [
@@ -2246,9 +2323,9 @@
         "core/event_bus.py"
       ],
       "reverse_deps": [
-        "main.py",
         "tests/integration/conftest.py",
-        "tests/unit/plugins/test_sponsorblock.py"
+        "tests/unit/plugins/test_sponsorblock.py",
+        "bootstrap/services.py"
       ],
       "publishes": [
         "LogMessageEvent"
@@ -2264,7 +2341,7 @@
       "function_count": 1,
       "loc": 46,
       "deps": [
-        "cache/db.py",
+        "persistence/__init__.py",
         "core/state.py"
       ],
       "reverse_deps": [],
@@ -2287,25 +2364,48 @@
       "layer": "server",
       "classes": [],
       "function_count": 2,
-      "loc": 95,
+      "loc": 100,
       "deps": [
         "core/ports.py",
         "engine/playback/controller.py",
+        "persistence/__init__.py",
         "server/connection_manager.py",
+        "server/handlers/audio_stream_handler.py",
         "server/handlers/http.py",
         "server/handlers/websocket.py",
         "server/handlers/event_listeners.py",
-        "server/services/broadcast_service.py",
-        "server/services/stream_prefetch.py"
+        "server/broadcast_service.py",
+        "services/stream_prefetch.py"
       ],
       "reverse_deps": [
-        "main.py",
         "tests/integration/conftest.py",
-        "tests/unit/server/test_app.py"
+        "tests/unit/server/test_app.py",
+        "main.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Create and configure the aiohttp web application with all routes,     services, and EventBus listeners wired together."
+    },
+    "server/broadcast_service.py": {
+      "layer": "server",
+      "classes": [
+        "BroadcastService"
+      ],
+      "function_count": 5,
+      "loc": 89,
+      "deps": [
+        "core/state.py",
+        "server/connection_manager.py",
+        "server/serializers.py"
+      ],
+      "reverse_deps": [
+        "tests/unit/server/test_broadcast_service.py",
+        "server/handlers/event_listeners.py",
+        "server/app.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Provide typed broadcast helpers that wrap ConnectionManager to push     specific message types to all connected WebSocket clients."
     },
     "server/connection_manager.py": {
       "layer": "server",
@@ -2318,9 +2418,10 @@
         "core/observability.py"
       ],
       "reverse_deps": [
+        "server/broadcast_service.py",
+        "tests/unit/server/test_connection_manager.py",
         "server/app.py",
-        "server/services/broadcast_service.py",
-        "tests/unit/server/test_connection_manager.py"
+        "server/handlers/__init__.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2329,13 +2430,40 @@
     "server/handlers/__init__.py": {
       "layer": "server",
       "classes": [],
-      "function_count": 0,
-      "loc": 1,
-      "deps": [],
+      "function_count": 7,
+      "loc": 72,
+      "deps": [
+        "core/ports.py",
+        "core/state.py",
+        "engine/playback/controller.py",
+        "persistence/__init__.py",
+        "server/connection_manager.py"
+      ],
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": ""
+      "purpose": "Shared, typed accessors for values stashed on `request.app[...]` by     server.app.create_app(). Handlers should use these instead of raw     `request.app[\"key\"]` lookups so the type of each value is explicit     (T3.7 — dulu rencana ini ditulis untuk `request.app[\"db\"]`, tapi     setelah T2.2 memecah `Database` God Facade, tidak ada lagi key     tunggal \"db\" — sudah jadi beberapa key spesifik: \"repos\", \"tracks\",     \"conn\", dst. Accessor di bawah menutupi semua key itu)."
+    },
+    "server/handlers/audio_stream_handler.py": {
+      "layer": "server",
+      "classes": [],
+      "function_count": 1,
+      "loc": 169,
+      "deps": [
+        "config.py",
+        "server/handlers/__init__.py",
+        "core/event_bus.py",
+        "core/events.py"
+      ],
+      "reverse_deps": [
+        "tests/unit/server/handlers/test_audio_stream_handler.py",
+        "server/app.py"
+      ],
+      "publishes": [
+        "LogMessageEvent"
+      ],
+      "subscribes": [],
+      "purpose": "Proxy cached/streamed MP3 audio for a track, including range-request     support for seeking. Split out of server/handlers/http.py (T3.4) so     the streaming/range-request logic isn't bundled with the SPA/health/     metrics endpoints."
     },
     "server/handlers/auth.py": {
       "layer": "server",
@@ -2373,14 +2501,14 @@
       "deps": [
         "core/events.py",
         "core/task_utils.py",
-        "server/services/broadcast_service.py",
-        "server/services/stream_prefetch.py",
+        "server/broadcast_service.py",
+        "services/stream_prefetch.py",
         "server/serializers.py",
         "services/discover_service.py"
       ],
       "reverse_deps": [
-        "server/app.py",
-        "tests/unit/server/handlers/test_event_listeners.py"
+        "tests/unit/server/handlers/test_event_listeners.py",
+        "server/app.py"
       ],
       "publishes": [],
       "subscribes": [
@@ -2398,30 +2526,27 @@
     "server/handlers/http.py": {
       "layer": "server",
       "classes": [],
-      "function_count": 4,
-      "loc": 210,
+      "function_count": 3,
+      "loc": 88,
       "deps": [
-        "config.py",
         "core/observability.py",
-        "core/event_bus.py",
-        "core/events.py"
+        "server/handlers/__init__.py"
       ],
       "reverse_deps": [
         "server/app.py",
         "tests/unit/server/handlers/test_http.py"
       ],
-      "publishes": [
-        "LogMessageEvent"
-      ],
+      "publishes": [],
       "subscribes": [],
-      "purpose": "Serve the SPA index, audio stream proxy, health check, and Prometheus     metrics endpoints over HTTP."
+      "purpose": "Serve the SPA index, health check, and Prometheus metrics endpoints     over HTTP."
     },
     "server/handlers/websocket.py": {
       "layer": "server",
       "classes": [],
       "function_count": 2,
-      "loc": 185,
+      "loc": 186,
       "deps": [
+        "server/handlers/__init__.py",
         "server/handlers/auth.py",
         "server/handlers/ws_discovery.py",
         "server/handlers/ws_download.py",
@@ -2443,30 +2568,30 @@
       "layer": "server",
       "classes": [],
       "function_count": 1,
-      "loc": 57,
+      "loc": 64,
       "deps": [
         "config.py"
       ],
       "reverse_deps": [
-        "server/handlers/websocket.py",
-        "tests/unit/server/handlers/test_ws_cache.py"
+        "tests/unit/server/handlers/test_ws_cache.py",
+        "server/handlers/websocket.py"
       ],
       "publishes": [],
       "subscribes": [],
-      "purpose": "WebSocket handler for managing cache queries and clearing."
+      "purpose": "WebSocket handler for managing the downloaded MP3 file cache     (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it."
     },
     "server/handlers/ws_discovery.py": {
       "layer": "server",
       "classes": [],
       "function_count": 1,
-      "loc": 114,
+      "loc": 115,
       "deps": [
         "server/serializers.py",
         "services/discover_service.py"
       ],
       "reverse_deps": [
-        "server/handlers/websocket.py",
-        "tests/unit/server/handlers/test_ws_discovery.py"
+        "tests/unit/server/handlers/test_ws_discovery.py",
+        "server/handlers/websocket.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2506,8 +2631,8 @@
         "core/command_bus.py"
       ],
       "reverse_deps": [
-        "server/handlers/websocket.py",
-        "tests/unit/server/handlers/test_ws_playback.py"
+        "tests/unit/server/handlers/test_ws_playback.py",
+        "server/handlers/websocket.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2524,8 +2649,8 @@
         "server/serializers.py"
       ],
       "reverse_deps": [
-        "server/handlers/websocket.py",
-        "tests/unit/server/handlers/test_ws_queue.py"
+        "tests/unit/server/handlers/test_ws_queue.py",
+        "server/handlers/websocket.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2554,61 +2679,20 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "server/services/broadcast_service.py",
-        "server/handlers/ws_queue.py",
+        "server/broadcast_service.py",
         "server/handlers/event_listeners.py",
+        "tests/unit/server/test_serializers.py",
+        "tests/unit/server/handlers/test_ws_playback.py",
+        "server/handlers/ws_queue.py",
+        "server/handlers/websocket.py",
         "server/handlers/ws_playback.py",
         "server/handlers/ws_discovery.py",
-        "server/handlers/websocket.py",
         "server/handlers/ws_download.py",
-        "server/handlers/ws_download.py",
-        "tests/unit/server/test_serializers.py",
-        "tests/unit/server/handlers/test_ws_playback.py"
+        "server/handlers/ws_download.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Convert between AppState/TrackInfo domain objects and JSON-serializable     dicts for WebSocket message payloads."
-    },
-    "server/services/broadcast_service.py": {
-      "layer": "server",
-      "classes": [
-        "BroadcastService"
-      ],
-      "function_count": 5,
-      "loc": 89,
-      "deps": [
-        "core/state.py",
-        "server/connection_manager.py",
-        "server/serializers.py"
-      ],
-      "reverse_deps": [
-        "server/app.py",
-        "server/handlers/event_listeners.py",
-        "tests/unit/server/services/test_broadcast_service.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Provide typed broadcast helpers that wrap ConnectionManager to push     specific message types to all connected WebSocket clients."
-    },
-    "server/services/stream_prefetch.py": {
-      "layer": "server",
-      "classes": [
-        "StreamPrefetchService"
-      ],
-      "function_count": 1,
-      "loc": 50,
-      "deps": [
-        "config.py",
-        "core/ports.py"
-      ],
-      "reverse_deps": [
-        "server/app.py",
-        "server/handlers/event_listeners.py",
-        "tests/unit/server/services/test_stream_prefetch.py"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Pre-fetch and cache the stream URL for the next track in the background     to reduce playback latency at track transitions."
     },
     "services/__init__.py": {
       "layer": "services",
@@ -2621,26 +2705,60 @@
       "subscribes": [],
       "purpose": ""
     },
+    "services/discover_ranking.py": {
+      "layer": "services",
+      "classes": [],
+      "function_count": 2,
+      "loc": 75,
+      "deps": [],
+      "reverse_deps": [
+        "tests/unit/services/test_discover_ranking.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Pure scoring/aggregation functions for Discover-tab personalization,     split out of persistence.discover_repo.py (T3.3) so the ranking math     is unit-testable with plain numbers instead of a real DB, and so it     lives in the services layer rather than persistence (which is not     allowed to depend on services — see .importlinter)."
+    },
     "services/discover_service.py": {
       "layer": "services",
       "classes": [
         "DiscoverService"
       ],
       "function_count": 10,
-      "loc": 211,
+      "loc": 234,
       "deps": [
         "core/ports.py",
-        "core/state.py"
+        "core/state.py",
+        "services/__init__.py"
       ],
       "reverse_deps": [
+        "tests/unit/services/test_discover_service.py",
         "server/handlers/event_listeners.py",
         "server/handlers/ws_discovery.py",
-        "server/handlers/ws_download.py",
-        "tests/unit/services/test_discover_service.py"
+        "server/handlers/ws_download.py"
       ],
       "publishes": [],
       "subscribes": [],
       "purpose": "Query the SQLite database to provide discover-page data: recently played     tracks, favorites, cached tracks, and featured artists/genres."
+    },
+    "services/stream_prefetch.py": {
+      "layer": "services",
+      "classes": [
+        "StreamPrefetchService"
+      ],
+      "function_count": 1,
+      "loc": 50,
+      "deps": [
+        "config.py",
+        "core/ports.py"
+      ],
+      "reverse_deps": [
+        "tests/unit/services/test_stream_prefetch.py",
+        "server/handlers/event_listeners.py",
+        "server/app.py"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Pre-fetch and cache the stream URL for the next track in the background     to reduce playback latency at track transitions."
     },
     "start.py": {
       "layer": "root",
@@ -2686,7 +2804,7 @@
       "function_count": 7,
       "loc": 122,
       "deps": [
-        "cache/db.py"
+        "persistence/__init__.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -2714,9 +2832,9 @@
       "deps": [],
       "reverse_deps": [
         "tests/unit/engine/test_volume_service.py",
+        "tests/unit/core/test_ports.py",
         "tests/unit/engine/conftest.py",
-        "tests/unit/engine/playback/test_mode_ops.py",
-        "tests/unit/core/test_ports.py"
+        "tests/unit/engine/playback/test_mode_ops.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2748,11 +2866,11 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "tests/unit/cache/test_resolver.py",
-        "tests/unit/engine/conftest.py",
         "tests/unit/engine/test_download_manager.py",
+        "tests/unit/core/test_ports.py",
         "tests/unit/engine/playback/test_track_loader.py",
-        "tests/unit/core/test_ports.py"
+        "tests/unit/engine/conftest.py",
+        "tests/unit/persistence/test_stream_cache.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2784,9 +2902,9 @@
         "core/state.py"
       ],
       "reverse_deps": [
-        "tests/unit/cache/test_resolver.py",
+        "tests/unit/engine/playback/test_track_loader.py",
         "tests/unit/engine/conftest.py",
-        "tests/unit/engine/playback/test_track_loader.py"
+        "tests/unit/persistence/test_stream_cache.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2809,18 +2927,18 @@
       "function_count": 3,
       "loc": 165,
       "deps": [
-        "cache/db.py",
-        "cache/resolver.py",
+        "adapters/mpv/__init__.py",
+        "adapters/ytdlp/__init__.py",
+        "persistence/stream_cache.py",
         "core/event_bus.py",
         "core/state.py",
         "engine/command_router.py",
         "engine/download_manager.py",
-        "engine/mpv_controller.py",
         "engine/playback/controller.py",
         "engine/queue_manager.py",
-        "engine/radio_engine.py",
+        "engine/radio/__init__.py",
         "engine/volume_service.py",
-        "engine/ytdlp_client.py",
+        "persistence/__init__.py",
         "plugins/lyrics_fetcher.py",
         "plugins/sponsorblock.py",
         "server/app.py",
@@ -2830,7 +2948,7 @@
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Shared fixtures for integration tests. Wires up real components     (EventBus, MpvController, Database, YtDlpClient, PlaybackController)     but points them to temporary directories and memory databases to     prevent side effects on the dev environment."
+      "purpose": "Shared fixtures for integration tests. Wires up real components     (EventBus, MpvController, Repositories, YtDlpClient, PlaybackController)     but points them to temporary directories and memory databases to     prevent side effects on the dev environment."
     },
     "tests/integration/test_download_flow.py": {
       "layer": "tests",
@@ -3042,11 +3160,18 @@
         "TestToTrack",
         "TestSearchFiltering",
         "TestPickAudioUrl",
-        "TestYtDlpDownloader"
+        "TestYtDlpDownloader",
+        "TestToTrackViaYtDlpClient",
+        "TestPickAudioUrlViaYtDlpClient",
+        "TestSearch",
+        "TestGetStreamUrl",
+        "TestDownloadAudio",
+        "TestCancellation"
       ],
-      "function_count": 18,
-      "loc": 275,
+      "function_count": 48,
+      "loc": 602,
       "deps": [
+        "adapters/ytdlp/__init__.py",
         "adapters/ytdlp/searcher.py",
         "core/state.py",
         "adapters/ytdlp/resolver.py",
@@ -3059,28 +3184,7 @@
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Unit tests for YtDlpSearcher._to_track and search filtering logic     without making real network calls. yt-dlp is mocked at the executor level."
-    },
-    "tests/unit/adapters/ytdlp/test_ytdlp_client.py": {
-      "layer": "tests",
-      "classes": [
-        "TestToTrack",
-        "TestPickAudioUrl",
-        "TestSearch",
-        "TestGetStreamUrl",
-        "TestDownloadAudio",
-        "TestCancellation"
-      ],
-      "function_count": 30,
-      "loc": 336,
-      "deps": [
-        "adapters/ytdlp/__init__.py",
-        "core/state.py"
-      ],
-      "reverse_deps": [],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": "Auto-generated purpose."
+      "purpose": "Unit tests for the adapters.ytdlp package: YtDlpSearcher._to_track and     search filtering logic (tested directly on the split submodules), plus     the YtDlpClient facade end-to-end behavior (search/get_stream_url/     download_audio/cancellation, tested through the facade's public API).     Consolidated from test_ytdlp.py + test_ytdlp_client.py (T4.6) since both     files tested overlapping logic (_to_track, _pick_audio_url) just via     different entry points (submodule directly vs. facade). No assertions     were dropped in the merge — the facade-level classes below are suffixed     \"ViaYtDlpClient\" to avoid name collision with the submodule-level ones.     yt-dlp is always mocked at the executor level, no real network calls."
     },
     "tests/unit/automation/__init__.py": {
       "layer": "tests",
@@ -3167,7 +3271,7 @@
       "subscribes": [],
       "purpose": "Regression tests untuk automation/repo_map.py (tool baru sesi ini) --     pastikan graph yang dihasilkan konsisten dengan index ownership yang     mendasarinya (nodes, edges, event map)."
     },
-    "tests/unit/cache/__init__.py": {
+    "tests/unit/bootstrap/__init__.py": {
       "layer": "tests",
       "classes": [],
       "function_count": 0,
@@ -3178,22 +3282,66 @@
       "subscribes": [],
       "purpose": ""
     },
-    "tests/unit/cache/test_resolver.py": {
+    "tests/unit/bootstrap/test_maintenance.py": {
       "layer": "tests",
       "classes": [],
-      "function_count": 13,
-      "loc": 192,
+      "function_count": 4,
+      "loc": 126,
       "deps": [
-        "config.py",
-        "cache/resolver.py",
         "core/state.py",
-        "tests/fakes/fake_media_extractor.py",
-        "tests/fakes/fake_track_repository.py"
+        "bootstrap/services.py",
+        "bootstrap/services.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/services.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/services.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/services.py",
+        "bootstrap/__init__.py"
       ],
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Auto-generated purpose."
+      "purpose": "Unit tests for bootstrap.maintenance."
+    },
+    "tests/unit/bootstrap/test_services.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 3,
+      "loc": 145,
+      "deps": [
+        "core/state.py",
+        "bootstrap/services.py",
+        "bootstrap/services.py",
+        "bootstrap/services.py",
+        "bootstrap/services.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for bootstrap.services."
+    },
+    "tests/unit/bootstrap/test_startup_tasks.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 4,
+      "loc": 134,
+      "deps": [
+        "core/state.py",
+        "bootstrap/services.py",
+        "bootstrap/services.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/services.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/services.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/services.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for bootstrap.startup_tasks."
     },
     "tests/unit/core/__init__.py": {
       "layer": "tests",
@@ -3331,13 +3479,16 @@
     "tests/unit/core/test_ports.py": {
       "layer": "tests",
       "classes": [],
-      "function_count": 4,
-      "loc": 59,
+      "function_count": 7,
+      "loc": 100,
       "deps": [
         "core/ports.py",
         "tests/fakes/fake_audio_player.py",
         "tests/fakes/fake_media_extractor.py",
-        "cache/db.py"
+        "persistence/track_repo.py",
+        "persistence/session_repo.py",
+        "persistence/artist_repo.py",
+        "persistence/discover_repo.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -3416,18 +3567,19 @@
         "FakeRadioMode"
       ],
       "function_count": 19,
-      "loc": 150,
+      "loc": 154,
       "deps": [
         "core/event_bus.py",
         "core/state.py",
         "tests/fakes/fake_audio_player.py",
         "tests/fakes/fake_media_extractor.py",
         "tests/fakes/fake_track_repository.py",
-        "cache/resolver.py",
+        "persistence/stream_cache.py",
         "engine/playback/controller.py"
       ],
       "reverse_deps": [
-        "tests/unit/engine/playback/test_controller.py"
+        "tests/unit/engine/playback/test_controller.py",
+        "tests/unit/engine/playback/test_queue_controller.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -3537,6 +3689,24 @@
       "subscribes": [],
       "purpose": "Unit tests for playback mode operations and toggles."
     },
+    "tests/unit/engine/playback/test_queue_controller.py": {
+      "layer": "tests",
+      "classes": [
+        "TestQueueSelect",
+        "TestQueueMutations",
+        "TestAdvanceToNext"
+      ],
+      "function_count": 10,
+      "loc": 94,
+      "deps": [
+        "core/state.py",
+        "tests/unit/engine/conftest.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for QueueController: command CMD_QUEUE_* dan advance-to-next,     diekstrak dari test_controller.py mengikuti pemisahan PlaybackController     (T2.3.1) menjadi QueueController + SettingsController."
+    },
     "tests/unit/engine/playback/test_queue_ops.py": {
       "layer": "tests",
       "classes": [],
@@ -3554,6 +3724,27 @@
         "QueueUpdatedEvent"
       ],
       "purpose": "Unit tests for queue manipulation operations."
+    },
+    "tests/unit/engine/playback/test_settings_controller.py": {
+      "layer": "tests",
+      "classes": [
+        "TestSetMode",
+        "TestRadioRandomize",
+        "TestOutputSponsorblockLoudness",
+        "TestLyricsOffset"
+      ],
+      "function_count": 11,
+      "loc": 97,
+      "deps": [
+        "core/events.py",
+        "core/state.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [
+        "LyricsUpdatedEvent"
+      ],
+      "purpose": "Unit tests for SettingsController: command CMD_SET_MODE,     CMD_RADIO_RANDOMIZE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK,     CMD_SET_LOUDNESS_NORMALIZATION, CMD_LYRICS_OFFSET, diekstrak dari     test_controller.py mengikuti pemisahan PlaybackController (T2.3.2)     menjadi QueueController + SettingsController."
     },
     "tests/unit/engine/playback/test_track_ended_ops.py": {
       "layer": "tests",
@@ -3584,7 +3775,7 @@
         "engine/playback/track_loader.py",
         "tests/fakes/fake_media_extractor.py",
         "tests/fakes/fake_track_repository.py",
-        "cache/resolver.py"
+        "persistence/stream_cache.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -3811,14 +4002,14 @@
       "subscribes": [],
       "purpose": ""
     },
-    "tests/unit/launcher/gui/test_app_lifecycle.py": {
+    "tests/unit/launcher/gui/test_app.py": {
       "layer": "tests",
       "classes": [],
       "function_count": 2,
       "loc": 100,
       "deps": [
-        "launcher/gui.py",
-        "launcher/gui.py"
+        "launcher/gui/__init__.py",
+        "launcher/gui/__init__.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -3829,7 +4020,7 @@
       "layer": "tests",
       "classes": [],
       "function_count": 2,
-      "loc": 92,
+      "loc": 94,
       "deps": [
         "launcher/gui/auth_panel.py",
         "core/security.py"
@@ -3839,13 +4030,13 @@
       "subscribes": [],
       "purpose": "Regression tests for launcher.gui.auth_panel's admin password file     contract."
     },
-    "tests/unit/launcher/gui/test_dep_checker.py": {
+    "tests/unit/launcher/test_dep_checker.py": {
       "layer": "tests",
       "classes": [],
       "function_count": 2,
       "loc": 45,
       "deps": [
-        "launcher/gui/dep_checker.py"
+        "launcher/dep_checker.py"
       ],
       "reverse_deps": [],
       "publishes": [],
@@ -3877,6 +4068,21 @@
       "publishes": [],
       "subscribes": [],
       "purpose": ""
+    },
+    "tests/unit/launcher/test_server_lifecycle.py": {
+      "layer": "tests",
+      "classes": [
+        "_ImmediateThread"
+      ],
+      "function_count": 15,
+      "loc": 258,
+      "deps": [
+        "launcher/server_lifecycle.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for ServerLifecycle — must pass without `tkinter` importable     at all, proving the class is genuinely GUI-toolkit-free (T2.5)."
     },
     "tests/unit/launcher/test_updater.py": {
       "layer": "tests",
@@ -3917,16 +4123,16 @@
       "layer": "tests",
       "classes": [],
       "function_count": 3,
-      "loc": 137,
+      "loc": 145,
       "deps": [
-        "persistence/__init__.py",
-        "persistence/__init__.py",
-        "persistence/__init__.py"
+        "persistence/db.py",
+        "persistence/db.py",
+        "persistence/db.py"
       ],
       "reverse_deps": [],
       "publishes": [],
       "subscribes": [],
-      "purpose": "Unit tests for database initialization and connection handling."
+      "purpose": "Unit tests for database connection lifecycle: initialization,     idempotent re-init, thread-safe close, and the songs table migration.     These all live in `persistence.db.DatabaseConnection` (extracted from     the old `Database` God Facade in PATCH T2.2a; the facade itself was     removed in PATCH T2.2e), so we test that class directly."
     },
     "tests/unit/persistence/test_discover_repo.py": {
       "layer": "tests",
@@ -3939,7 +4145,7 @@
         "TestGetArtistDetail"
       ],
       "function_count": 14,
-      "loc": 206,
+      "loc": 220,
       "deps": [],
       "reverse_deps": [],
       "publishes": [],
@@ -3980,6 +4186,23 @@
       "publishes": [],
       "subscribes": [],
       "purpose": "Unit tests for session token creation and verification."
+    },
+    "tests/unit/persistence/test_stream_cache.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 13,
+      "loc": 192,
+      "deps": [
+        "config.py",
+        "core/state.py",
+        "persistence/stream_cache.py",
+        "tests/fakes/fake_media_extractor.py",
+        "tests/fakes/fake_track_repository.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Auto-generated purpose."
     },
     "tests/unit/persistence/test_track_repo.py": {
       "layer": "tests",
@@ -4081,6 +4304,19 @@
       "subscribes": [],
       "purpose": ""
     },
+    "tests/unit/server/handlers/test_audio_stream_handler.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 15,
+      "loc": 388,
+      "deps": [
+        "server/handlers/audio_stream_handler.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for server.handlers.audio_stream_handler.serve_stream.     Moved out of tests/unit/server/handlers/test_http.py (T3.4) alongside     the serve_stream extraction into its own handler module."
+    },
     "tests/unit/server/handlers/test_auth.py": {
       "layer": "tests",
       "classes": [
@@ -4127,8 +4363,8 @@
     "tests/unit/server/handlers/test_http.py": {
       "layer": "tests",
       "classes": [],
-      "function_count": 22,
-      "loc": 481,
+      "function_count": 8,
+      "loc": 137,
       "deps": [
         "server/handlers/http.py"
       ],
@@ -4181,7 +4417,7 @@
       "layer": "tests",
       "classes": [],
       "function_count": 2,
-      "loc": 66,
+      "loc": 72,
       "deps": [
         "core/command_bus.py",
         "server/handlers/ws_download.py"
@@ -4222,37 +4458,11 @@
       "subscribes": [],
       "purpose": ""
     },
-    "tests/unit/server/services/test_broadcast_service.py": {
-      "layer": "tests",
-      "classes": [],
-      "function_count": 1,
-      "loc": 13,
-      "deps": [
-        "server/services/broadcast_service.py"
-      ],
-      "reverse_deps": [],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": ""
-    },
-    "tests/unit/server/services/test_stream_prefetch.py": {
-      "layer": "tests",
-      "classes": [],
-      "function_count": 1,
-      "loc": 15,
-      "deps": [
-        "server/services/stream_prefetch.py"
-      ],
-      "reverse_deps": [],
-      "publishes": [],
-      "subscribes": [],
-      "purpose": ""
-    },
     "tests/unit/server/test_app.py": {
       "layer": "tests",
       "classes": [],
       "function_count": 5,
-      "loc": 113,
+      "loc": 117,
       "deps": [
         "server/app.py"
       ],
@@ -4260,6 +4470,19 @@
       "publishes": [],
       "subscribes": [],
       "purpose": "Unit tests for server.app."
+    },
+    "tests/unit/server/test_broadcast_service.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 1,
+      "loc": 13,
+      "deps": [
+        "server/broadcast_service.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": ""
     },
     "tests/unit/server/test_connection_manager.py": {
       "layer": "tests",
@@ -4317,6 +4540,22 @@
       "subscribes": [],
       "purpose": ""
     },
+    "tests/unit/services/test_discover_ranking.py": {
+      "layer": "tests",
+      "classes": [
+        "TestComputeMatchPct",
+        "TestBuildTasteSpectrum"
+      ],
+      "function_count": 12,
+      "loc": 100,
+      "deps": [
+        "services/discover_ranking.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": "Unit tests for the pure Discover ranking/scoring functions     (compute_match_pct, build_taste_spectrum) extracted from     persistence/discover_repo.py in T3.3. These are plain-number test     cases, no DB/fixture involved — that's the whole point of splitting     this math out into its own module."
+    },
     "tests/unit/services/test_discover_service.py": {
       "layer": "tests",
       "classes": [
@@ -4342,6 +4581,19 @@
       "publishes": [],
       "subscribes": [],
       "purpose": "Auto-generated purpose."
+    },
+    "tests/unit/services/test_stream_prefetch.py": {
+      "layer": "tests",
+      "classes": [],
+      "function_count": 1,
+      "loc": 15,
+      "deps": [
+        "services/stream_prefetch.py"
+      ],
+      "reverse_deps": [],
+      "publishes": [],
+      "subscribes": [],
+      "purpose": ""
     },
     "tests/unit/test_config.py": {
       "layer": "tests",
@@ -4377,8 +4629,9 @@
       "layer": "tests",
       "classes": [],
       "function_count": 5,
-      "loc": 223,
+      "loc": 249,
       "deps": [
+        "bootstrap/services.py",
         "main.py",
         "main.py"
       ],
@@ -4439,7 +4692,7 @@
     },
     {
       "from": "adapters/ytdlp/downloader.py",
-      "to": "adapters/ytdlp/common.py"
+      "to": "adapters/ytdlp/ydl_options.py"
     },
     {
       "from": "adapters/ytdlp/downloader.py",
@@ -4447,7 +4700,7 @@
     },
     {
       "from": "adapters/ytdlp/resolver.py",
-      "to": "adapters/ytdlp/common.py"
+      "to": "adapters/ytdlp/ydl_options.py"
     },
     {
       "from": "adapters/ytdlp/resolver.py",
@@ -4455,35 +4708,103 @@
     },
     {
       "from": "adapters/ytdlp/searcher.py",
-      "to": "adapters/ytdlp/common.py"
+      "to": "adapters/ytdlp/ydl_options.py"
     },
     {
       "from": "adapters/ytdlp/searcher.py",
       "to": "core/state.py"
     },
     {
-      "from": "cache/db.py",
+      "from": "bootstrap/maintenance.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "bootstrap/maintenance.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "bootstrap/maintenance.py",
+      "to": "core/task_utils.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "adapters/mpv/__init__.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "adapters/ytdlp/__init__.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "core/event_bus.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/command_router.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/download_manager.py"
+    },
+    {
+      "from": "bootstrap/services.py",
       "to": "persistence/__init__.py"
     },
     {
-      "from": "cache/resolver.py",
-      "to": "config.py"
+      "from": "bootstrap/services.py",
+      "to": "plugins/lyrics_fetcher.py"
     },
     {
-      "from": "cache/resolver.py",
-      "to": "core/latency_window.py"
+      "from": "bootstrap/services.py",
+      "to": "plugins/notifications.py"
     },
     {
-      "from": "cache/resolver.py",
-      "to": "core/observability.py"
+      "from": "bootstrap/services.py",
+      "to": "plugins/sponsorblock.py"
     },
     {
-      "from": "cache/resolver.py",
-      "to": "core/ports.py"
+      "from": "bootstrap/services.py",
+      "to": "persistence/stream_cache.py"
     },
     {
-      "from": "cache/resolver.py",
+      "from": "bootstrap/services.py",
+      "to": "engine/loudness/service.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/playback/controller.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/queue_manager.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/radio/__init__.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/sleep_timer.py"
+    },
+    {
+      "from": "bootstrap/services.py",
+      "to": "engine/volume_service.py"
+    },
+    {
+      "from": "bootstrap/startup_tasks.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "bootstrap/startup_tasks.py",
       "to": "core/state.py"
+    },
+    {
+      "from": "bootstrap/startup_tasks.py",
+      "to": "core/task_utils.py"
     },
     {
       "from": "config.py",
@@ -4594,10 +4915,6 @@
       "to": "engine/loudness/analyzer.py"
     },
     {
-      "from": "engine/mpv_controller.py",
-      "to": "adapters/mpv/__init__.py"
-    },
-    {
       "from": "engine/playback/__init__.py",
       "to": "engine/playback/controller.py"
     },
@@ -4627,7 +4944,15 @@
     },
     {
       "from": "engine/playback/controller.py",
+      "to": "engine/playback/queue_controller.py"
+    },
+    {
+      "from": "engine/playback/controller.py",
       "to": "engine/playback/queue_ops.py"
+    },
+    {
+      "from": "engine/playback/controller.py",
+      "to": "engine/playback/settings_controller.py"
     },
     {
       "from": "engine/playback/controller.py",
@@ -4643,7 +4968,7 @@
     },
     {
       "from": "engine/playback/controller.py",
-      "to": "engine/radio_engine.py"
+      "to": "engine/radio/__init__.py"
     },
     {
       "from": "engine/playback/controller.py",
@@ -4651,15 +4976,7 @@
     },
     {
       "from": "engine/playback/controller.py",
-      "to": "core/events.py"
-    },
-    {
-      "from": "engine/playback/controller.py",
       "to": "engine/loudness/gain_calculator.py"
-    },
-    {
-      "from": "engine/playback/controller.py",
-      "to": "core/task_utils.py"
     },
     {
       "from": "engine/playback/controller.py",
@@ -4702,12 +5019,32 @@
       "to": "engine/loudness/gain_calculator.py"
     },
     {
+      "from": "engine/playback/queue_controller.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "engine/playback/queue_controller.py",
+      "to": "core/task_utils.py"
+    },
+    {
       "from": "engine/playback/queue_ops.py",
       "to": "core/events.py"
     },
     {
       "from": "engine/playback/queue_ops.py",
       "to": "core/state.py"
+    },
+    {
+      "from": "engine/playback/settings_controller.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "engine/playback/settings_controller.py",
+      "to": "core/task_utils.py"
+    },
+    {
+      "from": "engine/playback/settings_controller.py",
+      "to": "core/events.py"
     },
     {
       "from": "engine/playback/track_ended_ops.py",
@@ -4763,11 +5100,15 @@
     },
     {
       "from": "engine/radio/artist_selector.py",
+      "to": "core/ports.py"
+    },
+    {
+      "from": "engine/radio/artist_selector.py",
       "to": "core/state.py"
     },
     {
       "from": "engine/radio/artist_selector.py",
-      "to": "engine/radio/common.py"
+      "to": "engine/radio/radio_config.py"
     },
     {
       "from": "engine/radio/artist_selector.py",
@@ -4780,10 +5121,6 @@
     {
       "from": "engine/radio/artist_selector.py",
       "to": "engine/radio/artist_bandit.py"
-    },
-    {
-      "from": "engine/radio/common.py",
-      "to": "core/task_utils.py"
     },
     {
       "from": "engine/radio/engine.py",
@@ -4803,7 +5140,7 @@
     },
     {
       "from": "engine/radio/engine.py",
-      "to": "engine/radio/common.py"
+      "to": "engine/radio/radio_config.py"
     },
     {
       "from": "engine/radio/engine.py",
@@ -4823,7 +5160,7 @@
     },
     {
       "from": "engine/radio/prefetcher.py",
-      "to": "engine/radio/common.py"
+      "to": "engine/radio/radio_config.py"
     },
     {
       "from": "engine/radio/prefetcher.py",
@@ -4834,16 +5171,16 @@
       "to": "engine/radio/artist_selector.py"
     },
     {
+      "from": "engine/radio/radio_config.py",
+      "to": "core/task_utils.py"
+    },
+    {
       "from": "engine/radio/track_filter.py",
       "to": "core/state.py"
     },
     {
       "from": "engine/radio/track_filter.py",
       "to": "engine/radio/track_interleaver.py"
-    },
-    {
-      "from": "engine/radio_engine.py",
-      "to": "engine/radio/__init__.py"
     },
     {
       "from": "engine/sleep_timer.py",
@@ -4870,16 +5207,12 @@
       "to": "core/state.py"
     },
     {
-      "from": "engine/ytdlp_client.py",
-      "to": "adapters/ytdlp/__init__.py"
-    },
-    {
       "from": "launcher/gui/app.py",
       "to": "launcher/__init__.py"
     },
     {
       "from": "launcher/gui/app.py",
-      "to": "launcher/gui/controller.py"
+      "to": "launcher/server_lifecycle.py"
     },
     {
       "from": "launcher/gui/app.py",
@@ -4891,23 +5224,31 @@
     },
     {
       "from": "launcher/gui/app.py",
-      "to": "launcher/gui/dep_checker.py"
+      "to": "launcher/gui/log_view.py"
     },
     {
-      "from": "launcher/gui/controller.py",
-      "to": "launcher/__init__.py"
+      "from": "launcher/gui/app.py",
+      "to": "launcher/gui/log_view.py"
     },
     {
-      "from": "launcher/gui/controller.py",
+      "from": "launcher/gui/app.py",
       "to": "launcher/gui/popups.py"
+    },
+    {
+      "from": "launcher/gui/auth_panel.py",
+      "to": "launcher/__init__.py"
     },
     {
       "from": "launcher/gui/ui_builder.py",
       "to": "launcher/gui/auth_panel.py"
     },
     {
-      "from": "main.py",
-      "to": "cache/db.py"
+      "from": "launcher/server_lifecycle.py",
+      "to": "launcher/__init__.py"
+    },
+    {
+      "from": "launcher/server_lifecycle.py",
+      "to": "launcher/dep_checker.py"
     },
     {
       "from": "main.py",
@@ -4915,75 +5256,19 @@
     },
     {
       "from": "main.py",
-      "to": "core/event_bus.py"
-    },
-    {
-      "from": "main.py",
       "to": "core/log_config.py"
     },
     {
       "from": "main.py",
-      "to": "core/state.py"
+      "to": "bootstrap/maintenance.py"
     },
     {
       "from": "main.py",
-      "to": "core/task_utils.py"
+      "to": "bootstrap/services.py"
     },
     {
       "from": "main.py",
-      "to": "engine/command_router.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/download_manager.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/mpv_controller.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/ytdlp_client.py"
-    },
-    {
-      "from": "main.py",
-      "to": "plugins/notifications.py"
-    },
-    {
-      "from": "main.py",
-      "to": "plugins/lyrics_fetcher.py"
-    },
-    {
-      "from": "main.py",
-      "to": "plugins/sponsorblock.py"
-    },
-    {
-      "from": "main.py",
-      "to": "cache/resolver.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/loudness/service.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/playback/controller.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/queue_manager.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/radio_engine.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/volume_service.py"
-    },
-    {
-      "from": "main.py",
-      "to": "engine/sleep_timer.py"
+      "to": "bootstrap/startup_tasks.py"
     },
     {
       "from": "main.py",
@@ -5043,6 +5328,26 @@
     },
     {
       "from": "persistence/library_repo.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "persistence/stream_cache.py",
+      "to": "config.py"
+    },
+    {
+      "from": "persistence/stream_cache.py",
+      "to": "core/latency_window.py"
+    },
+    {
+      "from": "persistence/stream_cache.py",
+      "to": "core/observability.py"
+    },
+    {
+      "from": "persistence/stream_cache.py",
+      "to": "core/ports.py"
+    },
+    {
+      "from": "persistence/stream_cache.py",
       "to": "core/state.py"
     },
     {
@@ -5127,7 +5432,7 @@
     },
     {
       "from": "scratch/check_db.py",
-      "to": "cache/db.py"
+      "to": "persistence/__init__.py"
     },
     {
       "from": "scratch/check_db.py",
@@ -5143,7 +5448,15 @@
     },
     {
       "from": "server/app.py",
+      "to": "persistence/__init__.py"
+    },
+    {
+      "from": "server/app.py",
       "to": "server/connection_manager.py"
+    },
+    {
+      "from": "server/app.py",
+      "to": "server/handlers/audio_stream_handler.py"
     },
     {
       "from": "server/app.py",
@@ -5159,15 +5472,63 @@
     },
     {
       "from": "server/app.py",
-      "to": "server/services/broadcast_service.py"
+      "to": "server/broadcast_service.py"
     },
     {
       "from": "server/app.py",
-      "to": "server/services/stream_prefetch.py"
+      "to": "services/stream_prefetch.py"
+    },
+    {
+      "from": "server/broadcast_service.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "server/broadcast_service.py",
+      "to": "server/connection_manager.py"
+    },
+    {
+      "from": "server/broadcast_service.py",
+      "to": "server/serializers.py"
     },
     {
       "from": "server/connection_manager.py",
       "to": "core/observability.py"
+    },
+    {
+      "from": "server/handlers/__init__.py",
+      "to": "core/ports.py"
+    },
+    {
+      "from": "server/handlers/__init__.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "server/handlers/__init__.py",
+      "to": "engine/playback/controller.py"
+    },
+    {
+      "from": "server/handlers/__init__.py",
+      "to": "persistence/__init__.py"
+    },
+    {
+      "from": "server/handlers/__init__.py",
+      "to": "server/connection_manager.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
+      "to": "config.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
+      "to": "server/handlers/__init__.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
+      "to": "core/event_bus.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
+      "to": "core/events.py"
     },
     {
       "from": "server/handlers/auth.py",
@@ -5187,11 +5548,11 @@
     },
     {
       "from": "server/handlers/event_listeners.py",
-      "to": "server/services/broadcast_service.py"
+      "to": "server/broadcast_service.py"
     },
     {
       "from": "server/handlers/event_listeners.py",
-      "to": "server/services/stream_prefetch.py"
+      "to": "services/stream_prefetch.py"
     },
     {
       "from": "server/handlers/event_listeners.py",
@@ -5203,19 +5564,15 @@
     },
     {
       "from": "server/handlers/http.py",
-      "to": "config.py"
-    },
-    {
-      "from": "server/handlers/http.py",
       "to": "core/observability.py"
     },
     {
       "from": "server/handlers/http.py",
-      "to": "core/event_bus.py"
+      "to": "server/handlers/__init__.py"
     },
     {
-      "from": "server/handlers/http.py",
-      "to": "core/events.py"
+      "from": "server/handlers/websocket.py",
+      "to": "server/handlers/__init__.py"
     },
     {
       "from": "server/handlers/websocket.py",
@@ -5322,32 +5679,24 @@
       "to": "core/state.py"
     },
     {
-      "from": "server/services/broadcast_service.py",
+      "from": "services/discover_service.py",
+      "to": "core/ports.py"
+    },
+    {
+      "from": "services/discover_service.py",
       "to": "core/state.py"
     },
     {
-      "from": "server/services/broadcast_service.py",
-      "to": "server/connection_manager.py"
+      "from": "services/discover_service.py",
+      "to": "services/__init__.py"
     },
     {
-      "from": "server/services/broadcast_service.py",
-      "to": "server/serializers.py"
-    },
-    {
-      "from": "server/services/stream_prefetch.py",
+      "from": "services/stream_prefetch.py",
       "to": "config.py"
     },
     {
-      "from": "server/services/stream_prefetch.py",
+      "from": "services/stream_prefetch.py",
       "to": "core/ports.py"
-    },
-    {
-      "from": "services/discover_service.py",
-      "to": "core/ports.py"
-    },
-    {
-      "from": "services/discover_service.py",
-      "to": "core/state.py"
     },
     {
       "from": "start.py",
@@ -5363,7 +5712,7 @@
     },
     {
       "from": "tests/conftest.py",
-      "to": "cache/db.py"
+      "to": "persistence/__init__.py"
     },
     {
       "from": "tests/fakes/fake_lyrics_provider.py",
@@ -5383,11 +5732,15 @@
     },
     {
       "from": "tests/integration/conftest.py",
-      "to": "cache/db.py"
+      "to": "adapters/mpv/__init__.py"
     },
     {
       "from": "tests/integration/conftest.py",
-      "to": "cache/resolver.py"
+      "to": "adapters/ytdlp/__init__.py"
+    },
+    {
+      "from": "tests/integration/conftest.py",
+      "to": "persistence/stream_cache.py"
     },
     {
       "from": "tests/integration/conftest.py",
@@ -5407,10 +5760,6 @@
     },
     {
       "from": "tests/integration/conftest.py",
-      "to": "engine/mpv_controller.py"
-    },
-    {
-      "from": "tests/integration/conftest.py",
       "to": "engine/playback/controller.py"
     },
     {
@@ -5419,7 +5768,7 @@
     },
     {
       "from": "tests/integration/conftest.py",
-      "to": "engine/radio_engine.py"
+      "to": "engine/radio/__init__.py"
     },
     {
       "from": "tests/integration/conftest.py",
@@ -5427,7 +5776,7 @@
     },
     {
       "from": "tests/integration/conftest.py",
-      "to": "engine/ytdlp_client.py"
+      "to": "persistence/__init__.py"
     },
     {
       "from": "tests/integration/conftest.py",
@@ -5539,6 +5888,10 @@
     },
     {
       "from": "tests/unit/adapters/ytdlp/test_ytdlp.py",
+      "to": "adapters/ytdlp/__init__.py"
+    },
+    {
+      "from": "tests/unit/adapters/ytdlp/test_ytdlp.py",
       "to": "adapters/ytdlp/searcher.py"
     },
     {
@@ -5568,14 +5921,6 @@
     {
       "from": "tests/unit/adapters/ytdlp/test_ytdlp.py",
       "to": "adapters/ytdlp/downloader.py"
-    },
-    {
-      "from": "tests/unit/adapters/ytdlp/test_ytdlp_client.py",
-      "to": "adapters/ytdlp/__init__.py"
-    },
-    {
-      "from": "tests/unit/adapters/ytdlp/test_ytdlp_client.py",
-      "to": "core/state.py"
     },
     {
       "from": "tests/unit/automation/test_find_owner_and_context_pack.py",
@@ -5634,24 +5979,104 @@
       "to": "automation/repo_map.py"
     },
     {
-      "from": "tests/unit/cache/test_resolver.py",
-      "to": "config.py"
-    },
-    {
-      "from": "tests/unit/cache/test_resolver.py",
-      "to": "cache/resolver.py"
-    },
-    {
-      "from": "tests/unit/cache/test_resolver.py",
+      "from": "tests/unit/bootstrap/test_maintenance.py",
       "to": "core/state.py"
     },
     {
-      "from": "tests/unit/cache/test_resolver.py",
-      "to": "tests/fakes/fake_media_extractor.py"
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/services.py"
     },
     {
-      "from": "tests/unit/cache/test_resolver.py",
-      "to": "tests/fakes/fake_track_repository.py"
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/maintenance.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/maintenance.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/maintenance.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_maintenance.py",
+      "to": "bootstrap/__init__.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_services.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_services.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_services.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_services.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_services.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/startup_tasks.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/startup_tasks.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/startup_tasks.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/startup_tasks.py"
+    },
+    {
+      "from": "tests/unit/bootstrap/test_startup_tasks.py",
+      "to": "bootstrap/services.py"
     },
     {
       "from": "tests/unit/core/test_command_bus.py",
@@ -5715,7 +6140,19 @@
     },
     {
       "from": "tests/unit/core/test_ports.py",
-      "to": "cache/db.py"
+      "to": "persistence/track_repo.py"
+    },
+    {
+      "from": "tests/unit/core/test_ports.py",
+      "to": "persistence/session_repo.py"
+    },
+    {
+      "from": "tests/unit/core/test_ports.py",
+      "to": "persistence/artist_repo.py"
+    },
+    {
+      "from": "tests/unit/core/test_ports.py",
+      "to": "persistence/discover_repo.py"
     },
     {
       "from": "tests/unit/core/test_security.py",
@@ -5755,7 +6192,7 @@
     },
     {
       "from": "tests/unit/engine/conftest.py",
-      "to": "cache/resolver.py"
+      "to": "persistence/stream_cache.py"
     },
     {
       "from": "tests/unit/engine/conftest.py",
@@ -5814,6 +6251,14 @@
       "to": "tests/fakes/fake_audio_player.py"
     },
     {
+      "from": "tests/unit/engine/playback/test_queue_controller.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "tests/unit/engine/playback/test_queue_controller.py",
+      "to": "tests/unit/engine/conftest.py"
+    },
+    {
       "from": "tests/unit/engine/playback/test_queue_ops.py",
       "to": "core/event_bus.py"
     },
@@ -5828,6 +6273,14 @@
     {
       "from": "tests/unit/engine/playback/test_queue_ops.py",
       "to": "engine/playback/queue_ops.py"
+    },
+    {
+      "from": "tests/unit/engine/playback/test_settings_controller.py",
+      "to": "core/events.py"
+    },
+    {
+      "from": "tests/unit/engine/playback/test_settings_controller.py",
+      "to": "core/state.py"
     },
     {
       "from": "tests/unit/engine/playback/test_track_ended_ops.py",
@@ -5859,7 +6312,7 @@
     },
     {
       "from": "tests/unit/engine/playback/test_track_loader.py",
-      "to": "cache/resolver.py"
+      "to": "persistence/stream_cache.py"
     },
     {
       "from": "tests/unit/engine/radio/test_artist_bandit.py",
@@ -5994,12 +6447,12 @@
       "to": "tests/fakes/fake_audio_player.py"
     },
     {
-      "from": "tests/unit/launcher/gui/test_app_lifecycle.py",
-      "to": "launcher/gui.py"
+      "from": "tests/unit/launcher/gui/test_app.py",
+      "to": "launcher/gui/__init__.py"
     },
     {
-      "from": "tests/unit/launcher/gui/test_app_lifecycle.py",
-      "to": "launcher/gui.py"
+      "from": "tests/unit/launcher/gui/test_app.py",
+      "to": "launcher/gui/__init__.py"
     },
     {
       "from": "tests/unit/launcher/gui/test_auth_panel.py",
@@ -6010,8 +6463,8 @@
       "to": "core/security.py"
     },
     {
-      "from": "tests/unit/launcher/gui/test_dep_checker.py",
-      "to": "launcher/gui/dep_checker.py"
+      "from": "tests/unit/launcher/test_dep_checker.py",
+      "to": "launcher/dep_checker.py"
     },
     {
       "from": "tests/unit/launcher/test_network.py",
@@ -6022,24 +6475,48 @@
       "to": "launcher/process.py"
     },
     {
+      "from": "tests/unit/launcher/test_server_lifecycle.py",
+      "to": "launcher/server_lifecycle.py"
+    },
+    {
       "from": "tests/unit/launcher/test_updater.py",
       "to": "launcher/updater.py"
     },
     {
       "from": "tests/unit/persistence/test_db.py",
-      "to": "persistence/__init__.py"
+      "to": "persistence/db.py"
     },
     {
       "from": "tests/unit/persistence/test_db.py",
-      "to": "persistence/__init__.py"
+      "to": "persistence/db.py"
     },
     {
       "from": "tests/unit/persistence/test_db.py",
-      "to": "persistence/__init__.py"
+      "to": "persistence/db.py"
     },
     {
       "from": "tests/unit/persistence/test_library_repo.py",
       "to": "persistence/library_repo.py"
+    },
+    {
+      "from": "tests/unit/persistence/test_stream_cache.py",
+      "to": "config.py"
+    },
+    {
+      "from": "tests/unit/persistence/test_stream_cache.py",
+      "to": "core/state.py"
+    },
+    {
+      "from": "tests/unit/persistence/test_stream_cache.py",
+      "to": "persistence/stream_cache.py"
+    },
+    {
+      "from": "tests/unit/persistence/test_stream_cache.py",
+      "to": "tests/fakes/fake_media_extractor.py"
+    },
+    {
+      "from": "tests/unit/persistence/test_stream_cache.py",
+      "to": "tests/fakes/fake_track_repository.py"
     },
     {
       "from": "tests/unit/persistence/test_track_repo.py",
@@ -6088,6 +6565,10 @@
     {
       "from": "tests/unit/plugins/test_sponsorblock.py",
       "to": "plugins/sponsorblock.py"
+    },
+    {
+      "from": "tests/unit/server/handlers/test_audio_stream_handler.py",
+      "to": "server/handlers/audio_stream_handler.py"
     },
     {
       "from": "tests/unit/server/handlers/test_auth.py",
@@ -6202,16 +6683,12 @@
       "to": "server/handlers/ws_queue.py"
     },
     {
-      "from": "tests/unit/server/services/test_broadcast_service.py",
-      "to": "server/services/broadcast_service.py"
-    },
-    {
-      "from": "tests/unit/server/services/test_stream_prefetch.py",
-      "to": "server/services/stream_prefetch.py"
-    },
-    {
       "from": "tests/unit/server/test_app.py",
       "to": "server/app.py"
+    },
+    {
+      "from": "tests/unit/server/test_broadcast_service.py",
+      "to": "server/broadcast_service.py"
     },
     {
       "from": "tests/unit/server/test_connection_manager.py",
@@ -6230,12 +6707,20 @@
       "to": "server/serializers.py"
     },
     {
+      "from": "tests/unit/services/test_discover_ranking.py",
+      "to": "services/discover_ranking.py"
+    },
+    {
       "from": "tests/unit/services/test_discover_service.py",
       "to": "core/state.py"
     },
     {
       "from": "tests/unit/services/test_discover_service.py",
       "to": "services/discover_service.py"
+    },
+    {
+      "from": "tests/unit/services/test_stream_prefetch.py",
+      "to": "services/stream_prefetch.py"
     },
     {
       "from": "tests/unit/test_config.py",
@@ -6263,6 +6748,10 @@
     },
     {
       "from": "tests/unit/test_main.py",
+      "to": "bootstrap/services.py"
+    },
+    {
+      "from": "tests/unit/test_main.py",
       "to": "main.py"
     },
     {
@@ -6271,37 +6760,16 @@
     }
   ],
   "events": {
-    "LogMessageEvent": {
+    "QueueUpdatedEvent": {
       "publishers": [
-        "server/handlers/http.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/sleep_timer.py",
-        "engine/sleep_timer.py",
-        "engine/sleep_timer.py",
-        "engine/volume_service.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
         "engine/playback/track_ended_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
         "engine/radio/engine.py",
         "engine/radio/engine.py",
         "engine/radio/engine.py",
@@ -6313,42 +6781,102 @@
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "plugins/sponsorblock.py"
-      ],
-      "subscribers": [
-        "server/handlers/event_listeners.py",
-        "tests/integration/test_download_flow.py",
-        "tests/unit/engine/test_volume_service.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/test_download_manager.py",
-        "tests/unit/engine/playback/test_controller.py",
-        "tests/unit/engine/playback/test_controller.py",
-        "tests/unit/engine/playback/test_controller.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py"
-      ]
-    },
-    "TrackStartedEvent": {
-      "publishers": [
+        "engine/queue_manager.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
         "engine/playback/controller.py"
       ],
       "subscribers": [
+        "tests/unit/engine/test_queue_manager.py",
+        "tests/unit/engine/test_queue_manager.py",
         "server/handlers/event_listeners.py",
-        "tests/integration/test_radio_flow.py",
-        "tests/integration/test_playback_flow.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/engine/playback/test_queue_ops.py"
+      ]
+    },
+    "DownloadCompleteEvent": {
+      "publishers": [
+        "engine/download_manager.py"
+      ],
+      "subscribers": [
+        "tests/integration/test_download_flow.py",
+        "tests/unit/engine/test_download_manager.py",
+        "server/handlers/event_listeners.py"
+      ]
+    },
+    "LogMessageEvent": {
+      "publishers": [
+        "plugins/sponsorblock.py",
+        "engine/playback/track_ended_ops.py",
+        "engine/sleep_timer.py",
+        "engine/sleep_timer.py",
+        "engine/sleep_timer.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "engine/radio/engine.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "server/handlers/audio_stream_handler.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/queue_ops.py",
+        "engine/volume_service.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py",
+        "engine/playback/controller.py"
+      ],
+      "subscribers": [
+        "tests/integration/test_download_flow.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "server/handlers/event_listeners.py",
+        "tests/unit/engine/test_volume_service.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
+        "tests/unit/core/test_event_bus.py",
         "tests/unit/engine/playback/test_controller.py",
-        "plugins/notifications.py"
+        "tests/unit/engine/playback/test_controller.py",
+        "tests/unit/engine/playback/test_controller.py"
       ]
     },
     "TrackProgressEvent": {
@@ -6358,87 +6886,36 @@
         "adapters/mpv/observer.py"
       ],
       "subscribers": [
-        "server/handlers/event_listeners.py",
-        "engine/playback/controller.py",
+        "plugins/sponsorblock.py",
         "plugins/lyrics_sync.py",
-        "plugins/sponsorblock.py"
-      ]
-    },
-    "QueueUpdatedEvent": {
-      "publishers": [
-        "engine/queue_manager.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/controller.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "engine/radio/engine.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py"
-      ],
-      "subscribers": [
         "server/handlers/event_listeners.py",
-        "tests/unit/engine/test_queue_manager.py",
-        "tests/unit/engine/test_queue_manager.py",
-        "tests/unit/engine/playback/test_queue_ops.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py",
-        "tests/unit/core/test_event_bus.py"
+        "engine/playback/controller.py"
       ]
     },
     "LyricsUpdatedEvent": {
       "publishers": [
-        "engine/playback/controller.py",
         "plugins/lyrics_sync.py",
+        "engine/playback/settings_controller.py",
         "plugins/lyrics_fetcher.py",
         "plugins/lyrics_fetcher.py",
         "plugins/lyrics_fetcher.py"
       ],
       "subscribers": [
+        "tests/unit/plugins/test_lyrics_sync.py",
         "server/handlers/event_listeners.py",
-        "tests/unit/plugins/test_lyrics_sync.py"
+        "tests/unit/engine/playback/test_settings_controller.py"
       ]
     },
-    "DownloadCompleteEvent": {
+    "TrackStartedEvent": {
       "publishers": [
-        "engine/download_manager.py"
+        "engine/playback/controller.py"
       ],
       "subscribers": [
+        "tests/integration/test_radio_flow.py",
+        "plugins/notifications.py",
         "server/handlers/event_listeners.py",
-        "tests/integration/test_download_flow.py",
-        "tests/unit/engine/test_download_manager.py"
-      ]
-    },
-    "TrackPauseChangedEvent": {
-      "publishers": [
-        "engine/playback/controller.py",
-        "tests/unit/engine/playback/test_controller.py",
-        "adapters/mpv/observer.py"
-      ],
-      "subscribers": [
-        "server/handlers/event_listeners.py",
-        "engine/playback/controller.py",
         "tests/integration/test_playback_flow.py",
-        "plugins/notifications.py"
+        "tests/unit/engine/playback/test_controller.py"
       ]
     },
     "DownloadProgressEvent": {
@@ -6446,8 +6923,21 @@
         "engine/download_manager.py"
       ],
       "subscribers": [
+        "tests/unit/engine/test_download_manager.py",
+        "server/handlers/event_listeners.py"
+      ]
+    },
+    "TrackPauseChangedEvent": {
+      "publishers": [
+        "adapters/mpv/observer.py",
+        "tests/unit/engine/playback/test_controller.py",
+        "engine/playback/controller.py"
+      ],
+      "subscribers": [
+        "plugins/notifications.py",
         "server/handlers/event_listeners.py",
-        "tests/unit/engine/test_download_manager.py"
+        "tests/integration/test_playback_flow.py",
+        "engine/playback/controller.py"
       ]
     },
     "TrackEndedEvent": {
@@ -6459,7 +6949,7 @@
         "engine/playback/controller.py"
       ]
     },
-    "TrackDurationEvent": {
+    "MpvReconnectedEvent": {
       "publishers": [
         "adapters/mpv/observer.py"
       ],
@@ -6467,7 +6957,7 @@
         "engine/playback/controller.py"
       ]
     },
-    "MpvReconnectedEvent": {
+    "TrackDurationEvent": {
       "publishers": [
         "adapters/mpv/observer.py"
       ],
@@ -6496,12 +6986,12 @@
     "automation/verify_docs/checks_coverage.py",
     "automation/verify_docs/checks_docs.py",
     "automation/verify_docs/checks_files.py",
-    "automation/verify_docs/helpers.py",
+    "automation/verify_docs/doc_parsing_utils.py",
     "automation/verify_docs/render.py",
     "automation/verify_security.py",
     "automation/verify_structure.py",
+    "launcher/auth_service.py",
     "launcher/gui/app.py",
-    "plugins/lyrics.py",
     "scratch/check_db.py",
     "start.py"
   ]

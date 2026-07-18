@@ -62,7 +62,7 @@ from verify_docs.checks_docs import (
     check_patchlog,
 )
 from verify_docs.checks_files import check_empty_packages, check_large_files
-from verify_docs.helpers import STALE_DAYS_DEFAULT
+from verify_docs.doc_parsing_utils import STALE_DAYS_DEFAULT
 from verify_docs.render import render_json, render_summary
 
 # ---------------------------------------------------------------------------

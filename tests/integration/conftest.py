@@ -3,7 +3,7 @@ Module: tests.integration.conftest
 
 Purpose:
     Shared fixtures for integration tests. Wires up real components
-    (EventBus, MpvController, Database, YtDlpClient, PlaybackController)
+    (EventBus, MpvController, Repositories, YtDlpClient, PlaybackController)
     but points them to temporary directories and memory databases to
     prevent side effects on the dev environment.
 
@@ -11,18 +11,18 @@ Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - cache.db
-    - cache.resolver
+    - adapters.mpv
+    - adapters.ytdlp
+    - persistence.stream_cache
     - core.event_bus
     - core.state
     - engine.command_router
     - engine.download_manager
-    - engine.mpv_controller
     - engine.playback.controller
     - engine.queue_manager
-    - engine.radio_engine
+    - engine.radio
     - engine.volume_service
-    - engine.ytdlp_client
+    - persistence
     - plugins.lyrics_fetcher
     - plugins.sponsorblock
     - server.app
@@ -44,18 +44,18 @@ from pathlib import Path
 import aiohttp
 import pytest
 
-from cache.db import Database
-from cache.resolver import CacheResolver
+from adapters.mpv import MpvController
+from adapters.ytdlp import YtDlpClient
+from persistence.stream_cache import CacheResolver, ResolverDbCompat
 from core.event_bus import bus
 from core.state import AppState
 from engine.command_router import CommandRouter
 from engine.download_manager import DownloadManager
-from engine.mpv_controller import MpvController
 from engine.playback.controller import PlaybackController
 from engine.queue_manager import QueueMode
-from engine.radio_engine import RadioMode
+from engine.radio import RadioMode
 from engine.volume_service import VolumeService
-from engine.ytdlp_client import YtDlpClient
+from persistence import Repositories
 from plugins.lyrics_fetcher import LyricsFetcher
 from plugins.sponsorblock import SponsorBlockHandler
 from server.app import create_app
@@ -98,7 +98,7 @@ async def integration_app(tmp_path, monkeypatch):
         pytest.skip("yt-dlp not available in test environment, skipping integration test.")
 
     # 1. Initialize real DB in memory
-    db = Database(db_path=Path(":memory:"))
+    db = Repositories(db_path=Path(":memory:"))
     await db.init()
 
     # 2. Initialize real MPV (will spawn subprocess)
@@ -117,13 +117,13 @@ async def integration_app(tmp_path, monkeypatch):
     ytdlp = YtDlpClient()
 
     http_session = aiohttp.ClientSession()
-    resolver = CacheResolver(db, ytdlp)
+    resolver = CacheResolver(ResolverDbCompat(db.tracks, db.artists, db.discover), ytdlp)
 
     sponsorblock = SponsorBlockHandler(mpv, state=state, session=http_session, event_bus=bus)
     lyrics_fetcher = LyricsFetcher(state, session=http_session, event_bus=bus)
 
     queue_mode = QueueMode()
-    radio_mode = RadioMode(ytdlp, state, db=db)
+    radio_mode = RadioMode(ytdlp, state, artists=db.artists, library=db.library)
 
     volume_service = VolumeService(bus, mpv, state)
     playback_controller = PlaybackController(

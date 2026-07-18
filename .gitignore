@@ -21,6 +21,7 @@ cache/*.db
 cache/*.db-shm
 cache/*.db-wal
 cache/admin_password.txt
+instance/
 
 # Database utama (berisi session tokens — jangan commit)
 # Data artis di-seed ulang via: python data/import_artists.py

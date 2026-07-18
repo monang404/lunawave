@@ -1,0 +1,74 @@
+{
+  "_meta": {
+    "generated_at": 1784391261.572828,
+    "source_mtimes": {
+      "server/handler.py": 1784391261.5716374,
+      "engine/player.py": 1784391261.5715065,
+      "core/bus.py": 1784391261.5714324
+    }
+  },
+  "files": {
+    "engine/player.py": {
+      "layer": "engine",
+      "classes": [
+        "DownloadCompleteEvent",
+        "Player"
+      ],
+      "functions": [
+        "finish"
+      ],
+      "imports": [
+        "core.bus"
+      ],
+      "publishes": [
+        "DownloadCompleteEvent"
+      ],
+      "subscribes": [],
+      "loc": 9,
+      "docstring_purpose": "",
+      "reverse_deps": [
+        "server/handler.py"
+      ]
+    },
+    "core/bus.py": {
+      "layer": "core",
+      "classes": [
+        "EventBus"
+      ],
+      "functions": [
+        "publish",
+        "subscribe"
+      ],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 6,
+      "docstring_purpose": "",
+      "reverse_deps": [
+        "engine/player.py",
+        "server/handler.py"
+      ]
+    },
+    "server/handler.py": {
+      "layer": "server",
+      "classes": [
+        "Handler"
+      ],
+      "functions": [
+        "setup",
+        "on_done"
+      ],
+      "imports": [
+        "core.bus",
+        "engine.player"
+      ],
+      "publishes": [],
+      "subscribes": [
+        "DownloadCompleteEvent"
+      ],
+      "loc": 9,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    }
+  }
+}

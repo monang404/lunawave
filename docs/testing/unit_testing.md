@@ -123,8 +123,8 @@ Layer wiring — sebagian besar `Sedang` karena membutuhkan WebSocket/HTTP mock.
 | `server/handlers/ws_queue.py` | `tests/unit/server/handlers/test_ws_queue.py` | Sedang |
 | `server/handlers/ws_discovery.py` | `tests/unit/server/handlers/test_ws_discovery.py` | Sedang |
 | `server/handlers/ws_download.py` | `tests/unit/server/handlers/test_ws_download.py` | Sedang |
-| `server/services/broadcast_service.py` | `tests/unit/server/services/test_broadcast_service.py` | Sedang |
-| `server/services/stream_prefetch.py` | `tests/unit/server/services/test_stream_prefetch.py` | Sedang |
+| `server/broadcast_service.py` | `tests/unit/server/test_broadcast_service.py` | Sedang |
+| `services/stream_prefetch.py` | `tests/unit/services/test_stream_prefetch.py` | Sedang |
 
 **Total: 14 file test**
 

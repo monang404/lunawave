@@ -13,7 +13,7 @@ Depends on:
     - core.state
     - engine.playback
     - engine.radio.artist_selector
-    - engine.radio.common
+    - engine.radio.radio_config
     - engine.radio.prefetcher
 
 Subscribes to:
@@ -32,10 +32,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from core.events import LogMessageEvent, QueueUpdatedEvent
-from core.ports import MediaExtractorPort
+from core.ports import ArtistRepositoryPort, LibraryRepositoryPort, MediaExtractorPort
 from core.state import AppState, PlayerStatus
 from engine.radio.artist_selector import ArtistSelector
-from engine.radio.common import ARTISTS_PER_BATCH, ARTISTS_QUICK, track_task
+from engine.radio.radio_config import ARTISTS_PER_BATCH, ARTISTS_QUICK, track_task
 from engine.radio.prefetcher import RadioPrefetcher
 
 if TYPE_CHECKING:
@@ -49,12 +49,17 @@ class RadioMode:
     Orchestrator radio: activate, deactivate, auto-next.
     """
 
-    def __init__(self, ytdlp: MediaExtractorPort, state: AppState, db=None):
+    def __init__(
+        self,
+        ytdlp: MediaExtractorPort,
+        state: AppState,
+        artists: ArtistRepositoryPort | None = None,
+        library: LibraryRepositoryPort | None = None,
+    ):
         self.ytdlp = ytdlp
         self.state = state
-        self.db = db
 
-        self.artist_selector = ArtistSelector(db, state)
+        self.artist_selector = ArtistSelector(artists, library, state)
         self.prefetcher = RadioPrefetcher(state, self.artist_selector)
 
         self._bg_tasks: set = set()

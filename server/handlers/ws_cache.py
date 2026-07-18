@@ -2,7 +2,14 @@
 Module: server.handlers.ws_cache
 
 Purpose:
-    WebSocket handler for managing cache queries and clearing.
+    WebSocket handler for managing the downloaded MP3 file cache
+    (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.
+
+    Note (T2.6): this module is unrelated to the stream-URL cache moved to
+    `persistence/stream_cache.py`. It was kept under its original name
+    (`ws_cache.py`, not renamed to `ws_stream_cache.py`) because it never
+    touched `cache/resolver.py` in the first place — see
+    `docs/backend/caching.md` for the two-cache distinction and rationale.
 
 Responsibilities:
     - Get cache size

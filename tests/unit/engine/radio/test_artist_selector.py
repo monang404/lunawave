@@ -49,7 +49,7 @@ class MockDB:
 async def test_ensure_artists_loaded():
     state = AppState()
     db = MockDB()
-    selector = ArtistSelector(db, state)
+    selector = ArtistSelector(db, db, state)
 
     await selector.ensure_artists_loaded()
     assert "Artist A" in selector._seed_artists
@@ -62,7 +62,7 @@ async def test_build_exclusion_set():
     state.current_track = TrackInfo(video_id="c1", title="C", artist="B", duration=100)
     state.history.append(TrackInfo(video_id="h1", title="H", artist="C", duration=100))
 
-    selector = ArtistSelector(None, state)
+    selector = ArtistSelector(None, None, state)
     exclusions = selector.build_exclusion_set()
 
     assert exclusions == {"q1", "c1", "h1"}
@@ -72,7 +72,7 @@ async def test_build_exclusion_set():
 async def test_gather_batch():
     state = AppState()
     db = MockDB()
-    selector = ArtistSelector(db, state)
+    selector = ArtistSelector(db, db, state)
     await selector.ensure_artists_loaded()
 
     batch = await selector.gather_batch(prioritized_artist="Artist A")

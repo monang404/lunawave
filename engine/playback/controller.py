@@ -13,7 +13,7 @@ Responsibilities:
 Depends on:
     - core.event_bus, core.events, core.ports, core.state, core.task_utils,
       engine.playback.mode_ops, engine.playback.queue_ops,
-      engine.playback.track_loader, engine.queue_manager, engine.radio_engine
+      engine.playback.track_loader, engine.queue_manager, engine.radio
 
 Subscribes to:
     TrackEndedEvent, TrackProgressEvent, TrackPauseChangedEvent,
@@ -49,11 +49,13 @@ from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, St
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 from engine.playback.mode_ops import ModeOps
+from engine.playback.queue_controller import QueueController
 from engine.playback.queue_ops import QueueOps
+from engine.playback.settings_controller import SettingsController
 from engine.playback.track_ended_ops import TrackEndedOps, poll_duration
 from engine.playback.track_loader import TrackLoader
 from engine.queue_manager import QueueMode
-from engine.radio_engine import RadioMode
+from engine.radio import RadioMode
 
 logger = structlog.get_logger(__name__)
 
@@ -86,6 +88,13 @@ class PlaybackController:
         self._queue_ops = QueueOps(self.state, self.bus, self._lock)
         self._mode_ops = ModeOps(self.state, self.bus, self._lock, self.mpv, self.radio_mode)
         self._track_ended_ops = TrackEndedOps(self)
+        # PATCH: T2.3.1/T2.3.2 — QueueController dan SettingsController
+        # menangani command CMD_QUEUE_* dan CMD_SET_*/CMD_RADIO_RANDOMIZE/
+        # CMD_LYRICS_OFFSET (diekstrak dari PlaybackController sesuai
+        # IMPLEMENTATION_PLAN.md §2.3; controller.py ini adalah izin
+        # eksplisit untuk menyentuh file ❄️ Frozen ini).
+        self._queue_controller = QueueController(self)
+        self._settings_controller = SettingsController(self)
         self._retry_count = 0
         self._loading = False
         self._last_position_save = 0.0
@@ -339,19 +348,7 @@ class PlaybackController:
             await self._advance_to_next()
 
     async def _advance_to_next(self):
-        # Track Completion/Skip for Bandit (Phase 5)
-        if self.state.current_track and self.state.duration > 0:
-            if self.state.position >= self.state.duration * 0.9:
-                safe_create_task(
-                    self.resolver.db.record_completion(self.state.current_track.artist)
-                )
-            else:
-                safe_create_task(self.resolver.db.record_skip(self.state.current_track.artist))
-
-        if self.state.playback_mode == PlaybackMode.QUEUE:
-            await self.queue_mode.next(self)
-        else:
-            await self.radio_mode.next(self)
+        await self._queue_controller.advance_to_next()
 
     async def _on_prev(self, data=None):
         async with self._lock:
@@ -390,39 +387,25 @@ class PlaybackController:
             self.state.position = position
 
     async def _on_set_mode(self, mode: PlaybackMode):
-        should_activate_radio = await self._mode_ops.set_mode(mode)
-        if should_activate_radio:
-            await self.radio_mode.on_activated(self)
+        await self._settings_controller.on_set_mode(mode)
 
     async def _on_queue_select(self, index: int):
-        track = await self._queue_ops.queue_select(index)
-        if track:
-            await self.play_track(track)
+        await self._queue_controller.on_queue_select(index)
 
     async def _on_queue_remove(self, index: int):
-        await self._queue_ops.remove_track(index)
+        await self._queue_controller.on_queue_remove(index)
 
     async def _on_queue_add(self, track: TrackInfo):
-        await self._queue_ops.add_track(track)
+        await self._queue_controller.on_queue_add(track)
 
     async def _on_queue_replace(self, tracks: list[TrackInfo]):
-        await self._queue_ops.replace_queue(tracks)
+        await self._queue_controller.on_queue_replace(tracks)
 
     async def _on_queue_reorder(self, data: dict):
-        from_index = data.get("from_index")
-        to_index = data.get("to_index")
-        if from_index is not None and to_index is not None:
-            await self._queue_ops.reorder(from_index, to_index)
+        await self._queue_controller.on_queue_reorder(data)
 
     async def _on_radio_randomize(self, data=None):
-        should_fetch, seed = await self._mode_ops.randomize_radio(data)
-        if should_fetch:
-            from core.task_utils import safe_create_task
-
-            safe_create_task(
-                self.radio_mode._fetch_and_play_initial(self, seed_artist=seed),
-                name="radio_randomize_fetch",
-            )
+        await self._settings_controller.on_radio_randomize(data)
 
     async def _on_pause_changed(self, event: TrackPauseChangedEvent):
         if self._loading:
@@ -438,17 +421,13 @@ class PlaybackController:
                 self.state.status = PlayerStatus.PLAYING
 
     async def _on_set_output(self, output: AudioOutput):
-        await self._mode_ops.set_output(output)
+        await self._settings_controller.on_set_output(output)
 
     async def _on_set_sponsorblock(self, enabled: bool):
-        await self._mode_ops.toggle_sponsorblock(enabled)
+        await self._settings_controller.on_set_sponsorblock(enabled)
 
     async def _on_set_loudness_normalization(self, enabled: bool):
-        await self._mode_ops.toggle_loudness_normalization(enabled)
+        await self._settings_controller.on_set_loudness_normalization(enabled)
 
     async def _on_lyrics_offset(self, data: dict):
-        offset = data.get("offset", 0.0)
-        self.state.lyrics_offset = float(offset)
-        from core.events import LyricsUpdatedEvent
-
-        await self.bus.publish(LyricsUpdatedEvent())
+        await self._settings_controller.on_lyrics_offset(data)

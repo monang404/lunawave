@@ -106,7 +106,7 @@ async def test_handle_playback_command_other_commands(mock_execute):
     mock_execute.reset_mock()
 
     await handle_playback_command("prev", {})
-    mock_execute.assert_called_once_with(CMD_PREV)
+    mock_execute.assert_called_once_with(CMD_PREV, {})
     mock_execute.reset_mock()
 
     await handle_playback_command("stop", {})

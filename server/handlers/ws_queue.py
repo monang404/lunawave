@@ -36,7 +36,7 @@ from core.state import PlaybackMode
 from server.serializers import dict_to_track
 
 
-async def handle_queue_command(action: str, data: dict, db):
+async def handle_queue_command(action: str, data: dict, artists, genres):
     if action == "queue_select":
         index = data.get("index", 0)
         await command_bus.execute(CMD_QUEUE_SELECT, int(index))
@@ -58,9 +58,9 @@ async def handle_queue_command(action: str, data: dict, db):
     elif action == "enqueue_artist_songs":
         artist_name = data.get("artist")
         if artist_name:
-            songs = await db.get_artist_songs_strict(artist=artist_name, limit=10)
+            songs = await artists.get_artist_songs_strict(artist=artist_name, limit=10)
             if songs:
-                await db.increment_artist_click(artist_name)
+                await artists.increment_artist_click(artist_name)
                 first_track, rest_tracks = songs[0], songs[1:]
                 await command_bus.execute(CMD_QUEUE_REPLACE, rest_tracks)
                 await command_bus.execute(CMD_PLAY_TRACK, first_track)
@@ -68,8 +68,8 @@ async def handle_queue_command(action: str, data: dict, db):
     elif action == "enqueue_genre_songs":
         genre_name = data.get("genre")
         if genre_name:
-            await db.increment_genre_click(genre_name)
-            songs = await db.get_genre_songs(genre_name, total_limit=12, max_per_artist=3)
+            await genres.increment_genre_click(genre_name)
+            songs = await genres.get_genre_songs(genre_name, total_limit=12, max_per_artist=3)
             if songs:
                 await command_bus.execute(CMD_SET_MODE, PlaybackMode.QUEUE)
                 await command_bus.execute(CMD_QUEUE_REPLACE, songs)

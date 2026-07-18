@@ -12,7 +12,7 @@ Responsibilities:
       correct file, regardless of the container yt-dlp chose.
 
 Depends on:
-    - adapters.ytdlp.common
+    - adapters.ytdlp.ydl_options
 
 Subscribes to:
     None
@@ -28,7 +28,7 @@ import asyncio
 import glob
 import re
 
-from adapters.ytdlp.common import YDL_OPTS_INFO
+from adapters.ytdlp.ydl_options import YDL_OPTS_INFO
 from config import CACHE_DIR
 
 

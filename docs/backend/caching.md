@@ -10,12 +10,26 @@ LunaWave memiliki dua jenis cache yang berbeda tujuan:
 
 | Cache | Lokasi | Isi | Persisten |
 |---|---|---|---|
-| Stream URL Cache | `cache/resolver.py` | URL stream yt-dlp (TTL pendek) | Opsional (SQLite) |
+| Stream URL Cache | `persistence/stream_cache.py` (T2.6: dipindah dari `cache/resolver.py`) | URL stream yt-dlp (TTL pendek) | Opsional (SQLite) |
 | MP3 File Cache | `cache/mp3/` | File MP3 yang sudah didownload | ✅ Permanen |
+
+**Catatan T2.6:** folder `cache/` (paket Python) sudah dibubarkan — isinya
+dipindah ke `persistence/stream_cache.py`, dan `cache/pb_html.txt` (template
+HTML statis, tidak ada referensi aktif di kode) dipindah ke `data/pb_html.txt`.
+Yang tersisa di `cache/` hanyalah direktori/berkas runtime yang sudah
+di-gitignore sejak awal (`cache/mp3/`, `cache/sockets/`,
+`cache/admin_password.txt`) — bukan bagian dari paket Python, jadi di luar
+cakupan pemindahan ini dan sengaja tidak disentuh.
+
+`server/handlers/ws_cache.py` **tidak** di-rename menjadi `ws_stream_cache.py`
+meski namanya mirip: modul ini menangani cache file MP3 (`DOWNLOAD_DIR` /
+`cache/mp3/`), bukan stream-URL cache, dan tidak pernah mengimpor
+`cache/resolver.py`. Docstring modul itu diperjelas untuk mencegah kerancuan
+di masa depan.
 
 ---
 
-## Stream URL Cache (`cache/resolver.py`)
+## Stream URL Cache (`persistence/stream_cache.py`)
 
 ### Masalah yang Diselesaikan
 
@@ -67,7 +81,7 @@ class CacheResolver:
     async def is_cached(self, video_id: str) -> bool
 ```
 
-Test → `tests/unit/cache/test_resolver.py`
+Test → `tests/unit/persistence/test_stream_cache.py`
 
 ---
 
@@ -135,7 +149,7 @@ CMD_DOWNLOAD_START
         ▼
 download_manager.py
         │
-        ├── cache/resolver.py (resolve URL dulu)
+        ├── persistence/stream_cache.py (resolve URL dulu)
         │
         ├── adapters/ytdlp/downloader.py (download file)
         │       └── output → cache/mp3/{video_id}.mp3
@@ -149,7 +163,7 @@ engine/playback/track_loader.py
         │
         ├── persistence/track_repo.py.file_path? → load dari cache/mp3/ (lokal)
         │
-        └── cache/resolver.py.get_stream_url()  → stream dari yt-dlp
+        └── persistence/stream_cache.py.get_stream_url()  → stream dari yt-dlp
 ```
 
 ---

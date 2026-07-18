@@ -25,13 +25,13 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 54 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 108 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 56 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 111 |
 | Total file `.js` (ekskl. `.min.js`) | 36 |
 | Total file `.css` (ekskl. `.min.css`) | 22 |
-| Total class (Python) | 83 |
-| Total function/method (Python) | 462 |
-| Total baris Python | 10,747 |
+| Total class (Python) | 89 |
+| Total function/method (Python) | 493 |
+| Total baris Python | 11,337 |
 | Total baris JS (web/) | 3,968 |
 | Total baris CSS (web/) | 3,947 |
 | Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
@@ -41,11 +41,11 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 473 ⚠️ |
-| `main.py` | 360 |
-| `launcher/gui/ui_builder.py` | 355 |
-| `launcher/gui/app.py` | 319 |
-| `launcher/gui/auth_panel.py` | 277 |
+| `engine/playback/controller.py` | 433 |
+| `launcher/gui/ui_builder.py` | 363 |
+| `launcher/gui/app.py` | 309 |
+| `launcher/gui/auth_panel.py` | 264 |
+| `persistence/discover_repo.py` | 254 |
 <!-- END:GENERATED -->
 
 ---
