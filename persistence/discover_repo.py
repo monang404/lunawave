@@ -210,24 +210,46 @@ class DiscoverRepository:
         decade: int | None = None,
         limit: int = 20,
     ) -> list[dict]:
-        """Quick Search Discover: cari track berdasarkan judul/nama artis
-        (LIKE, case-insensitive bawaan SQLite untuk ASCII), dengan filter
-        opsional kategori (Solo/Band, K1) dan/atau dekade (K2).
+        """Quick Search Discover: cari lagu berdasarkan judul/nama artis,
+        dengan matching ala mesin pencari (tokenized, bukan harus frasa
+        eksak) dan cakupan gabungan 2 sumber data, dengan filter opsional
+        kategori (Solo/Band, K1) dan/atau dekade (K2).
 
-        Kedua filter menurunkan cakupan asli (genre track-level, tahun
-        rilis per-track) ke pola yang SUDAH ADA di filter-bar Discover:
-        kategori & tahun_aktif hidup di level `artists`, bukan `tracks`,
-        dan `tracks.artist` bukan foreign key ke `artists.id` (join by
-        nama tidak reliable secara skema). Untuk menghindari JOIN
-        `artists`/`artist_genres` di method ini (lihat K1), filter
-        dilakukan lewat subquery `IN` by nama artis alih-alih JOIN —
-        efeknya best-effort match by name, sama seperti keterbatasan yang
-        sudah didokumentasikan di `get_taste_spectrum()`.
+        Kenapa 2 sumber (BUG: sebelumnya cuma `tracks`, lihat
+        PATCH-2026-07-19 investigasi "1 artis harusnya 10 lagu, kok cuma
+        muncul 1"):
+        - `tracks`: cache/history video yang SUDAH pernah diputar/dicoba
+          resolve. `tracks.artist` diisi dari uploader/channel YouTube
+          (lihat adapters/ytdlp/searcher.py: artist=entry.get("uploader")),
+          BUKAN nama artis kanonik -- best-effort, bisa meleset kalau video
+          diunggah ulang channel lain.
+        - `songs` JOIN `artists`: katalog kurasi per-artis (artist_id FK
+          reliable ke artists.id) -- sumber yang sama dipakai
+          get_artist_detail() untuk nampilin "hingga 10 lagu" per artis.
+          Banyak lagu di sini BELUM PERNAH di-cache ke `tracks` (belum
+          pernah diputar), jadi tanpa sumber ini search cuma nemu sebagian
+          kecil dari katalog yang sebenarnya ada.
+        Baris dengan video_id yang sama di kedua sumber: versi `tracks`
+        dipakai (metadata lebih lengkap -- duration/view_count real,
+        is_favorite, is_cached), versi `songs` di-skip.
 
-        Tidak ada skor/ranking di layer ini: hasil diurut alfabetis by
-        judul saja. Ranking (kalau nanti dibutuhkan) adalah tugas layer
-        services, bukan repo ini (pola sama seperti method lain di file
-        ini, lihat docstring modul).
+        Kenapa tokenized (bukan LIKE frasa utuh seperti sebelumnya): query
+        dipecah per kata, tiap kata wajib match (AND) di title ATAU artist,
+        tapi urutan/posisi antar kata bebas -- supaya "fals iwan" tetap
+        ketemu "Iwan Fals", dan satu kata yang typo di tengah frasa panjang
+        tidak menggagalkan seluruh frasa seperti model lama.
+
+        Untuk kategori/decade: filter pada bagian `songs` JOIN langsung ke
+        `artists` (reliable). Filter pada bagian `tracks` tetap best-effort
+        subquery by nama seperti sebelumnya (keterbatasan sama seperti
+        get_taste_spectrum(), tracks.artist bukan FK ke artists.id).
+
+        Ranking: hasil yang match FRASA UTUH (bukan cuma token terpisah)
+        diprioritaskan di atas hasil token-only match, baru diurut
+        alfabetis di dalam masing-masing kelompok. Tidak ada skor
+        relevansi yang lebih canggih (mis. typo-tolerance/FTS5) di layer
+        ini -- kalau nanti dibutuhkan, itu perluasan terpisah, bukan bagian
+        patch ini (hindari 2 refactor sekaligus, lihat AI_CONTEXT.md).
 
         Return [] untuk query kosong/whitespace-only, tanpa query DB.
         """
@@ -238,43 +260,113 @@ class DiscoverRepository:
         if not q:
             return []
 
-        like_pattern = f"%{q}%"
-        conditions = ["(t.title LIKE ? OR t.artist LIKE ?)"]
-        params: list = [like_pattern, like_pattern]
+        tokens = q.split()
+        if not tokens:
+            return []
 
+        def _token_conditions(title_col: str, artist_col: str) -> tuple[list[str], list]:
+            conds: list[str] = []
+            params: list = []
+            for tok in tokens:
+                pat = f"%{tok}%"
+                conds.append(f"({title_col} LIKE ? OR {artist_col} LIKE ?)")
+                params.extend([pat, pat])
+            return conds, params
+
+        # --- Sumber 1: tracks (cache/history, metadata lengkap) ---
+        track_conds, track_params = _token_conditions("t.title", "t.artist")
         if kategori:
-            conditions.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
-            params.append(kategori)
-
+            track_conds.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
+            track_params.append(kategori)
         if decade is not None:
-            conditions.append(
+            track_conds.append(
                 "t.artist IN ("
                 "SELECT nama FROM artists "
                 "WHERE CAST(tahun_aktif AS INTEGER) >= ? "
                 "AND CAST(tahun_aktif AS INTEGER) < ?"
                 ")"
             )
-            params.extend([decade, decade + 10])
+            track_params.extend([decade, decade + 10])
 
-        where_clause = " AND ".join(conditions)
-        sql = f"""
+        sql_tracks = f"""
             SELECT video_id, title, artist, duration, thumbnail,
                    local_path, view_count, is_favorite
             FROM tracks t
-            WHERE {where_clause}
+            WHERE {" AND ".join(track_conds)}
             ORDER BY t.title ASC
             LIMIT ?
         """
-        params.append(limit)
+        track_params_full = track_params + [limit]
+
+        # --- Sumber 2: songs JOIN artists (katalog kurasi) ---
+        song_conds, song_params = _token_conditions("s.judul", "a.nama")
+        if kategori:
+            song_conds.append("a.kategori = ?")
+            song_params.append(kategori)
+        if decade is not None:
+            song_conds.append(
+                "CAST(a.tahun_aktif AS INTEGER) >= ? AND CAST(a.tahun_aktif AS INTEGER) < ?"
+            )
+            song_params.extend([decade, decade + 10])
+
+        sql_songs = f"""
+            SELECT s.youtube_id AS video_id, s.judul AS title, a.nama AS artist,
+                   s.duration AS duration
+            FROM songs s
+            JOIN artists a ON a.id = s.artist_id
+            WHERE {" AND ".join(song_conds)}
+            ORDER BY s.judul ASC
+            LIMIT ?
+        """
+        song_params_full = song_params + [limit]
 
         try:
-            async with self._conn.execute(sql, params) as cursor:
-                rows = [dict(r) for r in await cursor.fetchall()]
+            async with self._conn.execute(sql_tracks, track_params_full) as cursor:
+                track_rows = [dict(r) for r in await cursor.fetchall()]
+            async with self._conn.execute(sql_songs, song_params_full) as cursor:
+                song_rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error searching tracks: {e}")
             return []
 
-        return rows
+        # --- Gabung + dedup (tracks menang atas songs untuk video_id sama) ---
+        merged: dict[str, dict] = {}
+        for r in track_rows:
+            merged[r["video_id"]] = {
+                "video_id": r["video_id"],
+                "title": r["title"],
+                "artist": r["artist"],
+                "duration": r["duration"],
+                "thumbnail": r["thumbnail"],
+                "local_path": r["local_path"],
+                "view_count": r["view_count"],
+                "is_favorite": r["is_favorite"],
+            }
+        for r in song_rows:
+            if r["video_id"] in merged:
+                continue
+            merged[r["video_id"]] = {
+                "video_id": r["video_id"],
+                "title": r["title"],
+                "artist": r["artist"],
+                "duration": r["duration"],
+                "thumbnail": f"https://i.ytimg.com/vi/{r['video_id']}/mqdefault.jpg",
+                "local_path": None,
+                "view_count": None,
+                "is_favorite": 0,
+            }
+
+        # --- Ranking: frasa utuh > token-only, lalu alfabetis ---
+        full_phrase = q.lower()
+
+        def _sort_key(row: dict):
+            title_l = (row["title"] or "").lower()
+            artist_l = (row["artist"] or "").lower()
+            is_phrase_match = full_phrase in title_l or full_phrase in artist_l
+            return (0 if is_phrase_match else 1, title_l)
+
+        rows = sorted(merged.values(), key=_sort_key)
+        return rows[:limit]
 
     async def get_artist_detail(self, nama: str) -> dict | None:
         """Info lengkap satu artis untuk detail sheet: data dasar + cover +

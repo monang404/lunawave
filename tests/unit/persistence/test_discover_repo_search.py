@@ -41,6 +41,14 @@ async def _make_track(db, video_id, title, artist, duration=180):
     await db.conn.commit()
 
 
+async def _make_song(db, artist_id, judul, youtube_id, duration=180):
+    await db.conn.execute(
+        "INSERT INTO songs (artist_id, judul, youtube_id, duration) VALUES (?, ?, ?, ?)",
+        (artist_id, judul, youtube_id, duration),
+    )
+    await db.conn.commit()
+
+
 class TestSearchTracksBasicMatch:
     async def test_matches_by_title(self, db):
         await _make_track(db, "v1", "Bohemian Rhapsody", "Queen")
@@ -100,6 +108,86 @@ class TestSearchTracksKategoriFilter:
         await _make_track(db, "v1", "Song A", "Unknown Uploader")
         result = await db.discover.search_tracks("Song", kategori="solo")
         assert result == []
+
+
+class TestSearchTracksCatalogSource:
+    """Regression: sebelum fix, search_tracks() cuma query tabel `tracks`
+    (cache/history), tidak pernah menyentuh `songs` (katalog kurasi per
+    artis yang sama dipakai get_artist_detail()). Efeknya: artis dengan 10
+    lagu di katalog tapi baru 1 yang pernah diputar/dicache, search cuma
+    nemu 1 -- padahal 9 lainnya memang ada di database."""
+
+    async def test_finds_catalog_song_never_cached_in_tracks(self, db):
+        await _make_artist(db, 1, "Wali", kategori="band")
+        # 1 track sudah pernah diputar (ada di cache `tracks`)...
+        await _make_track(db, "v1", "Cari Jodoh", "Wali")
+        # ...tapi 9 lagu lain cuma ada di katalog kurasi `songs`, belum
+        # pernah diputar/dicache sama sekali.
+        for i in range(2, 11):
+            await _make_song(db, 1, f"Lagu Wali {i}", f"song_{i}")
+
+        result = await db.discover.search_tracks("Wali")
+        assert len(result) == 10
+        video_ids = {r["video_id"] for r in result}
+        assert video_ids == {"v1"} | {f"song_{i}" for i in range(2, 11)}
+
+    async def test_catalog_only_song_has_sane_defaults(self, db):
+        await _make_artist(db, 1, "Iwan Fals", kategori="solo")
+        await _make_song(db, 1, "Bento", "song_bento", duration=240)
+
+        result = await db.discover.search_tracks("Bento")
+        assert len(result) == 1
+        row = result[0]
+        assert row["video_id"] == "song_bento"
+        assert row["duration"] == 240
+        assert row["local_path"] is None
+        assert row["view_count"] is None
+        assert row["is_favorite"] == 0
+        assert "song_bento" in row["thumbnail"]
+
+    async def test_track_wins_over_song_on_same_video_id(self, db):
+        """Kalau video_id yang sama ada di tracks (sudah pernah diputar,
+        metadata lengkap) DAN songs (katalog), versi tracks yang dipakai --
+        bukan di-duplikasi jadi 2 baris."""
+        await _make_artist(db, 1, "Sheila On 7", kategori="band")
+        await _make_track(db, "dup1", "Sephia", "Sheila On 7", duration=999)
+        await db.conn.execute(
+            "UPDATE tracks SET local_path = ?, is_favorite = 1 WHERE video_id = ?",
+            ("/cache/dup1.mp3", "dup1"),
+        )
+        await db.conn.commit()
+        await _make_song(db, 1, "Sephia", "dup1", duration=240)
+
+        result = await db.discover.search_tracks("Sephia")
+        assert len(result) == 1
+        assert result[0]["duration"] == 999
+        assert result[0]["local_path"] == "/cache/dup1.mp3"
+        assert result[0]["is_favorite"] == 1
+
+
+class TestSearchTracksTokenizedMatching:
+    """Regression: matching sebelumnya LIKE frasa utuh (harus persis
+    berurutan). Sekarang tokenized -- tiap kata di-AND kan, urutan bebas."""
+
+    async def test_matches_regardless_of_word_order(self, db):
+        await _make_track(db, "v1", "Bento", "Iwan Fals")
+        result = await db.discover.search_tracks("Fals Iwan")
+        assert [r["video_id"] for r in result] == ["v1"]
+
+    async def test_requires_all_tokens_to_match(self, db):
+        await _make_track(db, "v1", "Bento", "Iwan Fals")
+        await _make_track(db, "v2", "Other Song", "Iwan Only")
+        result = await db.discover.search_tracks("Iwan Fals")
+        assert [r["video_id"] for r in result] == ["v1"]
+
+    async def test_full_phrase_match_ranked_above_token_only_match(self, db):
+        # v2: frasa utuh "iwan fals" muncul persis di title.
+        await _make_track(db, "v2", "Iwan Fals Terbaik", "Various Artists")
+        # v1: kedua token match, tapi tersebar (bukan frasa utuh).
+        await _make_track(db, "v1", "Fals Menyanyi", "Iwan Solo")
+
+        result = await db.discover.search_tracks("Iwan Fals")
+        assert [r["video_id"] for r in result] == ["v2", "v1"]
 
 
 class TestSearchTracksDecadeFilter:
