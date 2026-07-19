@@ -1,7 +1,24 @@
 function initKeyboardShortcutEvents() {
     document.addEventListener("keydown", (e) => {
-        if (document.activeElement === dom.searchInput) {
-            if (e.key === "Escape") dom.searchInput.blur();
+        // Guard generik: kalau fokus sedang ada di elemen input teks/textarea/
+        // contenteditable APAPUN (search-input lama, discover-search-input
+        // baru T-A7, atau input teks lain yang mungkin ditambahkan nanti),
+        // shortcut global tidak boleh aktif. Sebelumnya guard ini hardcoded
+        // hanya mengecek dom.searchInput, sehingga input baru (mis.
+        // discoverSearchInput) tidak pernah ter-exclude -- itulah root cause
+        // Bug #1 (space -> toggle_pause + karakter spasi hilang dari query)
+        // dan Bug #2 (huruf 'l'/'L' -> lyrics overlay kebuka) di Quick Search
+        // Discover. Pola guard generik ini menyamakan file ini dengan
+        // platform/keyboard.js yang sudah pakai pendekatan serupa.
+        const activeEl = document.activeElement;
+        const isTypingContext =
+            activeEl &&
+            (activeEl.tagName === "INPUT" ||
+                activeEl.tagName === "TEXTAREA" ||
+                activeEl.isContentEditable);
+
+        if (isTypingContext) {
+            if (e.key === "Escape") activeEl.blur();
             return;
         }
 

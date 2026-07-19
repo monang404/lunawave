@@ -51,7 +51,14 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, discover_repo
         # DiscoverRepository.search_tracks() — no ranking/scoring, so no
         # DiscoverService wrapper needed here (unlike "discover" below).
         query = data.get("query", "").strip()
-        kategori = data.get("kategori") or None
+        kategori = data.get("kategori")
+        # "all" adalah sentinel client-side untuk "tanpa filter kategori"
+        # (chip "Semua" default aktif di discover-search-events.js), BUKAN
+        # nilai kategori yang valid -- artists.kategori cuma pernah berisi
+        # "individu"/"band" (lihat schema.sql + data-kategori di index.html).
+        # Perlakukan sama seperti decade di bawah, kalau tidak, filter
+        # "Semua" (posisi default) bikin search_tracks() selalu 0 hasil.
+        kategori = kategori if kategori not in (None, "", "all") else None
         decade = data.get("decade")
         decade = int(decade) if decade not in (None, "", "all") else None
         results = await discover_repo.search_tracks(query, kategori=kategori, decade=decade)

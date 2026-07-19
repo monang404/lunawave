@@ -168,6 +168,25 @@ async def test_handle_discovery_command_discover_search_decade_all_is_none():
 
 
 @pytest.mark.asyncio
+async def test_handle_discovery_command_discover_search_kategori_all_is_none():
+    """Regression: kategori="all" adalah sentinel client-side (chip "Semua"
+    default aktif di discover-search-events.js), bukan nilai kategori valid
+    di DB (artists.kategori cuma "individu"/"band"). Sebelum fix ini, kategori
+    tidak di-exclude seperti decade, jadi search_tracks() dipanggil dengan
+    kategori="all" -> filter SQL tidak pernah match apa pun -> 0 hasil selalu,
+    walau query & data-nya valid."""
+    mock_repo = AsyncMock()
+    mock_repo.search_tracks.return_value = []
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command(
+        "discover_search", {"query": "Ari Lasso", "kategori": "all"}, None, mock_repo, mock_ws
+    )
+
+    mock_repo.search_tracks.assert_called_once_with("Ari Lasso", kategori=None, decade=None)
+
+
+@pytest.mark.asyncio
 @patch("server.handlers.ws_discovery.track_to_dict")
 async def test_handle_discovery_command_discover_search_does_not_use_track_to_dict(
     mock_track_to_dict,

@@ -115,6 +115,13 @@ function initDiscoverSearchEvents() {
     });
 
     input.addEventListener("keydown", (e) => {
+        // Cegah semua keydown di kolom search ini bubble ke document (di mana
+        // events/keyboard-shortcut-events.js listen untuk shortcut global
+        // seperti Space=toggle_pause, L=lyrics overlay, N/B/S/M/R, dst).
+        // Search box wajib terisolasi penuh dari state player -- lihat
+        // AI_CONTEXT.md/PATCHLOG fix Bug#1 & Bug#2 Quick Search Discover.
+        e.stopPropagation();
+
         if (e.key !== "Enter") return;
         const trimmed = input.value.trim();
         if (!trimmed) return;
