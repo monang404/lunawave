@@ -195,18 +195,16 @@ def test_mpv_socket_outside_base_dir_is_rejected_and_falls_back(tmp_path):
     assert "di luar BASE_DIR" in result.stderr
 
 
-def test_admin_password_is_auto_generated_when_no_env_var_set(tmp_path):
+def test_admin_password_override_is_none_when_no_env_var_set(tmp_path):
+    """T-B14.1: no more auto-generation. Without an env var override,
+    config.py must not create any file and must not print any password."""
     env = {
         "PATH": __import__("os").environ.get("PATH", ""),
         "PYTHONPATH": str(REPO_ROOT),
         "LUNAWAVE_BASE": str(tmp_path),
     }
     result = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "import config\nprint(config.IS_PASSWORD_AUTO_GENERATED)\nprint(config.ADMIN_PASSWORD.startswith('pbkdf2:sha256:'))",
-        ],
+        [sys.executable, "-c", "import config\nprint(config.ADMIN_PASSWORD_OVERRIDE)"],
         cwd=str(REPO_ROOT),
         env=env,
         capture_output=True,
@@ -214,62 +212,51 @@ def test_admin_password_is_auto_generated_when_no_env_var_set(tmp_path):
         timeout=15,
     )
     assert result.returncode == 0, result.stderr
-    # The auto-generated-password banner is printed by config.py itself
-    # during import, i.e. *before* our own print() calls run — so our
-    # values are the last two lines of stdout, not the first two.
+    assert result.stdout.strip() == "None"
+    assert "PASSWORD ADMIN GENERATED" not in result.stdout
+    assert not (tmp_path / "cache" / "admin_password.txt").exists()
+
+
+def test_config_no_longer_exposes_legacy_auto_generate_symbols(tmp_path):
+    """T-B14.1: IS_PASSWORD_AUTO_GENERATED and the legacy ADMIN_PASSWORD
+    name (config.ADMIN_PASSWORD, read directly by verification logic) must
+    both be gone -- admin_account (SQLite) is the only source of truth."""
+    result = run_config_snippet(
+        "print(hasattr(config, 'IS_PASSWORD_AUTO_GENERATED'))\n"
+        "print(hasattr(config, 'ADMIN_PASSWORD'))",
+        {},
+        tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
     lines = result.stdout.strip().splitlines()
-    assert lines[-2] == "True"
-    assert lines[-1] == "True"
-    assert "PASSWORD ADMIN GENERATED" in result.stdout
-    assert (tmp_path / "cache" / "admin_password.txt").exists()
+    assert lines == ["False", "False"]
 
 
-def test_admin_password_auto_generation_is_stable_across_restarts(tmp_path):
+def test_running_config_twice_without_env_var_never_writes_a_cache_file(tmp_path):
+    """Regression for the removed mechanism: repeated imports/restarts with
+    no override set must stay a pure no-op on disk."""
     env = {
         "PATH": __import__("os").environ.get("PATH", ""),
         "PYTHONPATH": str(REPO_ROOT),
         "LUNAWAVE_BASE": str(tmp_path),
     }
-    code = "import config\nprint(config.ADMIN_PASSWORD)"
-    first = subprocess.run(
-        [sys.executable, "-c", code],
-        cwd=str(REPO_ROOT),
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=15,
-    )
-    second = subprocess.run(
-        [sys.executable, "-c", code],
-        cwd=str(REPO_ROOT),
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=15,
-    )
-    assert first.returncode == 0 and second.returncode == 0
-    # First run auto-generates + prints the banner + the password value on
-    # its own last line; second run reads the cached file and prints only
-    # the value. Both values are hashes of the same underlying password,
-    # but they will differ in string representation due to random salting.
-    from core.security import verify_password
-
-    first_hash = first.stdout.strip().splitlines()[-1]
-    second_hash = second.stdout.strip().splitlines()[-1]
-
-    raw_password = (tmp_path / "cache" / "admin_password.txt").read_text(encoding="utf-8").strip()
-
-    assert verify_password(raw_password, first_hash) is True
-    assert verify_password(raw_password, second_hash) is True
-    assert first_hash != second_hash
-
-    # second run reads the existing file, so it must not print the banner again
-    assert "PASSWORD ADMIN GENERATED" not in second.stdout
+    code = "import config\n"
+    for _ in range(2):
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=str(REPO_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        assert result.returncode == 0, result.stderr
+    assert not (tmp_path / "cache" / "admin_password.txt").exists()
 
 
-def test_admin_password_from_ytgui_admin_pass_plaintext_gets_hashed(tmp_path):
+def test_admin_password_override_from_ytgui_admin_pass_plaintext_gets_hashed(tmp_path):
     result = run_config_snippet(
-        "print(config.ADMIN_PASSWORD)",
+        "print(config.ADMIN_PASSWORD_OVERRIDE)",
         {"YTGUI_ADMIN_PASS": "plaintext-secret"},
         tmp_path,
     )
@@ -277,12 +264,12 @@ def test_admin_password_from_ytgui_admin_pass_plaintext_gets_hashed(tmp_path):
     assert result.stdout.strip().startswith("pbkdf2:sha256:")
 
 
-def test_admin_password_from_ytgui_admin_pass_already_hashed_is_kept_as_is(tmp_path):
+def test_admin_password_override_from_ytgui_admin_pass_already_hashed_is_kept_as_is(tmp_path):
     from core.security import hash_password
 
     pre_hashed = hash_password("already-hashed-secret")
     result = run_config_snippet(
-        "print(config.ADMIN_PASSWORD)",
+        "print(config.ADMIN_PASSWORD_OVERRIDE)",
         {"YTGUI_ADMIN_PASS": pre_hashed},
         tmp_path,
     )
@@ -290,18 +277,12 @@ def test_admin_password_from_ytgui_admin_pass_already_hashed_is_kept_as_is(tmp_p
     assert result.stdout.strip() == pre_hashed
 
 
-def test_admin_password_from_lunawave_admin_pass_plaintext_gets_hashed(tmp_path):
-    """Regression test — LUNAWAVE_ADMIN_PASS is the primary/preferred env
-    var (LUNAWAVE_* supersedes the legacy YTGUI_* names throughout
-    config.py), so it must be hashed exactly like YTGUI_ADMIN_PASS.
-
-    Bug found: the LUNAWAVE_ADMIN_PASS branch never assigned
-    ADMIN_PASSWORD at all, so `from config import ADMIN_PASSWORD`
-    (done at import time by server/handlers/auth.py and main.py) raised
-    ImportError and crashed startup for anyone using the new env var.
-    """
+def test_admin_password_override_from_lunawave_admin_pass_plaintext_gets_hashed(tmp_path):
+    """LUNAWAVE_ADMIN_PASS is the primary/preferred env var (LUNAWAVE_*
+    supersedes the legacy YTGUI_* names throughout config.py), so it must
+    be hashed exactly like YTGUI_ADMIN_PASS."""
     result = run_config_snippet(
-        "print(config.ADMIN_PASSWORD)",
+        "print(config.ADMIN_PASSWORD_OVERRIDE)",
         {"LUNAWAVE_ADMIN_PASS": "plaintext-secret"},
         tmp_path,
     )
@@ -309,12 +290,12 @@ def test_admin_password_from_lunawave_admin_pass_plaintext_gets_hashed(tmp_path)
     assert result.stdout.strip().startswith("pbkdf2:sha256:")
 
 
-def test_admin_password_from_lunawave_admin_pass_already_hashed_is_kept_as_is(tmp_path):
+def test_admin_password_override_from_lunawave_admin_pass_already_hashed_is_kept_as_is(tmp_path):
     from core.security import hash_password
 
     pre_hashed = hash_password("already-hashed-secret")
     result = run_config_snippet(
-        "print(config.ADMIN_PASSWORD)",
+        "print(config.ADMIN_PASSWORD_OVERRIDE)",
         {"LUNAWAVE_ADMIN_PASS": pre_hashed},
         tmp_path,
     )
@@ -324,7 +305,7 @@ def test_admin_password_from_lunawave_admin_pass_already_hashed_is_kept_as_is(tm
 
 def test_lunawave_admin_pass_takes_precedence_over_ytgui_admin_pass(tmp_path):
     result = run_config_snippet(
-        "print(config.ADMIN_PASSWORD)",
+        "print(config.ADMIN_PASSWORD_OVERRIDE)",
         {"LUNAWAVE_ADMIN_PASS": "new-var-wins", "YTGUI_ADMIN_PASS": "old-var-loses"},
         tmp_path,
     )

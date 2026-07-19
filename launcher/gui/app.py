@@ -12,7 +12,6 @@ Responsibilities:
 Depends on:
     - launcher
     - launcher.server_lifecycle
-    - launcher.gui.auth_panel
     - launcher.gui.log_view
     - launcher.gui.popups
     - launcher.gui.ui_builder
@@ -90,22 +89,6 @@ class ServerManager(tk.Tk):
         self._build_ui()
         self.lifecycle.run_dependency_check()
         self._refresh_status()
-        from launcher.gui.auth_panel import handle_first_run
-
-        handle_first_run(
-            self,
-            BASE_DIR,
-            BG,
-            BG_CARD,
-            BG_SURFACE,
-            ACCENT,
-            TEXT_1,
-            TEXT_2,
-            TEXT_3,
-            RED,
-            GREEN,
-            BORDER,
-        )
 
     # ── Window setup ──────────────────────────────────────
     def _build_window(self):

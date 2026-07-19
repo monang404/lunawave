@@ -49,11 +49,24 @@ def make_ws():
     return ws
 
 
-def make_db(session_valid: bool = False):
+def make_db(session_valid: bool = False, account=None):
+    """Fake `repos` (bukan cuma sessions lagi, T-B13.1): punya
+    `.sessions` (session_repo-like) dan `.admin_account`
+    (admin_account_repo-like). `account`, kalau diisi, dict biasa
+    (mendukung akses `["username"]`/`["password_hash"]` seperti
+    aiosqlite.Row) -- None berarti admin_account belum ada (instalasi
+    baru, belum lewat Initial Setup).
+    """
     db = MagicMock()
-    db.verify_session = AsyncMock(return_value=session_valid)
-    db.create_session = AsyncMock()
+    db.sessions = MagicMock()
+    db.sessions.verify_session = AsyncMock(return_value=session_valid)
+    db.sessions.create_session = AsyncMock()
+    db.admin_account = MagicMock()
+    db.admin_account.get_admin_account = AsyncMock(return_value=account)
     return db
+
+
+ADMIN_ACCOUNT = {"username": "admin", "password_hash": "hashed"}
 
 
 # ---------------------------------------------------------------------------
@@ -124,11 +137,9 @@ class TestHandleAuthToken:
 
         ws = make_ws()
         mgr = make_manager()
-        db = make_db(session_valid=False)
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
 
         with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
             patch("server.handlers.auth.verify_password", return_value=False),
             patch("asyncio.get_running_loop") as mock_loop,
         ):
@@ -159,20 +170,16 @@ class TestHandleAuthCredentials:
 
         ws = make_ws()
         mgr = make_manager()
-        db = make_db(session_valid=False)
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
 
-        with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
-            patch("asyncio.get_running_loop") as mock_loop,
-        ):
+        with patch("asyncio.get_running_loop") as mock_loop:
             mock_loop.return_value.run_in_executor = AsyncMock(return_value=True)
             await handle_auth(
                 ws, {"username": "admin", "password": "correct"}, mgr, "127.0.0.1", db, now=1000
             )
 
         assert ws in mgr.authenticated_connections
-        db.create_session.assert_awaited_once()
+        db.sessions.create_session.assert_awaited_once()
         sent = json.loads(ws.send_str.call_args[0][0])
         assert sent["data"]["success"] is True
         assert "token" in sent["data"]
@@ -186,13 +193,9 @@ class TestHandleAuthCredentials:
 
         ws = make_ws()
         mgr = make_manager()
-        db = make_db(session_valid=False)
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
 
-        with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
-            patch("asyncio.get_running_loop") as mock_loop,
-        ):
+        with patch("asyncio.get_running_loop") as mock_loop:
             executor_mock = AsyncMock(return_value=True)
             mock_loop.return_value.run_in_executor = executor_mock
             await handle_auth(
@@ -210,18 +213,46 @@ class TestHandleAuthCredentials:
         assert sent["data"]["success"] is False
 
     @pytest.mark.asyncio
+    async def test_no_admin_account_yet_still_runs_password_verification(self):
+        """T-B13.1 regression: kalau admin_account belum ada sama sekali
+        (instalasi baru, belum lewat Initial Setup), verify_password tetap
+        harus dijalankan (terhadap dummy hash) -- bukan short-circuit fail
+        instan -- demi mempertahankan mitigasi timing side-channel
+        PATCH-2026-07-16-001 walau sumber datanya sekarang admin_account."""
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        db = make_db(session_valid=False, account=None)
+
+        with patch("asyncio.get_running_loop") as mock_loop:
+            executor_mock = AsyncMock(return_value=True)  # walau "cocok" secara hash
+            mock_loop.return_value.run_in_executor = executor_mock
+            await handle_auth(
+                ws,
+                {"username": "admin", "password": "whatever"},
+                mgr,
+                "127.0.0.1",
+                db,
+                now=1000,
+            )
+
+        executor_mock.assert_awaited_once()
+        # Tidak ada admin_account -> login TIDAK BOLEH berhasil meski
+        # verify_password (dummy) mengembalikan True.
+        assert ws not in mgr.authenticated_connections
+        sent = json.loads(ws.send_str.call_args[0][0])
+        assert sent["data"]["success"] is False
+
+    @pytest.mark.asyncio
     async def test_wrong_credentials_send_failure_and_record_attempt(self):
         from server.handlers.auth import handle_auth
 
         ws = make_ws()
         mgr = make_manager()
-        db = make_db(session_valid=False)
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
 
-        with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
-            patch("asyncio.get_running_loop") as mock_loop,
-        ):
+        with patch("asyncio.get_running_loop") as mock_loop:
             mock_loop.return_value.run_in_executor = AsyncMock(return_value=False)
             await handle_auth(
                 ws, {"username": "admin", "password": "wrong"}, mgr, "127.0.0.1", db, now=1000
@@ -242,11 +273,7 @@ class TestHandleAuthCredentials:
         # Simulate 5 recent failed attempts
         mgr.login_attempts["10.0.0.5"] = [995, 996, 997, 998, 999]
 
-        with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
-            patch("asyncio.get_running_loop") as mock_loop,
-        ):
+        with patch("asyncio.get_running_loop") as mock_loop:
             mock_loop.return_value.run_in_executor = AsyncMock(return_value=False)
             await handle_auth(
                 ws, {"username": "admin", "password": "wrong"}, mgr, "10.0.0.5", db, now=1000
@@ -262,14 +289,10 @@ class TestHandleAuthCredentials:
 
         ws = make_ws()
         mgr = make_manager()
-        db = make_db(session_valid=False)
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
         mgr.login_attempts["10.0.0.6"] = [998]
 
-        with (
-            patch("server.handlers.auth.ADMIN_USERNAME", "admin"),
-            patch("server.handlers.auth.ADMIN_PASSWORD", "hashed"),
-            patch("asyncio.get_running_loop") as mock_loop,
-        ):
+        with patch("asyncio.get_running_loop") as mock_loop:
             mock_loop.return_value.run_in_executor = AsyncMock(return_value=True)
             await handle_auth(
                 ws, {"username": "admin", "password": "correct"}, mgr, "10.0.0.6", db, now=1000

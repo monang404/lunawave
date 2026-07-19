@@ -69,6 +69,33 @@
         </div>
     </div>
 
+    <!-- ═══ Setup Screen (Initial Setup — hanya muncul saat admin_account belum ada) ═══ -->
+    <div id="setup-screen">
+        <div class="portal-card">
+            <h1 class="portal-title">lunawave</h1>
+            <p class="portal-subtitle">Initial Setup — buat akun admin untuk mengakses kontrol musik</p>
+
+            <div class="portal-options">
+                <div class="portal-admin-wrapper" style="width: 100%;">
+                    <div id="setup-form" class="portal-login-form">
+                        <div class="login-input-group">
+                            <input type="text" id="setup-username" placeholder="Username" autocomplete="off">
+                        </div>
+                        <div class="login-input-group">
+                            <input type="password" id="setup-password" placeholder="Password">
+                        </div>
+                        <div class="login-input-group">
+                            <input type="password" id="setup-confirm-password" placeholder="Confirm Password">
+                        </div>
+                        <div id="setup-confirm-error-msg" class="login-error"></div>
+                        <button id="setup-submit-btn">Buat Akun Admin</button>
+                        <div id="setup-error-msg" class="login-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="app" class="fm portal-active">
 
         <!-- ═══ Header (Hidden) ═══ -->

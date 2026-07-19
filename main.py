@@ -92,14 +92,11 @@ async def run_server():
         print(f"|   Client : {url_client:<37} |")
         print(f"|   Admin  : {url_admin:<37} |")
 
-        from config import ADMIN_USERNAME, IS_PASSWORD_AUTO_GENERATED
-
-        if IS_PASSWORD_AUTO_GENERATED:
-            print("|                                                   |")
-            print("|   Kredensial Mode Admin:                          |")
-            print(f"|   User: {ADMIN_USERNAME:<40} |")
-            print("|   Pass: (lihat file di bawah - dibuat saat first-run) |")
-            print("|   File: cache/admin_password.txt                  |")
+        # T-B14.1: config.IS_PASSWORD_AUTO_GENERATED sudah dihapus -- tidak
+        # ada lagi password auto-generated untuk ditampilkan di sini.
+        # admin_account (SQLite) sekarang satu-satunya source of truth;
+        # instalasi baru tanpa admin_account diarahkan ke Initial Setup
+        # oleh frontend/server itu sendiri, bukan lewat banner ini.
         print("=====================================================")
 
         await _web_run_server(app, host=host, port=port)

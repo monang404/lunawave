@@ -25,6 +25,9 @@ CLI:
 
 Responsibilities:
     - Build and hold every long-lived service object needed at runtime.
+    - Seed admin_account from an explicit env var override (K4, T-B14.2)
+      when the table is still empty -- non-default provisioning path only,
+      never overwrites an existing account.
 
 Depends on:
     - persistence
@@ -122,6 +125,47 @@ async def _init_mpv():
         ctx.mpv_ready_event.set()  # set juga saat error agar resume tidak hang
 
 
+async def _seed_admin_account_from_env(repos):
+    """T-B14.2 (K4): satu-satunya konsumen dari config.ADMIN_PASSWORD_OVERRIDE.
+
+    admin_account (SQLite) adalah source of truth untuk login (T-B13.1).
+    Jalur normal untuk mengisinya adalah wizard Initial Setup di browser
+    (server/handlers/setup.py). Helper ini hanya jalur *override* eksplisit
+    untuk provisioning non-interaktif (CI, automated deploy) yang tidak
+    bisa lewat browser.
+
+    Perilaku, sesuai K3 (tidak ada migrasi otomatis / overwrite diam-diam)
+    dan K4 (override dipertahankan, non-default, terpisah dari auto-generate
+    yang sudah dihapus di T-B14.1):
+      - Kalau admin_account SUDAH ADA -> tidak melakukan apa-apa, walau
+        ADMIN_PASSWORD_OVERRIDE di-set. Tidak pernah overwrite akun existing.
+      - Kalau admin_account KOSONG dan ADMIN_PASSWORD_OVERRIDE TIDAK di-set
+        -> tidak melakukan apa-apa. Instalasi baru tetap diarahkan ke
+        Initial Setup seperti biasa (perilaku default, tanpa env var).
+      - Kalau admin_account KOSONG dan ADMIN_PASSWORD_OVERRIDE di-set ->
+        seed satu baris admin_account dari config.ADMIN_USERNAME +
+        ADMIN_PASSWORD_OVERRIDE (sudah ter-hash oleh config.py).
+    """
+    from config import ADMIN_PASSWORD_OVERRIDE, ADMIN_USERNAME
+
+    if ADMIN_PASSWORD_OVERRIDE is None:
+        return
+    if await repos.admin_account.admin_account_exists():
+        structlog.get_logger(__name__).info(
+            "admin_account_seed_skipped_already_exists",
+            reason="ADMIN_PASSWORD_OVERRIDE env var di-set tapi admin_account "
+            "sudah ada -- tidak di-overwrite (K3).",
+        )
+        return
+    await repos.admin_account.create_admin_account(ADMIN_USERNAME, ADMIN_PASSWORD_OVERRIDE)
+    structlog.get_logger(__name__).info(
+        "admin_account_seeded_from_env",
+        username=ADMIN_USERNAME,
+        reason="admin_account kosong + ADMIN_PASSWORD_OVERRIDE di-set (K4, "
+        "jalur provisioning non-interaktif, bukan alur default).",
+    )
+
+
 async def init_core_services() -> BootstrapContext:
     """Bootstrap stage 1: DB, MPV, yt-dlp, shared HTTP session, and every
     domain service (resolver, playback controller, radio, volume, sleep
@@ -139,6 +183,10 @@ async def init_core_services() -> BootstrapContext:
     ctx.repos = Repositories()
     ctx.mpv = MpvController()
     await ctx.repos.init()
+    # T-B14.2 (K4): seed admin_account dari env var override, hanya kalau
+    # tabel masih kosong. No-op kalau ADMIN_PASSWORD_OVERRIDE tidak di-set
+    # atau admin_account sudah ada -- lihat docstring _seed_admin_account_from_env.
+    await _seed_admin_account_from_env(ctx.repos)
 
     # 2. Initialize Core Engine (YtDlpClient ringan — hanya buat ThreadPoolExecutor)
     print("  [2/5] Menginisialisasi YT-DLP Engine...")

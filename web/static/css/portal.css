@@ -88,3 +88,34 @@
 #admin-submit-btn:hover { background: var(--accent-hover); }
 
 .login-error { font-size: var(--t-xs); color: var(--red); text-align: center; min-height: 16px; }
+
+/* ══ Setup Screen (Initial Setup, T-B9/T-B10) ══
+   Mirror persis #portal-screen show/hide -- reuse .portal-card/.portal-title
+   dkk berarti tidak perlu rule visual terpisah untuk field Username/Password,
+   cuma butuh: (1) rule tampil/sembunyi screen-nya sendiri (T-B9 belum
+   menambah ini di index.html, portal-active di-toggle lewat JS di T-B11.2),
+   dan (2) submit button (nama id beda dari #admin-submit-btn). Field Confirm
+   Password otomatis konsisten di 3 breakpoint (mobile/tablet/desktop) karena
+   portal.css sendiri tidak punya override per-breakpoint apapun (lihat
+   platform/*.css -- tidak ada selector "portal" di sana), jadi tidak ada
+   breakpoint terpisah yang perlu disentuh. */
+#setup-screen {
+  position: fixed; inset: 0;
+  background: var(--bg-primary);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9000; padding: var(--s6);
+}
+#setup-screen.portal-active { display: flex; }
+
+#setup-submit-btn {
+  width: 100%; background: var(--accent); border: none;
+  border-radius: 10px; padding: 12px;
+  color: #090A0D; font-size: var(--t-md);
+  font-weight: var(--w-semibold); font-family: var(--font);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+#setup-submit-btn:hover { background: var(--accent-hover); }
+#setup-submit-btn:disabled {
+  background: var(--bg-elevated); color: var(--text-3); cursor: not-allowed;
+}

@@ -41,12 +41,7 @@ pytestmark = pytest.mark.skipif(not _HAS_DISPLAY, reason="requires a usable X di
 
 def _make_app(monkeypatch):
     from launcher.gui import app as app_module
-    from launcher.gui import auth_panel
 
-    # Keep the first-run password dialog out of the way — irrelevant here.
-    # app.py imports handle_first_run locally (inside __init__) from
-    # launcher.gui.auth_panel, so that's the name that must be patched.
-    monkeypatch.setattr(auth_panel, "handle_first_run", lambda *a, **k: None)
     return app_module.ServerManager()
 
 

@@ -20,7 +20,11 @@
             navBtn.setAttribute("aria-selected", "true");
         }
 
-        initPortal();
+        // T-B11.1/T-B11.2: initSetupCheck() menggantikan panggilan initPortal()
+        // langsung -- keputusan #setup-screen vs #portal-screen sekarang lewat
+        // GET /api/setup-required dulu (async), initPortal() dipanggil dari
+        // dalamnya kalau setup TIDAK diperlukan (lihat portal.js).
+        initSetupCheck();
         initAudio();
         initEvents();
         // Loop rAF yang gambar progress bar tiap frame lewat interpolasi

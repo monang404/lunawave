@@ -40,6 +40,7 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
+from persistence.admin_account_repo import AdminAccountRepository
 from persistence.artist_repo import ArtistRepository
 from persistence.db import DatabaseConnection
 from persistence.discover_repo import DiscoverRepository
@@ -65,6 +66,7 @@ class Repositories:
         self.genres: GenreRepository | None = None
         self.library: LibraryRepository | None = None
         self.discover: DiscoverRepository | None = None
+        self.admin_account: AdminAccountRepository | None = None
 
     async def init(self):
         schema_path = Path(__file__).parent / "schema.sql"
@@ -100,6 +102,7 @@ class Repositories:
         self.genres = GenreRepository(conn)
         self.library = LibraryRepository(conn)
         self.discover = DiscoverRepository(conn)
+        self.admin_account = AdminAccountRepository(conn)
 
     async def close(self):
         await self._conn_manager.close()

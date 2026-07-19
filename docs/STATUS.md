@@ -9,6 +9,16 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
 
+## Status Fitur (dari `task_breakdown_agent.yaml`)
+
+| Fitur | Status | Selesai | Ringkasan |
+|---|---|---|---|
+| Fitur A — `quick_search_discover` | ✅ Done | Sesi sebelumnya | Personalisasi tab Discover (bandit ranking, taste spectrum, filter, artist detail sheet). Detail: §Discover Tab Personalization di bawah, `PATCH-2026-07-17-070`/`-071`. |
+| Fitur B — `login_redesign` | ✅ Done | Sesi ini (T-B1..T-B19) | Kredensial admin pindah dari file auto-generate ke tabel `admin_account` (SQLite) via Initial Setup; env var override dipertahankan (K4); launcher tanpa mekanisme auth sendiri (K5); tanpa migrasi otomatis dari file password lama (K3). Keputusan lengkap: [ADR-0008](adr/0008-admin-credentials-in-sqlite.md). |
+
+Kedua fitur sumber (`meta.source_features` / `meta.completed_features` di
+`task_breakdown_agent.yaml`) sekarang sama-sama selesai dan diverifikasi.
+
 ## Backend Python
 
 | File | Kondisi Aktual | Kondisi Target | Sprint Target | Status |

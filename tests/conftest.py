@@ -59,12 +59,15 @@ REPO_ROOT = Path(__file__).parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# config.py auto-generates an admin password file and prints a banner the
-# first time it is imported with no LUNAWAVE_ADMIN_PASS / YTGUI_ADMIN_PASS
-# env var set. During tests we don't want that side effect (it writes to
-# cache/admin_password.txt inside the repo and spams stdout), so we pin a
-# deterministic admin password before anything imports `config`.
-os.environ.setdefault("LUNAWAVE_ADMIN_PASS", "test-admin-password-not-a-secret")
+# T-B14.1: config.py no longer auto-generates an admin password or writes
+# cache/admin_password.txt on import (admin_account in SQLite is now the
+# only source of truth, seeded via Initial Setup or, non-default, via
+# bootstrap.services._seed_admin_account_from_env — see K4). There is no
+# more import-time side effect to suppress here, so we intentionally do
+# NOT set LUNAWAVE_ADMIN_PASS by default: doing so would make
+# config.ADMIN_PASSWORD_OVERRIDE non-None for the entire test session and
+# push every test that boots services down the non-default env-override
+# seeding path instead of the default no-op path.
 os.environ.setdefault("LUNAWAVE_BASE", str(REPO_ROOT))
 
 

@@ -16,6 +16,7 @@ Depends on:
     - server.connection_manager
     - server.handlers.event_listeners
     - server.handlers.http
+    - server.handlers.setup
     - server.handlers.websocket
     - server.broadcast_service
     - services.stream_prefetch
@@ -42,6 +43,7 @@ from persistence import Repositories
 from server.connection_manager import ConnectionManager
 from server.handlers.audio_stream_handler import serve_stream
 from server.handlers.http import health_check, serve_index, serve_metrics
+from server.handlers.setup import setup_required
 from server.handlers.websocket import ws_handler
 
 logger = structlog.get_logger(__name__)
@@ -76,6 +78,7 @@ def create_app(
     app.router.add_get("/admin", serve_index)
     app.router.add_get("/ws", ws_handler)
     app.router.add_get("/api/stream/{video_id}", serve_stream)
+    app.router.add_get("/api/setup-required", setup_required)
     app.router.add_get("/health", health_check)
     app.router.add_get("/metrics", serve_metrics)
     app.router.add_static("/static", STATIC_DIR, name="static")

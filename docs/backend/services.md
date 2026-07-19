@@ -12,25 +12,23 @@ Engine adalah domain logic utama LunaWave. Semua handler di engine hanya berbica
 
 ### `engine/command_router.py`
 
-Menerima `CMD_*` dari `command_bus` dan mendispatch ke handler yang tepat.
+`CommandRouter` mendaftarkan setiap `CMD_*` (dari `core/command_bus.py` / `core/commands.py`) ke `command_bus`, dibungkus tipis agar handler sync maupun async bisa dipanggil seragam. Bukan dict `HANDLERS` statis — registrasi terjadi di `__init__` via `command_bus.register(CMD_X, self._route(...))`.
 
 ```python
-# Pola routing
-HANDLERS = {
-    CMD_PLAY:           playback_controller.handle_play,
-    CMD_PAUSE:          playback_controller.handle_pause,
-    CMD_SKIP_NEXT:      playback_controller.handle_skip_next,
-    CMD_SKIP_PREV:      playback_controller.handle_skip_prev,
-    CMD_SEEK:           playback_controller.handle_seek,
-    CMD_SET_VOLUME:     volume_service.handle_set_volume,
-    CMD_QUEUE_ADD:      queue_manager.handle_add,
-    CMD_QUEUE_REMOVE:   queue_manager.handle_remove,
-    CMD_QUEUE_REORDER:  queue_manager.handle_reorder,
-    CMD_RADIO_START:    radio_engine.handle_start,
-    CMD_DOWNLOAD_START: download_manager.handle_start,
-    CMD_DOWNLOAD_CANCEL:download_manager.handle_cancel,
-    CMD_SEARCH:         discover_service.handle_search,
-}
+class CommandRouter:
+    def __init__(self, playback_controller, volume_service, sleep_timer=None):
+        command_bus.register(CMD_PLAY_TRACK, self._route(lambda c, data: c._on_cmd_play_track(data)))
+        command_bus.register(CMD_TOGGLE_PAUSE, self._route(lambda c, data: c._on_cmd_toggle_pause(data)))
+        command_bus.register(CMD_NEXT, self._route(lambda c, data: c._on_next(data)))
+        # ... CMD_PREV, CMD_STOP, CMD_SEEK, CMD_SET_MODE, CMD_QUEUE_*,
+        #     CMD_RADIO_RANDOMIZE, CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK,
+        #     CMD_SET_LOUDNESS_NORMALIZATION, CMD_LYRICS_OFFSET -> playback_controller
+        command_bus.register(CMD_VOLUME_UP, self._route_volume(lambda v, data: v._on_volume_up(data)))
+        # ... CMD_VOLUME_DOWN, CMD_VOLUME_SET -> volume_service
+        command_bus.register(CMD_SET_CROSSFADE, self._route(lambda c, data: c._mode_ops.set_crossfade(data)))
+        # ... CMD_SET_SPEED, CMD_SET_LOOP -> playback_controller._mode_ops
+        if self.sleep_timer:
+            command_bus.register(CMD_SET_SLEEP_TIMER, self._route_sleep(...))  # -> sleep_timer
 ```
 
 Test → `tests/unit/engine/test_command_router.py`
@@ -39,12 +37,12 @@ Test → `tests/unit/engine/test_command_router.py`
 
 ### `engine/playback/controller.py`
 
-Orchestrator playback. Slim — hanya routing, tidak ada logic detail di sini.
+Orchestrator playback. Method transport (play/pause/next/prev/stop/seek) tetap di `controller.py`; sisanya didelegasikan tipis ke dua sub-controller (`PATCH-2026-07-18-085`).
 
 **Tanggung jawab:**
-- Menerima CMD_PLAY → panggil `track_loader.load_track()`
-- Menerima CMD_PAUSE / CMD_SKIP → panggil port `AudioPlayerPort`
-- Publish `EVENT_PLAYBACK_*` ke event bus setelah setiap aksi
+- Menerima `CMD_PLAY_TRACK` → panggil `track_loader.py` (resolve URL cache → yt-dlp, load ke player)
+- Menerima `CMD_TOGGLE_PAUSE` / `CMD_NEXT` / `CMD_PREV` / `CMD_SEEK` → panggil port `AudioPlayerPort`
+- Publish event (`core/events.py`) ke event bus setelah setiap aksi
 
 **Tidak boleh:**
 - Akses langsung ke MPV (lewat port saja)
@@ -55,51 +53,61 @@ Sub-modul:
 | File | Tanggung Jawab |
 |---|---|
 | `track_loader.py` | Resolve URL (cache → yt-dlp) lalu load ke player |
-| `queue_ops.py` 🆕 | next/prev track dari queue saat playback selesai |
-| `mode_ops.py` 🆕 | Switch mode normal/radio/shuffle |
+| `queue_controller.py` | `_on_queue_*` / `_advance_to_next` — operasi queue & auto-advance |
+| `settings_controller.py` | `_on_set_mode` / `_on_set_output` / `_on_set_sponsorblock` / `_on_set_loudness_normalization` / `_on_radio_randomize` / `_on_lyrics_offset` |
+| `mode_ops.py` | `set_crossfade` / `set_speed` / `set_loop` (dipanggil dari `command_router.py`) |
+| `queue_ops.py` | Operasi queue level-rendah dipakai `queue_controller.py` |
+| `crossfade.py` | Logic crossfade (fade in/out volume) |
+| `track_ended_ops.py` | Penanganan saat track selesai diputar |
+
+⚠️ File ini di-freeze dari perubahan struktural tanpa izin eksplisit — lihat `AI_CONTEXT.md`.
 
 Test → `tests/unit/engine/playback/`
 
 ---
 
-### `engine/radio/engine.py`
+### `engine/radio/engine.py` (`RadioMode`)
 
-Orchestrator radio mode. Mengelola siklus: pilih artis → search → filter → enqueue → prefetch.
+Orchestrator radio mode. Mengelola siklus lewat standby prefetch, bukan search-per-next sederhana.
 
-**Alur radio:**
+**Alur radio (`on_activated` / `next`):**
 
 ```
-CMD_RADIO_START
+on_activated(controller)
       │
       ▼
-artist_selector.select_next(history)
+artist_selector.ensure_artists_loaded()  (sekali)
       │
       ▼
-ytdlp_adapter.search(artist + " music")
+_start(controller)
       │
+      ├─ prefetcher.pop_standby() ada?
+      │     ├─ YA  → clear+extend radio_queue, play_track(track[0]),
+      │     │        trigger_build_standby() (background, siapkan berikutnya)
+      │     └─ TIDAK → artist_selector.gather_batch(ARTISTS_QUICK, timeout 20s)
+      │                 → play_track() segera, lalu _backfill_and_standby()
+      │                   di background (fetch sisa artis + trigger standby)
       ▼
-track_filter.filter(results, history, current_queue)
+next(controller)   ← dipanggil saat track_ended
       │
-      ▼
-queue_manager.enqueue(track)
-      │
-      ▼
-prefetcher.schedule_next()   ← async, tidak blocking
-      │
-      ▼
-EventBus.publish(EVENT_RADIO_TRACK_QUEUED)
+      ├─ radio_queue tidak kosong → pop kiri, play_track();
+      │   kalau sisa ≤5, ensure_standby() di background
+      └─ radio_queue kosong → _start() lagi (refill)
 ```
 
-**⚠️ Titik rawan:** `track_filter.py` adalah sumber bug radio mode yang paling umum — filter terlalu agresif menyebabkan queue kosong. Prioritas test tertinggi di modul ini.
+**⚠️ Titik rawan:** `engine/radio/track_filter.py` (dipakai `artist_selector.py`) adalah sumber bug radio mode yang paling umum — filter terlalu agresif menyebabkan queue kosong. Prioritas test tertinggi.
 
 Sub-modul:
 
 | File | Tanggung Jawab | Catatan |
 |---|---|---|
-| `engine.py` | Orchestrator, export `RadioMode` | |
-| `prefetcher.py` | Background prefetch track berikutnya | Async task |
-| `artist_selector.py` | Pilih artis berikutnya berdasar riwayat | |
-| `track_filter.py` | Filter duplikat, recently-played, blacklist | ⚠️ Bug-prone |
+| `engine.py` | `RadioMode` — lifecycle (`on_activated`/`on_deactivated`), `next`, `_start`, `_fetch_and_play_initial` (tombol Acak) | |
+| `prefetcher.py` (`RadioPrefetcher`) | Standby prefetch batch berikutnya secara background | Async task |
+| `artist_selector.py` (`ArtistSelector`) | `gather_batch()` pilih artis + lagu, terapkan `TrackFilter` | |
+| `track_filter.py` (`TrackFilter`) | Filter duplikat, recently-played, blacklist | ⚠️ Bug-prone |
+| `track_interleaver.py` | Interleave lagu antar-artis agar tidak menumpuk per-artis | |
+| `artist_bandit.py` | Thompson Sampling reward tracking (dipakai bareng `ArtistRepository.record_completion/record_skip`) | |
+| `radio_config.py` | Konstanta (`ARTISTS_PER_BATCH`, `ARTISTS_QUICK`), helper `track_task` | |
 
 Test → `tests/unit/engine/radio/` — `test_track_filter.py` prioritas tertinggi.
 
@@ -107,31 +115,54 @@ Test → `tests/unit/engine/radio/` — `test_track_filter.py` prioritas terting
 
 ### `engine/queue_manager.py`
 
-Manajemen queue track. State queue disimpan di `core/state.py`, bukan di sini.
+**Catatan:** operasi queue (add/remove/reorder/select) **tidak** ada di file ini — sudah pindah ke `engine/playback/queue_ops.py` (`QueueOps`) + `queue_controller.py` (dijelaskan di §`engine/playback/controller.py` di atas). `queue_manager.py` sekarang hanya berisi `QueueMode`, penentu mode lanjutan (normal/radio/shuffle) saat sebuah track selesai:
 
-**Operasi:**
-- `add(track, position=None)` — tambah ke akhir atau posisi tertentu
-- `remove(index)` — hapus dari posisi
-- `reorder(from_index, to_index)` — drag & drop
-- `clear()` — kosongkan queue
-- `get_next()` / `get_prev()` — dipakai oleh playback
+```python
+class QueueMode:
+    async def next(self, controller: "PlaybackController") -> None:
+        # Tentukan track berikutnya sesuai mode aktif (delegasi ke
+        # RadioMode.next() kalau mode radio, atau queue biasa lewat state)
+        ...
+```
 
-Setiap operasi → publish `EVENT_QUEUE_UPDATED`.
+`QueueOps` (`engine/playback/queue_ops.py`):
 
-Test → `tests/unit/engine/test_queue_manager.py`
+```python
+class QueueOps:
+    async def queue_select(self, index: int) -> TrackInfo | None
+    async def add_track(self, track: TrackInfo) -> None
+    async def remove_track(self, index: int) -> None
+    async def replace_queue(self, tracks: list[TrackInfo]) -> None
+    async def reorder(self, from_index: int, to_index: int) -> None
+```
+
+State queue disimpan di `core/state.py`, bukan di `queue_ops.py`/`queue_manager.py` sendiri. Setiap operasi → publish event queue-terkait ke `core/events.py`.
+
+Test → `tests/unit/engine/test_queue_manager.py`, `tests/unit/engine/playback/test_queue_ops.py`, `tests/unit/engine/playback/test_queue_controller.py`
 
 ---
 
 ### `engine/volume_service.py`
 
-Wrapper tipis untuk set/get volume.
+`VolumeService` — handle `CMD_VOLUME_UP`/`_DOWN`/`_SET`. Volume 0–150 (bukan 0–100), dan disuppress ke `0` di MPV saat `audio_output == BROWSER` (browser yang mengatur volume sendiri via `<audio>` tag).
 
 ```python
-async def handle_set_volume(volume: int) -> None:
-    clamped = max(0, min(100, volume))
-    await audio_player_port.set_volume(clamped)
-    state.volume = clamped
-    await event_bus.publish(EVENT_VOLUME_CHANGED, {"volume": clamped})
+class VolumeService:
+    async def _on_volume_up(self, _data=None):
+        self.current_volume = min(150, self.current_volume + 5)
+        await self._apply_volume()
+
+    async def _on_volume_set(self, data):
+        vol = data.get("volume", 80)
+        self.current_volume = max(0, min(150, int(vol)))
+        await self._apply_volume()
+
+    async def _apply_volume(self):
+        if self.state.audio_output == AudioOutput.BROWSER:
+            await self.mpv.set_volume(0)
+        else:
+            await self.mpv.set_volume(self.current_volume)
+        self.state.volume = self.current_volume
 ```
 
 Test → `tests/unit/engine/test_volume_service.py`
@@ -142,12 +173,7 @@ Test → `tests/unit/engine/test_volume_service.py`
 
 ### `services/discover_service.py`
 
-Logic discover: mix artis dari library, trending, rekomendasi berdasar riwayat.
-
-**Tanggung jawab:**
-- Query `artist_repo` dan `track_repo` untuk data lokal
-- Susun rekomendasi (belum ada ML — rule-based untuk sekarang)
-- Return `List[TrackInfo]` ke handler
+`DiscoverService` — wrapper tipis di atas `DiscoverRepository` (lihat [backend/persistence.md](persistence.md#discoverrepository-discover_repopy)), bukan lagi rule-based sederhana di layer service. Method: `get_recent`, `get_favorites`, `get_cached`, `get_featured_artists`, `get_featured_genres`, `get_for_you` (bandit-ranked), `get_unheard`, `get_genre_affinity`, `get_taste_spectrum`, `get_artist_detail`. Detail konsumsi end-to-end (WS handler, frontend) → §Discover Tab Personalization di `STATUS.md`.
 
 Test → `tests/unit/services/test_discover_service.py`
 
