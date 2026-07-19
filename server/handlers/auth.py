@@ -55,14 +55,14 @@ def _prune_stale_ips(manager, now: float) -> None:
         del manager.command_history[ip]
 
 
-async def handle_auth(ws, data, manager, client_ip, db, now):
+async def handle_auth(ws, data, manager, client_ip, sessions, now):
     async with manager.rl_lock:
         # Prune dict rate-limit agar tidak tumbuh selamanya
         _prune_stale_ips(manager, now)
 
         token = data.get("token")
-        if token and db:
-            if await db.verify_session(token):
+        if token and sessions:
+            if await sessions.verify_session(token):
                 manager.authenticated_connections.add(ws)
                 await ws.send_str(
                     json.dumps({"type": "auth_status", "data": {"success": True, "token": token}})
@@ -108,8 +108,8 @@ async def handle_auth(ws, data, manager, client_ip, db, now):
         password_ok = password_matches and username == ADMIN_USERNAME
         if password_ok:
             new_token = secrets.token_hex(16)
-            if db:
-                await db.create_session(new_token, int(now) + 86400)
+            if sessions:
+                await sessions.create_session(new_token, int(now) + 86400)
             manager.authenticated_connections.add(ws)
             if client_ip in manager.login_attempts:
                 del manager.login_attempts[client_ip]

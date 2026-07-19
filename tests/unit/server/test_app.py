@@ -42,12 +42,14 @@ def mock_ytdlp():
 
 
 @pytest.fixture
-def mock_db():
-    return MagicMock()
+def mock_repos():
+    repos = MagicMock()
+    repos.conn = MagicMock()
+    return repos
 
 
-def test_create_app_registers_routes_and_services(mock_playback_controller, mock_ytdlp, mock_db):
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_db)
+def test_create_app_registers_routes_and_services(mock_playback_controller, mock_ytdlp, mock_repos):
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_repos)
 
     assert isinstance(app, web.Application)
 
@@ -55,7 +57,9 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert app["playback_controller"] == mock_playback_controller
     assert app["state"] == mock_playback_controller.state
     assert app["ytdlp"] == mock_ytdlp
-    assert app["db"] == mock_db
+    assert app["repos"] == mock_repos
+    assert app["conn"] == mock_repos.conn
+    assert app["tracks"] == mock_repos.tracks
     assert "manager" in app
 
     # Check that routes are registered

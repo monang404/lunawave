@@ -2,13 +2,17 @@
 Module: tests.unit.persistence.test_db
 
 Purpose:
-    Unit tests for database initialization and connection handling.
+    Unit tests for database connection lifecycle: initialization,
+    idempotent re-init, thread-safe close, and the songs table migration.
+    These all live in `persistence.db.DatabaseConnection` (extracted from
+    the old `Database` God Facade in PATCH T2.2a; the facade itself was
+    removed in PATCH T2.2e), so we test that class directly.
 
 Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - persistence
+    - persistence.db
 
 Subscribes to:
     None
@@ -20,27 +24,31 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from pathlib import Path
+
+SCHEMA_PATH = Path(__file__).resolve().parents[3] / "persistence" / "schema.sql"
+
 
 async def test_init_is_idempotent_when_called_twice_on_a_file_backed_db(tmp_path):
-    from persistence import Database
+    from persistence.db import DatabaseConnection
 
     path = tmp_path / "idempotent.db"
-    database = Database(db_path=path)
-    await database.init()
-    await database.close()
+    conn_mgr = DatabaseConnection(path)
+    await conn_mgr.init(SCHEMA_PATH)
+    await conn_mgr.close()
 
     # Re-opening and re-running migrations must not raise.
-    database2 = Database(db_path=path)
-    await database2.init()
+    conn_mgr2 = DatabaseConnection(path)
+    await conn_mgr2.init(SCHEMA_PATH)
 
     # Concrete assertion: verify that the database connection works and schema exists
-    async with database2.conn.execute(
+    async with conn_mgr2.conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table'"
     ) as cursor:
         tables = [row[0] async for row in cursor]
         assert len(tables) > 0, "Database should contain tables after init"
 
-    await database2.close()
+    await conn_mgr2.close()
 
 
 async def test_close_joins_connection_worker_thread(tmp_path):
@@ -49,16 +57,16 @@ async def test_close_joins_connection_worker_thread(tmp_path):
     thread left alive after close() is a non-daemon zombie thread that
     prevents the process from exiting cleanly (root cause of the CI hang
     investigated in implementation-plan.md Batch 0)."""
-    from persistence import Database
+    from persistence.db import DatabaseConnection
 
     path = tmp_path / "close_joins_thread.db"
-    database = Database(db_path=path)
-    await database.init()
+    conn_mgr = DatabaseConnection(path)
+    await conn_mgr.init(SCHEMA_PATH)
 
-    worker_thread = database.conn._thread
+    worker_thread = conn_mgr.conn._thread
     assert worker_thread.is_alive()
 
-    await database.close()
+    await conn_mgr.close()
 
     assert not worker_thread.is_alive()
 
@@ -74,7 +82,7 @@ async def test_songs_migration_recovers_collaboration_song_on_old_schema(tmp_pat
     allow a second artist to be linked to the same video going forward)."""
     import sqlite3
 
-    from persistence import Database
+    from persistence.db import DatabaseConnection
 
     path = tmp_path / "old_schema.db"
 
@@ -110,27 +118,27 @@ async def test_songs_migration_recovers_collaboration_song_on_old_schema(tmp_pat
     raw_conn.commit()
     raw_conn.close()
 
-    database = Database(db_path=path)
-    await database.init()
+    conn_mgr = DatabaseConnection(path)
+    await conn_mgr.init(SCHEMA_PATH)
 
     # Old data survived the migration.
-    async with database.conn.execute(
+    async with conn_mgr.conn.execute(
         "SELECT artist_id, judul, duration FROM songs WHERE youtube_id = 'tstwxIh6xJw'"
     ) as cursor:
         rows = await cursor.fetchall()
     assert [dict(r) for r in rows] == [{"artist_id": 1, "judul": "Separuh Aku", "duration": 240}]
 
     # The constraint is now per-artist: a second artist can own the same video_id.
-    await database.conn.execute("INSERT INTO artists (id, nama) VALUES (2, 'NOAH')")
-    await database.conn.execute(
+    await conn_mgr.conn.execute("INSERT INTO artists (id, nama) VALUES (2, 'NOAH')")
+    await conn_mgr.conn.execute(
         "INSERT INTO songs (artist_id, judul, youtube_id, duration) VALUES (2, 'Separuh Aku', 'tstwxIh6xJw', 240)"
     )
-    await database.conn.commit()
+    await conn_mgr.conn.commit()
 
-    async with database.conn.execute(
+    async with conn_mgr.conn.execute(
         "SELECT artist_id FROM songs WHERE youtube_id = 'tstwxIh6xJw' ORDER BY artist_id"
     ) as cursor:
         owning_artists = [row[0] async for row in cursor]
     assert owning_artists == [1, 2]
 
-    await database.close()
+    await conn_mgr.close()

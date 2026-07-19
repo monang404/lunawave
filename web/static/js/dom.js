@@ -59,6 +59,8 @@ function initDOM() {
         pbTimeDur: $("pb-time-dur"),
         pbProgressTrack: $("pb-progress-track"),
         pbProgressFill: $("pb-progress-fill"),
+        pbThumb: $("seek-thumb"),
+        playerBarEl: $("player-bar"),
         pbVolLabel: $("pb-vol-label"),
         volSlider: $("vol-slider"),
         btnShuffle: $("btn-shuffle"),
@@ -123,6 +125,21 @@ function initDOM() {
         rowGenreAffinityLabel: $("row-genre-affinity-label"),
         rowGenreAffinitySub: $("row-genre-affinity-sub"),
         rowUnheard: $("row-unheard"),
+        // Quick Search Discover (T-A9): registrasi elemen dari markup T-A5/T-A8.
+        discoverSearchWrap: $("discover-search-wrap"),
+        discoverSearchInput: $("discover-search-input"),
+        discoverSearchClearBtn: $("discover-search-clear-btn"),
+        discoverSearchFilterRow: $("discover-search-filter-row"),
+        discoverSearchKategoriToggle: $("discover-search-kategori-toggle"),
+        discoverSearchDecadeBtn: $("discover-search-decade-dropdown-btn"),
+        discoverSearchDecadeContainer: $("discover-search-decade-dropdown-container"),
+        discoverSearchDecadeChips: $("discover-search-decade-chips"),
+        discoverSearchStatus: $("discover-search-status"),
+        discoverSearchResults: $("discover-search-results"),
+        // filter-scope-hint tidak punya id di markup existing (di luar cakupan T-A9
+        // untuk menambah id baru ke index.html) -- querySelector di sini tetap sesuai
+        // aturan "tidak ada querySelector liar DI LUAR dom.js", karena ini di dalam dom.js.
+        filterScopeHint: document.querySelector("#tab-discover .filter-scope-hint"),
         artistDetailSheet: $("artist-detail-sheet"),
         adsCoverImg: $("ads-cover-img"),
         adsName: $("ads-name"),
@@ -131,4 +148,7 @@ function initDOM() {
         adsTrackList: $("ads-track-list"),
         adsCloseBtn: $("ads-close-btn")
     });
+    // Label row "Belum Pernah Kamu Dengar" tidak punya id sendiri di markup existing;
+    // dihitung dari struktur (sibling row-unheard), tetap terkurung di dom.js.
+    dom.rowUnheardLabel = dom.rowUnheard ? dom.rowUnheard.previousElementSibling : null;
 }

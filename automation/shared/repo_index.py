@@ -22,10 +22,30 @@ import json
 import time
 from pathlib import Path
 
-from shared.skip_dirs import walk_py_files
+from shared.skip_dirs import SKIP_DIRS_FOR_OWNERSHIP, walk_py_files
 
 CACHE_PATH = Path(".cache/repo_index.json")
 _BUS_METHODS = {"publish", "subscribe"}
+
+# Index "ownership" terpisah dari index utama di atas: index utama sengaja
+# skip automation/ dan tests/ (dipakai call_graph/hotspot/architecture_lint
+# yang fokus ke kode aplikasi). Tapi find_owner.py/context_pack.py perlu
+# bisa melihat automation/ dan tests/ juga. Sebelum PATCH-2026-07-17-075,
+# find_owner.py karena itu re-walk + re-parse AST SELURUH repo dari nol di
+# SETIAP panggilan (termasuk saat context_pack.py sudah punya index utama
+# ter-cache di panggilan yang sama) -- cache kedua ini menghilangkan
+# duplikasi kerja itu tanpa mengubah cakupan index utama.
+OWNERSHIP_CACHE_PATH = Path(".cache/repo_index_ownership.json")
+
+
+def _walk_py_files_for_ownership(root: Path):
+    import os
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS_FOR_OWNERSHIP]
+        for fn in filenames:
+            if fn.endswith(".py"):
+                yield Path(dirpath) / fn
 
 
 def _event_name(node: ast.Call) -> str | None:
@@ -93,13 +113,11 @@ def _rebuild_reverse_deps(files_index: dict) -> None:
                 files_index[imp_path]["reverse_deps"].append(rel)
 
 
-def _load_or_build(root: Path, force: bool) -> dict:
-    current = {
-        str(p.relative_to(root)).replace("\\", "/"): p.stat().st_mtime for p in walk_py_files(root)
-    }
+def _load_or_build(root: Path, force: bool, cache_path: Path, walker) -> dict:
+    current = {str(p.relative_to(root)).replace("\\", "/"): p.stat().st_mtime for p in walker(root)}
 
-    if not force and CACHE_PATH.exists():
-        cached = json.loads(CACHE_PATH.read_text())
+    if not force and cache_path.exists():
+        cached = json.loads(cache_path.read_text())
         old = cached["_meta"]["source_mtimes"]
         changed = {f for f, m in current.items() if old.get(f) != m}
         deleted = set(old) - set(current)
@@ -116,16 +134,32 @@ def _load_or_build(root: Path, force: bool) -> dict:
 
     _rebuild_reverse_deps(files_index)  # murah: invert dict, bukan AST
     data = {"_meta": {"generated_at": time.time(), "source_mtimes": current}, "files": files_index}
-    CACHE_PATH.parent.mkdir(exist_ok=True)
-    CACHE_PATH.write_text(json.dumps(data, indent=2))
+    cache_path.parent.mkdir(exist_ok=True)
+    cache_path.write_text(json.dumps(data, indent=2))
     return data
 
 
 def build_index(root: Path) -> dict:
-    """Full rebuild — abaikan cache lama."""
-    return _load_or_build(root, force=True)
+    """Full rebuild — abaikan cache lama. Cakupan: kode aplikasi (skip
+    automation/ dan tests/), dipakai call_graph/hotspot/architecture_lint."""
+    return _load_or_build(root, force=True, cache_path=CACHE_PATH, walker=walk_py_files)
 
 
 def load_index(root: Path) -> dict:
     """Load dari cache; reparse hanya file yang mtime-nya berubah."""
-    return _load_or_build(root, force=False)
+    return _load_or_build(root, force=False, cache_path=CACHE_PATH, walker=walk_py_files)
+
+
+def build_ownership_index(root: Path) -> dict:
+    """Full rebuild index cakupan "ownership" (termasuk automation/ dan
+    tests/) — dipakai find_owner.py/context_pack.py."""
+    return _load_or_build(
+        root, force=True, cache_path=OWNERSHIP_CACHE_PATH, walker=_walk_py_files_for_ownership
+    )
+
+
+def load_ownership_index(root: Path) -> dict:
+    """Load index ownership dari cache; reparse hanya file yang berubah."""
+    return _load_or_build(
+        root, force=False, cache_path=OWNERSHIP_CACHE_PATH, walker=_walk_py_files_for_ownership
+    )

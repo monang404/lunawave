@@ -31,4 +31,15 @@ function renderFullState() {
     if (typeof renderSettingsSheet === "function") renderSettingsSheet();
     if (typeof updateSearchPlayingState === "function") updateSearchPlayingState();
     if (typeof updateDiscoverPlayingState === "function") updateDiscoverPlayingState();
+
+    // Dynamic Title
+    const track = store.current_track;
+    if (track) {
+        document.title = `${track.title} - ${track.artist}`;
+    } else {
+        document.title = "LunaWave — Midnight Audio Experience";
+    }
+
+    // Media Session (fungsi ada di playback-sync.js)
+    if (typeof updateMediaSession === "function") updateMediaSession();
 }

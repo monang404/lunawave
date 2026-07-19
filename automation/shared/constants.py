@@ -12,4 +12,4 @@ Publishes:
     None
 """
 
-LARGE_FILE_THRESHOLD = 400  # lines of code
+LARGE_FILE_THRESHOLD = 500  # lines of code

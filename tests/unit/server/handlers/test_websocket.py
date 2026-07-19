@@ -28,7 +28,7 @@ async def test_handle_ws_message_auth(mock_handle_auth):
     assert args[1] == {"token": "123"}
     assert args[2] == mock_manager
     assert args[3] == "127.0.0.1"
-    assert args[4] == mock_db
+    assert args[4] == mock_db.sessions
 
 
 @pytest.mark.asyncio
@@ -86,7 +86,7 @@ async def test_handle_ws_message_queue_routing(mock_handle_queue, mock_check, mo
         None,
         mock_db,
     )
-    mock_handle_queue.assert_called_once_with("queue_add", {}, mock_db)
+    mock_handle_queue.assert_called_once_with("queue_add", {}, mock_db.artists, mock_db.genres)
 
 
 @pytest.mark.asyncio

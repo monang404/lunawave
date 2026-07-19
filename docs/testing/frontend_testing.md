@@ -49,8 +49,8 @@ Fokus ke **pure function** saja. Jangan test render, DOM, atau WebSocket connect
 | Kode | Test | Prioritas |
 |---|---|---|
 | `utils/format.js` | `tests/frontend/utils/format.test.js` | Tinggi |
-| `store.js` | `tests/frontend/test_store.test.js` | Sedang |
-| `ws.js` *(bagian routing saja, bukan render)* | `tests/frontend/test_ws-routing.test.js` | Sedang |
+| `store.js` | `tests/frontend/store.test.js` | Sedang |
+| `ws.js` *(bagian routing saja, bukan render)* | `tests/frontend/ws-routing.test.js` | Sedang |
 | `utils/toast.js`, `render/*.js`, `events/*.js` | — | Manual / e2e smoke (Playwright) |
 
 ---
@@ -94,12 +94,12 @@ describe("truncateTitle", () => {
 
 ---
 
-### `test_store.test.js` — Sedang
+### `store.test.js` — Sedang
 
 `store.js` mengelola state aplikasi. Test fokus ke mutasi state yang bisa diprediksi.
 
 ```javascript
-// tests/frontend/test_store.test.js
+// tests/frontend/store.test.js
 import { describe, it, expect, beforeEach } from "vitest";
 import { createStore } from "../../../static/store.js";
 
@@ -133,12 +133,12 @@ describe("Store", () => {
 
 ---
 
-### `test_ws-routing.test.js` — Sedang
+### `ws-routing.test.js` — Sedang
 
 Test routing logic WebSocket — bukan koneksi asli, hanya fungsi yang memetakan message ke handler.
 
 ```javascript
-// tests/frontend/test_ws-routing.test.js
+// tests/frontend/ws-routing.test.js
 import { describe, it, expect, vi } from "vitest";
 import { routeMessage } from "../../../static/ws.js";
 
@@ -187,8 +187,8 @@ tests/
 └── frontend/
     ├── utils/
     │   └── format.test.js       # Pure functions — prioritas tinggi
-    ├── test_store.test.js       # State mutations
-    └── test_ws-routing.test.js  # Message routing logic
+    ├── store.test.js       # State mutations
+    └── ws-routing.test.js  # Message routing logic
 ```
 
 ---

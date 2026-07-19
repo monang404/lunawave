@@ -2,28 +2,32 @@ function initVisualizer() {
     startFakeBeatLoop();
 }
 
-let _fakeBeatRaf = null;
+// PERF-02: dulu ini rAF loop 60fps yang jalan terus selama PLAYING, padahal
+// isinya cuma ngecek "sudah lewat 500ms belum" tiap frame (59 dari 60
+// panggilan per detik berakhir `return` tanpa ngapa-ngapain). Ini pola yang
+// sama persis dengan progress clock di player.js: rAF dipakai sebagai
+// "timer wakeup", bukan buat animasi per-frame beneran. Bedanya di sini
+// malah lebih jelas boros karena efeknya cuma pulsa tiap 500ms (bukan
+// gerakan kontinu), jadi ganti ke setInterval(500ms) — perilaku & tampilan
+// tetap sama persis (glow tetap pakai CSS transition 0.15s/0.4s yang sudah
+// ada, gak berubah), tapi main thread gak lagi dibangunin 60x/detik.
+let _fakeBeatInterval = null;
 function startFakeBeatLoop() {
-    if (_fakeBeatRaf) return;
+    if (_fakeBeatInterval) return;
     const BASE_INTERVAL = 500;
-    let lastBeat = 0;
-    function tick(ts) {
+    function beat() {
         if (store.status !== 'PLAYING') {
             if (dom.tabHome) {
                 dom.tabHome.style.removeProperty('--beat-glow-opacity');
                 dom.tabHome.style.removeProperty('--beat-bg-brightness');
                 dom.tabHome.style.removeProperty('--beat-glow-transition');
             }
-            if (_fakeBeatRaf) {
-                cancelAnimationFrame(_fakeBeatRaf);
-                _fakeBeatRaf = null;
+            if (_fakeBeatInterval) {
+                clearInterval(_fakeBeatInterval);
+                _fakeBeatInterval = null;
             }
             return;
         }
-        _fakeBeatRaf = requestAnimationFrame(tick);
-        const elapsed = ts - lastBeat;
-        if (elapsed < BASE_INTERVAL) return;
-        lastBeat = ts;
         if (!dom.tabHome) return;
         dom.tabHome.style.setProperty('--beat-glow-opacity', '0.5');
         dom.tabHome.style.setProperty('--beat-bg-brightness', '0.28');
@@ -35,7 +39,8 @@ function startFakeBeatLoop() {
             dom.tabHome.style.setProperty('--beat-glow-transition', '0.4s');
         }, 150);
     }
-    _fakeBeatRaf = requestAnimationFrame(tick);
+    _fakeBeatInterval = setInterval(beat, BASE_INTERVAL);
+    beat();
 }
 
 let _vizRafId = null;

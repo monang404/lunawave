@@ -37,7 +37,9 @@ def test_handle_first_run_writes_raw_password_not_hash(tmp_path, monkeypatch):
     """PATCH-2026-07-16-001 regression.
 
     Bug found: auth_panel._reset_password() wrote hash_password(raw) into
-    cache/admin_password.txt. config.py's loader treats the *file content*
+    the admin password file (originally cache/admin_password.txt, moved to
+    instance/admin_password.txt by T1.1). config.py's loader treats the
+    *file content*
     as the raw plaintext password and hashes it itself on every startup
     (see config.py / config_security.generate_admin_password()), so writing
     an already-hashed string there caused config.py to hash-the-hash —
@@ -58,7 +60,7 @@ def test_handle_first_run_writes_raw_password_not_hash(tmp_path, monkeypatch):
 
     auth_panel.handle_first_run(app_instance, tmp_path, *_dummy_colors())
 
-    password_file = tmp_path / "cache" / "admin_password.txt"
+    password_file = tmp_path / "instance" / "admin_password.txt"
     assert password_file.exists()
     raw_from_file = password_file.read_text(encoding="utf-8").strip()
 
@@ -85,7 +87,7 @@ def test_on_reset_password_also_writes_raw_password(tmp_path, monkeypatch):
 
     auth_panel.on_reset_password(app_instance, tmp_path, *_dummy_colors())
 
-    password_file = tmp_path / "cache" / "admin_password.txt"
+    password_file = tmp_path / "instance" / "admin_password.txt"
     assert password_file.exists()
     raw_from_file = password_file.read_text(encoding="utf-8").strip()
     assert not raw_from_file.startswith("pbkdf2:sha256:")

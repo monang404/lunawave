@@ -11,7 +11,7 @@ Responsibilities:
 
 Depends on:
     - shared.check_result
-    - scripts.verify_docs.helpers
+    - automation.verify_docs.doc_parsing_utils
 
 Subscribes to:
     None
@@ -30,7 +30,7 @@ import json
 from shared.check_result import CheckResult, _overall_status
 from shared.check_result import _score as _score_generic
 
-from .helpers import CHECK_HINTS, CHECK_WEIGHTS, fmt_items
+from .doc_parsing_utils import CHECK_HINTS, CHECK_WEIGHTS, fmt_items
 
 # Re-export _overall_status agar caller bisa import dari sini
 __all__ = ["_score", "_overall_status", "render_summary", "render_json"]

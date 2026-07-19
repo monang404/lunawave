@@ -11,7 +11,8 @@ Responsibilities:
 
 Depends on:
     - shared.check_result
-    - scripts.verify_docs.helpers
+    - automation.verify_docs.doc_parsing_utils
+    - automation.patchlog (verify() — deteksi entry gagal parse)
 
 Subscribes to:
     None
@@ -30,7 +31,9 @@ from pathlib import Path
 
 from shared.check_result import CheckResult
 
-from .helpers import (
+from patchlog import verify as patchlog_verify
+
+from .doc_parsing_utils import (
     GENERATED_BEGIN_RE,
     GENERATED_END_RE,
     PATCH_ID_RE,
@@ -121,6 +124,20 @@ def check_patchlog(docs_dir: Path) -> CheckResult:
             issues.append(
                 f"latest_patch_id='{latest_fm}' tidak cocok dengan entry terbaru ('{expected_latest}')"
             )
+
+    # Konsistensi struktural: ID yang ADA di file vs yang berhasil di-parse
+    # penuh (Tanggal/Ringkasan/File Terdampak). Kalau beda, artinya ada
+    # entry berformat non-baku yang diam-diam kehilangan riwayatnya di mata
+    # tool AI-facing (context_pack.py, find_owner.py) -- lihat
+    # PATCH-2026-07-17-074. Ini FAIL, bukan WARN, karena efeknya silent
+    # data loss di tool hilir.
+    parse_report = patchlog_verify(text)
+    if not parse_report["ok"]:
+        issues.append(
+            "Entry gagal di-parse penuh (format tidak baku, riwayat hilang dari "
+            f"context_pack/find_owner): {', '.join(parse_report['unparsed_ids'])}"
+        )
+        dupes = dupes or parse_report["unparsed_ids"]  # paksa status FAIL di bawah
 
     if issues:
         status = "FAIL" if dupes else "WARN"

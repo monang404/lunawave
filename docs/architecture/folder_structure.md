@@ -204,8 +204,8 @@ tests/
 └── frontend/                            opsional, prioritas rendah
     ├── utils/
     │   └── format.test.js
-    ├── test_store.test.js
-    └── test_ws-routing.test.js
+    ├── store.test.js
+    └── ws-routing.test.js
 ```
 
 Detail testing → [testing/unit_testing.md](../testing/unit_testing.md)

@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-17
-sprint: 3.2
+last_verified: 2026-07-19
+sprint: 3.3
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-17
+> **Tanggal Scan:** 2026-07-19
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,33 +19,33 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-17 oleh `automation/generate_report.py`
+> **Auto-generated:** 2026-07-19 oleh `automation/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
 | Total folder (ekskl. `__pycache__`, `.git`) | 62 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 108 |
-| Total file `.js` (ekskl. `.min.js`) | 35 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 111 |
+| Total file `.js` (ekskl. `.min.js`) | 36 |
 | Total file `.css` (ekskl. `.min.css`) | 22 |
-| Total class (Python) | 83 |
-| Total function/method (Python) | 462 |
-| Total baris Python | 10,738 |
-| Total baris JS (web/) | 3,627 |
-| Total baris CSS (web/) | 3,732 |
-| Ukuran DB utama (`data/lunawave.db`) | 804 KB (+ WAL 2068 KB) |
-| Ukuran DB library (`cache/library.db`) | 68 KB (+ WAL 0 KB) |
+| Total class (Python) | 89 |
+| Total function/method (Python) | 493 |
+| Total baris Python | 11,337 |
+| Total baris JS (web/) | 3,968 |
+| Total baris CSS (web/) | 3,947 |
+| Ukuran DB utama (`data/lunawave.db`) | 248 KB (+ WAL 1098 KB) |
+| Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 464 ⚠️ |
-| `main.py` | 360 |
-| `launcher/gui/ui_builder.py` | 355 |
-| `launcher/gui/app.py` | 319 |
-| `launcher/gui/auth_panel.py` | 277 |
+| `engine/playback/controller.py` | 433 |
+| `launcher/gui/ui_builder.py` | 363 |
+| `launcher/gui/app.py` | 309 |
+| `launcher/gui/auth_panel.py` | 264 |
+| `persistence/discover_repo.py` | 254 |
 <!-- END:GENERATED -->
 
 ---

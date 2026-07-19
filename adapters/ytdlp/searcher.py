@@ -8,7 +8,7 @@ Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - adapters.ytdlp.common
+    - adapters.ytdlp.ydl_options
     - core.state
 
 Subscribes to:
@@ -27,7 +27,7 @@ import re
 
 _VALID_ID_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
 
-from adapters.ytdlp.common import YDL_OPTS_INFO
+from adapters.ytdlp.ydl_options import YDL_OPTS_INFO
 from core.state import TrackInfo
 
 

@@ -62,7 +62,7 @@ async def handle_playback_command(action: str, data: dict):
         await command_bus.execute(CMD_NEXT, data)
 
     elif action == "prev":
-        await command_bus.execute(CMD_PREV)
+        await command_bus.execute(CMD_PREV, data)
 
     elif action == "stop":
         await command_bus.execute(CMD_STOP)

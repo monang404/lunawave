@@ -29,7 +29,7 @@ sequenceDiagram
     participant YTDLP as adapters/ytdlp/resolver.py
     participant MPV as adapters/mpv/
     participant EventBus as core/event_bus.py
-    participant Broadcast as server/services/broadcast_service.py
+    participant Broadcast as server/broadcast_service.py
 
     Browser->>WSHandler: WS {"cmd": "play", "video_id": "abc123"}
     WSHandler->>Router: route(CMD_PLAY, payload)
@@ -120,7 +120,7 @@ sequenceDiagram
     participant WS as server/handlers/websocket.py
     participant CM as server/connection_manager.py
     participant State as core/state.py
-    participant Broadcast as server/services/broadcast_service.py
+    participant Broadcast as server/broadcast_service.py
 
     Browser->>WS: WS connect (after disconnect)
     WS->>CM: register(ws)

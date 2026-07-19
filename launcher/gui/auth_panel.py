@@ -6,9 +6,11 @@ Purpose:
 
 Responsibilities:
     - Implement the core functionality described in the purpose.
+    - Delegate password generation/storage/verification to
+      launcher.auth_service (T3.2); this module owns dialogs only.
 
 Depends on:
-    None
+    - launcher.auth_service
 
 Subscribes to:
     None
@@ -20,9 +22,10 @@ Thread Safety:
     Stateless.
 """
 
-import secrets
 import tkinter as tk
 from tkinter import messagebox
+
+from launcher import auth_service
 
 
 # Need to know BASE_DIR, let's pass it
@@ -40,8 +43,7 @@ def handle_first_run(
     green,
     border,
 ):
-    password_file = base_dir / "cache" / "admin_password.txt"
-    if not password_file.exists():
+    if not auth_service.password_file_exists(base_dir):
         _reset_password(
             app_instance,
             base_dir,
@@ -111,23 +113,8 @@ def _reset_password(
     border,
 ):
     try:
-        raw_password = secrets.token_urlsafe(12)
-        # NOTE: the file on disk MUST hold the raw plaintext password, not a
-        # hash. config.py's loader (and config_security.generate_admin_password())
-        # both read this file as raw plaintext and hash it themselves on every
-        # startup — writing a pre-hashed string here caused config.py to hash
-        # an already-hashed value, silently invalidating the password shown
-        # to the user (PATCH-2026-07-16-001).
-        password_file = base_dir / "cache" / "admin_password.txt"
-        password_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(password_file, "w", encoding="utf-8") as f:
-            f.write(raw_password)
-        try:
-            import stat
-
-            password_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
-        except OSError:
-            pass
+        raw_password = auth_service.generate_password()
+        auth_service.save_password(base_dir, raw_password)
 
         if is_first_run:
             app_instance._safe_after(

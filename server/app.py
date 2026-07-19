@@ -12,12 +12,13 @@ Responsibilities:
 Depends on:
     - core.ports
     - engine.playback.controller
+    - persistence
     - server.connection_manager
     - server.handlers.event_listeners
     - server.handlers.http
     - server.handlers.websocket
-    - server.services.broadcast_service
-    - server.services.stream_prefetch
+    - server.broadcast_service
+    - services.stream_prefetch
 
 Subscribes to:
     None
@@ -35,10 +36,12 @@ from pathlib import Path
 import structlog
 from aiohttp import web
 
-from core.ports import DatabasePort, MediaExtractorPort
+from core.ports import MediaExtractorPort
 from engine.playback.controller import PlaybackController
+from persistence import Repositories
 from server.connection_manager import ConnectionManager
-from server.handlers.http import health_check, serve_index, serve_metrics, serve_stream
+from server.handlers.audio_stream_handler import serve_stream
+from server.handlers.http import health_check, serve_index, serve_metrics
 from server.handlers.websocket import ws_handler
 
 logger = structlog.get_logger(__name__)
@@ -46,7 +49,7 @@ STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
 
 def create_app(
-    playback_controller: PlaybackController, ytdlp: MediaExtractorPort, db: DatabasePort
+    playback_controller: PlaybackController, ytdlp: MediaExtractorPort, repos: Repositories
 ) -> web.Application:
     app = web.Application()
     manager = ConnectionManager()
@@ -54,16 +57,18 @@ def create_app(
     app["playback_controller"] = playback_controller
     app["state"] = playback_controller.state
     app["ytdlp"] = ytdlp
-    app["db"] = db
+    app["repos"] = repos
+    app["conn"] = repos.conn
+    app["tracks"] = repos.tracks
     app["manager"] = manager
     # Bug #9 fix: ClientSession sudah dibuat di main.py dan di-pass ke plugins.
     # Tidak perlu buat session baru di sini agar tidak ada resource leak.
 
     from server.handlers.event_listeners import setup_event_listeners
-    from server.services.broadcast_service import BroadcastService
-    from server.services.stream_prefetch import StreamPrefetchService
+    from server.broadcast_service import BroadcastService
+    from services.stream_prefetch import StreamPrefetchService
 
-    prefetch_service = StreamPrefetchService(db, ytdlp)
+    prefetch_service = StreamPrefetchService(repos.tracks, ytdlp)
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
 

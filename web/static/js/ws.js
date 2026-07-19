@@ -189,6 +189,19 @@ function handleServerMessage(msg) {
                     if (!_inToggleGrace) {
                         const diff = Math.abs(audio.currentTime - msg.data.position);
                         if (diff > 5 && msg.data.position > 2) {
+                            // Audio sudah aktif & ter-load (readyState cukup karena
+                            // _browserAudioActive true), jadi seek bisa langsung tanpa
+                            // nunggu event 'canplay' -- yang di kondisi ini kemungkinan
+                            // besar TIDAK PERNAH fire lagi (canplay hanya muncul lagi
+                            // kalau ada reload/stall, bukan tiap kali kita ganti
+                            // currentTime pada audio yang sudah playing). Sebelumnya
+                            // anchor (angka yang ditampilkan) diubah duluan lewat
+                            // setPositionAnchor(), sedangkan audio.currentTime baru
+                            // menyusul di dalam oncanplay yang gak jalan -- itu sebabnya
+                            // progress bar keliatan "loncat ke posisi server, lalu balik
+                            // lagi" begitu timeupdate berikutnya menimpa balik ke posisi
+                            // audio yang sebenarnya. Sekarang keduanya diset bareng,
+                            // di tick yang sama, jadi tidak ada jeda visual.
                             audio.currentTime = msg.data.position;
                             if (typeof setPositionAnchor === "function") {
                                 setPositionAnchor(msg.data.position);
@@ -240,6 +253,9 @@ function handleServerMessage(msg) {
         case "search_results":
             renderSearchResults(msg.data);
             break;
+        case "discover_search_results":
+            if (typeof renderDiscoverSearchResults === "function") renderDiscoverSearchResults(msg.data);
+            break;
         case "discover_data":
             showLogToast("Menerima data lagu! " + (msg.data.recent ? msg.data.recent.length : 0) + " items");
             store.discover_recent = msg.data.recent || [];
@@ -264,12 +280,28 @@ function handleServerMessage(msg) {
             break;
         case "error":
             showLogToast("Error: " + msg.data);
+            if (typeof handleDiscoverSearchError === "function") handleDiscoverSearchError();
             break;
-        case "download_progress":
+        case "download_progress": {
+            const prevProgress = store.download_progress;
             store.download_progress = msg.data;
             if (typeof renderPlayerBar === "function") renderPlayerBar();
             if (typeof renderSettingsSheet === "function") renderSettingsSheet();
+
+            if (prevProgress == null || prevProgress >= 1.0) {
+                if (msg.data >= 0 && msg.data < 1.0) {
+                    if (typeof showLogToast === "function") showLogToast("⬇ Mulai mengunduh lagu...");
+                }
+            }
+            if (msg.data >= 1.0 && prevProgress !== 1.0) {
+                if (typeof showLogToast === "function") showLogToast("✅ Unduhan selesai! Tersedia di Tersimpan Lokal");
+                setTimeout(() => {
+                    store.download_progress = null;
+                    if (typeof renderPlayerBar === "function") renderPlayerBar();
+                }, 3000);
+            }
             break;
+        }
         case "cache_size":
             if (dom.ssCacheSub) {
                 const mb = (msg.data.size_bytes / (1024 * 1024)).toFixed(2);

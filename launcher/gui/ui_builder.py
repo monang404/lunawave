@@ -45,7 +45,12 @@ class UIBuilder:
 
     # ── UI Layout ─────────────────────────────────────────
     def build_ui(self, app):
-        # ── Header ──
+        self._build_header(app)
+        self._build_status_bar(app)
+        self._build_controls(app)
+        self._build_log_panel(app)
+
+    def _build_header(self, app):
         header = tk.Frame(app, bg=self.BG_SURFACE, pady=14)
         header.pack(fill="x")
 
@@ -64,6 +69,7 @@ class UIBuilder:
             font=("Segoe UI", 9),
         ).pack()
 
+    def _build_status_bar(self, app):
         # ── Status Card ──
         status_frame = tk.Frame(app, bg=self.BG_CARD, pady=12, padx=16)
         status_frame.pack(fill="x", padx=16, pady=(14, 0))
@@ -134,6 +140,7 @@ class UIBuilder:
             command=app._on_kill_conflict,
         )
 
+    def _build_controls(self, app):
         # ── Buttons ──
         btn_frame = tk.Frame(app, bg=self.BG, pady=10)
         btn_frame.pack(fill="x", padx=16)
@@ -251,6 +258,7 @@ class UIBuilder:
         )
         app._deps_status.pack(fill="x")
 
+    def _build_log_panel(self, app):
         # ── Log area ──
         log_header = tk.Frame(app, bg=self.BG, pady=0)
         log_header.pack(fill="x", padx=16, pady=(10, 0))

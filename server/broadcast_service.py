@@ -1,0 +1,88 @@
+"""
+Module: server.broadcast_service
+
+Purpose:
+    Provide typed broadcast helpers that wrap ConnectionManager to push
+    specific message types to all connected WebSocket clients.
+
+Responsibilities:
+    - Broadcast state, progress, lyrics, log, and download-progress messages.
+
+Depends on:
+    - core.state
+    - server.connection_manager
+    - server.serializers
+
+Subscribes to:
+    None
+
+Publishes:
+    None
+
+Thread Safety:
+    Worker thread (async; delegates to ConnectionManager.broadcast).
+"""
+
+import time
+
+from core.state import AppState
+from server.connection_manager import ConnectionManager
+from server.serializers import state_to_dict
+
+
+class BroadcastService:
+    def __init__(self, manager: ConnectionManager):
+        self.manager = manager
+
+    async def broadcast_state(self, state: AppState, include_lyrics: bool = False):
+        # Default False: broadcast periodik tidak perlu menyeret ulang payload lirik penuh
+        # — sudah ditangani broadcast_lyrics(). Panggil dengan include_lyrics=True
+        # khusus untuk initial snapshot saat client baru connect.
+        await self.manager.broadcast(
+            {
+                "type": "state",
+                "data": state_to_dict(state, include_lyrics=include_lyrics),
+            }
+        )
+
+    async def broadcast_progress(self, position: float, status_name: str):
+        await self.manager.broadcast(
+            {
+                "type": "progress",
+                "data": {
+                    "position": position,
+                    "status": status_name,
+                    "server_ts": time.time(),
+                },
+            }
+        )
+
+    async def broadcast_lyrics(self, state: AppState):
+        await self.manager.broadcast(
+            {
+                "type": "lyrics",
+                "data": {
+                    "lyrics_lines": list(state.lyrics_lines),
+                    "lyrics_timestamps": list(state.lyrics_timestamps),
+                    "lyrics_index": state.lyrics_index,
+                    "lyrics_offset": state.lyrics_offset,
+                    "lyrics_loading": getattr(state, "lyrics_loading", False),
+                },
+            }
+        )
+
+    async def broadcast_log(self, message: str):
+        await self.manager.broadcast(
+            {
+                "type": "log",
+                "data": message,
+            }
+        )
+
+    async def broadcast_download_progress(self, progress: float):
+        await self.manager.broadcast(
+            {
+                "type": "download_progress",
+                "data": progress,
+            }
+        )

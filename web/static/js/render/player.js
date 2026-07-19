@@ -31,10 +31,15 @@ function renderPlayerBar() {
         dom.pbModeBadge.textContent = "📻 radio";
         dom.pbModeBadge.className = "pb-mode-badge radio";
         dom.btnRepeat.style.display = "none";
+        // PATCH-HIDE-SHUFFLE-RADIO-01: samain kayak repeat — di mode radio,
+        // shuffle nggak relevan (radio udah otomatis "acak" lagu baru), jadi
+        // ikut disembunyikan biar layout tombol tetap simetris.
+        if (dom.btnShuffle) dom.btnShuffle.style.display = "none";
     } else {
         dom.pbModeBadge.textContent = "≡ queue";
         dom.pbModeBadge.className = "pb-mode-badge queue";
         dom.btnRepeat.style.display = "inline-flex";
+        if (dom.btnShuffle) dom.btnShuffle.style.display = "inline-flex";
     }
 
     if (dom.btnRepeat) {
@@ -81,8 +86,10 @@ function renderPlayerBar() {
 function renderPlayBtn() {
     if (store.status === "PLAYING") {
         dom.btnPlay.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M14,19H18V5H14M6,19H10V5H6V19Z"></path></svg>';
+        if (typeof startProgressClock === "function") startProgressClock();
     } else {
         dom.btnPlay.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"></path></svg>';
+        if (typeof stopProgressClock === "function") stopProgressClock();
     }
 }
 
@@ -108,11 +115,19 @@ function renderPlayBtn() {
 let _posAnchorValue = 0;
 let _posAnchorTime = 0;
 let _progressRafId = null;
+// PERF-01: detik terakhir yang sudah ditulis ke DOM teks (pbTimePos/pbTimeDur).
+// Dipakai buat skip document write kalau detiknya belum berubah (lihat
+// _renderProgressCore). null artinya "belum pernah ditulis" -> paksa tulis
+// sekali di kesempatan berikutnya (aman dipakai setelah ganti lagu/seek
+// karena posisi baru hampir selalu beda detik dari yang lama; kalaupun sama
+// persis, teks yang ditampilkan memang sama jadi tidak ada bug terlihat).
+let _lastRenderedSec = null;
 
 function setPositionAnchor(value) {
     _posAnchorValue = Math.max(0, value || 0);
     _posAnchorTime = performance.now();
     store.position = _posAnchorValue;
+    _lastRenderedSec = null;
 }
 
 // FIX-POSITION-DRIFT-06: dipanggil setiap kali status BERUBAH jadi "PLAYING"
@@ -147,6 +162,13 @@ function startProgressClock() {
     _progressRafId = requestAnimationFrame(tick);
 }
 
+function stopProgressClock() {
+    if (_progressRafId) {
+        cancelAnimationFrame(_progressRafId);
+        _progressRafId = null;
+    }
+}
+
 function renderProgress() {
     // Dipanggil dari event (timeupdate, progress, seek, dll) yang sudah
     // mengupdate anchor lewat setPositionAnchor(). Loop rAF di atas yang
@@ -165,12 +187,19 @@ function _renderProgressCore(posOverride) {
 
     dom.pbProgressFill.style.width = pct + "%";
 
-    // update thumb
-    const thumb = dom.pbProgressTrack.querySelector('.pb-thumb');
-    if(thumb) thumb.style.left = pct + "%";
+    // update thumb (PERF-01: pakai referensi yang di-cache di dom.js, bukan
+    // querySelector ulang tiap frame — elemennya statis, gak pernah diganti)
+    if (dom.pbThumb) dom.pbThumb.style.left = pct + "%";
 
-    dom.pbTimePos.textContent = formatTime(pos);
-    dom.pbTimeDur.textContent = formatTime(dur);
+    // PERF-01: teks waktu presisinya detik, jadi gak perlu ditulis ulang ke
+    // DOM 60x/detik untuk nilai yang sama persis. Cuma tulis kalau detiknya
+    // (dibulatkan ke bawah) berubah dari yang terakhir ditampilkan.
+    const _sec = Math.floor(pos);
+    if (_sec !== _lastRenderedSec) {
+        _lastRenderedSec = _sec;
+        dom.pbTimePos.textContent = formatTime(pos);
+        dom.pbTimeDur.textContent = formatTime(dur);
+    }
 
     if (store.audio_output === "browser" && typeof getOrInitAudio === "function") {
         const _audioEl = getOrInitAudio();
@@ -190,7 +219,6 @@ function _renderProgressCore(posOverride) {
         }
     }
 
-    // S8-08 Mini Player Progress
-    const playerBar = document.getElementById("player-bar");
-    if(playerBar) playerBar.style.setProperty("--mini-progress", pct + "%");
+    // S8-08 Mini Player Progress (PERF-01: pakai dom.playerBarEl yang di-cache)
+    if (dom.playerBarEl) dom.playerBarEl.style.setProperty("--mini-progress", pct + "%");
 }

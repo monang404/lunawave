@@ -8,7 +8,7 @@ Responsibilities:
     - Implement the core functionality described in the purpose.
 
 Depends on:
-    - cache.resolver
+    - persistence.stream_cache
     - core.event_bus
     - core.state
     - engine.playback.controller
@@ -58,6 +58,7 @@ class FakeRadioMode:
         self.next_calls = []
         self.activated = False
         self.deactivated = False
+        self.fetch_initial_calls: list = []
 
     async def next(self, controller) -> None:
         self.next_calls.append(controller)
@@ -70,6 +71,9 @@ class FakeRadioMode:
 
     def check_prefetch(self, controller, position, duration) -> None:
         pass
+
+    async def _fetch_and_play_initial(self, controller, seed_artist=None) -> None:
+        self.fetch_initial_calls.append(seed_artist)
 
 
 def make_track(video_id="v1", duration=200):
@@ -132,7 +136,7 @@ def radio_mode():
 
 @pytest.fixture
 def controller(bus, state, player, repo, extractor, queue_mode, radio_mode):
-    from cache.resolver import CacheResolver
+    from persistence.stream_cache import CacheResolver
 
     resolver = CacheResolver(db=repo, ytdlp=extractor)
     from engine.playback.controller import PlaybackController

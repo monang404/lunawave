@@ -153,7 +153,19 @@ Test → `tests/unit/services/test_discover_service.py`
 
 ---
 
-### `server/services/broadcast_service.py`
+### `services/stream_prefetch.py`
+
+Prefetch URL stream untuk track berikutnya di queue, sebelum dibutuhkan.
+
+**Kapan berjalan:** setelah `EVENT_TRACK_CHANGED`, resolve URL track ke-2 di queue secara background.
+
+**Kenapa:** yt-dlp resolve bisa 1–3 detik. Prefetch menghilangkan jeda saat skip.
+
+Test → `tests/unit/services/test_stream_prefetch.py`
+
+---
+
+### `server/broadcast_service.py` (T2.7: tetap di `server/`, bukan `services/`)
 
 Subscribe ke `event_bus` dan broadcast state ke semua koneksi WebSocket aktif.
 
@@ -164,21 +176,29 @@ async def on_event(event_type: str, payload: dict) -> None:
     await connection_manager.broadcast(message)
 ```
 
+**Catatan T2.7 (deviasi dari rencana awal):** roadmap awalnya mengarahkan
+`server/services/broadcast_service.py` pindah ke root `services/` (disatukan
+dengan `stream_prefetch.py` dan `discover_service.py`). Itu **tidak
+dilakukan** untuk file ini karena `BroadcastService` meng-import
+`server.connection_manager` (pengelola koneksi WebSocket mentah) dan
+`server.serializers` — keduanya murni konstruksi web/wire layer, bukan
+business logic. Memindahkannya ke `services/` akan melanggar kontrak
+`.importlinter` "services hanya boleh import core dan persistence" (kontrak
+ini sempat tidak terdeteksi karena bug syntax di `.importlinter` — lihat
+`PATCH-2026-07-18-089` — begitu diperbaiki, pelanggaran ini langsung
+terverifikasi). `stream_prefetch.py` tidak punya masalah ini (hanya impor
+`config`+`core`) sehingga tetap pindah ke `services/` sesuai rencana.
+
+Konvensi suffix `_service.py`: dipakai untuk kelas yang mewakili
+use-case/orchestration murni tanpa dependency layer lain (`discover_service.py`,
+`stream_prefetch.py` — meski tanpa suffix, keduanya konsisten sebagai
+"service" business-logic). `broadcast_service.py` tetap pakai suffix karena
+memang me-representasikan orchestration (fan-out ke semua koneksi), namun
+lokasinya di `server/` mencerminkan bahwa ia terikat erat ke web layer.
+
 Berkaitan dengan → [backend/api.md](api.md) (format pesan)
 
-Test → `tests/unit/server/services/test_broadcast_service.py`
-
----
-
-### `server/services/stream_prefetch.py`
-
-Prefetch URL stream untuk track berikutnya di queue, sebelum dibutuhkan.
-
-**Kapan berjalan:** setelah `EVENT_TRACK_CHANGED`, resolve URL track ke-2 di queue secara background.
-
-**Kenapa:** yt-dlp resolve bisa 1–3 detik. Prefetch menghilangkan jeda saat skip.
-
-Test → `tests/unit/server/services/test_stream_prefetch.py`
+Test → `tests/unit/server/test_broadcast_service.py`
 
 ---
 

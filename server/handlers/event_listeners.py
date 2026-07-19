@@ -13,8 +13,8 @@ Depends on:
     - core.events
     - core.task_utils
     - server.serializers
-    - server.services.broadcast_service
-    - server.services.stream_prefetch
+    - server.broadcast_service
+    - services.stream_prefetch
 
 Subscribes to:
     TrackStartedEvent, TrackProgressEvent, QueueUpdatedEvent,
@@ -43,8 +43,8 @@ from core.events import (
     TrackStartedEvent,
 )
 from core.task_utils import safe_create_task
-from server.services.broadcast_service import BroadcastService
-from server.services.stream_prefetch import StreamPrefetchService
+from server.broadcast_service import BroadcastService
+from services.stream_prefetch import StreamPrefetchService
 
 logger = structlog.get_logger(__name__)
 
@@ -94,7 +94,7 @@ def setup_event_listeners(
             from server.serializers import track_to_dict
             from services.discover_service import DiscoverService
 
-            ds = DiscoverService(playback_controller.resolver.db)
+            ds = DiscoverService(playback_controller.resolver.db.discover)
             # 4 query independent — jalankan bersamaan, bukan berurutan
             recent, cached, featured_artists, featured_genres = await asyncio.gather(
                 ds.get_recent(15),

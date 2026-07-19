@@ -1,188 +1,168 @@
-const _hashtagColors = {};
+const HASHTAG_PALETTE = ['var(--g-pop)','var(--g-rock)','var(--g-indopop)','var(--g-jazz)','var(--g-electronic)','var(--g-other)'];
 function getHashtagColor(hashtag) {
-    if (_hashtagColors[hashtag]) return _hashtagColors[hashtag];
-    const hue = Math.floor(Math.random() * 360);
-    const saturation = 60 + Math.floor(Math.random() * 30);
-    const lightness = 50 + Math.floor(Math.random() * 20);
-    const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    _hashtagColors[hashtag] = color;
-    return color;
+    let hash = 0;
+    for (let i = 0; i < hashtag.length; i++) hash = (hash * 31 + hashtag.charCodeAt(i)) >>> 0;
+    return HASHTAG_PALETTE[hash % HASHTAG_PALETTE.length];
 }
 
-function renderDiscoverTab() {
-    if (dom.discRecent && store.discover_recent) {
-        if (store.discover_recent.length === 0) {
-            dom.discRecent.innerHTML = '<div class="discover-empty"><i class="ti ti-history" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada riwayat</div>';
-        } else {
-            dom.discRecent.innerHTML = store.discover_recent.map(track => {
-                const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
-                let artistName = track.artist || "";
-                if (artistName.length > 25) {
-                    artistName = artistName.substring(0, 22) + "...";
-                }
-                const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
-                return `
-                <div class="sr-item" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
-                    <div class="sr-thumb">
-                        <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
-                        <div class="thumb-eq-overlay">
-                            <div class="eq-anim-icon">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                        ${track.local_path ? '<span class="disc-tag">cache</span>' : ''}
-                    </div>
-                    <div class="sr-info">
-                        <div class="sr-title">${title}</div>
-                        <div class="sr-meta">${escapeHtml(artistName)}</div>
-                    </div>
-                    <div class="sr-duration">${formatTime(track.duration)}</div>
-                    <button class="sr-more-btn" aria-label="More">
-                        <i class="ti ti-dots-vertical"></i>
-                    </button>
-                </div>
-            `}).join('');
+const HASHTAG_VISIBLE_CAP = 16;
+function renderHashtagCloud(container, items, buildPillHTML, isExpanded = false) {
+    if (!container) return;
+    if (!items || items.length === 0) { container.innerHTML = ''; return; }
+    if (isExpanded) {
+        container.innerHTML = items.map(buildPillHTML).join('') +
+            `<button class="hashtag-more-btn hide-btn"><i class="ti ti-chevron-up" style="margin-right: 4px;"></i> Sembunyikan</button>`;
+        const btn = container.querySelector('.hide-btn');
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                renderHashtagCloud(container, items, buildPillHTML, false);
+            }, { once: true });
+        }
+    } else {
+        const visible = items.slice(0, HASHTAG_VISIBLE_CAP);
+        const rest = items.slice(HASHTAG_VISIBLE_CAP);
+        container.innerHTML = visible.map(buildPillHTML).join('') +
+            (rest.length
+                ? `<button class="hashtag-more-btn" data-remaining="${rest.length}">+${rest.length} lainnya</button>`
+                : '');
+        const btn = container.querySelector('.hashtag-more-btn');
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                renderHashtagCloud(container, items, buildPillHTML, true);
+            }, { once: true });
         }
     }
+}
+
+const LIST_PREVIEW_CAP = 5;
+function renderTrackList(container, tracks, itemHTMLFn, emptyHTML, isExpanded = false) {
+    if (!container) return;
+    if (!tracks || tracks.length === 0) { container.innerHTML = emptyHTML; return; }
+    if (isExpanded) {
+        container.innerHTML = tracks.map(itemHTMLFn).join('') +
+            `<button class="list-expand-btn hide-btn"><i class="ti ti-chevron-up" style="margin-right: 4px;"></i> Sembunyikan</button>`;
+        const btn = container.querySelector('.hide-btn');
+        if (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                renderTrackList(container, tracks, itemHTMLFn, emptyHTML, false);
+                if (typeof window.loadLazyCovers === 'function') window.loadLazyCovers();
+            }, { once: true });
+        }
+    } else {
+        const preview = tracks.slice(0, LIST_PREVIEW_CAP);
+        const rest = tracks.length - preview.length;
+        container.innerHTML = preview.map(itemHTMLFn).join('') +
+            (rest > 0 ? `<button class="list-expand-btn" data-remaining="${rest}">Lihat Semua (${tracks.length})</button>` : '');
+        const btn = container.querySelector('.list-expand-btn');
+        if (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                renderTrackList(container, tracks, itemHTMLFn, emptyHTML, true);
+                if (typeof window.loadLazyCovers === 'function') window.loadLazyCovers();
+            }, { once: true });
+        }
+    }
+}
+
+
+function renderDiscoverTab() {
 
     if (dom.discArtists && store.discover_featured_artists) {
-        if (store.discover_featured_artists.length > 0) {
-            dom.discArtists.innerHTML = store.discover_featured_artists.map((artist, idx) => {
-                const name = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(artist.nama)) : escapeHtml(artist.nama);
-                const hashtag = "#" + name.replace(/\s+/g, '');
+        renderHashtagCloud(dom.discArtists, store.discover_featured_artists, (artist) => {
+            const name = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(artist.nama)) : escapeHtml(artist.nama);
+            const hashtag = "#" + name.replace(/\s+/g, '');
+            const color = getHashtagColor(hashtag);
+            const clicks = artist.click_count || 0;
+            const bonusSize = Math.min(clicks * 2, 14); // Max +14px
+            const fontSize = 14 + bonusSize; // 14px - 28px
+            return `<div class="hashtag-pill" data-artist="${escapeHtml(artist.nama)}" style="color: ${color}; --base-size: ${fontSize}px;">${hashtag}</div>`;
+        });
 
-                const color = getHashtagColor(hashtag);
-                const clicks = artist.click_count || 0;
-                const bonusSize = Math.min(clicks * 2, 14); // Max +14px
-                const fontSize = 14 + bonusSize; // 14px - 28px
-
-                return `<div class="hashtag-pill" data-artist="${escapeHtml(artist.nama)}" style="color: ${color}; --base-size: ${fontSize}px;">${hashtag}</div>`;
-            }).join('');
-
-            dom.discArtists.onclick = (e) => {
-                const pill = e.target.closest('.hashtag-pill');
-                if (pill && pill.dataset.artist) {
-                    if (store.userRole !== 'admin') {
-                        if (typeof showLogToast === 'function') showLogToast("Hanya admin yang bisa memutar musik");
-                        return;
-                    }
-                    if (typeof showLogToast === 'function') showLogToast(`Memutar playlist dari ${pill.dataset.artist}...`);
-                    wsSend('enqueue_artist_songs', { artist: pill.dataset.artist });
-                    if (typeof switchTab === 'function') switchTab('home');
+        dom.discArtists.onclick = (e) => {
+            const pill = e.target.closest('.hashtag-pill');
+            if (pill && pill.dataset.artist) {
+                if (store.userRole !== 'admin') {
+                    if (typeof showLogToast === 'function') showLogToast("Hanya admin yang bisa memutar musik");
+                    return;
                 }
-            };
-        } else {
-            dom.discArtists.innerHTML = '';
-        }
+                if (typeof showLogToast === 'function') showLogToast(`Memutar playlist dari ${pill.dataset.artist}...`);
+                wsSend('enqueue_artist_songs', { artist: pill.dataset.artist });
+                if (typeof switchTab === 'function') switchTab('home');
+            }
+        };
     }
-
     if (dom.discGenres && store.discover_featured_genres) {
-        if (store.discover_featured_genres.length > 0) {
-            dom.discGenres.innerHTML = store.discover_featured_genres.map((genre, idx) => {
-                const name = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(genre.nama_genre)) : escapeHtml(genre.nama_genre);
-                const hashtag = "#" + name.replace(/\s+/g, '');
+        renderHashtagCloud(dom.discGenres, store.discover_featured_genres, (genre) => {
+            const name = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(genre.nama_genre)) : escapeHtml(genre.nama_genre);
+            const hashtag = "#" + name.replace(/\s+/g, '');
+            const color = getHashtagColor(hashtag);
+            const clicks = genre.click_count || 0;
+            const bonusSize = Math.min(clicks * 2, 14); // Max +14px
+            const fontSize = 14 + bonusSize; // 14px - 28px
+            return `<div class="hashtag-pill" data-genre="${escapeHtml(genre.nama_genre)}" style="color: ${color}; --base-size: ${fontSize}px;">${hashtag}</div>`;
+        });
 
-                const color = getHashtagColor(hashtag);
-
-                const clicks = genre.click_count || 0;
-                const bonusSize = Math.min(clicks * 2, 14); // Max +14px
-                const fontSize = 14 + bonusSize; // 14px - 28px
-
-                return `<div class="hashtag-pill" data-genre="${escapeHtml(genre.nama_genre)}" style="color: ${color}; --base-size: ${fontSize}px;">${hashtag}</div>`;
-            }).join('');
-
-            dom.discGenres.onclick = (e) => {
-                const pill = e.target.closest('.hashtag-pill');
-                if (pill && pill.dataset.genre) {
-                    if (store.userRole !== 'admin') {
-                        if (typeof showLogToast === 'function') showLogToast("Hanya admin yang bisa memutar musik");
-                        return;
-                    }
-                    if (typeof showLogToast === 'function') showLogToast(`Memutar playlist dari genre ${pill.dataset.genre}...`);
-                    wsSend('enqueue_genre_songs', { genre: pill.dataset.genre });
-                    if (typeof switchTab === 'function') switchTab('home');
+        dom.discGenres.onclick = (e) => {
+            const pill = e.target.closest('.hashtag-pill');
+            if (pill && pill.dataset.genre) {
+                if (store.userRole !== 'admin') {
+                    if (typeof showLogToast === 'function') showLogToast("Hanya admin yang bisa memutar musik");
+                    return;
                 }
-            };
-        } else {
-            dom.discGenres.innerHTML = '';
-        }
+                if (typeof showLogToast === 'function') showLogToast(`Memutar playlist dari genre ${pill.dataset.genre}...`);
+                wsSend('enqueue_genre_songs', { genre: pill.dataset.genre });
+                if (typeof switchTab === 'function') switchTab('home');
+            }
+        };
     }
-
     if (dom.discFavorites && store.discover_favorites) {
-        if (store.discover_favorites.length === 0) {
-            dom.discFavorites.innerHTML = '<div class="discover-empty"><i class="ti ti-heart" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada lagu favorit</div>';
-        } else {
-            dom.discFavorites.innerHTML = store.discover_favorites.map(track => {
-                const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
-                let artistName = track.artist || "";
-                if (artistName.length > 25) {
-                    artistName = artistName.substring(0, 22) + "...";
-                }
-                const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
-                return `
-                <div class="sr-item" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
-                    <div class="sr-thumb">
-                        <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
-                        <div class="thumb-eq-overlay">
-                            <div class="eq-anim-icon">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                        ${track.local_path ? '<span class="disc-tag">cache</span>' : ''}
-                    </div>
-                    <div class="sr-info">
-                        <div class="sr-title">${title}</div>
-                        <div class="sr-meta">${escapeHtml(artistName)}</div>
-                    </div>
-                    <div class="sr-duration">${formatTime(track.duration)}</div>
-                    <button class="sr-more-btn" aria-label="More">
-                        <i class="ti ti-dots-vertical"></i>
-                    </button>
+        const emptyHTML = '<div class="discover-empty"><i class="ti ti-heart" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Belum ada lagu favorit</div>';
+        renderTrackList(dom.discFavorites, store.discover_favorites, (track) => {
+            const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
+            let artistName = track.artist || "";
+            if (artistName.length > 25) { artistName = artistName.substring(0, 22) + "..."; }
+            const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
+            return `
+            <div class="sr-item" tabindex="0" role="button" aria-label="Putar ${escapeHtml(track.title)} — ${escapeHtml(track.artist)}" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
+                <div class="sr-thumb">
+                    <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
+                    <div class="thumb-eq-overlay"><div class="eq-anim-icon"><span></span><span></span><span></span></div></div>
+                    ${track.local_path ? '<span class="disc-tag">cache</span>' : ''}
                 </div>
-            `}).join('');
-        }
+                <div class="sr-info">
+                    <div class="sr-title" title="${escapeHtml(track.title)}">${title}</div>
+                    <div class="sr-meta">${escapeHtml(artistName)}</div>
+                </div>
+                <div class="sr-duration">${formatTime(track.duration)}</div>
+                <button class="sr-more-btn" aria-label="More"><i class="ti ti-dots-vertical"></i></button>
+            </div>`;
+        }, emptyHTML);
     }
-
     if (dom.discCached && store.discover_cached) {
-        if (store.discover_cached.length === 0) {
-            dom.discCached.innerHTML = '<div class="discover-empty"><i class="ti ti-box-off" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Tidak ada file tersimpan</div>';
-        } else {
-            dom.discCached.innerHTML = store.discover_cached.map(track => {
-                const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
-                let artistName = track.artist || "";
-                if (artistName.length > 25) {
-                    artistName = artistName.substring(0, 22) + "...";
-                }
-                const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
-                return `
-                <div class="sr-item" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
-                    <div class="sr-thumb">
-                        <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
-                        <div class="thumb-eq-overlay">
-                            <div class="eq-anim-icon">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="sr-info">
-                        <div class="sr-title">${title}</div>
-                        <div class="sr-meta">${escapeHtml(artistName)}</div>
-                    </div>
-                    <div class="sr-duration">${formatTime(track.duration)}</div>
-                    <button class="sr-more-btn" aria-label="More">
-                        <i class="ti ti-dots-vertical"></i>
-                    </button>
+        const emptyHTML = '<div class="discover-empty"><i class="ti ti-box-off" style="font-size:32px; opacity:0.6; margin-bottom:12px; display:block;"></i>Tidak ada file tersimpan</div>';
+        renderTrackList(dom.discCached, store.discover_cached, (track) => {
+            const title = typeof cleanTrackTitle === "function" ? escapeHtml(cleanTrackTitle(track.title)) : escapeHtml(track.title);
+            let artistName = track.artist || "";
+            if (artistName.length > 25) { artistName = artistName.substring(0, 22) + "..."; }
+            const trackStr = JSON.stringify(track).replace(/'/g, "&apos;");
+            return `
+            <div class="sr-item" tabindex="0" role="button" aria-label="Putar ${escapeHtml(track.title)} — ${escapeHtml(track.artist)}" data-vid="${escapeHtml(track.video_id || '')}" data-track-str='${trackStr}'>
+                <div class="sr-thumb">
+                    <img class="lazy-cover" data-vid="${escapeHtml(track.video_id || '')}" data-title="${escapeHtml(track.title || '')}" data-artist="${escapeHtml(track.artist || '')}" data-thumb="${escapeHtml(track.thumbnail || '')}" src="" alt="">
+                    <div class="thumb-eq-overlay"><div class="eq-anim-icon"><span></span><span></span><span></span></div></div>
                 </div>
-            `}).join('');
-        }
+                <div class="sr-info">
+                    <div class="sr-title" title="${escapeHtml(track.title)}">${title}</div>
+                    <div class="sr-meta">${escapeHtml(artistName)}</div>
+                </div>
+                <div class="sr-duration">${formatTime(track.duration)}</div>
+                <button class="sr-more-btn" aria-label="More"><i class="ti ti-dots-vertical"></i></button>
+            </div>`;
+        }, emptyHTML);
     }
-
     if (typeof window.loadLazyCovers === "function") {
         window.loadLazyCovers();
     }

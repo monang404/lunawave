@@ -53,8 +53,8 @@ tests/
 └── frontend/
     ├── utils/
     │   └── format.test.js
-    ├── test_store.test.js
-    └── test_ws-routing.test.js
+    ├── store.test.js
+    └── ws-routing.test.js
 ```
 
 ---

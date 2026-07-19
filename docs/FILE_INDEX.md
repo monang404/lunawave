@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-17
+last_verified: 2026-07-19
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-17 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-19 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `cache/resolver`, `core/log_config`, _11 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `core/log_config`, `engine/loudness/analyzer`, _11 lainnya_
 **Menggunakan:** —
 
 
@@ -43,9 +43,9 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `main.py`
 **Fungsi:** Bootstrap all LunaWave subsystems and start the async aiohttp web server.
 **Class:** —
-**Function utama:** `main()`
+**Function utama:** `run_server()`, `main()`
 **Digunakan oleh:** —
-**Menggunakan:** `cache/db`, `config`, `core/event_bus`, `core/log_config`, `core/state`, `core/task_utils`, _7 lainnya_
+**Menggunakan:** `config`, `core/log_config`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`
 
 
 ---
@@ -87,7 +87,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Implement a lightweight async pub/sub EventBus that decouples modules via typed DomainEvents, using weak references for method handlers.
 **Class:** `EventBus`
 **Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`
-**Digunakan oleh:** `adapters/mpv/observer`, `engine/download_manager`, `engine/playback/controller`, `engine/volume_service`, `main`, _3 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/services`, `engine/download_manager`, `engine/playback/controller`, `engine/volume_service`, _3 lainnya_
 **Menggunakan:** `core/events`, `core/observability`, `core/task_utils`
 
 
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Rolling window durasi (detik) untuk menghitung percentile ke-n dari N sample terakhir. Dipakai untuk threshold adaptif yang bereaksi ke kondisi jaringan aktual, bukan angka statis.
 **Class:** `LatencyWindow`
 **Function utama:** `record()`, `percentile()`, `sample_count()`
-**Digunakan oleh:** `cache/resolver`
+**Digunakan oleh:** `persistence/stream_cache`
 **Menggunakan:** —
 
 
@@ -137,7 +137,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.
 **Class:** —
 **Function utama:** `get_metrics_content()`
-**Digunakan oleh:** `cache/resolver`, `core/command_bus`, `core/event_bus`, `server/connection_manager`, `server/handlers/http`
+**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `persistence/stream_cache`, `server/connection_manager`, `server/handlers/http`
 **Menggunakan:** —
 
 
@@ -145,9 +145,9 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 **File:** `core/ports.py`
 **Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.
-**Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `ArtistRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, ArtistRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
-**Function utama:** `is_connected()`, `cancel_download()`, `db()`, `latency_window()`
-**Digunakan oleh:** `cache/resolver`, `engine/download_manager`, `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, _7 lainnya_
+**Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `ArtistRepositoryPort(Protocol)`, `LibraryRepositoryPort(Protocol)`, `DiscoverRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, ArtistRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
+**Function utama:** `is_connected()`, `cancel_download()`, `db()`, `latency_window()`, `conn()`, `conn()`
+**Digunakan oleh:** `engine/download_manager`, `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, `engine/playback/track_loader`, _9 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -167,7 +167,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(StrEnum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`
 **Function utama:** —
-**Digunakan oleh:** `adapters/ytdlp/searcher`, `cache/resolver`, `core/events`, `core/ports`, `engine/download_manager`, _26 lainnya_
+**Digunakan oleh:** `adapters/ytdlp/searcher`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`, `core/events`, _31 lainnya_
 **Menggunakan:** —
 
 
@@ -177,7 +177,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Wrap asyncio.create_task with centralized exception handling to prevent silent background-task crashes.
 **Class:** —
 **Function utama:** `safe_create_task()`
-**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/track_ended_ops`, _4 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/maintenance`, `bootstrap/startup_tasks`, `core/event_bus`, `engine/download_manager`, _7 lainnya_
 **Menggunakan:** —
 
 
@@ -236,22 +236,12 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `adapters/ytdlp/common.py`
-**Fungsi:** Shared utilities and constants for yt-dlp integration.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `adapters/ytdlp/searcher`
-**Menggunakan:** —
-
-
----
-
 **File:** `adapters/ytdlp/downloader.py`
 **Fungsi:** Handles downloading audio streams using yt-dlp.
 **Class:** `YtDlpDownloader`
 **Function utama:** `cancel_download()`
 **Digunakan oleh:** `adapters/ytdlp/__init__`
-**Menggunakan:** `adapters/ytdlp/common`, `config`
+**Menggunakan:** `adapters/ytdlp/ydl_options`, `config`
 
 
 ---
@@ -261,7 +251,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `YtDlpResolver`
 **Function utama:** `_extract_sync()`, `_pick_audio_url()`
 **Digunakan oleh:** `adapters/ytdlp/__init__`
-**Menggunakan:** `adapters/ytdlp/common`, `config`
+**Menggunakan:** `adapters/ytdlp/ydl_options`, `config`
 
 
 ---
@@ -271,7 +261,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `YtDlpSearcher`
 **Function utama:** `_extract_sync()`, `_to_track()`
 **Digunakan oleh:** `adapters/ytdlp/__init__`
-**Menggunakan:** `adapters/ytdlp/common`, `core/state`
+**Menggunakan:** `adapters/ytdlp/ydl_options`, `core/state`
+
+
+---
+
+**File:** `adapters/ytdlp/ydl_options.py`
+**Fungsi:** Shared utilities and constants for yt-dlp integration.
+**Class:** —
+**Function utama:** —
+**Digunakan oleh:** `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `adapters/ytdlp/searcher`
+**Menggunakan:** —
 
 
 ---
@@ -283,7 +283,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Register all CMD_* CommandBus handlers, routing each command to the appropriate method on PlaybackController or VolumeService.
 **Class:** `CommandRouter`
 **Function utama:** `_route_sleep()`, `_route()`, `_route_volume()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `bootstrap/services`
 **Menggunakan:** `core/command_bus`
 
 
@@ -293,7 +293,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Handle the CMD_DOWNLOAD command by downloading the current or specified track via yt-dlp and moving it to the downloads/ folder.
 **Class:** `DownloadManager`
 **Function utama:** `_update_progress()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `bootstrap/services`
 **Menggunakan:** `core/command_bus`, `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`
 
 
@@ -329,22 +329,12 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `engine/mpv_controller.py`
-**Fungsi:** Auto-generated purpose.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** `main`
-**Menggunakan:** `adapters/mpv`
-
-
----
-
 **File:** `engine/playback/controller.py`
 **Fungsi:** Orchestrate all playback logic: track loading, queue/radio advancement, pause/seek, and mode switching via CommandBus commands.
 **Class:** `PlaybackController`
 **Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`, `engine/playback/mode_ops`, _5 lainnya_
+**Menggunakan:** `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`, `engine/playback/mode_ops`, _7 lainnya_
 
 
 ---
@@ -369,12 +359,32 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `engine/playback/queue_controller.py`
+**Fungsi:** Menangani command CMD_QUEUE_* (select/remove/add/replace/reorder) dan advance-to-next (lanjut ke lagu berikutnya, baik mode QUEUE maupun RADIO). Diekstrak dari PlaybackController (roadmap IMPLEMENTATION_PLAN.md §2.3, task T2.3.1) agar controller.py tetap ramping.
+**Class:** `QueueController`
+**Function utama:** —
+**Digunakan oleh:** `engine/playback/controller`
+**Menggunakan:** `core/state`, `core/task_utils`
+
+
+---
+
 **File:** `engine/playback/queue_ops.py`
 **Fungsi:** Manages queue operations including adding, removing, and reordering tracks.
 **Class:** `QueueOps`
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/controller`
 **Menggunakan:** `core/events`, `core/state`
+
+
+---
+
+**File:** `engine/playback/settings_controller.py`
+**Fungsi:** Menangani command CMD_SET_OUTPUT, CMD_SET_SPONSORBLOCK, CMD_SET_LOUDNESS_NORMALIZATION, CMD_SET_MODE, CMD_RADIO_RANDOMIZE, dan CMD_LYRICS_OFFSET. Diekstrak dari PlaybackController (roadmap IMPLEMENTATION_PLAN.md §2.3, task T2.3.2) agar controller.py tetap ramping.
+**Class:** `SettingsController`
+**Function utama:** —
+**Digunakan oleh:** `engine/playback/controller`
+**Menggunakan:** `core/state`, `core/task_utils`
 
 
 ---
@@ -424,17 +434,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `ArtistSelector`
 **Function utama:** `reset_rotation()`, `build_exclusion_set()`
 **Digunakan oleh:** `engine/radio/engine`
-**Menggunakan:** `core/state`, `engine/radio/common`, `engine/radio/track_filter`, `engine/radio/track_interleaver`
-
-
----
-
-**File:** `engine/radio/common.py`
-**Fungsi:** Common utilities and shared logic for the radio engine components.
-**Class:** —
-**Function utama:** `track_task()`
-**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/engine`, `engine/radio/prefetcher`
-**Menggunakan:** `core/task_utils`
+**Menggunakan:** `core/ports`, `core/state`, `engine/radio/radio_config`, `engine/radio/track_filter`, `engine/radio/track_interleaver`
 
 
 ---
@@ -444,7 +444,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `RadioMode`
 **Function utama:** `check_prefetch()`
 **Digunakan oleh:** `engine/radio/__init__`
-**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/common`, `engine/radio/prefetcher`
+**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/radio_config`, `engine/radio/prefetcher`
 
 
 ---
@@ -454,7 +454,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `RadioPrefetcher`
 **Function utama:** `cancel_tasks()`, `trigger_build_standby()`, `check_prefetch()`
 **Digunakan oleh:** `engine/radio/engine`
-**Menggunakan:** `config`, `core/state`, `engine/radio/common`
+**Menggunakan:** `config`, `core/state`, `engine/radio/radio_config`
+
+
+---
+
+**File:** `engine/radio/radio_config.py`
+**Fungsi:** Common utilities and shared logic for the radio engine components.
+**Class:** —
+**Function utama:** `track_task()`
+**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/engine`, `engine/radio/prefetcher`
+**Menggunakan:** `core/task_utils`
 
 
 ---
@@ -479,16 +489,6 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `engine/radio_engine.py`
-**Fungsi:** Core logic for the radio mode engine, orchestrating playback when radio is active.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `engine/radio`
-
-
----
-
 **File:** `engine/sleep_timer.py`
 **Fungsi:** Handles setting, tracking, and executing a sleep timer to stop playback after a specified duration.
 **Class:** `SleepTimer`
@@ -509,22 +509,12 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `engine/ytdlp_client.py`
-**Fungsi:** Auto-generated purpose.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** `main`
-**Menggunakan:** `adapters/ytdlp`
-
-
----
-
 
 ## persistence/
 
 **File:** `persistence/__init__.py`
-**Fungsi:** Database facade that aggregates all repositories into a unified data access layer.
-**Class:** `Database`
+**Fungsi:** Package entry point for the persistence layer: builds one DB connection and the six domain repositories that use it. Domain logic itself lives in each `*_repo.py` module (persistence.track_repo, .session_repo, .artist_repo, .genre_repo, .library_repo, .discover_repo) — this module only wires them up.
+**Class:** `Repositories`
 **Function utama:** `conn()`
 **Digunakan oleh:** —
 **Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, _1 lainnya_
@@ -535,7 +525,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `persistence/artist_repo.py`
 **Fungsi:** Repository for tracking artist statistics and fetching artist-specific tracks.
 **Class:** `ArtistRepository`
-**Function utama:** —
+**Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `core/state`
 
@@ -565,7 +555,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `persistence/discover_repo.py`
 **Fungsi:** Repository for Discover-tab personalization queries: bandit-ranked "Untuk Kamu" artists, "Belum Pernah Kamu Dengar" (unheard) artists, genre taste spectrum, genre affinity, and artist detail lookup.
 **Class:** `DiscoverRepository`
-**Function utama:** —
+**Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `persistence/discover_enrich`
 
@@ -585,7 +575,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `persistence/library_repo.py`
 **Fungsi:** Repository for global library operations such as fetching random songs.
 **Class:** `LibraryRepository`
-**Function utama:** —
+**Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `core/state`
 
@@ -602,35 +592,22 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `persistence/stream_cache.py`
+**Fungsi:** Resolve the playback URI for a track using a priority-based cache strategy: local file > cached stream URL > fresh yt-dlp extraction.
+**Class:** `ResolverDbCompat`, `CacheResolver`
+**Function utama:** —
+**Digunakan oleh:** —
+**Menggunakan:** `config`, `core/latency_window`, `core/observability`, `core/ports`, `core/state`
+
+
+---
+
 **File:** `persistence/track_repo.py`
 **Fungsi:** Repository for track metadata, play counts, favorites, and local file paths.
 **Class:** `TrackRepository`
 **Function utama:** —
 **Digunakan oleh:** `persistence/__init__`
 **Menggunakan:** `core/state`
-
-
----
-
-
-## cache/
-
-**File:** `cache/db.py`
-**Fungsi:** Provides database caching mechanisms for quick access to frequently used data.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** `main`, `scratch/check_db`
-**Menggunakan:** `persistence`
-
-
----
-
-**File:** `cache/resolver.py`
-**Fungsi:** Resolve the playback URI for a track using a priority-based cache strategy: local file > cached stream URL > fresh yt-dlp extraction.
-**Class:** `CacheResolver`
-**Function utama:** —
-**Digunakan oleh:** —
-**Menggunakan:** `config`, `core/latency_window`, `core/observability`, `core/ports`, `core/state`
 
 
 ---
@@ -643,7 +620,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `create_app()`, `run_server()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/ports`, `engine/playback/controller`, `server/connection_manager`, `server/handlers/http`, `server/handlers/websocket`
+**Menggunakan:** `core/ports`, `engine/playback/controller`, `persistence`, `server/connection_manager`, `server/handlers/audio_stream_handler`, `server/handlers/http`, _1 lainnya_
+
+
+---
+
+**File:** `server/broadcast_service.py`
+**Fungsi:** Provide typed broadcast helpers that wrap ConnectionManager to push specific message types to all connected WebSocket clients.
+**Class:** `BroadcastService`
+**Function utama:** —
+**Digunakan oleh:** `server/handlers/event_listeners`
+**Menggunakan:** `core/state`, `server/connection_manager`, `server/serializers`
 
 
 ---
@@ -652,8 +639,28 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Manages active WebSocket connections and broadcasts events to connected clients.
 **Class:** `ConnectionManager`
 **Function utama:** `disconnect()`
-**Digunakan oleh:** `server/app`, `server/services/broadcast_service`
+**Digunakan oleh:** `server/app`, `server/broadcast_service`
 **Menggunakan:** `core/observability`
+
+
+---
+
+**File:** `server/handlers/__init__.py`
+**Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app["key"]` lookups so the type of each value is explicit (T3.7 — dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" — sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
+**Class:** —
+**Function utama:** `get_repos()`, `get_tracks_repo()`, `get_conn()`, `get_state()`, `get_manager()`, `get_ytdlp()`
+**Digunakan oleh:** —
+**Menggunakan:** `core/ports`, `core/state`
+
+
+---
+
+**File:** `server/handlers/audio_stream_handler.py`
+**Fungsi:** Proxy cached/streamed MP3 audio for a track, including range-request support for seeking. Split out of server/handlers/http.py (T3.4) so the streaming/range-request logic isn't bundled with the SPA/health/ metrics endpoints.
+**Class:** —
+**Function utama:** `serve_stream()`
+**Digunakan oleh:** `server/app`
+**Menggunakan:** `config`, `server/handlers`
 
 
 ---
@@ -673,17 +680,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `setup_event_listeners()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/events`, `core/task_utils`, `server/services/broadcast_service`, `server/services/stream_prefetch`
+**Menggunakan:** `core/events`, `core/task_utils`, `server/broadcast_service`, `services/stream_prefetch`
 
 
 ---
 
 **File:** `server/handlers/http.py`
-**Fungsi:** Serve the SPA index, audio stream proxy, health check, and Prometheus metrics endpoints over HTTP.
+**Fungsi:** Serve the SPA index, health check, and Prometheus metrics endpoints over HTTP.
 **Class:** —
-**Function utama:** `serve_index()`, `health_check()`, `serve_stream()`, `serve_metrics()`
+**Function utama:** `serve_index()`, `health_check()`, `serve_metrics()`
 **Digunakan oleh:** `server/app`
-**Menggunakan:** `config`, `core/observability`
+**Menggunakan:** `core/observability`, `server/handlers`
 
 
 ---
@@ -693,13 +700,13 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** `server/app`
-**Menggunakan:** `server/handlers/auth`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, `server/handlers/ws_queue`, `server/middleware`, _1 lainnya_
+**Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, `server/handlers/ws_queue`, _2 lainnya_
 
 
 ---
 
 **File:** `server/handlers/ws_cache.py`
-**Fungsi:** WebSocket handler for managing cache queries and clearing.
+**Fungsi:** WebSocket handler for managing the downloaded MP3 file cache (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.
 **Class:** —
 **Function utama:** `handle_cache_command()`
 **Digunakan oleh:** —
@@ -762,23 +769,36 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Convert between AppState/TrackInfo domain objects and JSON-serializable dicts for WebSocket message payloads.
 **Class:** —
 **Function utama:** `track_to_dict()`, `state_to_dict()`, `dict_to_track()`
-**Digunakan oleh:** `server/handlers/websocket`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, `server/handlers/ws_queue`, _1 lainnya_
+**Digunakan oleh:** `server/broadcast_service`, `server/handlers/websocket`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _1 lainnya_
 **Menggunakan:** `core/state`
 
 
 ---
 
-**File:** `server/services/broadcast_service.py`
-**Fungsi:** Provide typed broadcast helpers that wrap ConnectionManager to push specific message types to all connected WebSocket clients.
-**Class:** `BroadcastService`
-**Function utama:** —
-**Digunakan oleh:** `server/handlers/event_listeners`
-**Menggunakan:** `core/state`, `server/connection_manager`, `server/serializers`
+
+## services/
+
+**File:** `services/discover_ranking.py`
+**Fungsi:** Pure scoring/aggregation functions for Discover-tab personalization, split out of persistence.discover_repo.py (T3.3) so the ranking math is unit-testable with plain numbers instead of a real DB, and so it lives in the services layer rather than persistence (which is not allowed to depend on services — see .importlinter).
+**Class:** —
+**Function utama:** `compute_match_pct()`, `build_taste_spectrum()`
+**Digunakan oleh:** —
+**Menggunakan:** —
 
 
 ---
 
-**File:** `server/services/stream_prefetch.py`
+**File:** `services/discover_service.py`
+**Fungsi:** Query the SQLite database to provide discover-page data: recently played tracks, favorites, cached tracks, and featured artists/genres.
+**Class:** `DiscoverService`
+**Function utama:** —
+**Digunakan oleh:** `server/handlers/ws_discovery`, `server/handlers/ws_download`
+**Menggunakan:** `core/ports`, `core/state`, `services`
+
+
+---
+
+**File:** `services/stream_prefetch.py`
 **Fungsi:** Pre-fetch and cache the stream URL for the next track in the background to reduce playback latency at track transitions.
 **Class:** `StreamPrefetchService`
 **Function utama:** —
@@ -789,36 +809,13 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 
-## services/
-
-**File:** `services/discover_service.py`
-**Fungsi:** Query the SQLite database to provide discover-page data: recently played tracks, favorites, cached tracks, and featured artists/genres.
-**Class:** `DiscoverService`
-**Function utama:** —
-**Digunakan oleh:** `server/handlers/ws_discovery`, `server/handlers/ws_download`
-**Menggunakan:** `core/ports`, `core/state`
-
-
----
-
-
 ## plugins/
-
-**File:** `plugins/lyrics.py`
-**Fungsi:** Expose lyrics fetching, parsing, and syncing functionality.
-**Class:** —
-**Function utama:** —
-**Digunakan oleh:** —
-**Menggunakan:** —
-
-
----
 
 **File:** `plugins/lyrics_fetcher.py`
 **Fungsi:** Fetch synchronized lyrics from lrclib.net and syncedlyrics, then update the active lyric index on each playback progress event.
 **Class:** `LyricsFetcher`
 **Function utama:** `cleanup()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `bootstrap/services`
 **Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`
 
 
@@ -848,7 +845,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Mirror current playback state to an Android MediaStyle notification via termux-notification and relay button presses back via CommandBus.
 **Class:** `TermuxNowPlaying`
 **Function utama:** `_blocking_read_loop()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `bootstrap/services`
 **Menggunakan:** `config`, `core/command_bus`, `core/event_bus`, `core/events`, `core/state`
 
 
@@ -858,7 +855,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Fetch SponsorBlock skip segments for the current video and auto-seek past them during playback.
 **Class:** `SponsorBlockHandler`
 **Function utama:** `cleanup()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `bootstrap/services`
 **Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/ports`, `core/state`
 
 
@@ -877,10 +874,20 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `launcher/gui.py`
-**Fungsi:** Auto-generated purpose.
+**File:** `launcher/auth_service.py`
+**Fungsi:** Non-UI logic for generating, persisting, and verifying the launcher's admin password file. Extracted from launcher.gui.auth_panel (T3.2) so the auth logic doesn't live inside the Tkinter dialog code.
 **Class:** —
-**Function utama:** —
+**Function utama:** `password_file_path()`, `password_file_exists()`, `generate_password()`, `save_password()`, `verify_password()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `launcher/dep_checker.py`
+**Fungsi:** Utility to verify required system dependencies before launching the application.
+**Class:** `DependencyChecker`
+**Function utama:** `check_dependencies()`
 **Digunakan oleh:** —
 **Menggunakan:** —
 
@@ -902,25 +909,15 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `handle_first_run()`, `on_reset_password()`, `show_new_password_dialog()`
 **Digunakan oleh:** `launcher/gui/ui_builder`
-**Menggunakan:** —
-
-
----
-
-**File:** `launcher/gui/controller.py`
-**Fungsi:** Controls the underlying server lifecycle from within the launcher GUI.
-**Class:** `ServerController`
-**Function utama:** `on_start()`, `wait_for_server_ready()`, `on_stop()`, `wait_stop()`, `on_restart()`, `on_open()`
-**Digunakan oleh:** —
 **Menggunakan:** `launcher`
 
 
 ---
 
-**File:** `launcher/gui/dep_checker.py`
-**Fungsi:** Utility to verify required system dependencies before launching the application.
-**Class:** `DependencyChecker`
-**Function utama:** `check_dependencies()`
+**File:** `launcher/gui/log_view.py`
+**Fungsi:** Render log lines and manage clearing of the launcher GUI's log widget.
+**Class:** —
+**Function utama:** `write_log()`, `clear_log()`
 **Digunakan oleh:** —
 **Menggunakan:** —
 
@@ -967,6 +964,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `launcher/server_lifecycle.py`
+**Fungsi:** Own the LunaWave server process lifecycle (start/stop/restart, port conflict resolution, readiness polling, dependency checks) independent of any GUI toolkit.
+**Class:** `ServerLifecycle`
+**Function utama:** `is_running()`, `run_dependency_check()`, `start()`, `wait_for_ready()`, `stop()`, `restart()`
+**Digunakan oleh:** —
+**Menggunakan:** `launcher`
+
+
+---
+
 **File:** `launcher/updater.py`
 **Fungsi:** Stub module reserved for future OTA update checking and release info retrieval in the LunaWave launcher.
 **Class:** —
@@ -998,24 +1005,48 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `main()`
 **Digunakan oleh:** —
-**Menggunakan:** `cache/db`, `core/state`
+**Menggunakan:** `persistence`, `core/state`
 
 
 ---
 
 
-## ⚠️ File Besar (>400 baris)
+## bootstrap/
+
+**File:** `bootstrap/maintenance.py`
+**Fungsi:** Stage 3 of application startup: schedule the periodic DB maintenance loop and the MPV connection watchdog as background tasks. Extracted from main.py's `main()` (T2.4) without changing call order.
+**Class:** —
+**Function utama:** `db_maintenance()`, `schedule_db_maintenance()`, `mpv_watchdog()`, `start_mpv_watchdog()`
+**Digunakan oleh:** `main`
+**Menggunakan:** `bootstrap/services`, `core/state`, `core/task_utils`
 
 
-| File | Baris | Catatan |
-|---|---|---|
+---
 
-| `engine/playback/controller.py` | 464 | Perlu dipecah |
+**File:** `bootstrap/services.py`
+**Fungsi:** Stage 1 of application startup: open the DB, connect core adapters (MPV, yt-dlp), and wire every domain service used by the rest of the app (resolver, playback controller, radio, volume, sleep timer, etc). Extracted from main.py's `main()` (T2.4, section "1-6" of the original God Function) without changing call order.
+**Class:** `BootstrapContext`
+**Function utama:** `init_core_services()`
+**Digunakan oleh:** `bootstrap/maintenance`, `bootstrap/startup_tasks`, `main`
+**Menggunakan:** `adapters/mpv`, `adapters/ytdlp`, `core/event_bus`, `core/state`, `engine/command_router`, `engine/download_manager`, _4 lainnya_
+
+
+---
+
+**File:** `bootstrap/startup_tasks.py`
+**Fungsi:** Stage 2 of application startup: kick off the background tasks that must not block the web server from listening — connectivity polling, the initial MPV connect, and resuming the last-played track. Extracted from main.py's `main()` (T2.4) without changing call order.
+**Class:** —
+**Function utama:** `check_connectivity()`, `run_startup_checks()`
+**Digunakan oleh:** `main`
+**Menggunakan:** `bootstrap/services`, `core/state`, `core/task_utils`
+
+
+---
 
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**92/92** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**95/95** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi 🎉)_

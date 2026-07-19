@@ -463,8 +463,8 @@
 .hashtag-cloud-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: var(--s2) var(--s5) var(--s5);
+  gap: 12px;
+  padding: var(--s4) var(--s5) var(--s5);
   align-items: center;
   justify-content: flex-start;
 }
@@ -475,19 +475,64 @@
 }
 
 .hashtag-pill {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
-  font-weight: var(--w-bold);
-  opacity: 0.85;
-  font-size: calc(var(--base-size, 14px) * var(--tag-scale, 1));
+  transition: all 0.2s var(--ease);
+  font-weight: var(--w-semibold);
+  font-size: calc(var(--base-size, 14px) * 0.9);
+  padding: 8px 16px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid currentColor;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .hashtag-pill:hover {
-  transform: scale(1.15) rotate(-2deg);
-  opacity: 1;
-  filter: brightness(1.2) drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+  transform: translateY(-2px);
+  background: currentColor;
+  color: #111 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   z-index: 2;
   position: relative;
+}
+
+.hashtag-more-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  padding: 8px 16px;
+  border-radius: var(--r-full);
+  font-size: var(--t-sm);
+  font-weight: var(--w-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.hashtag-more-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-1);
+}
+
+.list-expand-btn {
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  padding: 10px;
+  width: calc(100% - 2 * var(--s5));
+  margin: var(--s3) var(--s5) var(--s5);
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: var(--w-medium);
+  transition: all 0.2s;
+  display: block;
+}
+.list-expand-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text-1);
 }

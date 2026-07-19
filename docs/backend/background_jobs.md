@@ -12,7 +12,7 @@ LunaWave memiliki dua jenis background job yang berjalan async:
 |---|---|---|
 | Download Manager | `engine/download_manager.py` | `CMD_DOWNLOAD_START` |
 | Radio Prefetcher | `engine/radio/prefetcher.py` | `EVENT_TRACK_CHANGED` saat mode radio |
-| Stream Prefetch | `server/services/stream_prefetch.py` | `EVENT_TRACK_CHANGED` |
+| Stream Prefetch | `services/stream_prefetch.py` | `EVENT_TRACK_CHANGED` |
 
 Semua berjalan sebagai asyncio task — tidak ada thread pool, tidak ada celery, tidak ada external queue.
 
@@ -159,7 +159,7 @@ cache/resolver.py: ada?
 
 **Tidak ada event yang di-publish** — ini murni background optimization.
 
-Test → `tests/unit/server/services/test_stream_prefetch.py`
+Test → `tests/unit/services/test_stream_prefetch.py`
 
 ---
 

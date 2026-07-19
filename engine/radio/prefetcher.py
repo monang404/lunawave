@@ -11,7 +11,7 @@ Depends on:
     - core.state
     - engine.playback
     - engine.radio.artist_selector
-    - engine.radio.common
+    - engine.radio.radio_config
 
 Subscribes to:
     None
@@ -34,7 +34,7 @@ from config import (
     PREFETCH_SAFETY_FACTOR,
 )
 from core.state import AppState
-from engine.radio.common import ARTISTS_PER_BATCH, track_task
+from engine.radio.radio_config import ARTISTS_PER_BATCH, track_task
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController

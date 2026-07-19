@@ -30,5 +30,5 @@ async def test_get_genre_artists_returns_only_artists_in_that_genre(db):
     await db.conn.execute("INSERT INTO artist_genres (artist_id, genre_id) VALUES (2, 2)")
     await db.conn.commit()
 
-    result = await db.get_genre_artists("rock", limit=10)
+    result = await db.genres.get_genre_artists("rock", limit=10)
     assert result == ["Rock Artist"]

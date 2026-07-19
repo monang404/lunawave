@@ -9,6 +9,7 @@ Responsibilities:
 
 Depends on:
     - server.serializers
+    - services.discover_service
 
 Subscribes to:
     None
@@ -28,7 +29,7 @@ from server.serializers import track_to_dict
 from services.discover_service import DiscoverService
 
 
-async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
+async def handle_discovery_command(action: str, data: dict, ytdlp, discover_repo, ws):
     if action == "search":
         query = data.get("query", "").strip()
         if query:
@@ -43,8 +44,52 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
                 )
             )
 
+    elif action == "discover_search":
+        # Quick Search Discover (T-A3). NOT the same as action == "search"
+        # above (that one is a live YouTube search via ytdlp). This one
+        # searches already-cached local tracks via
+        # DiscoverRepository.search_tracks() — no ranking/scoring, so no
+        # DiscoverService wrapper needed here (unlike "discover" below).
+        query = data.get("query", "").strip()
+        kategori = data.get("kategori")
+        # "all" adalah sentinel client-side untuk "tanpa filter kategori"
+        # (chip "Semua" default aktif di discover-search-events.js), BUKAN
+        # nilai kategori yang valid -- artists.kategori cuma pernah berisi
+        # "individu"/"band" (lihat schema.sql + data-kategori di index.html).
+        # Perlakukan sama seperti decade di bawah, kalau tidak, filter
+        # "Semua" (posisi default) bikin search_tracks() selalu 0 hasil.
+        kategori = kategori if kategori not in (None, "", "all") else None
+        decade = data.get("decade")
+        decade = int(decade) if decade not in (None, "", "all") else None
+        results = await discover_repo.search_tracks(query, kategori=kategori, decade=decade)
+        # search_tracks() returns plain DB row dicts (not TrackInfo objects),
+        # so track_to_dict() doesn't apply here directly — build the same
+        # shape it produces for the "search" action above instead.
+        payload = [
+            {
+                "video_id": r["video_id"],
+                "title": r["title"],
+                "artist": r["artist"],
+                "duration": r["duration"],
+                "thumbnail": r["thumbnail"],
+                "is_cached": bool(r["local_path"]),
+                "view_count": r["view_count"],
+                "is_favorite": bool(r["is_favorite"]),
+            }
+            for r in results
+        ]
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "discover_search_results",
+                    "data": payload,
+                },
+                ensure_ascii=False,
+            )
+        )
+
     elif action == "discover":
-        ds = DiscoverService(db)
+        ds = DiscoverService(discover_repo)
         (
             recent,
             favorites,
@@ -59,8 +104,8 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
             ds.get_recent(15),
             ds.get_favorites(15),
             ds.get_cached(15),
-            ds.get_featured_artists(100),
-            ds.get_featured_genres(100),
+            ds.get_featured_artists(30),
+            ds.get_featured_genres(30),
             ds.get_for_you(15),
             ds.get_unheard(15),
             ds.get_genre_affinity(15),
@@ -99,7 +144,7 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, db, ws):
         # izin eksplisit") and was intentionally NOT touched in this patch.
         # See docs/PATCHLOG.md PATCH-2026-07-17-070 for the one-line change
         # needed before this branch can ever be dispatched to.
-        ds = DiscoverService(db)
+        ds = DiscoverService(discover_repo)
         artist = data.get("artist", "").strip()
         detail = await ds.get_artist_detail(artist) if artist else None
         await ws.send_str(

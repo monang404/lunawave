@@ -11,10 +11,25 @@ Purpose:
     *tracking*, this one owns Discover *personalization reads* built on top
     of that data. Same split as `LibraryRepository` vs `TrackRepository`.
 
+    T3.3: score/ranking arithmetic (bandit match_pct, taste-spectrum
+    percentage normalization) has moved to services.discover_ranking
+    (pure functions, no DB) — this repo returns raw rows only. Persistence
+    is not allowed to import services (.importlinter), so
+    services.discover_service calls services.discover_ranking itself once
+    it has the raw rows from here. get_top_genre() is the one exception:
+    it stays a repo method (needed by DiscoverRepositoryPort) but only
+    needs the highest-scored row, not any percentage math, so it can stay
+    self-sufficient without touching the ranking layer.
+
 Responsibilities:
     - get_bandit_ranked_artists / get_unheard_artists — "Untuk Kamu" /
-      "Belum Pernah Kamu Dengar" sections.
-    - get_taste_spectrum / get_top_genre — genre listening-history breakdown.
+      "Belum Pernah Kamu Dengar" sections (raw reward_alpha/reward_beta,
+      no match_pct — see services.discover_ranking.compute_match_pct).
+    - get_taste_spectrum — raw genre/score rows, sorted score descending
+      (see services.discover_ranking.build_taste_spectrum for the
+      percentage/"Lainnya" normalization).
+    - get_top_genre — top genre name (or None), derived from the same raw
+      rows above without needing percentage normalization.
     - get_genre_artists_enriched — artists for a given genre, with cover+tags.
     - get_artist_detail — full detail (genres + up to 10 songs) for a sheet.
 
@@ -42,12 +57,21 @@ class DiscoverRepository:
     def __init__(self, conn):
         self._conn = conn
 
+    @property
+    def conn(self):
+        return self._conn
+
     async def get_bandit_ranked_artists(self, limit: int = 10) -> list[dict]:
         """ "Untuk Kamu": artis yang bandit (reward_alpha/beta) sudah pernah
         belajar sesuatu tentangnya (bukan default alpha=beta=1), diurut
         berdasarkan posterior mean alpha/(alpha+beta) — makin tinggi makin
-        besar kemungkinan disukai user. Tiap hasil dapat field `match_pct`
-        (0-100, dibulatkan) untuk ditampilkan di kartu.
+        besar kemungkinan disukai user.
+
+        Raw row saja (T3.3): `reward_alpha`/`reward_beta` dikembalikan
+        apa adanya, TIDAK ada `match_pct` di sini lagi — itu tugas
+        `services.discover_ranking.compute_match_pct(alpha, beta)`,
+        dipanggil oleh `services.discover_service.get_for_you()` setelah
+        baris ini didapat.
         """
         if not self._conn:
             return []
@@ -67,10 +91,6 @@ class DiscoverRepository:
         except Exception as e:
             logger.error(f"Error getting bandit ranked artists: {e}")
             return []
-
-        for row in rows:
-            alpha, beta = row["reward_alpha"], row["reward_beta"]
-            row["match_pct"] = round(100 * alpha / (alpha + beta))
 
         return await enrich_artists(self._conn, rows)
 
@@ -101,11 +121,16 @@ class DiscoverRepository:
 
         return await enrich_artists(self._conn, rows)
 
-    async def get_taste_spectrum(self, limit: int = 6) -> list[dict]:
-        """Agregasi genre dari histori putar: SUM(play_count +
-        is_favorite*3) per genre, dinormalisasi ke persentase. Genre di
-        luar top-(limit-1) digabung ke satu bucket "Lainnya" supaya bar
-        tidak pecah jadi puluhan slice tipis.
+    async def get_taste_spectrum(self) -> list[dict]:
+        """Raw genre/score rows di balik taste spectrum: SUM(play_count +
+        is_favorite*3) per genre, diurut score descending, sudah difilter
+        `score > 0`.
+
+        Raw row saja (T3.3) — TIDAK ada normalisasi persentase atau bucket
+        "Lainnya" di sini lagi. Itu tugas
+        `services.discover_ranking.build_taste_spectrum(rows, limit)`,
+        dipanggil oleh `services.discover_service.get_taste_spectrum()`
+        setelah baris ini didapat.
 
         Caveat (lihat AI_CONTEXT / implementation-plan): join
         tracks.artist -> artists.nama hanya reliable untuk lagu yang
@@ -137,32 +162,21 @@ class DiscoverRepository:
             logger.error(f"Error getting taste spectrum: {e}")
             return []
 
-        if not rows:
-            return []
-
-        total = sum(r["score"] for r in rows)
-        if total <= 0:
-            return []
-
-        top = rows[: max(limit - 1, 1)] if limit > 1 else rows[:1]
-        rest = rows[len(top) :]
-
-        spectrum = [{"genre": r["genre"], "pct": round(100 * r["score"] / total)} for r in top]
-        if rest:
-            rest_score = sum(r["score"] for r in rest)
-            if rest_score > 0:
-                spectrum.append({"genre": "Lainnya", "pct": round(100 * rest_score / total)})
-
-        return spectrum
+        return rows
 
     async def get_top_genre(self) -> str | None:
-        """Genre teratas dari taste spectrum, atau None kalau histori
+        """Genre teratas dari histori putar, atau None kalau histori
         kosong (dipakai untuk seed section "Karena Kamu Suka [Genre]").
+
+        Baris dari `get_taste_spectrum()` sudah `ORDER BY score DESC`,
+        jadi genre teratas cukup diambil dari baris pertama — tidak perlu
+        normalisasi persentase (`services.discover_ranking.build_taste_spectrum`)
+        untuk sekadar tahu genre mana yang tertinggi.
         """
-        spectrum = await self.get_taste_spectrum(limit=1)
-        if not spectrum:
+        rows = await self.get_taste_spectrum()
+        if not rows:
             return None
-        return spectrum[0]["genre"]
+        return rows[0]["genre"]
 
     async def get_genre_artists_enriched(self, genre_name: str, limit: int = 4) -> list[dict]:
         """Versi `GenreRepository.get_genre_artists` yang mengembalikan
@@ -188,6 +202,171 @@ class DiscoverRepository:
             return []
 
         return await enrich_artists(self._conn, rows)
+
+    async def search_tracks(
+        self,
+        query: str,
+        kategori: str | None = None,
+        decade: int | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Quick Search Discover: cari lagu berdasarkan judul/nama artis,
+        dengan matching ala mesin pencari (tokenized, bukan harus frasa
+        eksak) dan cakupan gabungan 2 sumber data, dengan filter opsional
+        kategori (Solo/Band, K1) dan/atau dekade (K2).
+
+        Kenapa 2 sumber (BUG: sebelumnya cuma `tracks`, lihat
+        PATCH-2026-07-19 investigasi "1 artis harusnya 10 lagu, kok cuma
+        muncul 1"):
+        - `tracks`: cache/history video yang SUDAH pernah diputar/dicoba
+          resolve. `tracks.artist` diisi dari uploader/channel YouTube
+          (lihat adapters/ytdlp/searcher.py: artist=entry.get("uploader")),
+          BUKAN nama artis kanonik -- best-effort, bisa meleset kalau video
+          diunggah ulang channel lain.
+        - `songs` JOIN `artists`: katalog kurasi per-artis (artist_id FK
+          reliable ke artists.id) -- sumber yang sama dipakai
+          get_artist_detail() untuk nampilin "hingga 10 lagu" per artis.
+          Banyak lagu di sini BELUM PERNAH di-cache ke `tracks` (belum
+          pernah diputar), jadi tanpa sumber ini search cuma nemu sebagian
+          kecil dari katalog yang sebenarnya ada.
+        Baris dengan video_id yang sama di kedua sumber: versi `tracks`
+        dipakai (metadata lebih lengkap -- duration/view_count real,
+        is_favorite, is_cached), versi `songs` di-skip.
+
+        Kenapa tokenized (bukan LIKE frasa utuh seperti sebelumnya): query
+        dipecah per kata, tiap kata wajib match (AND) di title ATAU artist,
+        tapi urutan/posisi antar kata bebas -- supaya "fals iwan" tetap
+        ketemu "Iwan Fals", dan satu kata yang typo di tengah frasa panjang
+        tidak menggagalkan seluruh frasa seperti model lama.
+
+        Untuk kategori/decade: filter pada bagian `songs` JOIN langsung ke
+        `artists` (reliable). Filter pada bagian `tracks` tetap best-effort
+        subquery by nama seperti sebelumnya (keterbatasan sama seperti
+        get_taste_spectrum(), tracks.artist bukan FK ke artists.id).
+
+        Ranking: hasil yang match FRASA UTUH (bukan cuma token terpisah)
+        diprioritaskan di atas hasil token-only match, baru diurut
+        alfabetis di dalam masing-masing kelompok. Tidak ada skor
+        relevansi yang lebih canggih (mis. typo-tolerance/FTS5) di layer
+        ini -- kalau nanti dibutuhkan, itu perluasan terpisah, bukan bagian
+        patch ini (hindari 2 refactor sekaligus, lihat AI_CONTEXT.md).
+
+        Return [] untuk query kosong/whitespace-only, tanpa query DB.
+        """
+        if not self._conn:
+            return []
+
+        q = (query or "").strip()
+        if not q:
+            return []
+
+        tokens = q.split()
+        if not tokens:
+            return []
+
+        def _token_conditions(title_col: str, artist_col: str) -> tuple[list[str], list]:
+            conds: list[str] = []
+            params: list = []
+            for tok in tokens:
+                pat = f"%{tok}%"
+                conds.append(f"({title_col} LIKE ? OR {artist_col} LIKE ?)")
+                params.extend([pat, pat])
+            return conds, params
+
+        # --- Sumber 1: tracks (cache/history, metadata lengkap) ---
+        track_conds, track_params = _token_conditions("t.title", "t.artist")
+        if kategori:
+            track_conds.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
+            track_params.append(kategori)
+        if decade is not None:
+            track_conds.append(
+                "t.artist IN ("
+                "SELECT nama FROM artists "
+                "WHERE CAST(tahun_aktif AS INTEGER) >= ? "
+                "AND CAST(tahun_aktif AS INTEGER) < ?"
+                ")"
+            )
+            track_params.extend([decade, decade + 10])
+
+        sql_tracks = f"""
+            SELECT video_id, title, artist, duration, thumbnail,
+                   local_path, view_count, is_favorite
+            FROM tracks t
+            WHERE {" AND ".join(track_conds)}
+            ORDER BY t.title ASC
+            LIMIT ?
+        """
+        track_params_full = track_params + [limit]
+
+        # --- Sumber 2: songs JOIN artists (katalog kurasi) ---
+        song_conds, song_params = _token_conditions("s.judul", "a.nama")
+        if kategori:
+            song_conds.append("a.kategori = ?")
+            song_params.append(kategori)
+        if decade is not None:
+            song_conds.append(
+                "CAST(a.tahun_aktif AS INTEGER) >= ? AND CAST(a.tahun_aktif AS INTEGER) < ?"
+            )
+            song_params.extend([decade, decade + 10])
+
+        sql_songs = f"""
+            SELECT s.youtube_id AS video_id, s.judul AS title, a.nama AS artist,
+                   s.duration AS duration
+            FROM songs s
+            JOIN artists a ON a.id = s.artist_id
+            WHERE {" AND ".join(song_conds)}
+            ORDER BY s.judul ASC
+            LIMIT ?
+        """
+        song_params_full = song_params + [limit]
+
+        try:
+            async with self._conn.execute(sql_tracks, track_params_full) as cursor:
+                track_rows = [dict(r) for r in await cursor.fetchall()]
+            async with self._conn.execute(sql_songs, song_params_full) as cursor:
+                song_rows = [dict(r) for r in await cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error searching tracks: {e}")
+            return []
+
+        # --- Gabung + dedup (tracks menang atas songs untuk video_id sama) ---
+        merged: dict[str, dict] = {}
+        for r in track_rows:
+            merged[r["video_id"]] = {
+                "video_id": r["video_id"],
+                "title": r["title"],
+                "artist": r["artist"],
+                "duration": r["duration"],
+                "thumbnail": r["thumbnail"],
+                "local_path": r["local_path"],
+                "view_count": r["view_count"],
+                "is_favorite": r["is_favorite"],
+            }
+        for r in song_rows:
+            if r["video_id"] in merged:
+                continue
+            merged[r["video_id"]] = {
+                "video_id": r["video_id"],
+                "title": r["title"],
+                "artist": r["artist"],
+                "duration": r["duration"],
+                "thumbnail": f"https://i.ytimg.com/vi/{r['video_id']}/mqdefault.jpg",
+                "local_path": None,
+                "view_count": None,
+                "is_favorite": 0,
+            }
+
+        # --- Ranking: frasa utuh > token-only, lalu alfabetis ---
+        full_phrase = q.lower()
+
+        def _sort_key(row: dict):
+            title_l = (row["title"] or "").lower()
+            artist_l = (row["artist"] or "").lower()
+            is_phrase_match = full_phrase in title_l or full_phrase in artist_l
+            return (0 if is_phrase_match else 1, title_l)
+
+        rows = sorted(merged.values(), key=_sort_key)
+        return rows[:limit]
 
     async def get_artist_detail(self, nama: str) -> dict | None:
         """Info lengkap satu artis untuk detail sheet: data dasar + cover +

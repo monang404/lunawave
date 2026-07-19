@@ -1,7 +1,7 @@
 ---
 title : LunaWave Documentation Index
-last_verified: 2026-07-13
-sprint: 3.2
+last_verified: 2026-07-18
+sprint: 3.3
 status: current
 ---
 
@@ -133,7 +133,7 @@ lunawave/
 | `server/app.py` | aiohttp app factory + runner |
 | `server/handlers/websocket.py` | `ConnectionManager` + WS routing + command dispatch |
 | `server/handlers/http.py` | REST: `/`, `/stream`, `/health`, `/metrics` |
-| `server/services/broadcast_service.py` | Push state/progress/lyrics ke semua WS clients |
+| `server/broadcast_service.py` | Push state/progress/lyrics ke semua WS clients |
 | `services/discover_service.py` | Query recent, favorites, cached, artists, genres dari DB |
 | `plugins/lyrics.py` | Fetch + parse LRC dari lrclib.net, sync via TrackProgressEvent |
 | `plugins/notifications.py` | Termux MediaStyle notification (no-op di luar Termux) |

@@ -31,8 +31,8 @@ def make_track(video_id="v1", **kwargs):
 
 @pytest.fixture
 def svc(db):
-    """DiscoverService wired to the in-memory test Database."""
-    return DiscoverService(db=db)
+    """DiscoverService wired to the in-memory test Database's DiscoverRepository."""
+    return DiscoverService(discover=db.discover)
 
 
 # ---------------------------------------------------------------------------
@@ -46,12 +46,12 @@ class TestGetRecent:
         assert result == []
 
     async def test_returns_tracks_ordered_by_last_played_desc(self, svc, db):
-        await db.upsert_track(make_track("v1"))
-        await db.upsert_track(make_track("v2"))
+        await db.tracks.upsert_track(make_track("v1"))
+        await db.tracks.upsert_track(make_track("v2"))
         # increment play count sets last_played timestamp
-        await db.increment_play_count("v1")
-        await db.increment_play_count("v2")
-        await db.increment_play_count("v1")  # v1 more recently played
+        await db.tracks.increment_play_count("v1")
+        await db.tracks.increment_play_count("v2")
+        await db.tracks.increment_play_count("v1")  # v1 more recently played
 
         result = await svc.get_recent(10)
         ids = [t.video_id for t in result]
@@ -59,12 +59,12 @@ class TestGetRecent:
 
     async def test_respects_n_limit(self, svc, db):
         for i in range(5):
-            await db.upsert_track(make_track(f"v{i}"))
+            await db.tracks.upsert_track(make_track(f"v{i}"))
         result = await svc.get_recent(3)
         assert len(result) <= 3
 
     async def test_returns_track_info_instances(self, svc, db):
-        await db.upsert_track(make_track("v1", title="My Song"))
+        await db.tracks.upsert_track(make_track("v1", title="My Song"))
         result = await svc.get_recent(5)
         assert all(isinstance(t, TrackInfo) for t in result)
 
@@ -74,7 +74,7 @@ class TestGetRecent:
         class NoConnDB:
             pass  # no conn attribute
 
-        svc = DiscoverService(db=NoConnDB())
+        svc = DiscoverService(discover=NoConnDB())
         result = await svc.get_recent(5)
         assert result == []
 
@@ -90,26 +90,26 @@ class TestGetFavorites:
         assert result == []
 
     async def test_returns_favorited_tracks(self, svc, db):
-        await db.upsert_track(make_track("v1"))
-        await db.upsert_track(make_track("v2"))
-        await db.toggle_favorite("v1")
+        await db.tracks.upsert_track(make_track("v1"))
+        await db.tracks.upsert_track(make_track("v2"))
+        await db.tracks.toggle_favorite("v1")
 
         result = await svc.get_favorites(10)
         ids = [t.video_id for t in result]
         assert "v1" in ids
 
     async def test_returns_tracks_with_play_count_too(self, svc, db):
-        await db.upsert_track(make_track("v1"))
-        await db.increment_play_count("v1")
+        await db.tracks.upsert_track(make_track("v1"))
+        await db.tracks.increment_play_count("v1")
 
         result = await svc.get_favorites(10)
         assert any(t.video_id == "v1" for t in result)
 
     async def test_favorites_ordered_before_play_count_tracks(self, svc, db):
-        await db.upsert_track(make_track("played"))
-        await db.increment_play_count("played")
-        await db.upsert_track(make_track("fav"))
-        await db.toggle_favorite("fav")
+        await db.tracks.upsert_track(make_track("played"))
+        await db.tracks.increment_play_count("played")
+        await db.tracks.upsert_track(make_track("fav"))
+        await db.tracks.toggle_favorite("fav")
 
         result = await svc.get_favorites(10)
         ids = [t.video_id for t in result]
@@ -117,8 +117,8 @@ class TestGetFavorites:
 
     async def test_respects_n_limit(self, svc, db):
         for i in range(5):
-            await db.upsert_track(make_track(f"v{i}"))
-            await db.increment_play_count(f"v{i}")
+            await db.tracks.upsert_track(make_track(f"v{i}"))
+            await db.tracks.increment_play_count(f"v{i}")
         result = await svc.get_favorites(2)
         assert len(result) <= 2
 
@@ -130,8 +130,8 @@ class TestGetFavorites:
 
 class TestGetCached:
     async def test_returns_only_tracks_with_local_path(self, svc, db):
-        await db.upsert_track(make_track("v1"), local_path="/mp3/v1.mp3")
-        await db.upsert_track(make_track("v2"))  # no local_path
+        await db.tracks.upsert_track(make_track("v1"), local_path="/mp3/v1.mp3")
+        await db.tracks.upsert_track(make_track("v2"))  # no local_path
 
         result = await svc.get_cached(10)
         ids = [t.video_id for t in result]
@@ -139,13 +139,13 @@ class TestGetCached:
         assert "v2" not in ids
 
     async def test_returns_empty_when_no_cached_tracks(self, svc, db):
-        await db.upsert_track(make_track("v1"))
+        await db.tracks.upsert_track(make_track("v1"))
         result = await svc.get_cached(10)
         assert result == []
 
     async def test_respects_n_limit(self, svc, db):
         for i in range(5):
-            await db.upsert_track(make_track(f"v{i}"), local_path=f"/mp3/v{i}.mp3")
+            await db.tracks.upsert_track(make_track(f"v{i}"), local_path=f"/mp3/v{i}.mp3")
         result = await svc.get_cached(2)
         assert len(result) <= 2
 

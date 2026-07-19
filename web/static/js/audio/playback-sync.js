@@ -7,6 +7,9 @@ let audioCtx = null;
 let analyser = null;
 let dataArray = null;
 
+// Flag untuk mencegah infinite loop antara native audio event dan Media Session handler
+let _mediaSessionHandling = false;
+
 function getOrInitAudio() {
     if (!localAudio) {
         localAudio = new Audio();
@@ -31,6 +34,50 @@ function getOrInitAudio() {
                     }
                 }
                 if (typeof syncLocalLyrics === "function") syncLocalLyrics();
+            }
+        });
+        localAudio.addEventListener("pause", () => {
+            // _updateMediaSessionState HARUS selalu jalan (di luar guard) supaya
+            // navigator.mediaSession.playbackState selalu cerminan audio yang
+            // sebenarnya — kalau ini ikut di-skip pas _mediaSessionHandling true,
+            // OS/headset masih nganggep status "playing" dan notifikasi macet
+            // nunjukin tombol pause padahal audio sudah berhenti.
+            _updateMediaSessionState("paused");
+            if (_mediaSessionHandling || window.audioBlocked || localAudio.ended) return;
+            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
+            // pause ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
+            // Jangan kirim toggle_pause lagi.
+            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            if (!_inUIGrace && store.status === "PLAYING") {
+                console.log("[audio] Native pause (headset/OS), syncing to server...");
+                if (store.userRole === "admin") {
+                    store.status = "PAUSED";
+                    window.lastToggleTime = Date.now();
+                    if (typeof renderPlayBtn === "function") renderPlayBtn();
+                    if (typeof renderNowPlaying === "function") renderNowPlaying();
+                    if (typeof wsSend === "function") wsSend("toggle_pause");
+                }
+            }
+        });
+        localAudio.addEventListener("play", () => {
+            // Sama seperti di atas: selalu sinkronkan state media session dulu,
+            // baru cek guard buat keputusan kirim toggle_pause ke server atau tidak.
+            _updateMediaSessionState("playing");
+            if (_mediaSessionHandling || window.audioBlocked) return;
+            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
+            // play ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
+            // Jangan kirim toggle_pause lagi.
+            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            if (!_inUIGrace && store.status !== "PLAYING") {
+                console.log("[audio] Native play (headset/OS), syncing to server...");
+                if (store.userRole === "admin") {
+                    store.status = "PLAYING";
+                    window.lastToggleTime = Date.now();
+                    if (typeof resetAnchorClock === "function") resetAnchorClock();
+                    if (typeof renderPlayBtn === "function") renderPlayBtn();
+                    if (typeof renderNowPlaying === "function") renderNowPlaying();
+                    if (typeof wsSend === "function") wsSend("toggle_pause");
+                }
             }
         });
     }
@@ -195,7 +242,11 @@ function syncBrowserAudio(forcePlay) {
 
         audio.oncanplay = () => {
             audio.oncanplay = null;
-            if (store.position > 5 && Math.abs(audio.currentTime - store.position) > 5) {
+            // Hanya seek jika posisi memang untuk lagu ini bukan sisa posisi lagu sebelumnya
+            const isResume = store.position > 5 &&
+                store.current_track &&
+                store.current_track.video_id === track.video_id;
+            if (isResume && Math.abs(audio.currentTime - store.position) > 5) {
                 audio.currentTime = store.position;
             }
             if (forcePlay || store.status === "PLAYING") {
@@ -221,4 +272,98 @@ function syncBrowserAudio(forcePlay) {
 
 function initAudio() {
     document.addEventListener("click", unlockBrowserAudio);
+}
+
+// ── Media Session API ─────────────────────────────────────────────────────────
+
+function _updateMediaSessionState(state) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+        navigator.mediaSession.playbackState = state; // "playing" | "paused" | "none"
+    } catch(e) {}
+}
+
+let _lastMediaSessionVideoId = null;
+
+function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    const track = store.current_track;
+    if (!track) {
+        _updateMediaSessionState('none');
+        navigator.mediaSession.metadata = null;
+        _lastMediaSessionVideoId = null;
+        return;
+    }
+
+    // Perbarui metadata hanya jika lagu berubah
+    if (_lastMediaSessionVideoId !== track.video_id) {
+        _lastMediaSessionVideoId = track.video_id;
+        const coverUrl = track.thumbnail
+            ? (track.thumbnail.startsWith('http') ? track.thumbnail : window.location.origin + track.thumbnail)
+            : (window.location.origin + '/api/thumbnail/' + track.video_id);
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: track.title || 'Unknown',
+            artist: track.artist || 'Unknown',
+            album: 'LunaWave',
+            artwork: [
+                { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
+            ]
+        });
+
+        // Helper untuk update instan sebelum menunggu respon server
+        const _optimisticToggle = (wantsPlay) => {
+            if (store.userRole !== "admin") return;
+            store.status = wantsPlay ? "PLAYING" : "PAUSED";
+            window.lastToggleTime = Date.now();
+            if (wantsPlay && typeof resetAnchorClock === "function") resetAnchorClock();
+            if (typeof renderPlayBtn === "function") renderPlayBtn();
+            if (typeof renderNowPlaying === "function") renderNowPlaying();
+            if (typeof renderQueue === "function") renderQueue();
+            if (store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
+                unlockBrowserAudio(wantsPlay);
+                syncBrowserAudio(wantsPlay);
+            }
+        };
+
+        // Pasang action handler — gunakan nama action yang sesuai dengan backend Python
+        navigator.mediaSession.setActionHandler('play', () => {
+            if (store.status === "PLAYING") return; // Cegah double toggle jika sudah play
+            _mediaSessionHandling = true;
+            _optimisticToggle(true);
+            if (typeof wsSend === "function") wsSend("toggle_pause");
+            setTimeout(() => { _mediaSessionHandling = false; }, 300);
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+            if (store.status !== "PLAYING") return; // Cegah double toggle jika sudah pause
+            _mediaSessionHandling = true;
+            _optimisticToggle(false);
+            if (typeof wsSend === "function") wsSend("toggle_pause");
+            setTimeout(() => { _mediaSessionHandling = false; }, 300);
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            if (store.userRole === "admin") {
+                store.status = "LOADING";
+                if (typeof renderNowPlaying === "function") renderNowPlaying();
+                if (typeof renderPlayerBar === "function") renderPlayerBar();
+                const data = (store.current_track && store.current_track.video_id) ? { video_id: store.current_track.video_id } : {};
+                if (typeof wsSend === "function") wsSend("prev", data);
+            }
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            if (store.userRole === "admin") {
+                store.status = "LOADING";
+                if (typeof renderNowPlaying === "function") renderNowPlaying();
+                if (typeof renderPlayerBar === "function") renderPlayerBar();
+                const data = (store.current_track && store.current_track.video_id) ? { video_id: store.current_track.video_id } : {};
+                if (typeof wsSend === "function") wsSend("next", data);
+            }
+        });
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (typeof wsSend === "function") wsSend("seek", { position: details.seekTime });
+        });
+    }
+
+    // Selalu sinkronkan status putar/jeda
+    _updateMediaSessionState(store.status === "PLAYING" ? "playing" : "paused");
 }

@@ -15,13 +15,13 @@ import asyncio
 import sqlite3
 from pathlib import Path
 
-from cache.db import Database
+from persistence import Repositories
 from core.state import TrackInfo
 
 
 async def main():
-    db = Database(Path("data/lunawave.db"))
-    await db.init()
+    repos = Repositories(Path("data/lunawave.db"))
+    await repos.init()
 
     # Check current tracks with local_path
     conn = sqlite3.connect("data/lunawave.db")
@@ -32,13 +32,13 @@ async def main():
 
     # Try inserting a test track
     t = TrackInfo(video_id="test1", title="t1", artist="a1", duration=10)
-    await db.upsert_track(t, local_path="test_local_path.mp3")
+    await repos.tracks.upsert_track(t, local_path="test_local_path.mp3")
 
     # Verify insertion
     row = conn.execute("SELECT local_path FROM tracks WHERE video_id='test1'").fetchone()
     print("Test insert result:", row)
 
-    await db.close()
+    await repos.close()
 
 
 if __name__ == "__main__":

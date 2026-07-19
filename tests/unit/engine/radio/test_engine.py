@@ -60,7 +60,7 @@ class MockController:
 async def test_radio_activate_deactivate():
     state = AppState()
     db = MockDB()
-    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, artists=db, library=db)
     controller = MockController()
 
     await radio.on_activated(controller)
@@ -75,7 +75,7 @@ async def test_radio_activate_deactivate():
 async def test_radio_next_with_queue():
     state = AppState()
     db = MockDB()
-    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, artists=db, library=db)
     controller = MockController()
 
     t1 = TrackInfo(video_id="1", title="T1", artist="A", duration=100)
@@ -91,7 +91,7 @@ async def test_radio_next_with_queue():
 async def test_radio_next_empty_queue():
     state = AppState()
     db = MockDB()
-    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, artists=db, library=db)
     controller = MockController()
 
     await radio.next(controller)
@@ -105,7 +105,7 @@ async def test_radio_next_empty_queue():
 async def test_radio_start_empty_standby_fetches_quick(mock_gather_batch):
     state = AppState()
     db = MockDB()
-    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, artists=db, library=db)
     controller = MockController()
 
     track = TrackInfo(video_id="1", title="T1", artist="A", duration=100)
@@ -122,7 +122,7 @@ async def test_radio_start_empty_standby_fetches_quick(mock_gather_batch):
 async def test_fetch_and_play_initial_randomize(mock_gather_batch):
     state = AppState()
     db = MockDB()
-    radio = RadioMode(ytdlp=MockExtractor(), state=state, db=db)
+    radio = RadioMode(ytdlp=MockExtractor(), state=state, artists=db, library=db)
     controller = MockController()
 
     track = TrackInfo(video_id="1", title="T1", artist="A", duration=100)

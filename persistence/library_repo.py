@@ -29,6 +29,10 @@ class LibraryRepository:
     def __init__(self, conn):
         self._conn = conn
 
+    @property
+    def conn(self):
+        return self._conn
+
     async def get_random_songs(
         self,
         limit: int = 12,

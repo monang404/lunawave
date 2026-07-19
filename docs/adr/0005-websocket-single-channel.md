@@ -19,7 +19,7 @@ Untuk personal music player dengan satu pengguna aktif (Termux, layar tunggal), 
 
 ## Konsekuensi
 
-- `server/services/broadcast_service.py` selalu serialize seluruh `AppState` — tidak pernah partial
+- `server/broadcast_service.py` selalu serialize seluruh `AppState` — tidak pernah partial
 - `ws.js` di frontend memiliki satu entry point `renderFullState(state)` yang menangani semua pembaruan UI
 - Menambah domain state baru (contoh: lyrics sync) cukup tambah field ke `AppState` — tidak perlu channel baru
 - Jika di masa depan LunaWave jadi multi-user atau multi-room, arsitektur ini perlu direvisi untuk mengurangi broadcast yang tidak perlu
@@ -27,7 +27,7 @@ Untuk personal music player dengan satu pengguna aktif (Termux, layar tunggal), 
 
 ## Referensi
 
-- Implementasi: `server/services/broadcast_service.py`, `server/connection_manager.py`
+- Implementasi: `server/broadcast_service.py`, `server/connection_manager.py`
 - Frontend: `js/ws.js`, `js/render/full-state.js`
 - State definition: `core/state.py`
 - Lihat juga: ADR-0004 (CommandBus), `architecture/data_flow.md`
