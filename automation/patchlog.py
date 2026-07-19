@@ -184,11 +184,11 @@ def main():
             print(f"ID ditemukan   : {report['total_ids_found']}")
             print(f"Berhasil parse : {report['total_parsed']}")
             if report["unparsed_ids"]:
-                print(f"❌ Gagal parse ({len(report['unparsed_ids'])}):")
+                print(f"[ERROR] Gagal parse ({len(report['unparsed_ids'])}):")
                 for pid in report["unparsed_ids"]:
                     print(f"   - {pid}")
                 sys.exit(1)
-            print("✅ Semua entry berhasil di-parse.")
+            print("[OK] Semua entry berhasil di-parse.")
         return
 
     entries = parse_entries(text)

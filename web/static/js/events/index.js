@@ -77,5 +77,6 @@ function initEvents() {
     if (typeof initLyricsEvents === "function") initLyricsEvents();
     if (typeof initSettingsEvents === "function") initSettingsEvents();
     if (typeof initDiscoverFilterEvents === "function") initDiscoverFilterEvents();
+    if (typeof initDiscoverSearchEvents === "function") initDiscoverSearchEvents();
     if (typeof initDragScrollEvents === "function") initDragScrollEvents();
 }

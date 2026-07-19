@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="/static/css/components/lyrics.css">
     <link rel="stylesheet" href="/static/css/components/cards.css">
     <link rel="stylesheet" href="/static/css/components/discover-cards.css">
+    <link rel="stylesheet" href="/static/css/components/discover-search.css">
     <link rel="stylesheet" href="/static/css/components/toasts.css">
     <link rel="stylesheet" href="/static/css/portal.css">
 
@@ -319,6 +320,35 @@
                     <p class="discover-sub">Find your next favorite song</p>
                 </div>
 
+
+                <!-- Quick Search Discover (T-A5): terisolasi, tidak mengubah section Discover existing di bawahnya -->
+                <div class="discover-search-wrap" id="discover-search-wrap">
+                    <div class="discover-search-input-row" style="position:relative;">
+                        <i class="ti ti-search" aria-hidden="true"></i>
+                        <input type="text" id="discover-search-input" placeholder="Cari judul atau artis..."
+                            autocomplete="off">
+                        <button id="discover-search-clear-btn" aria-label="Clear Search"
+                            style="display:none; position:absolute; right:14px; background:none; border:none; color:var(--text-3); font-size:16px; cursor:pointer;">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
+                    <!-- Progressive disclosure: hanya muncul saat query aktif (T-A7/T-A8) -->
+                    <div class="filter-bar discover-search-filter-row" id="discover-search-filter-row" style="display:none;">
+                        <div class="segmented" id="discover-search-kategori-toggle">
+                            <button class="active" data-kategori="all" type="button">Semua</button>
+                            <button data-kategori="individu" type="button">Solo</button>
+                            <button data-kategori="band" type="button">Band</button>
+                        </div>
+                        <div class="custom-dropdown" id="discover-search-decade-dropdown-container">
+                            <button class="custom-dropdown-btn" id="discover-search-decade-dropdown-btn">Semua Era <i class="ti ti-chevron-down"></i></button>
+                            <div class="custom-dropdown-menu" id="discover-search-decade-chips"></div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Search Discover: status & hasil (T-A8) -->
+                    <div class="discover-search-status" id="discover-search-status" style="display:none; padding:4px 4px 8px; font-size:12px; color:var(--text-3);"></div>
+                    <div id="discover-search-results" style="display:none; flex-direction:column;"></div>
+                </div>
 
                 <!-- Selera Kamu (Taste Spectrum) -->
                 <div class="taste-block" id="taste-block">
@@ -816,6 +846,7 @@
     <script src="/static/js/render/queue.js?v=3" defer></script>
     <script src="/static/js/render/discover-tab.js?v=6" defer></script>
     <script src="/static/js/render/discover-personalize.js" defer></script>
+    <script src="/static/js/render/discover-search.js" defer></script>
     <script src="/static/js/render/radio-tab.js?v=6" defer></script>
     <script src="/static/js/render/full-state.js" defer></script>
     <script src="/static/js/render/lyrics.js" defer></script>
@@ -823,6 +854,7 @@
     <script src="/static/js/events/transport-events.js" defer></script>
     <script src="/static/js/events/progress-events.js" defer></script>
     <script src="/static/js/events/search-input-events.js" defer></script>
+    <script src="/static/js/events/discover-search-events.js" defer></script>
     <script src="/static/js/events/action-modal-events.js" defer></script>
     <script src="/static/js/events/click-delegation-events.js" defer></script>
     <script src="/static/js/events/keyboard-shortcut-events.js" defer></script>

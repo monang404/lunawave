@@ -101,6 +101,101 @@ async def test_handle_discovery_command_discover_includes_personalization(mock_d
 
 
 @pytest.mark.asyncio
+async def test_handle_discovery_command_discover_search():
+    mock_repo = AsyncMock()
+    mock_repo.search_tracks.return_value = [
+        {
+            "video_id": "v1",
+            "title": "Song A",
+            "artist": "Artist A",
+            "duration": 180,
+            "thumbnail": "thumb.jpg",
+            "local_path": "/cache/v1.mp3",
+            "view_count": 100,
+            "is_favorite": 1,
+        }
+    ]
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command(
+        "discover_search",
+        {"query": "Song A", "kategori": "solo", "decade": 1990},
+        None,
+        mock_repo,
+        mock_ws,
+    )
+
+    mock_repo.search_tracks.assert_called_once_with("Song A", kategori="solo", decade=1990)
+    sent_data = json.loads(mock_ws.send_str.call_args[0][0])
+    assert sent_data["type"] == "discover_search_results"
+    assert sent_data["data"] == [
+        {
+            "video_id": "v1",
+            "title": "Song A",
+            "artist": "Artist A",
+            "duration": 180,
+            "thumbnail": "thumb.jpg",
+            "is_cached": True,
+            "view_count": 100,
+            "is_favorite": True,
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_handle_discovery_command_discover_search_no_filters():
+    """kategori/decade tidak dikirim -> None, bukan string kosong/'all'."""
+    mock_repo = AsyncMock()
+    mock_repo.search_tracks.return_value = []
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command("discover_search", {"query": "Song"}, None, mock_repo, mock_ws)
+
+    mock_repo.search_tracks.assert_called_once_with("Song", kategori=None, decade=None)
+
+
+@pytest.mark.asyncio
+async def test_handle_discovery_command_discover_search_decade_all_is_none():
+    mock_repo = AsyncMock()
+    mock_repo.search_tracks.return_value = []
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command(
+        "discover_search", {"query": "Song", "decade": "all"}, None, mock_repo, mock_ws
+    )
+
+    mock_repo.search_tracks.assert_called_once_with("Song", kategori=None, decade=None)
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.ws_discovery.track_to_dict")
+async def test_handle_discovery_command_discover_search_does_not_use_track_to_dict(
+    mock_track_to_dict,
+):
+    """discover_search return dict row mentah (bukan TrackInfo), jadi
+    track_to_dict() -- yang butuh attribute access -- tidak boleh dipanggil
+    di branch ini (beda dari action 'search')."""
+    mock_repo = AsyncMock()
+    mock_repo.search_tracks.return_value = [
+        {
+            "video_id": "v1",
+            "title": "Song A",
+            "artist": "Artist A",
+            "duration": 180,
+            "thumbnail": None,
+            "local_path": None,
+            "view_count": None,
+            "is_favorite": 0,
+        }
+    ]
+    mock_ws = AsyncMock()
+
+    await handle_discovery_command("discover_search", {"query": "Song"}, None, mock_repo, mock_ws)
+
+    mock_track_to_dict.assert_not_called()
+
+
+@pytest.mark.asyncio
 @patch("server.handlers.ws_discovery.DiscoverService")
 async def test_handle_discovery_command_get_artist_detail(mock_discover_service):
     """NOTE: this action is implemented but currently unreachable through

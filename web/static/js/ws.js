@@ -253,6 +253,9 @@ function handleServerMessage(msg) {
         case "search_results":
             renderSearchResults(msg.data);
             break;
+        case "discover_search_results":
+            if (typeof renderDiscoverSearchResults === "function") renderDiscoverSearchResults(msg.data);
+            break;
         case "discover_data":
             showLogToast("Menerima data lagu! " + (msg.data.recent ? msg.data.recent.length : 0) + " items");
             store.discover_recent = msg.data.recent || [];
@@ -277,6 +280,7 @@ function handleServerMessage(msg) {
             break;
         case "error":
             showLogToast("Error: " + msg.data);
+            if (typeof handleDiscoverSearchError === "function") handleDiscoverSearchError();
             break;
         case "download_progress": {
             const prevProgress = store.download_progress;

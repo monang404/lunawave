@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-18-103
+latest_patch_id: PATCH-2026-07-19-110
 
-total_entries: 103
+total_entries: 110
 
 ---
 
@@ -26,6 +26,115 @@ total_entries: 103
 
 ---
 
+
+## [2026-07-19] T-A9: registrasi elemen DOM baru Quick Search Discover ke web/static/js/dom.js -- 10 elemen (discoverSearchWrap/Input/ClearBtn/FilterRow/KategoriToggle/DecadeBtn/DecadeContainer/DecadeChips/Status/Results) via $() (getElementById), plus filterScopeHint (querySelector, markup existing tidak punya id) dan rowUnheardLabel (computed dari sibling row-unheard) -- keduanya tetap terkurung di dalam dom.js sesuai aturan "tidak ada querySelector liar di luar dom.js". web/static/js/events/discover-search-events.js (T-A7) dan web/static/js/render/discover-search.js (T-A8) diupdate pakai dom.* alih-alih document.getElementById langsung (kedua file tidak locked, sudah dalam scope perbaikan wajar mengikuti dod T-A9). web/static/js/main.js: tidak ada perubahan diperlukan (initDOM() sudah dipanggil sebelum initEvents() di init(), urutan sudah benar). doctor.py --strict & verify_structure.py PASS 100.
+
+**ID:** `PATCH-2026-07-19-110`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A9: registrasi elemen DOM baru Quick Search Discover ke dom.js (10 elemen via $() + filterScopeHint/rowUnheardLabel yang di-resolve di dalam dom.js). discover-search-events.js (T-A7) & render/discover-search.js (T-A8) diupdate pakai dom.* alih-alih document.getElementById langsung. main.js tidak berubah (urutan initDOM()/initEvents() sudah benar). doctor.py --strict PASS 100.
+
+**File Terdampak:**
+
+- `web/static/js/dom.js`
+- `web/static/js/events/discover-search-events.js`
+- `web/static/js/render/discover-search.js`
+
+---
+
+## [2026-07-19] T-A8: file baru web/static/js/render/discover-search.js -- render hasil pencarian Quick Search Discover, mirror ringan render/search.js (bangun .sr-item yang sama, reuse di semua breakpoint, tanpa CSS baru). 5 state: Initial (default, belum ada state khusus), Loading (enterDiscoverSearchLoading(), dipanggil dari events/discover-search-events.js T-A7 tepat sebelum wsSend), Empty (exitDiscoverSearchMode(), query dikosongkan -> balik ke rekomendasi personalisasi TANPA reload), No result (renderDiscoverSearchResults([]) -> pesan "Tidak ditemukan hasil"), Error (handleDiscoverSearchError(), hook ke case "error" umum di ws.js, hanya render inline kalau mode search sedang aktif). Toggle visibilitas blok personalisasi (taste-block, discover-filter-bar, filter-scope-hint, row-for-you*, row-genre-affinity*, row-unheard + label row-nya) saat masuk/keluar mode pencarian -- discover-artists/discover-genres/discover-cached (di luar cakupan "personalisasi") tidak disentuh. Guard _discoverSearchActive mencegah respons WS basi (query sudah diganti/dikosongkan) menimpa UI. Perubahan pendukung (izin eksplisit user, di luar cakupan file asli T-A8, precedent T-A6/T-A7): web/static/index.html -- 2 baris container (#discover-search-status, #discover-search-results) di dalam .discover-search-wrap + 1 baris <script> render/discover-search.js. web/static/js/ws.js (tidak locked) -- case baru "discover_search_results", hook handleDiscoverSearchError() di case "error". web/static/js/events/discover-search-events.js (tidak locked, dari T-A7) -- panggil enterDiscoverSearchLoading() di sendSearch(). doctor.py --strict & verify_structure.py PASS 100.
+
+**ID:** `PATCH-2026-07-19-109`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A8: file baru web/static/js/render/discover-search.js -- render hasil pencarian Quick Search Discover, mirror ringan render/search.js, reuse .sr-item. 5 state (Initial/Loading/Empty/No result/Error) lengkap dengan toggle blok personalisasi & guard request basi. Perlu 2 baris container + 1 baris <script> di index.html (izin eksplisit user) dan wiring kecil di ws.js (tidak locked) + discover-search-events.js (tidak locked). doctor.py --strict PASS 100.
+
+**File Terdampak:**
+
+- `web/static/js/render/discover-search.js`
+- `web/static/index.html`
+- `web/static/js/ws.js`
+- `web/static/js/events/discover-search-events.js`
+
+---
+
+## [2026-07-19] T-A7: file baru web/static/js/events/discover-search-events.js -- event handling + debounce 500ms untuk Quick Search Discover, mirror pola search-input-events.js. wsSend('discover_search', {query, kategori, decade}) terpicu setelah 500ms idle (atau Enter langsung). Tombol clear reset input, filter row, kategori/decade ke default TANPA round-trip ke server saat query kosong. Filter row (.discover-search-filter-row) progressive disclosure show/hide berdasar query aktif. Opsi dekade (K2) diturunkan dari store.discover_for_you/genre_affinity_artists/unheard yang sudah dimuat -- pola sama persis dgn buildDecadeChips() filter-bar Discover existing, tanpa query/kolom skema baru. Didaftarkan ke initEvents() via events/index.js (file tidak locked). Ditambahkan 1 baris <script src="/static/js/events/discover-search-events.js" defer> di web/static/index.html (izin eksplisit user, di luar cakupan file asli T-A7, sama seperti precedent T-A6) -- action kini reachable end-to-end dari browser. doctor.py --strict & verify_structure.py PASS 100, identik baseline.
+
+**ID:** `PATCH-2026-07-19-108`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A7: file baru web/static/js/events/discover-search-events.js -- event handling + debounce 500ms untuk Quick Search Discover, mirror pola search-input-events.js. wsSend('discover_search', {query, kategori, decade}) terpicu setelah 500ms idle (atau Enter langsung). Tombol clear reset input, filter row, kategori/decade ke default TANPA round-trip ke server saat query kosong. Opsi dekade diturunkan dari data personalisasi yang sudah dimuat, tanpa query/kolom skema baru. Didaftarkan ke initEvents() via events/index.js. Ditambahkan 1 baris <script> di index.html (izin eksplisit user) -- reachable end-to-end. doctor.py --strict PASS 100.
+
+**File Terdampak:**
+
+- `web/static/js/events/discover-search-events.js`
+- `web/static/js/events/index.js`
+- `web/static/index.html`
+
+---
+
+## [2026-07-19] T-A6: CSS baru web/static/css/components/discover-search.css untuk Quick Search Discover (search bar + filter row), pakai token spacing --s* project-wide, tanpa breakpoint baru. .filter-bar/.segmented/.custom-dropdown di-reuse apa adanya (tidak ada rule baru untuk itu). Perlu 1 baris tambahan <link rel=stylesheet> di web/static/index.html (izin eksplisit user, di luar cakupan file asli T-A6) supaya CSS ini benar-benar termuat. verify_structure.py & doctor.py --strict PASS 100.
+
+**ID:** `PATCH-2026-07-19-107`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A6: CSS baru web/static/css/components/discover-search.css untuk Quick Search Discover (search bar + filter row), pakai token spacing --s* project-wide, tanpa breakpoint baru. .filter-bar/.segmented/.custom-dropdown di-reuse apa adanya (tidak ada rule baru untuk itu). Perlu 1 baris tambahan <link rel=stylesheet> di web/static/index.html (izin eksplisit user, di luar cakupan file asli T-A6) supaya CSS ini benar-benar termuat. verify_structure.py & doctor.py --strict PASS 100.
+
+**File Terdampak:**
+
+- `web/static/css/components/discover-search.css`
+- `web/static/index.html`
+
+---
+
+## [2026-07-19] T-A5: markup Quick Search Discover di web/static/index.html (izin eksplisit user) -- search bar (.discover-search-wrap) + filter row (reuse .segmented kategori K1 + .custom-dropdown dekade K2, progressive disclosure via display:none) disisipkan sebelum .taste-block di #tab-discover. Terisolasi via id/class baru, tidak ada duplicate id, elemen Discover existing (taste-block, kategori-toggle, decade-dropdown-container) tidak berubah. Belum ada JS wiring (menunggu T-A7/T-A8).
+
+**ID:** `PATCH-2026-07-19-106`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A5: markup Quick Search Discover di web/static/index.html (izin eksplisit user) -- search bar (.discover-search-wrap) + filter row (reuse .segmented kategori K1 + .custom-dropdown dekade K2, progressive disclosure via display:none) disisipkan sebelum .taste-block di #tab-discover. Terisolasi via id/class baru, tidak ada duplicate id, elemen Discover existing (taste-block, kategori-toggle, decade-dropdown-container) tidak berubah. Belum ada JS wiring (menunggu T-A7/T-A8).
+
+**File Terdampak:**
+
+- `web/static/index.html`
+
+---
+
+## [2026-07-19] T-A4: tambah 'discover_search' ke DISCOVERY_CMDS di server/handlers/websocket.py (izin eksplisit user, perubahan 1 baris) -- action discover_search kini reachable dari client. Command lama (search, discover, get_artist_detail) diverifikasi tetap jalan. doctor.py --strict PASS 100, identik baseline T0.1. Belum ditest manual di browser sungguhan (sandbox tanpa network/display), sama seperti catatan get_artist_detail sebelumnya.
+
+**ID:** `PATCH-2026-07-19-105`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** T-A4: tambah 'discover_search' ke DISCOVERY_CMDS di server/handlers/websocket.py (izin eksplisit user, perubahan 1 baris) -- action discover_search kini reachable dari client. Command lama (search, discover, get_artist_detail) diverifikasi tetap jalan. doctor.py --strict PASS 100, identik baseline T0.1. Belum ditest manual di browser sungguhan (sandbox tanpa network/display), sama seperti catatan get_artist_detail sebelumnya.
+
+**File Terdampak:**
+
+- `server/handlers/websocket.py`
+
+---
+
+## [2026-07-19] Quick Search Discover (T-A1..T-A3): search_tracks() di discover_repo.py (LIKE title/artist, filter kategori Solo/Band K1 & dekade K2 via subquery tanpa JOIN artists/artist_genres, tanpa logika skor/ranking), unit test baru, branch discover_search di ws_discovery.py. Belum reachable dari client -- menunggu izin eksplisit T-A4 (DISCOVERY_CMDS di server/handlers/websocket.py, file governance-locked).
+
+**ID:** `PATCH-2026-07-19-104`
+
+**Tanggal:** 2026-07-19
+
+**Ringkasan:** Quick Search Discover (T-A1..T-A3): search_tracks() di discover_repo.py (LIKE title/artist, filter kategori Solo/Band K1 & dekade K2 via subquery tanpa JOIN artists/artist_genres, tanpa logika skor/ranking), unit test baru, branch discover_search di ws_discovery.py. Belum reachable dari client -- menunggu izin eksplisit T-A4 (DISCOVERY_CMDS di server/handlers/websocket.py, file governance-locked).
+
+**File Terdampak:**
+
+- `persistence/discover_repo.py`
+- `tests/unit/persistence/test_discover_repo_search.py`
+- `server/handlers/ws_discovery.py`
+- `tests/unit/server/handlers/test_ws_discovery.py`
+
+---
 
 ## [2026-07-18] Rename nama generik: adapters/ytdlp/common.py -> ydl_options.py, engine/radio/common.py -> radio_config.py, automation/verify_docs/helpers.py -> doc_parsing_utils.py; sekalian perbaiki docstring 'Depends on' yang masih menyebut scripts.verify_docs.helpers (sisa lupa update dari PATCH-2026-07-17-072)
 

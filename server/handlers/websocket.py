@@ -73,7 +73,7 @@ QUEUE_CMDS = {
     "enqueue_artist_songs",
     "enqueue_genre_songs",
 }
-DISCOVERY_CMDS = {"search", "discover", "get_artist_detail"}
+DISCOVERY_CMDS = {"search", "discover", "get_artist_detail", "discover_search"}
 DOWNLOAD_CMDS = {"download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
 
@@ -165,7 +165,9 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         elif action in DISCOVERY_CMDS:
             await handle_discovery_command(action, data, ytdlp, repos.discover, ws)
         elif action in DOWNLOAD_CMDS:
-            await handle_download_command(action, data, repos.tracks, repos.discover, manager, state)
+            await handle_download_command(
+                action, data, repos.tracks, repos.discover, manager, state
+            )
         elif action in CACHE_CMDS:
             from server.handlers.ws_cache import handle_cache_command
 

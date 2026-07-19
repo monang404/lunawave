@@ -203,6 +203,79 @@ class DiscoverRepository:
 
         return await enrich_artists(self._conn, rows)
 
+    async def search_tracks(
+        self,
+        query: str,
+        kategori: str | None = None,
+        decade: int | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Quick Search Discover: cari track berdasarkan judul/nama artis
+        (LIKE, case-insensitive bawaan SQLite untuk ASCII), dengan filter
+        opsional kategori (Solo/Band, K1) dan/atau dekade (K2).
+
+        Kedua filter menurunkan cakupan asli (genre track-level, tahun
+        rilis per-track) ke pola yang SUDAH ADA di filter-bar Discover:
+        kategori & tahun_aktif hidup di level `artists`, bukan `tracks`,
+        dan `tracks.artist` bukan foreign key ke `artists.id` (join by
+        nama tidak reliable secara skema). Untuk menghindari JOIN
+        `artists`/`artist_genres` di method ini (lihat K1), filter
+        dilakukan lewat subquery `IN` by nama artis alih-alih JOIN —
+        efeknya best-effort match by name, sama seperti keterbatasan yang
+        sudah didokumentasikan di `get_taste_spectrum()`.
+
+        Tidak ada skor/ranking di layer ini: hasil diurut alfabetis by
+        judul saja. Ranking (kalau nanti dibutuhkan) adalah tugas layer
+        services, bukan repo ini (pola sama seperti method lain di file
+        ini, lihat docstring modul).
+
+        Return [] untuk query kosong/whitespace-only, tanpa query DB.
+        """
+        if not self._conn:
+            return []
+
+        q = (query or "").strip()
+        if not q:
+            return []
+
+        like_pattern = f"%{q}%"
+        conditions = ["(t.title LIKE ? OR t.artist LIKE ?)"]
+        params: list = [like_pattern, like_pattern]
+
+        if kategori:
+            conditions.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
+            params.append(kategori)
+
+        if decade is not None:
+            conditions.append(
+                "t.artist IN ("
+                "SELECT nama FROM artists "
+                "WHERE CAST(tahun_aktif AS INTEGER) >= ? "
+                "AND CAST(tahun_aktif AS INTEGER) < ?"
+                ")"
+            )
+            params.extend([decade, decade + 10])
+
+        where_clause = " AND ".join(conditions)
+        sql = f"""
+            SELECT video_id, title, artist, duration, thumbnail,
+                   local_path, view_count, is_favorite
+            FROM tracks t
+            WHERE {where_clause}
+            ORDER BY t.title ASC
+            LIMIT ?
+        """
+        params.append(limit)
+
+        try:
+            async with self._conn.execute(sql, params) as cursor:
+                rows = [dict(r) for r in await cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error searching tracks: {e}")
+            return []
+
+        return rows
+
     async def get_artist_detail(self, nama: str) -> dict | None:
         """Info lengkap satu artis untuk detail sheet: data dasar + cover +
         genre tags + hingga 10 lagu. Return None kalau artis tidak

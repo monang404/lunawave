@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": "2026-07-19T09:09:32",
+    "generated_at": "2026-07-19T02:59:23",
     "note": "Auto-generated oleh automation/repo_map.py — jangan edit manual. Refresh via `python automation/run_all.py` atau `python automation/repo_map.py`."
   },
   "summary": {
@@ -2096,8 +2096,8 @@
       "classes": [
         "DiscoverRepository"
       ],
-      "function_count": 7,
-      "loc": 255,
+      "function_count": 8,
+      "loc": 329,
       "deps": [
         "persistence/discover_enrich.py"
       ],
