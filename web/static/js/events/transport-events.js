@@ -11,7 +11,7 @@ function initTransportEvents() {
         if (store.userRole === "admin") {
             const wantsPlay = store.status !== "PLAYING";
             store.status = wantsPlay ? "PLAYING" : "PAUSED";
-            window.lastToggleTime = Date.now();
+            markPendingToggle(wantsPlay ? "PLAYING" : "PAUSED");
             if (wantsPlay && typeof resetAnchorClock === "function") resetAnchorClock();
             if (typeof renderPlayBtn === "function") renderPlayBtn();
             if (typeof renderNowPlaying === "function") renderNowPlaying();

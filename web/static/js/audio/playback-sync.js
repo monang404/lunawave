@@ -44,15 +44,17 @@ function getOrInitAudio() {
             // nunjukin tombol pause padahal audio sudah berhenti.
             _updateMediaSessionState("paused");
             if (_mediaSessionHandling || window.audioBlocked || localAudio.ended) return;
-            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
-            // pause ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
-            // Jangan kirim toggle_pause lagi.
-            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            // FIX-PAUSE-RACE-01: kalau kita masih menunggu konfirmasi toggle ke PAUSED
+            // (baru saja diminta lewat tombol/media-session), pause ini kemungkinan besar
+            // dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS. Jangan kirim
+            // toggle_pause lagi. Dulu ini pakai timer tetap (1500ms) yang beda sendiri dari
+            // ws.js (1200ms); sekarang keduanya pakai satu sumber kebenaran yang sama.
+            const _inUIGrace = isPendingToggleActive("PAUSED");
             if (!_inUIGrace && store.status === "PLAYING") {
                 console.log("[audio] Native pause (headset/OS), syncing to server...");
                 if (store.userRole === "admin") {
                     store.status = "PAUSED";
-                    window.lastToggleTime = Date.now();
+                    markPendingToggle("PAUSED");
                     if (typeof renderPlayBtn === "function") renderPlayBtn();
                     if (typeof renderNowPlaying === "function") renderNowPlaying();
                     if (typeof wsSend === "function") wsSend("toggle_pause");
@@ -64,15 +66,16 @@ function getOrInitAudio() {
             // baru cek guard buat keputusan kirim toggle_pause ke server atau tidak.
             _updateMediaSessionState("playing");
             if (_mediaSessionHandling || window.audioBlocked) return;
-            // Jika dalam grace period (lastToggleTime baru saja diset oleh UI click),
-            // play ini dipicu oleh syncBrowserAudio() kita sendiri — bukan headset/OS.
-            // Jangan kirim toggle_pause lagi.
-            const _inUIGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1500);
+            // FIX-PAUSE-RACE-01: kalau kita masih menunggu konfirmasi toggle ke PLAYING,
+            // play ini kemungkinan besar dipicu oleh syncBrowserAudio() kita sendiri —
+            // bukan headset/OS. Jangan kirim toggle_pause lagi. Satu sumber kebenaran yang
+            // sama dengan ws.js (lihat store.js), bukan timer tetap terpisah lagi.
+            const _inUIGrace = isPendingToggleActive("PLAYING");
             if (!_inUIGrace && store.status !== "PLAYING") {
                 console.log("[audio] Native play (headset/OS), syncing to server...");
                 if (store.userRole === "admin") {
                     store.status = "PLAYING";
-                    window.lastToggleTime = Date.now();
+                    markPendingToggle("PLAYING");
                     if (typeof resetAnchorClock === "function") resetAnchorClock();
                     if (typeof renderPlayBtn === "function") renderPlayBtn();
                     if (typeof renderNowPlaying === "function") renderNowPlaying();
@@ -315,7 +318,7 @@ function updateMediaSession() {
         const _optimisticToggle = (wantsPlay) => {
             if (store.userRole !== "admin") return;
             store.status = wantsPlay ? "PLAYING" : "PAUSED";
-            window.lastToggleTime = Date.now();
+            markPendingToggle(wantsPlay ? "PLAYING" : "PAUSED");
             if (wantsPlay && typeof resetAnchorClock === "function") resetAnchorClock();
             if (typeof renderPlayBtn === "function") renderPlayBtn();
             if (typeof renderNowPlaying === "function") renderNowPlaying();

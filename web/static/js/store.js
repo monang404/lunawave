@@ -39,6 +39,36 @@ function createStore() {
 
 const store = createStore();
 
+// FIX-PAUSE-RACE-01: sebelumnya ws.js dan playback-sync.js masing-masing pakai
+// window.lastToggleTime dengan grace-window waktu TETAP yang beda (1200ms di
+// ws.js, 1500ms di playback-sync.js) buat nolak update status dari server yang
+// datang telat setelah user toggle play/pause. Dua angka beda untuk konsep yang
+// sama itu sendiri sudah jadi celah, dan begitu RTT jaringan lebih lama dari
+// grace-window-nya (jaringan jelek), progress message basi yang masih bawa
+// status LAMA tetap ditelan mentah-mentah -> menimpa balik status yang baru saja
+// di-set user -> audio ikut kebalik (lihat FIX-RADIO-08 di ws.js). Solusinya:
+// lacak status APA yang sedang ditunggu konfirmasinya (pendingToggleTarget),
+// bukan cuma "berapa lama sejak klik". Update dari server yang KONTRADIKTIF
+// dengan target itu ditolak selama masih menunggu -- bukan berdasar timer statis
+// yang gampang jebol di jaringan lambat.
+const PENDING_TOGGLE_TIMEOUT_MS = 8000; // safety-valve: cegah macet permanen kalau command toggle kita sendiri hilang di jalan
+
+function markPendingToggle(target) {
+    window.pendingToggleTarget = target;
+    window.toggleSentAt = Date.now();
+}
+
+// matchStatus: status yang mau dicek apakah masih "ditunggu konfirmasinya".
+// Return true kalau kita masih dalam masa tunggu utk toggle ke status itu (grace aktif).
+function isPendingToggleActive(matchStatus) {
+    if (!window.pendingToggleTarget) return false;
+    if (Date.now() - (window.toggleSentAt || 0) > PENDING_TOGGLE_TIMEOUT_MS) {
+        window.pendingToggleTarget = null; // safety-valve: anggap command kita hilang, jangan tunggu selamanya
+        return false;
+    }
+    return window.pendingToggleTarget === matchStatus;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { createStore, store };
+    module.exports = { createStore, store, markPendingToggle, isPendingToggleActive, PENDING_TOGGLE_TIMEOUT_MS };
 }

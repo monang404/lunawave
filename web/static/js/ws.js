@@ -64,6 +64,18 @@ function wsConnect() {
 }
 
 function wsSend(action, data) {
+    // FIX-PAUSE-RACE-01 (edge case ditemukan setelah patch awal): kalau ada
+    // pendingToggleTarget yang belum dikonfirmasi server (user pause lalu SEBELUM
+    // konfirmasi datang langsung next/prev/pilih track lain), status track yang
+    // baru (LOADING -> PLAYING) akan salah dianggap "kontradiktif" dengan target
+    // basi itu dan ditolak oleh handler "progress" -> UI kelihatan macet di
+    // LOADING sampai safety-valve 8 detik habis. Command-command ini mengganti
+    // track sepenuhnya, jadi toggle play/pause yang lama sudah tidak relevan --
+    // clear di sini (satu titik, berlaku utk semua caller: tombol next/prev,
+    // keyboard shortcut, klik track di search/queue, Media Session action).
+    if (action === "next" || action === "prev" || action === "play_track") {
+        window.pendingToggleTarget = null;
+    }
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
     }
@@ -141,7 +153,26 @@ function handleServerMessage(msg) {
             // yang toggle play/pause, biarkan <audio> browser (yang sudah otomatis
             // benar posisinya sendiri, tidak di-reload) main tanpa dipaksa re-seek oleh
             // posisi mpv server yang independen ini.
-            const _inToggleGrace = window.lastToggleTime && (Date.now() - window.lastToggleTime <= 1200);
+            //
+            // FIX-PAUSE-RACE-01 (bug: pause auto-play lagi di jaringan jelek): _inToggleGrace
+            // dulu dihitung dari window.lastToggleTime dgn window WAKTU TETAP 1200ms. Di
+            // jaringan flaky RTT sering > 1200ms, jadi progress message basi (msg.data.status
+            // masih status LAMA, dari sebelum server sempat proses toggle kita) lolos grace,
+            // menimpa balik store.status yg baru saja di-set user -> FIX-RADIO-08 di bawah
+            // melihat "status PLAYING tapi audio.paused" -> auto-play tanpa user gesture.
+            // Sekarang pakai window.pendingToggleTarget: kalau kita masih menunggu konfirmasi
+            // toggle ke status tertentu, message yg KONTRADIKTIF sama target itu ditolak
+            // (masih dianggap basi) TERLEPAS dari sudah berapa lama -- sampai message yang
+            // benar-benar mengonfirmasi target itu datang, atau safety-valve 8 detik habis.
+            const _awaitedTarget = window.pendingToggleTarget;
+            // isPendingToggleActive juga membersihkan pendingToggleTarget sendiri kalau
+            // sudah lewat safety-valve 8 detik (command toggle kita kemungkinan hilang).
+            const _stillWaitingConfirmation = !!_awaitedTarget && isPendingToggleActive(_awaitedTarget);
+            const _inToggleGrace = _stillWaitingConfirmation && msg.data.status !== _awaitedTarget;
+            if (_stillWaitingConfirmation && msg.data.status === _awaitedTarget) {
+                // Server akhirnya mengonfirmasi toggle yang kita minta -- selesai menunggu.
+                window.pendingToggleTarget = null;
+            }
 
             let statusChanged = false;
             if (!_inToggleGrace) {
