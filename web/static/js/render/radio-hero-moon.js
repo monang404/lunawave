@@ -8,6 +8,15 @@
 
    Dibangun bertahap sesi 3 (R3.1..R3.4). File ini belum di-load dari
    index.html manapun sampai sesi 4 (R4.1, gate governance-locked).
+
+   UPDATE (progress-driven): mode "cycling" tidak lagi loop buta 42 detik.
+   Fase bulan sekarang mengikuti progress lagu yang sedang diputar
+   (store.current_track.duration + getInterpolatedPosition() dari
+   player.js, dibaca read-only): awal lagu = bulan gelap/baru, tengah
+   lagu = purnama, akhir lagu = gelap lagi. Time-lapse 42 detik tetap
+   dipertahankan sebagai fallback kalau durasi lagu belum diketahui
+   (mis. sebelum track pertama termuat). Lihat getSongProgressPhase()
+   & stepCycle() di bawah.
    ═══════════════════════════════════════════ */
 
 (function () {
@@ -74,7 +83,7 @@
   let tweenStartTs = null;
   let tweenStartPhase = 0;
   let tweenTargetPhase = 0;
-  const CYCLE_SECONDS = 42; // accelerated time-lapse duration for one full synodic month
+  const CYCLE_SECONDS = 42; // fallback time-lapse duration, dipakai HANYA kalau durasi lagu tidak diketahui
   const TWEEN_MS = 900;
 
   function easeInOutCubic(t) {
@@ -87,11 +96,43 @@
     return d;
   }
 
+  // ── R3.2b (progress-driven): map fase bulan ke progress lagu yang sedang
+  // diputar, bukan ke jam buatan. CATATAN: secara empiris moonPathD(0) itu
+  // PURNAMA dan moonPathD(0.5) itu gelap/baru (kebalikan dari asumsi awal
+  // di komentar realPhase() di atas) — jadi fraction progress lagu digeser
+  // 0.5 dulu sebelum dipakai sebagai phase, supaya hasil akhirnya sesuai
+  // konvensi yang diminta: awal lagu (fraction 0) = gelap, tengah lagu
+  // (fraction 0.5) = purnama, akhir lagu (fraction 1 ≡ 0 lagi) = gelap lagi.
+  // Baca store.current_track.duration + getInterpolatedPosition() dari
+  // player.js (top-level function/const di script classic lain, jadi
+  // bisa diakses langsung — TIDAK menulis balik apa pun ke sana, read-only).
+  // Return null kalau durasi lagu belum diketahui (belum ada track / durasi
+  // 0), supaya caller bisa fallback ke time-lapse 42 detik yang lama. ──
+  function getSongProgressPhase() {
+    const track = store && store.current_track;
+    const dur = track ? track.duration : 0;
+    if (!dur || dur <= 0) return null;
+    const pos = typeof getInterpolatedPosition === "function"
+      ? getInterpolatedPosition()
+      : (store ? store.position || 0 : 0);
+    const fraction = Math.max(0, Math.min(1, pos / dur));
+    return (fraction + 0.5) % 1;
+  }
+
   function stepCycle(ts) {
     if (mode !== "cycling") return;
-    if (cycleStartTs === null) cycleStartTs = ts;
-    const elapsed = (ts - cycleStartTs) / 1000;
-    currentPhase = (cycleStartPhase + elapsed / CYCLE_SECONDS) % 1;
+    const songPhase = getSongProgressPhase();
+    if (songPhase !== null) {
+      // Lagu sedang diputar & durasinya diketahui: fase bulan mengikuti
+      // posisi playback secara langsung (informatif, bukan loop buta).
+      currentPhase = songPhase;
+      cycleStartTs = null; // reset supaya kalau nanti fallback dipakai lagi, mulai dari 0 elapsed
+    } else {
+      // Fallback: belum ada lagu / durasi tidak diketahui -> time-lapse lama.
+      if (cycleStartTs === null) cycleStartTs = ts;
+      const elapsed = (ts - cycleStartTs) / 1000;
+      currentPhase = (cycleStartPhase + elapsed / CYCLE_SECONDS) % 1;
+    }
     render(currentPhase);
     rafId = requestAnimationFrame(stepCycle);
   }
@@ -150,7 +191,11 @@
   // ── R3.3: SATU-SATUNYA API publik. Hanya menerima 1 parameter boolean,
   // tidak return apa pun yang dikonsumsi caller (RFC §5.3, §6 poin 2):
   //   - TIDAK menyentuh classList dari #radio-toggle-btn (domain radio-tab.js)
-  //   - TIDAK membaca/menulis store.* apa pun
+  //   - UPDATE (progress-driven): modul ini SEKARANG membaca
+  //     store.current_track.duration + getInterpolatedPosition() secara
+  //     read-only (lihat getSongProgressPhase()) supaya fase bulan bisa
+  //     mengikuti progress lagu. Tidak ada store.* lain yang disentuh, dan
+  //     modul ini tetap TIDAK PERNAH menulis ke store.* apa pun.
   //   - TIDAK memanggil resetAnchorClock/setPositionAnchor/wsSend/apa pun
   //     dari playback-sync.js atau player.js
   //   - TIDAK menulis dom.rtSub.textContent (domain radio-tab.js)
