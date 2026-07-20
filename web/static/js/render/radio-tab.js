@@ -11,6 +11,7 @@ function renderRadio() {
             dom.radioToggleBtn.classList.remove("on");
             dom.radioToggleBtn.dataset.on = "false";
         }
+        dom.radioToggleBtn.setAttribute('aria-pressed', isRadio ? 'true' : 'false');
     }
 
     if (dom.rtSub) {
@@ -23,5 +24,11 @@ function renderRadio() {
         } else {
             dom.rtSub.textContent = "Aktifkan untuk putar otomatis";
         }
+    }
+
+    // NEW — hook satu arah ke modul animasi hero, hanya kirim boolean,
+    // tidak ada state lain yang dibagi (RFC §5.3)
+    if (typeof setRadioHeroAnimState === 'function') {
+        setRadioHeroAnimState(isRadio);
     }
 }

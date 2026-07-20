@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="/static/css/components/settings-sheet.css">
     <link rel="stylesheet" href="/static/css/components/lyrics.css">
     <link rel="stylesheet" href="/static/css/components/cards.css">
+    <link rel="stylesheet" href="/static/css/components/radio-hero.css">
     <link rel="stylesheet" href="/static/css/components/discover-cards.css">
     <link rel="stylesheet" href="/static/css/components/discover-search.css">
     <link rel="stylesheet" href="/static/css/components/toasts.css">
@@ -296,29 +297,76 @@
 
 
                 <!-- Featured Station Hero (Clickable to Toggle Radio Mode) -->
-                <div class="radio-featured off" id="radio-toggle-btn" data-on="false" style="cursor: pointer;">
-                    <div class="radio-live-badge"><span class="badge-dot"></span>LIVE</div>
-                    <div class="radio-featured-inner">
-                        <div class="radio-centerpiece">
-                            <div class="centerpiece-waves left">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                            <div class="centerpiece-icon-wrap">
-                                <i class="ti ti-broadcast centerpiece-icon"></i>
-                            </div>
-                            <div class="centerpiece-waves right">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                        <div class="radio-featured-name">LunaWave</div>
-                        <div class="radio-featured-sub" id="rt-sub">24/7 Nonstop Music</div>
+                <!-- "Night Dial" — radio_toggle_redesign, docs/rfc/radio_toggle.md.
+                     id/data-on/id="rt-sub" DIPERTAHANKAN apa adanya (dipakai oleh
+                     touch.js swipe-guard, dom.js, transport-events.js, radio-tab.js). -->
+                <div class="radio-hero off" id="radio-toggle-btn" data-on="false" role="button" tabindex="0" aria-pressed="false">
+
+                    <div class="radio-status-badge">
+                        <span class="badge-dot"></span>
+                        <span class="badge-text-off">Radio Off</span>
+                        <span class="badge-text-on">Radio On</span>
                     </div>
+
+                    <!-- starfield, fixed positions, mixed sizes/brightness -->
+                    <div class="star" style="top:24px; left:30px; width:1.5px; height:1.5px; opacity:0.3;"></div>
+                    <div class="star" style="top:48px; left:56px; width:1px; height:1px; opacity:0.22;"></div>
+                    <div class="star" style="top:18px; left:96px; width:1px; height:1px; opacity:0.4;"></div>
+                    <div class="star" style="top:66px; left:22px; width:1px; height:1px; opacity:0.28;"></div>
+                    <div class="star" style="top:38px; left:130px; width:1.5px; height:1.5px; opacity:0.18;"></div>
+                    <div class="star" style="top:14px; left:230px; width:1px; height:1px; opacity:0.3;"></div>
+                    <div class="star" style="top:34px; left:290px; width:2px; height:2px; opacity:0.45;"></div>
+                    <div class="star" style="top:66px; left:326px; width:1px; height:1px; opacity:0.25;"></div>
+                    <div class="star" style="top:22px; left:360px; width:1.5px; height:1.5px; opacity:0.35;"></div>
+                    <div class="star" style="top:88px; left:350px; width:1px; height:1px; opacity:0.2;"></div>
+                    <div class="star" style="top:92px; left:44px; width:1px; height:1px; opacity:0.32;"></div>
+                    <div class="star" style="top:12px; left:160px; width:1px; height:1px; opacity:0.2;"></div>
+                    <div class="star" style="top:108px; left:16px; width:1px; height:1px; opacity:0.24;"></div>
+                    <div class="star" style="top:100px; left:390px; width:1.5px; height:1.5px; opacity:0.3;"></div>
+
+                    <svg class="dial-svg" viewBox="0 0 172 172" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="litGradCool" cx="36%" cy="32%" r="72%">
+                                <stop offset="0%" stop-color="#FDFBF6"/>
+                                <stop offset="55%" stop-color="var(--moon-light)"/>
+                                <stop offset="100%" stop-color="#C9C4BA"/>
+                            </radialGradient>
+                            <radialGradient id="litGradWarm" cx="36%" cy="32%" r="72%">
+                                <stop offset="0%" stop-color="#FFE3A8"/>
+                                <stop offset="55%" stop-color="var(--accent)"/>
+                                <stop offset="100%" stop-color="#C77E1E"/>
+                            </radialGradient>
+                            <filter id="softEdge" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur stdDeviation="0.85"/>
+                            </filter>
+                        </defs>
+
+                        <g id="moonGroup" class="moon-group">
+                            <g class="moon-glow-wrap">
+                                <path id="moonLitCool" class="moon-lit-cool" filter="url(#softEdge)"/>
+                                <path id="moonLitWarm" class="moon-lit-warm" filter="url(#softEdge)"/>
+                            </g>
+                        </g>
+
+                        <g transform="translate(86,150)">
+                            <line class="tick"        x1="-64" y1="0" x2="-64" y2="-10" transform="rotate(-40)"/>
+                            <line class="tick"        x1="-48" y1="0" x2="-48" y2="-10" transform="rotate(-28)"/>
+                            <line class="tick"        x1="-32" y1="0" x2="-32" y2="-10" transform="rotate(-16)"/>
+                            <line class="tick"        x1="-16" y1="0" x2="-16" y2="-10" transform="rotate(-4)"/>
+                            <line class="tick tuned"  x1="0"   y1="0" x2="0"   y2="-15" transform="rotate(0)"/>
+                            <line class="tick"        x1="16"  y1="0" x2="16"  y2="-10" transform="rotate(4)"/>
+                            <line class="tick"        x1="32"  y1="0" x2="32"  y2="-10" transform="rotate(16)"/>
+                            <line class="tick"        x1="48"  y1="0" x2="48"  y2="-10" transform="rotate(28)"/>
+                            <line class="tick"        x1="64"  y1="0" x2="64"  y2="-10" transform="rotate(40)"/>
+                        </g>
+
+                        <text class="freq-label" x="30" y="168" text-anchor="middle">88</text>
+                        <text class="freq-label tuned" x="86" y="170" text-anchor="middle" font-size="10">96.4</text>
+                        <text class="freq-label" x="142" y="168" text-anchor="middle">104</text>
+                    </svg>
+
+                    <div class="hero-name">Radio Mode</div>
+                    <div class="hero-sub" id="rt-sub">24/7 Nonstop Music</div>
                 </div>
 
                 <!-- Hidden compatibility elements -->
@@ -874,6 +922,7 @@
     <script src="/static/js/render/discover-tab.js?v=6" defer></script>
     <script src="/static/js/render/discover-personalize.js" defer></script>
     <script src="/static/js/render/discover-search.js" defer></script>
+    <script src="/static/js/render/radio-hero-moon.js?v=1" defer></script>
     <script src="/static/js/render/radio-tab.js?v=6" defer></script>
     <script src="/static/js/render/full-state.js" defer></script>
     <script src="/static/js/render/lyrics.js" defer></script>

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-19-124
+latest_patch_id: PATCH-2026-07-20-132
 
-total_entries: 124
+total_entries: 132
 
 ---
 
@@ -26,6 +26,127 @@ total_entries: 124
 
 ---
 
+
+## [2026-07-20] radio_toggle_redesign — HOTFIX (real-device report, screenshot bug): .radio-hero collapse ke sliver ~50px saat Radio ON dengan daftar 'All Stations' terisi. Root cause BUKAN RFC lama (§2, min-height vs teks 2 baris) -- ini bug flexbox terpisah: .radio-hero adalah flex item di dalam .tab-panel (nav.css: display:flex; flex-direction:column; height:100%), sementara yang scroll adalah #content-area (app-shell.css: flex:1; overflow-y:scroll), bukan .tab-panel itu sendiri. Begitu 'All Stations' terisi (radio ON) dan total tinggi children .tab-panel (hero + list) melebihi height:100% tsb, flexbox mengecilkan children sesuai flex-shrink (default:1) SEBELUM #content-area sempat scroll -- height:322px fixed saja tidak melindungi karena flex-basis tetap boleh diperas oleh algoritma shrink tanpa flex-shrink:0. Fix: tambah flex-shrink:0 + min-height:322px (backstop) ke .radio-hero di radio-hero.css, comment R2.1 diupdate menjelaskan root cause baru. Diverifikasi via Playwright headless (chromium) mereproduksi struktur nyata index.html + CSS asli, viewport mobile 400x700 dan desktop 1366x660, radio-queue-list diisi item .radio-queue-item sungguhan (bukan simulasi div kosong): SEBELUM fix tinggi .radio-hero jatuh 322px->50px persis begitu daftar terisi (match screenshot 'Radio On' user); SESUDAH fix tetap 322px konsisten di kedua viewport, baik state off/on x kosong/terisi (4 kombinasi diuji eksplisit), dan #content-area tetap scrollable normal (scrollHeight bertambah sesuai jumlah station, tidak clipped). python automation/doctor.py --strict --json -> PASS/100 (tidak ada regresi baru).
+
+**ID:** `PATCH-2026-07-20-132`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — HOTFIX (real-device report, screenshot bug): .radio-hero collapse ke sliver ~50px saat Radio ON dengan daftar 'All Stations' terisi. Root cause BUKAN RFC lama (§2, min-height vs teks 2 baris) -- ini bug flexbox terpisah: .radio-hero adalah flex item di dalam .tab-panel (nav.css: display:flex; flex-direction:column; height:100%), sementara yang scroll adalah #content-area (app-shell.css: flex:1; overflow-y:scroll), bukan .tab-panel itu sendiri. Begitu 'All Stations' terisi (radio ON) dan total tinggi children .tab-panel (hero + list) melebihi height:100% tsb, flexbox mengecilkan children sesuai flex-shrink (default:1) SEBELUM #content-area sempat scroll -- height:322px fixed saja tidak melindungi karena flex-basis tetap boleh diperas oleh algoritma shrink tanpa flex-shrink:0. Fix: tambah flex-shrink:0 + min-height:322px (backstop) ke .radio-hero di radio-hero.css, comment R2.1 diupdate menjelaskan root cause baru. Diverifikasi via Playwright headless (chromium) mereproduksi struktur nyata index.html + CSS asli, viewport mobile 400x700 dan desktop 1366x660, radio-queue-list diisi item .radio-queue-item sungguhan (bukan simulasi div kosong): SEBELUM fix tinggi .radio-hero jatuh 322px->50px persis begitu daftar terisi (match screenshot 'Radio On' user); SESUDAH fix tetap 322px konsisten di kedua viewport, baik state off/on x kosong/terisi (4 kombinasi diuji eksplisit), dan #content-area tetap scrollable normal (scrollHeight bertambah sesuai jumlah station, tidak clipped). python automation/doctor.py --strict --json -> PASS/100 (tidak ada regresi baru).
+
+**File Terdampak:**
+
+- `web/static/css/components/radio-hero.css`
+
+---
+
+## [2026-07-20] radio_toggle_redesign — Sesi 7 (R7.1..R7.3, PENUTUP FITUR "Night Dial"): cleanup CSS lama + regenerasi dokumentasi, entry terpisah dari entry fitur utama sesuai `patchlog_group: "PATCHLOG TERPISAH untuk sesi 7"` di `task_breakdown_radio.yaml`. R7.1: grep ulang dependency `.radio-featured`/`.centerpiece-*`/`.radio-live-badge` (aturan eksekusi #7 di `task_breakdown_radio.yaml`, sesuai RFC docs/rfc/radio_toggle.md §5.2) dikonfirmasi tidak ada referensi tersisa di `web/static/js/` maupun `index.html` (sudah tergantikan total sejak sesi 4). Hapus blok lama dari `web/static/css/components/cards.css`: `.radio-featured`, `.radio-featured::before`, `.radio-featured-inner`, `.radio-centerpiece`, `.centerpiece-icon-wrap`, `.centerpiece-icon`, `.centerpiece-waves` (+ `.left`/`.right`/`span`), `.radio-featured-name`, `.radio-featured-sub`, `.radio-live-badge` (+ `.badge-dot`), dan seluruh varian state `.on`/`:hover`, beserta `@keyframes transmit-radio`, `pulse-live`, `pulse-antenna`, `bounce-wave-1..4` -- total 233 baris terhapus dari `cards.css` (baris ~21-253 versi sebelum sesi ini). `.radio-page-header`/`.radio-page-title`/`.radio-page-sub` di atasnya SENGAJA DIPERTAHANKAN (di luar daftar selector yang ditugaskan untuk dihapus di R7.1, walau saat dicek juga tidak ada referensi pemakaiannya saat ini -- kalau memang dead code, itu di luar scope task ini, dicatat sebagai temuan terpisah, bukan dihapus tanpa izin eksplisit). **Catatan verifikasi grep**: perintah `grep -rn 'centerpiece\\|radio-live-badge\\|radio-featured\\|transmit-radio\\|pulse-antenna\\|bounce-wave' web/static/` masih menyisakan SATU match di `web/static/css/base/animations.css:7` (`@keyframes transmit-radio`) -- diverifikasi ini definisi keyframe LAIN yang tidak terkait (body animasi beda: `scale(1)→scale(2)`+`opacity` vs versi cards.css yang barusan dihapus yang pakai `box-shadow`), sudah tidak dipakai `animation:` manapun (dead code pre-existing, kemungkinan bukan bagian dari fitur radio_toggle_redesign), dan berada di file di luar scope `files:` R7.1 (`web/static/css/components/cards.css` saja) -- TIDAK disentuh, dicatat sebagai temuan terpisah untuk task cleanup lain, bukan bagian dari DoD fitur ini. `python automation/doctor.py --strict --json` -> PASS/100 (5 checker semua PASS: verify_docs, architecture_lint, verify_structure, verify_security, event_graph). R7.2: `python automation/generate_file_index.py` dan `generate_report.py` dijalankan, `docs/FILE_INDEX.md`/`docs/REPORT.md` ter-regenerate mencerminkan penghapusan CSS di atas; `python automation/patchlog.py verify --json` -> 130/130 entry ter-parse bersih (belum termasuk entry ini sendiri), tidak ada entry rusak. R7.3: entry ini sendiri, penutup seluruh fitur `radio_toggle_redesign` (Sesi 1-7): font self-host Fraunces+Space Grotesk (S1, `PATCH-2026-07-20-125` dst), isi penuh `radio-hero.css` dengan `height:322px` fixed yang menutup root cause bug ukuran on/off (S2, `-126`), modul `radio-hero-moon.js` self-contained/terisolasi penuh dari `playback-sync.js` (S3, `-127`), gate `index.html` dengan konfirmasi eksplisit user (S4, `-128`), wiring `renderRadio()` (S5, `-129`), QA headless browser -- 1 bug ditemukan+fix (rAF tidak berhenti saat reduced-motion, S6, `-130`) dan 1 bug ditemukan+didokumentasikan-belum-fix (starfield overflow viewport sempit, DoD R6.2 melarang buka ulang keputusan 322px di task ini), cleanup CSS lama (S7, entry ini). Referensi keputusan produk: R-D1 (label "Radio Mode"), R-D2 (badge "Radio Off"/"Radio On" selalu-visible via CSS, bukan textContent JS), R-D3 (self-host font, bukan CDN), R-D4 (322px final). Lihat `docs/rfc/radio_toggle.md` untuk analisis akar masalah lengkap.
+
+**ID:** `PATCH-2026-07-20-131`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 7 (PENUTUP, R7.1..R7.3): hapus 233 baris CSS lama `.radio-featured`/`.centerpiece-*`/`.radio-live-badge` + keyframes terkait dari `cards.css` setelah grep-ulang dependency (kosong, kecuali 1 keyframe unrelated di file lain, di luar scope, dicatat terpisah); regenerasi `FILE_INDEX.md`/`REPORT.md`; `doctor.py --strict` PASS/100. Menutup seluruh fitur "Night Dial" (Sesi 1-7) -- ringkasan referensi: font self-host (S1), `radio-hero.css` height-fixed (S2), `radio-hero-moon.js` terisolasi (S3), gate `index.html` (S4), wiring (S5), QA + 1 fix reduced-motion (S6), cleanup (S7, entry ini).
+
+**File Terdampak:**
+
+- `web/static/css/components/cards.css`
+- `docs/FILE_INDEX.md`
+- `docs/REPORT.md`
+
+---
+
+
+## [2026-07-20] radio_toggle_redesign — Sesi 6 (R6.1..R6.6): QA & verifikasi isolasi, dieksekusi via headless browser (Playwright/Chromium) di sandbox karena tidak ada akses DevTools manual/device fisik -- mpv dan akses internet ke YouTube TIDAK tersedia di sandbox ini, jadi verifikasi playback nyata (>2 menit) di R6.5 tidak bisa dijalankan penuh; sisanya diverifikasi otomatis. R6.1: tinggi `#radio-toggle-btn` diukur 322px identik di kedua state (off/on) dan tetap 322px walau subtitle diganti ke string terpanjang ("Mencari stasiun...") maupun terpendek -- root cause bug lama (RFC §2) terkonfirmasi tertutup. R6.2: diuji lebar 320px/360px/480px + landscape 740x360 -- DITEMUKAN bug starfield overflow batas kartu di 320px (4 star) dan 360px (2 star), serta di landscape 740x360 (tinggi kartu 87px dari platform/landscape.css) hero-name/hero-sub ikut overflow. Sesuai DoD eksplisit R6.2 ("jika ditemukan masalah, catat sebagai bug terpisah, JANGAN ubah keputusan 322px"), bug ini TIDAK diperbaiki di sesi ini -- dicatat sebagai temuan terpisah untuk sesi/task lanjutan, keputusan R-D4 tidak dibuka ulang. R6.3: klik (admin) memicu wsSend("set_mode") & toggle mode dengan benar; keyboard shortcut R (admin) berfungsi sama; guard isTypingContext di keyboard-shortcut-events.js terverifikasi mencegah shortcut R saat fokus di text input; swipe horizontal di atas kartu radio TIDAK memicu wsSend next/prev (guard #radio-toggle-btn di touch.js efektif). R6.4: user non-admin klik kartu -> tidak ada wsSend terkirim, playback_mode tidak berubah (guard role di transport-events.js efektif). R6.5: playback nyata >2 menit tidak bisa diuji (keterbatasan sandbox); sebagai proxy, radio-hero-moon.js diuji terisolasi (tanpa app lain) dengan spam 60x toggle ON/OFF cepat -- dikonfirmasi tidak ada rafId menumpuk (pending rAF = 0 setelah settle, cancelAnimationFrame dipanggil konsisten sebelum reschedule) dan tidak ada console error. R6.6: DITEMUKAN & DIPERBAIKI bug nyata -- `reduceMotion` sebelumnya cuma menonaktifkan transform libration di `render()`, tapi rAF loop `stepCycle`/`stepTween` tetap terus dijadwalkan walau OS-level `prefers-reduced-motion: reduce` aktif (melanggar RFC §5.5 poin 5 & DoD R6.6 "rAF fase bulan fallback ke render statis tanpa loop jalan"). Fix kecil dan terkontain di `goCycling()`/`goTweenToReal()`: kalau `reduceMotion` true, render fase bulan nyata sekali secara statis dan set `mode = "idle"`, tanpa memanggil `requestAnimationFrame` sama sekali -- diverifikasi terisolasi: 0 pemanggilan rAF saat reduced-motion aktif (sebelumnya rAF tetap terjadwal terus-menerus). Fix ini tidak mengubah isolasi RFC §5.4/§6 (re-checked: requestAnimationFrame hanya di modul ini, tidak ada store/wsSend/classList baru, playback-sync.js/player.js tetap tanpa reference ke modul ini). Verifikasi: node --check bersih; python automation/doctor.py --json -> PASS/100 (tidak ada regresi baru). Sesi 7 (cleanup CSS lama) belum dikerjakan.
+
+**ID:** `PATCH-2026-07-20-130`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 6 (R6.1..R6.6, QA via headless browser): tinggi kartu 322px identik off/on terkonfirmasi (R6.1); klik/keyboard/swipe/guard-role berfungsi benar (R6.3, R6.4); rAF isolation stress-test 60x spam toggle bersih tanpa leak (R6.5, proxy -- playback nyata tidak bisa diuji di sandbox); BUG DITEMUKAN+FIX di radio-hero-moon.js -- rAF loop sebelumnya tidak berhenti saat prefers-reduced-motion aktif, sekarang fallback render statis tanpa rAF sama sekali (R6.6). BUG DITEMUKAN, BELUM DIFIX (dicatat terpisah sesuai DoD R6.2) -- starfield overflow di viewport 320/360px dan landscape pendek. doctor.py tetap PASS/100.
+
+**File Terdampak:**
+
+- `web/static/js/render/radio-hero-moon.js`
+
+---
+
+
+## [2026-07-20] radio_toggle_redesign — Sesi 5 (R5.1): wiring renderRadio() -> modul animasi radio-hero-moon.js, satu-satunya perubahan ke radio-tab.js untuk seluruh fitur (RFC docs/rfc/radio_toggle.md §5.3). radio-tab.js tetap satu-satunya pemilik classList.add/remove("on"/"off") dan dataset.on -- logika itu TIDAK diubah sama sekali. Tambah 1 baris di akhir renderRadio(): typeof-check ke setRadioHeroAnimState(isRadio), hook satu arah yang cuma mengirim boolean, tanpa state lain dibagi. Tambah 1 baris sinkronisasi dom.radioToggleBtn.setAttribute('aria-pressed', ...) di blok classList existing, melengkapi atribut a11y role="button" tabindex="0" yang ditambahkan di markup sesi 4 (R4.1). Tidak ada perubahan lain ke logika classList on/off atau dom.rtSub.textContent yang sudah ada. Verifikasi: node --check bersih; grep radioToggleBtn.classList/dataset.on di seluruh web/static/js/ mengkonfirmasi radio-tab.js tetap satu-satunya file yang menulis state itu; python automation/doctor.py --json -> PASS/100 (baseline tidak berubah). Dengan ini, seluruh Sesi 1-5 dari task_breakdown_radio.yaml selesai: font self-host + skeleton CSS (S1), isi penuh radio-hero.css (S2), modul radio-hero-moon.js self-contained (S3), gate index.html (S4, dengan konfirmasi eksplisit user), wiring renderRadio() (S5). Sesi 6 (QA manual browser) dan Sesi 7 (cleanup cards.css lama) belum dikerjakan -- menunggu instruksi lanjutan.
+
+**ID:** `PATCH-2026-07-20-129`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 5 (R5.1): hook setRadioHeroAnimState(isRadio) dari renderRadio() + sinkronisasi aria-pressed, satu baris tambahan masing-masing, radio-tab.js tetap satu-satunya pemilik state on/off. Menutup Sesi 1-5 fitur "Night Dial" (font, CSS, modul JS animasi, markup index.html, wiring) -- Sesi 6 (QA) & Sesi 7 (cleanup CSS lama) masih pending.
+
+**File Terdampak:**
+
+- `web/static/js/render/radio-tab.js`
+
+---
+
+## [2026-07-20] radio_toggle_redesign — Sesi 4 (R4.1, GATE governance-locked): perubahan index.html untuk fitur "Night Dial", dieksekusi setelah konfirmasi eksplisit user (index.html tercantum di AI_CONTEXT.md sebagai file yang tidak boleh disentuh tanpa izin). Satu-satunya sesi yang menyentuh file locked ini untuk seluruh fitur radio_toggle_redesign, sesuai RFC docs/rfc/radio_toggle.md §5.1/§5.2. Tambah 1 baris <link rel="stylesheet" href="/static/css/components/radio-hero.css"> tepat setelah cards.css; tambah 1 baris <script src="/static/js/render/radio-hero-moon.js?v=1" defer> tepat sebelum radio-tab.js di urutan <script> (dependency dulu, konsisten dengan konvensi typeof-check codebase). Ganti total blok markup #radio-toggle-btn (baseline .radio-featured, badge "LIVE", icon broadcast + centerpiece-waves) dengan markup baru sesuai peta RFC §5.1: id="radio-toggle-btn", data-on, id="rt-sub" DIPERTAHANKAN apa adanya (dipakai touch.js swipe-guard, dom.js, transport-events.js, radio-tab.js -- tidak satupun disentuh); class container jadi radio-hero (bukan radio-featured); nama hero "Radio Mode" (R-D1); badge 2-span "Radio Off"/"Radio On" selalu-visible (R-D2, struktur dari R2.3); markup SVG moon (litGradCool/litGradWarm/softEdge filter, #moonGroup/#moonLitCool/#moonLitWarm dipertahankan supaya cocok dengan query getElementById di radio-hero-moon.js), tuner ticks, freq-label, dan 14 starfield div dari mockup; tambah role="button" tabindex="0" aria-pressed="false" (peningkatan a11y, aria-pressed akan di-sync oleh radio-tab.js di sesi 5). TIDAK diporting: toggle-hint dan section .compare (penjelasan demo, di luar scope produk). div#radio-toggle-wrap dipertahankan apa adanya, tidak disentuh. Verifikasi: grep centerpiece/radio-live-badge/radio-featured di web/static/js/ + index.html kosong total (markup lama tergantikan penuh); id/data-on/rt-sub terkonfirmasi masih ada persis dengan nama sama; python automation/doctor.py --json -> PASS/100; python automation/architecture_lint.py --json -> PASS/100 (tidak ada error baru dibanding baseline sebelum task ini).
+
+**ID:** `PATCH-2026-07-20-128`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 4 (R4.1, gate governance-locked, dieksekusi setelah konfirmasi eksplisit user): satu-satunya sentuhan ke index.html untuk seluruh fitur -- markup #radio-toggle-btn diganti total ke desain "Night Dial" (id/data-on/rt-sub dipertahankan), tambah <link> radio-hero.css dan <script> radio-hero-moon.js. doctor.py & architecture_lint.py tetap PASS 100.
+
+**File Terdampak:**
+
+- `web/static/index.html`
+
+---
+
+## [2026-07-20] radio_toggle_redesign — Sesi 3 (R3.1..R3.4): modul JS baru web/static/js/render/radio-hero-moon.js, self-contained, dibangun bertahap dalam 1 sesi dedicated (RFC docs/rfc/radio_toggle.md §5.3, §5.4 -- bagian paling kritis untuk mencegah regresi hipotesis §3, `playback_sync` error). Belum di-load dari index.html manapun (gate sesi 4). R3.1: porting realPhase(date)/moonPathD(phase)/render(phase) + libration apa adanya dari mockup; SEMUA query elemen (getElementById untuk #radio-toggle-btn, moonLitCool/moonLitWarm/moonGroup) dilakukan di dalam modul ini sendiri, TIDAK ada entry baru ditambah ke dom.js (hindari 2 sumber kebenaran, RFC §5.3); modul terverifikasi bisa di-load standalone tanpa error walau elemen SVG belum ada di DOM (guard null-check eksplisit di render()). R3.2: state machine rAF (stepCycle/stepTween/goCycling/goTweenToReal/easeInOutCubic/shortestDelta) porting apa adanya; SEMUA variabel state (rafId, mode, cycleStartTs, dst) di module-scope lewat closure IIFE, BUKAN di window -- grep window.raf/window.mode/window.cycleStart di file ini kosong; const reduceMotion dipertahankan (rAF JS tidak kena CSS kill-switch global, RFC §5.5 poin 5). R3.3: ekspos SATU fungsi publik window.setRadioHeroAnimState(isOn) yang cuma memanggil goCycling()/goTweenToReal(), tidak return apa pun yang dikonsumsi caller; init render(realPhase(new Date())) sekali saat modul dimuat; HAPUS dari hasil porting: hero.addEventListener('click'/'keydown') (klik tetap 100% milik transport-events.js) dan semua baris sub.textContent (subtitle tetap 100% milik radio-tab.js). R3.4: self-audit checklist isolasi RFC §5.4 dijalankan penuh -- requestAnimationFrame cuma muncul di file baru ini (tidak ada file baru lain yang pakai rAF); grep store./wsSend/resetAnchorClock/setPositionAnchor/classList di file ini kosong (cuma muncul di komentar dokumentasi "TIDAK boleh", bukan kode); playback-sync.js dan player.js dikonfirmasi tidak punya reference apa pun ke radio-hero-moon.js. Verifikasi tambahan: node --check bersih, simulasi load standalone dengan document/window/requestAnimationFrame ter-stub berhasil tanpa error, setRadioHeroAnimState terkonfirmasi ter-expose sebagai function global.
+
+**ID:** `PATCH-2026-07-20-127`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 3 (R3.1..R3.4): modul baru radio-hero-moon.js (astronomi fase bulan, state machine rAF cycling/tweening, API publik setRadioHeroAnimState(isOn)) -- self-contained, module-scoped, self-audit isolasi RFC §5.4 penuh lolos (tidak ada state global bocor, tidak ada coupling ke playback-sync.js/player.js, klik & subtitle tetap 100% milik file lain sesuai RFC §5.3). Belum reachable dari UI -- lanjutan di sesi 4 (gate index.html, wajib konfirmasi eksplisit user).
+
+**File Terdampak:**
+
+- `web/static/js/render/radio-hero-moon.js`
+
+---
+
+## [2026-07-20] radio_toggle_redesign — Sesi 2 (R2.1..R2.4): isi penuh web/static/css/components/radio-hero.css, dibangun bertahap dalam satu sesi dedicated (RFC docs/rfc/radio_toggle.md §4, §5.2). Belum di-link ke index.html manapun (gate sesi 4). R2.1: container .radio-hero (rename dari .hero mockup, hindari bentrok nama generik) dengan height: 322px FIXED (bukan min-height) -- ini yang menutup root cause bug ukuran on/off beda (RFC §2); porting starfield (.star, .shooting-star, @keyframes shootingStarMove) dan .radio-hero.on border/shadow apa adanya. R2.2: moon SVG (.dial-svg, .moon-lit-cool/.moon-lit-warm cross-fade, .moon-group, .moon-glow-wrap, @keyframes moonBreathe), tuner ticks (.tick + @keyframes tickPulse + delay per nth-child, .tick.tuned), freq-label -- verifikasi terprogram: semua @keyframes di file hanya mengubah transform/opacity/filter/stroke/fill (tidak ada width/height/margin/padding, guard reflow RFC §4). R2.3: badge status DEVIASI dari mockup (R-D2) -- .radio-status-badge selalu visible di kedua state (bukan visibility:hidden saat off seperti .onair-tag mockup), markup 2 span teks exclusive (.badge-text-off "Radio Off"/.badge-text-on "Radio On") murni via CSS class .radio-hero.on, TIDAK ada textContent JS di file ini; .hero-name pakai Fraunces (font-family var(--font-display) dari sesi 1) dengan teks final "Radio Mode" (R-D1); .hero-sub/#rt-sub styling only, teks tetap 100% dikontrol radio-tab.js existing. R2.4: audit -- dikonfirmasi tidak ada @media (prefers-reduced-motion) baru ditambah (kill-switch global sudah ada di base/animations.css:52); starfield dijamin tidak overflow visual di lebar berapa pun karena overflow:hidden sudah ada di container sejak R2.1 (bukan fix baru, verifikasi struktural). Reuse token existing dari tokens.css (var(--accent) untuk --moon-glow, var(--text-1)/var(--text-2)/var(--text-3)/var(--r-full)/var(--border-2)) -- tidak ada variable terduplikasi dengan tokens.css maupun skeleton R1.2. Verifikasi: python automation/doctor.py --json -> overall_status PASS, aggregate_score 100 (baseline tidak berubah, tidak ada error baru).
+
+**ID:** `PATCH-2026-07-20-126`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 2 (R2.1..R2.4): isi penuh radio-hero.css (container height:322px fixed, starfield, moon SVG + tuner ticks, badge status 2-state selalu-visible sesuai R-D2, hero-name/hero-sub) dibangun bertahap dalam 1 sesi dedicated. Semua animasi transform/opacity/filter/stroke/fill only (tidak ada reflow di keyframes). Belum reachable dari UI -- lanjutan di sesi 3 (modul JS animasi).
+
+**File Terdampak:**
+
+- `web/static/css/components/radio-hero.css`
+
+---
+
+## [2026-07-20] radio_toggle_redesign — Sesi 1 (R1.1..R1.2): fondasi font self-host + skeleton radio-hero.css. Sesuai task_breakdown_radio.yaml (sumber: docs/rfc/radio_toggle.md), belum menyentuh file lain manapun (radio-hero.css belum di-link di index.html, aset belum reachable dari UI). R1.1: vendor 2 font baru self-host (R-D3) -- Fraunces (italic 500, untuk hero-name "Radio Mode") dan Space Grotesk (400/500/600, untuk label mono/badge/freq-label) -- subset latin saja diambil dari build resmi Fontsource (self-hostable, OFL-1.1) lewat npm registry, BUKAN dari fonts.googleapis.com/fonts.gstatic.com (constraint self-hosted/offline app di CONSTRAINTS.md & AI_CONTEXT.md); total 4 file woff2 ~61.4KB gabungan (di bawah batas 150KB); lisensi dicatat ringkas di web/static/fonts/LICENSE.md. R1.2: skeleton web/static/css/components/radio-hero.css baru -- 4 blok @font-face untuk font R1.1, plus variable baru discoped ke selector .radio-hero (--void, --void-2, --moon-light, --indigo-deep, --static-grey, --font-display, --font-mono) TANPA duplikasi variable yang sudah ada di tokens.css (--moon-glow/--text-1/--text-2/--r-full sengaja tidak didefinisikan ulang, akan reuse var(--accent) dst langsung di rule sesi 2). Verifikasi: grep repo-wide untuk fonts.googleapis.com/fonts.gstatic.com kosong; comm terhadap daftar variable tokens.css tidak menemukan definisi ganda; brace-balance check pada radio-hero.css OK.
+
+**ID:** `PATCH-2026-07-20-125`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** radio_toggle_redesign — Sesi 1 (R1.1..R1.2): fondasi font self-host (Fraunces italic 500, Space Grotesk 400/500/600 via Fontsource/npm, bukan CDN Google Fonts) + skeleton radio-hero.css (baru) dengan @font-face dan variable scoped ke .radio-hero (tidak duplikasi tokens.css). Belum reachable dari UI manapun -- lanjutan di sesi 2 (CSS komponen penuh).
+
+**File Terdampak:**
+
+- `web/static/fonts/fraunces/fraunces-latin-500-italic.woff2`
+- `web/static/fonts/space-grotesk/space-grotesk-latin-400-normal.woff2`
+- `web/static/fonts/space-grotesk/space-grotesk-latin-500-normal.woff2`
+- `web/static/fonts/space-grotesk/space-grotesk-latin-600-normal.woff2`
+- `web/static/fonts/LICENSE.md`
+- `web/static/css/components/radio-hero.css`
+
+---
 
 ## [2026-07-19] Doc cleanup (di luar task_breakdown_agent.yaml, atas permintaan user): perbaiki drift dokumentasi vs kode aktual di docs/backend/persistence.md dan docs/backend/services.md, ditemukan saat audit pasca T-B19. persistence.md: skema tracks/sessions/artists/genres di dokumen sebelumnya tidak cocok dengan persistence/schema.sql aktual (mis. sessions didoc sebagai id/started_at/ended_at/track_count/mode, padahal aktual token/expires_at) -- diganti skema akurat untuk 7 tabel (tracks, sessions, admin_account, artists, genres, artist_genres, songs), tambah tabel artist_genres & songs yang sebelumnya tidak terdokumentasi sama sekali; Repository API diperbaiki total (TrackRepository/ArtistRepository/GenreRepository/LibraryRepository method-nya sebelumnya fiksi/tidak cocok nama method aktual); section Inisialisasi Database diganti dari class Database (sudah dihapus PATCH-2026-07-18-084) ke DatabaseConnection+Repositories aktual; tambah section Cache Resolver (link ke caching.md, hindari duplikasi); Migrasi Skema diperbaiki jadi 2 jalur nyata (loop ALTER TABLE di Repositories.init() + _migrate_songs_unique_constraint di db.py); contoh Testing diganti pakai API upsert_track/get_track yang benar. services.md: command_router.py -- HANDLERS dict fiktif diganti pola CommandRouter.register() aktual dgn CMD_PLAY_TRACK dst; playback/controller.py -- tabel sub-modul diupdate lengkap (queue_controller.py, settings_controller.py, crossfade.py, track_ended_ops.py sebelumnya tidak disebut); radio/engine.py -- alur radio fiktif (artist_selector.select_next -> ytdlp_adapter.search -> track_filter.filter -> queue_manager.enqueue) diganti alur nyata RadioMode (on_activated/_start dengan standby prefetch, next() dengan radio_queue popleft, _backfill_and_standby); queue_manager.py -- method add/remove/reorder/clear fiktif dihapus, diganti catatan bahwa operasi queue nyata ada di engine/playback/queue_ops.py (QueueOps) + queue_controller.py, queue_manager.py sendiri cuma QueueMode.next(); volume_service.py -- contoh kode function bebas diganti method class VolumeService aktual (_on_volume_up/_on_volume_set/_apply_volume, range 0-150 bukan 0-100); discover_service.py -- deskripsi 'rule-based, belum ada ML' diganti (sekarang wrapper DiscoverRepository dengan bandit ranking). Semua path test yang direferensikan diverifikasi ada di disk. doctor.py --strict tetap PASS 100 setelah perubahan (checker tidak menangkap drift semantik ini -- hanya cek struktur/frontmatter/docstring coverage, bukan kecocokan konten kode vs prosa).
 
