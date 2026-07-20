@@ -55,6 +55,21 @@
     width: 100%;
   }
 
+  /* Sama seperti fix di desktop.css: lepas max-width/margin/padding dari
+     #tab-discover sendiri (dia scroll container-nya, lihat discover-
+     cards.css) biar scrollbar mentok edge, terus pindahin ke children. */
+  #tab-discover {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 0 120px !important;
+  }
+  #tab-discover > * {
+    max-width: 1000px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   /* 2-Column Home Tab for Tablet Landscape (like Desktop) */
   body[data-active-tab="home"] #tab-home {
     display: grid !important;

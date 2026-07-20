@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-20-132
+latest_patch_id: PATCH-2026-07-20-133
 
-total_entries: 132
+total_entries: 133
 
 ---
 
@@ -26,6 +26,23 @@ total_entries: 132
 
 ---
 
+
+## [2026-07-20] starfield_and_discover_scrollbar: tambah ambient starfield pure-CSS site-wide + theming scrollbar Discover tab. (1) #content-area (app-shell.css) dikasih background-image 8x radial-gradient kecil (warna rgba(154,160,170,x) sama kaya .radio-hero .star, opacity 0.2-0.35), di-tile 220px x 220px, statis tanpa animasi -- muncul di belakang semua tab (Home/Search/Radio/Discover) tanpa markup baru, index.html tidak disentuh sama sekali (masih locked). Sesi sebelumnya sempat merencanakan pendekatan ini tapi editnya tidak pernah benar-benar tersimpan ke file -- diverifikasi ulang dari awal sebelum implementasi. (2) Scrollbar #tab-discover (discover-cards.css): ditambah ::-webkit-scrollbar (thumb 8px rounded var(--border-3), hover var(--text-3)) + scrollbar-width:thin/scrollbar-color untuk Firefox, gantiin scrollbar default browser yang tidak sesuai tema gelap. (3) Fix 'kurang mentok kanan': #tab-discover scroll sendiri terpisah dari #content-area, tapi ikut aturan .tab-panel (max-width:1200px/1000px + margin auto + padding 40px/32px) sehingga scrollbar jatuh ~79px dari tepi browser asli. Di desktop.css (min-width:1024px) dan landscape.css (tablet landscape), constraint itu dilepas khusus dari #tab-discover sendiri (max-width:none, margin:0, padding hanya bottom 120px untuk player-bar clearance) dan dipindah ke #tab-discover > * (max-width 1200px/1000px + margin auto), memanfaatkan pola existing yang sudah ada di codebase dimana semua direct children #tab-discover (discover-header, taste-block, filter-bar, card-row, section-label-row, sr-item, dst) sudah punya padding horizontal var(--s5)=20px sendiri -- diverifikasi satu-satu lewat grep sebelum implementasi, jadi #discover-cached (satu-satunya child tanpa padding sendiri) tetap aman karena children di dalamnya (.sr-item) juga sudah self-inset. Hasil: scrollbar sekarang flush ke tepi browser, layout visual anak-anaknya tidak berubah. Verifikasi: review manual cascade CSS baris-per-baris (spesifisitas ID vs class + !important); percobaan live-render via Playwright headless gagal karena sandbox network memblokir koneksi localhost (bukan masalah CSS), jadi tidak ada screenshot before/after -- disarankan dicek ulang di browser nyata.
+
+**ID:** `PATCH-2026-07-20-133`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** starfield_and_discover_scrollbar: tambah ambient starfield pure-CSS site-wide + theming scrollbar Discover tab. (1) #content-area (app-shell.css) dikasih background-image 8x radial-gradient kecil (warna rgba(154,160,170,x) sama kaya .radio-hero .star, opacity 0.2-0.35), di-tile 220px x 220px, statis tanpa animasi -- muncul di belakang semua tab (Home/Search/Radio/Discover) tanpa markup baru, index.html tidak disentuh sama sekali (masih locked). Sesi sebelumnya sempat merencanakan pendekatan ini tapi editnya tidak pernah benar-benar tersimpan ke file -- diverifikasi ulang dari awal sebelum implementasi. (2) Scrollbar #tab-discover (discover-cards.css): ditambah ::-webkit-scrollbar (thumb 8px rounded var(--border-3), hover var(--text-3)) + scrollbar-width:thin/scrollbar-color untuk Firefox, gantiin scrollbar default browser yang tidak sesuai tema gelap. (3) Fix 'kurang mentok kanan': #tab-discover scroll sendiri terpisah dari #content-area, tapi ikut aturan .tab-panel (max-width:1200px/1000px + margin auto + padding 40px/32px) sehingga scrollbar jatuh ~79px dari tepi browser asli. Di desktop.css (min-width:1024px) dan landscape.css (tablet landscape), constraint itu dilepas khusus dari #tab-discover sendiri (max-width:none, margin:0, padding hanya bottom 120px untuk player-bar clearance) dan dipindah ke #tab-discover > * (max-width 1200px/1000px + margin auto), memanfaatkan pola existing yang sudah ada di codebase dimana semua direct children #tab-discover (discover-header, taste-block, filter-bar, card-row, section-label-row, sr-item, dst) sudah punya padding horizontal var(--s5)=20px sendiri -- diverifikasi satu-satu lewat grep sebelum implementasi, jadi #discover-cached (satu-satunya child tanpa padding sendiri) tetap aman karena children di dalamnya (.sr-item) juga sudah self-inset. Hasil: scrollbar sekarang flush ke tepi browser, layout visual anak-anaknya tidak berubah. Verifikasi: review manual cascade CSS baris-per-baris (spesifisitas ID vs class + !important); percobaan live-render via Playwright headless gagal karena sandbox network memblokir koneksi localhost (bukan masalah CSS), jadi tidak ada screenshot before/after -- disarankan dicek ulang di browser nyata.
+
+**File Terdampak:**
+
+- `web/static/css/layout/app-shell.css`
+- `web/static/css/components/discover-cards.css`
+- `web/static/css/platform/desktop.css`
+- `web/static/css/platform/landscape.css`
+
+---
 
 ## [2026-07-20] radio_toggle_redesign — HOTFIX (real-device report, screenshot bug): .radio-hero collapse ke sliver ~50px saat Radio ON dengan daftar 'All Stations' terisi. Root cause BUKAN RFC lama (§2, min-height vs teks 2 baris) -- ini bug flexbox terpisah: .radio-hero adalah flex item di dalam .tab-panel (nav.css: display:flex; flex-direction:column; height:100%), sementara yang scroll adalah #content-area (app-shell.css: flex:1; overflow-y:scroll), bukan .tab-panel itu sendiri. Begitu 'All Stations' terisi (radio ON) dan total tinggi children .tab-panel (hero + list) melebihi height:100% tsb, flexbox mengecilkan children sesuai flex-shrink (default:1) SEBELUM #content-area sempat scroll -- height:322px fixed saja tidak melindungi karena flex-basis tetap boleh diperas oleh algoritma shrink tanpa flex-shrink:0. Fix: tambah flex-shrink:0 + min-height:322px (backstop) ke .radio-hero di radio-hero.css, comment R2.1 diupdate menjelaskan root cause baru. Diverifikasi via Playwright headless (chromium) mereproduksi struktur nyata index.html + CSS asli, viewport mobile 400x700 dan desktop 1366x660, radio-queue-list diisi item .radio-queue-item sungguhan (bukan simulasi div kosong): SEBELUM fix tinggi .radio-hero jatuh 322px->50px persis begitu daftar terisi (match screenshot 'Radio On' user); SESUDAH fix tetap 322px konsisten di kedua viewport, baik state off/on x kosong/terisi (4 kombinasi diuji eksplisit), dan #content-area tetap scrollable normal (scrollHeight bertambah sesuai jumlah station, tidak clipped). python automation/doctor.py --strict --json -> PASS/100 (tidak ada regresi baru).
 

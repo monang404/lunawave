@@ -229,6 +229,26 @@
     padding: 0 40px 120px !important;
   }
 
+  /* #tab-discover scroll sendiri (lihat discover-cards.css), jadi kalau
+     dia ikut max-width+margin+padding .tab-panel di atas, scrollbar-nya
+     jatuh ~79px dari tepi browser (39px auto-margin + 40px padding) —
+     keliatan "kurang mentok kanan". Fix: lepas constraint itu dari
+     #tab-discover-nya sendiri biar scrollbar mentok ke tepi asli, lalu
+     pindahin max-width/centering-nya ke direct children (yang semuanya
+     udah punya padding kiri-kanan var(--s5)=20px sendiri, jadi visualnya
+     tetap sama, cuma track scrollbar-nya yang geser ke edge). */
+  #tab-discover {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 0 120px !important;
+  }
+  #tab-discover > * {
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .search-wrap {
     max-width: 600px;
     margin: 0 auto;

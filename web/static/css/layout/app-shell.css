@@ -68,6 +68,27 @@
 #content-area { flex: 1; overflow-y: scroll; overflow-x: hidden; scrollbar-width: none; }
 #content-area::-webkit-scrollbar { display: none; }
 
+/* ── Ambient Starfield (site-wide) ──
+   Pure CSS, tanpa markup baru — biar tiap tab (Home/Search/Discover/dst)
+   punya tekstur bintang tipis yang sama kaya .radio-hero .star (warna
+   var(--text-2) #9AA0AA, opacity ~0.2-0.35), bukan div per-bintang yang
+   di-hardcode di HTML. Delapan radial-gradient posisi acak di-tile tiap
+   220px supaya polanya gak keliatan berulang/grid-y. Statis (no animation)
+   biar gak ganggu konten di atasnya — cukup ngisi ruang kosong. */
+#content-area {
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(154, 160, 170, 0.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 85% 75%, rgba(154, 160, 170, 0.30) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(154, 160, 170, 0.25) 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 65%, rgba(154, 160, 170, 0.30) 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 40%, rgba(154, 160, 170, 0.20) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 5% 85%, rgba(154, 160, 170, 0.30) 50%, transparent 51%),
+    radial-gradient(1px 1px at 95% 15%, rgba(154, 160, 170, 0.25) 50%, transparent 51%),
+    radial-gradient(1px 1px at 45% 90%, rgba(154, 160, 170, 0.20) 50%, transparent 51%);
+  background-repeat: repeat;
+  background-size: 220px 220px;
+}
+
 /* ── Responsive Helpers ── */
 
 
