@@ -29,6 +29,14 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at INTEGER NOT NULL
 );
 
+-- Fitur B (login_redesign): satu-satunya sumber kebenaran kredensial admin.
+-- Diisi lewat alur Initial Setup (server/handlers/setup.py), bukan auto-generate.
+CREATE TABLE IF NOT EXISTS admin_account (
+    username TEXT UNIQUE,
+    password_hash TEXT,
+    created_at INTEGER
+);
+
 -- Artists untuk Radio Mode seed
 CREATE TABLE IF NOT EXISTS artists (
     id INTEGER PRIMARY KEY,

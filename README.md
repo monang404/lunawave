@@ -78,10 +78,16 @@ python main.py
 Saat Anda menjalankan aplikasi, server web otomatis aktif di latar belakang pada port `8765`.
 1. Buka browser di Laptop/PC atau HP lain yang satu jaringan WiFi dengan HP Termux Anda.
 2. Masukkan alamat IP HP Termux Anda dan port `8765` (Contoh: `http://192.168.1.5:8765`).
-3. Anda akan disambut oleh halaman **Portal LunaWave** untuk memilih mode:
-   - **Mode Client (Dengar Saja)**: Langsung masuk tanpa sandi. Musik dari server akan otomatis dialirkan (streaming) dan berbunyi di browser Laptop/PC ini.
-   - **Mode Admin**: Gunakan username **`admin`**. Password *raw* akan di-generate otomatis dan **hanya dicetak satu kali ke konsol saat pertama berjalan**. Demi keamanan, yang disimpan di file `cache/admin_password.txt` hanyalah *hash* kriptografinya. Jika lupa, hapus file tersebut untuk me-reset sandi. Anda juga bisa mengaturnya via Environment Variable `LUNAWAVE_ADMIN_USER` dan `LUNAWAVE_ADMIN_PASS`.
-4. Klik tombol **`🚪 Keluar`** di pojok kanan atas UI Web untuk logout dan kembali ke halaman portal.
+3. **Pertama kali dijalankan**, Anda akan diarahkan ke halaman **Initial Setup** untuk membuat akun admin sendiri (username + password minimal 8 karakter). Tidak ada password yang di-generate otomatis lagi — Anda yang menentukannya sendiri, sekali, saat setup.
+4. Setelah setup selesai, gunakan kredensial itu untuk login. Untuk provisioning non-interaktif (CI, automated deploy) yang tidak bisa lewat wizard browser, kredensial awal juga bisa di-set via Environment Variable `LUNAWAVE_ADMIN_USER` dan `LUNAWAVE_ADMIN_PASS` — jalur ini hanya aktif kalau akun admin belum pernah dibuat.
+5. Klik tombol **`🚪 Keluar`** di pojok kanan atas UI Web untuk logout.
+
+> **⚠️ Catatan Upgrade (dari versi sebelum Fitur B / login redesign):**
+> Kredensial admin lama (`cache/admin_password.txt` atau
+> `instance/admin_password.txt`) **tidak dimigrasikan secara otomatis**.
+> Setelah upgrade, Anda akan logout paksa dan diarahkan ke Initial Setup
+> lagi untuk membuat akun admin baru — ini perilaku yang disengaja, bukan
+> bug. Alasan lengkap: [ADR-0008](docs/adr/0008-admin-credentials-in-sqlite.md).
 
 ### 🔒 Deployment Aman (HTTPS / WSS Publik)
 Secara default, LunaWave berjalan di `http://` (teks biasa). Jika Anda ingin mengakses server ini dari luar jaringan WiFi rumah (Internet), **SANGAT DISARANKAN** untuk mengamankannya dengan HTTPS. Anda dapat menggunakan *Reverse Proxy* seperti Nginx, Caddy, atau layanan tunneling:

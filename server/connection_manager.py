@@ -37,6 +37,7 @@ class ConnectionManager:
         self.session_tokens = {}
         self.login_attempts = {}
         self.command_history = {}
+        self.setup_attempts = {}
         self.rl_lock = asyncio.Lock()
 
     async def connect(self, ws):

@@ -191,20 +191,7 @@ class UIBuilder:
             activebackground=self.BG_CARD,
             activeforeground=self.TEXT_1,
             padx=10,
-            command=lambda: on_reset_password(
-                app,
-                self.BASE_DIR,
-                self.BG,
-                self.BG_CARD,
-                self.BG_SURFACE,
-                self.ACCENT,
-                self.TEXT_1,
-                self.TEXT_2,
-                self.TEXT_3,
-                self.RED,
-                self.GREEN,
-                self.BORDER,
-            ),
+            command=lambda: on_reset_password(app),
         )
         btn_reset.pack(side="right")
 

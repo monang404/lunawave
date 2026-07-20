@@ -8,10 +8,12 @@
 
 LunaWave menyediakan dua jalur API:
 
-- **WebSocket** `/ws` — komunikasi real-time dua arah (aksi + state broadcast)
-- **HTTP** — auth, file statis, status
+- **WebSocket** `/ws` — komunikasi real-time dua arah (aksi + state broadcast), **termasuk autentikasi** (lihat [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md))
+- **HTTP** — file statis, status, cek kebutuhan setup
 
-Semua aksi user dikirim lewat WebSocket. HTTP hanya untuk bootstrap (login, load `index.html`).
+Semua aksi user (termasuk login & Initial Setup) dikirim lewat WebSocket
+sebagai `cmd`. HTTP hanya untuk bootstrap: load `index.html`, cek
+`/api/setup-required`, dan streaming file statis/audio.
 
 Alasan single-channel WS → [ADR-0005](../adr/0005-websocket-single-channel.md)
 
@@ -22,10 +24,16 @@ Alasan single-channel WS → [ADR-0005](../adr/0005-websocket-single-channel.md)
 ### Koneksi
 
 ```
-ws://localhost:{PORT}/ws?token={AUTH_TOKEN}
+ws://localhost:{PORT}/ws
 ```
 
-Token diperoleh dari `POST /auth/login`. Koneksi tanpa token atau token invalid langsung ditutup dengan kode `4001`.
+Koneksi WS dibuka **tanpa token** — client langsung `connect()` dan
+menerima snapshot `state` awal, tidak ada gate token di level koneksi.
+Autentikasi terjadi lewat aksi WS setelah koneksi terbuka (lihat
+[Autentikasi & Setup](#autentikasi--setup-fitur-b) di bawah). Sebelum
+berhasil `auth`, hanya action `auth` dan `setup_admin` yang diterima —
+action lain ditolak dengan pesan error `"Akses ditolak. Silakan login
+sebagai Admin."` (lihat `require_auth()` di `server/handlers/websocket.py`).
 
 ### Format Pesan — Client → Server (Command)
 
@@ -53,6 +61,43 @@ Token diperoleh dari `POST /auth/login`. Koneksi tanpa token atau token invalid 
 ---
 
 ## WebSocket Commands
+
+### Autentikasi & Setup (Fitur B)
+
+Dikirim sebagai `{"type": "cmd", "action": "...", "data": {...}}` — format
+berbeda dari command domain lain (`cmd`/`payload`) karena kedua action ini
+harus reachable sebelum `require_auth()`.
+
+| Action | Payload | Keterangan |
+|---|---|---|
+| `setup_admin` | `{"username": "admin", "password": "..."}` | Buat akun admin (satu kali saja). Ditolak (`success: false`) kalau akun sudah ada. Rate limit 5x/5menit per IP. |
+| `auth` | `{"username": "admin", "password": "..."}` atau `{"token": "..."}` | Login dengan kredensial, atau verifikasi token sesi yang sudah ada. Rate limit 5x/5menit per IP untuk percobaan password. |
+
+Respons dikirim sebagai `setup_status` / `auth_status`:
+
+```json
+// setup_admin sukses
+{"type": "setup_status", "data": {"success": true}}
+
+// setup_admin gagal (akun sudah ada, input invalid, atau DB error)
+{"type": "setup_status", "data": {"success": false, "message": "..."}}
+
+// auth sukses
+{"type": "auth_status", "data": {"success": true, "token": "..."}}
+
+// auth gagal
+{"type": "auth_status", "data": {"success": false, "message": "Username atau Password salah!"}}
+```
+
+Kredensial disimpan di tabel `admin_account` (SQLite), diisi lewat
+`setup_admin` — bukan lagi di-generate otomatis atau disimpan sebagai file.
+Lihat [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md) untuk alasan
+lengkap (tanpa migrasi otomatis dari file password lama, env var override
+`LUNAWAVE_ADMIN_PASS` tetap tersedia untuk provisioning non-interaktif).
+
+Untuk mengecek apakah Initial Setup masih diperlukan sebelum menampilkan
+form yang tepat (Setup vs Login), client memanggil `GET /api/setup-required`
+— lihat [HTTP API](#http-api) di bawah.
 
 ### Playback
 
@@ -195,58 +240,52 @@ Dikirim setelah setiap perubahan yang relevan. Berisi **state lengkap**.
 
 ## HTTP API
 
-### `POST /auth/login`
+### `GET /api/setup-required`
+
+Dipanggil client saat load, **sebelum** memutuskan tampilkan form Setup
+atau form Login. Tidak memerlukan auth.
 
 ```json
-// Request
-{ "password": "your_password" }
-
-// Response 200
-{ "token": "eyJ...", "expires_in": 86400 }
-
-// Response 401
-{ "detail": "Invalid password" }
+{ "setup_required": true }
 ```
 
-### `GET /`
+### `GET /`, `GET /admin`
 
-Serve `web/static/index.html`. Redirect ke `/portal` jika belum auth.
+Serve `web/static/index.html`. Frontend sendiri yang memutuskan tampilan
+(Setup / Login / player) berdasarkan hasil `/api/setup-required` dan status
+auth WS — tidak ada redirect server-side ke halaman login terpisah lagi.
 
-### `GET /portal`
-
-Serve halaman login (`portal.html`).
-
-### `GET /static/{path}`
-
-Serve file statis (JS, CSS, icons).
-
-### `GET /status`
-
-Health check, tidak memerlukan auth.
-
-```json
-{
-  "status": "ok",
-  "version": "1.2.0",
-  "uptime": 3600
-}
-```
-
-### `GET /stream/{video_id}`
+### `GET /api/stream/{video_id}`
 
 Stream audio langsung (tanpa download). Proxy ke URL stream yang di-resolve dari yt-dlp.
 
-Memerlukan token auth di header atau query param.
+### `GET /health`
+
+Health check, tidak memerlukan auth.
+
+### `GET /metrics`
+
+Metrics/observability endpoint, tidak memerlukan auth.
 
 ---
 
 ## Middleware
 
-### Auth Middleware (`server/middleware.py`)
+### Rate Limiting (`server/middleware.py`)
 
-- WebSocket: validasi token dari query param `?token=`
-- HTTP: validasi token dari header `Authorization: Bearer {token}`
-- Endpoint `/status`, `/portal`, `/auth/login` dibebaskan dari auth
+- `check_rate_limit()`: 30 command WS per menit per IP (sliding window),
+  ditegakkan di `server/handlers/websocket.py` untuk semua action selain
+  `auth`/`setup_admin` (yang punya rate limit sendiri, lihat
+  [Autentikasi & Setup](#autentikasi--setup-fitur-b) di atas).
+
+### Autentikasi
+
+Tidak ada lagi middleware token per-HTTP-request atau query-param token di
+level koneksi WS (lihat [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md)).
+Gate auth ditegakkan per-action di `handle_ws_message()`
+(`server/handlers/websocket.py`) via `require_auth(manager, ws)`, yang
+mengecek keanggotaan koneksi di `manager.authenticated_connections` —
+diisi setelah action `auth` sukses.
 
 ### CORS
 
@@ -256,11 +295,14 @@ Dikonfigurasi hanya untuk origin lokal (`localhost`, `127.0.0.1`) karena LunaWav
 
 ## Kode Error WebSocket
 
+Sejak Fitur B, koneksi WS tidak lagi ditutup untuk masalah auth (tidak ada
+lagi gate token di level koneksi — lihat
+[Koneksi](#koneksi) di atas). Kegagalan auth per-action dikirim sebagai
+pesan `auth_status`/`setup_status` (`success: false`), bukan penutupan
+koneksi.
+
 | Kode | Arti |
 |---|---|
-| `4001` | Token tidak valid atau tidak ada |
-| `4002` | Token expired |
-| `4003` | Server sedang shutdown |
 | `1000` | Normal closure |
 | `1011` | Server error tak terduga |
 
@@ -273,3 +315,5 @@ Dikonfigurasi hanya untuk origin lokal (`localhost`, `127.0.0.1`) karena LunaWav
 - [frontend/state_management.md](../frontend/state_management.md) — Cara frontend memproses state
 - [frontend/routing.md](../frontend/routing.md) — WS message routing di frontend
 - [ADR-0005](../adr/0005-websocket-single-channel.md) — Kenapa single channel WS?
+- [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md) — Kredensial admin di SQLite, tanpa migrasi otomatis
+- [security/threat_model.md](../security/threat_model.md) — Catatan desain kredensial admin (K3)

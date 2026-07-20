@@ -30,6 +30,43 @@ function applyRoleUI() {
     renderHeader();
 }
 
+function submitSetup(user, pass, confirmPass) {
+    if (!user || !pass) {
+        dom.setupErrorMsg.textContent = "Isi username dan password!";
+        return;
+    }
+    if (pass !== confirmPass) {
+        // Jaring pengaman sisi client -- tombol submit seharusnya sudah
+        // disabled duluan oleh updateSetupSubmitState() (events/index.js,
+        // T-B12.1) saat password != confirm, tapi cek ini tetap ada untuk
+        // jaga-jaga (mis. submit lewat Enter sebelum listener input sempat
+        // jalan).
+        dom.setupConfirmErrorMsg.textContent = "Password dan Confirm Password tidak sama.";
+        return;
+    }
+
+    if (dom.setupSubmitBtn) {
+        dom.setupSubmitBtn.disabled = true;
+        dom.setupSubmitBtn.textContent = "Menyimpan...";
+    }
+    dom.setupErrorMsg.textContent = "";
+    if (dom.setupConfirmErrorMsg) dom.setupConfirmErrorMsg.textContent = "";
+
+    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+        // T-B12.2: field confirm password TIDAK PERNAH dikirim ke server --
+        // sesuai kontrak T-B5.1/_validate_setup_input di server/handlers/setup.py,
+        // yang tidak pernah menerima/memvalidasi field ini sama sekali.
+        // Match-check adalah tanggung jawab client sepenuhnya (di atas + T-B12.1).
+        wsSend("setup_admin", { username: user, password: pass });
+    } else {
+        dom.setupErrorMsg.textContent = "Koneksi server terputus. Silakan tunggu/refresh.";
+        if (dom.setupSubmitBtn) {
+            dom.setupSubmitBtn.disabled = false;
+            dom.setupSubmitBtn.textContent = "Buat Akun Admin";
+        }
+    }
+}
+
 function login(user, pass) {
     if (!user || !pass) {
         dom.loginErrorMsg.textContent = "Isi username dan password!";

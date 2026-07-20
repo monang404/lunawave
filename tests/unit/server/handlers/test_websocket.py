@@ -28,7 +28,58 @@ async def test_handle_ws_message_auth(mock_handle_auth):
     assert args[1] == {"token": "123"}
     assert args[2] == mock_manager
     assert args[3] == "127.0.0.1"
-    assert args[4] == mock_db.sessions
+    assert args[4] == mock_db
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.websocket.handle_setup_admin")
+async def test_handle_ws_message_setup_admin(mock_handle_setup_admin):
+    """setup_admin harus reachable SEBELUM require_auth -- mirror pola
+    'auth', karena saat Initial Setup belum ada admin_account sama
+    sekali (T-B8)."""
+    mock_ws = AsyncMock()
+    mock_manager = MagicMock()
+    mock_repos = MagicMock()
+
+    await handle_ws_message(
+        {"type": "cmd", "action": "setup_admin", "data": {"username": "admin", "password": "x"}},
+        mock_ws,
+        "127.0.0.1",
+        None,
+        None,
+        mock_manager,
+        mock_repos,
+    )
+
+    mock_handle_setup_admin.assert_called_once()
+    args, kwargs = mock_handle_setup_admin.call_args
+    assert args[0] == mock_ws
+    assert args[1] == {"username": "admin", "password": "x"}
+    assert args[2] == mock_manager
+    assert args[3] == "127.0.0.1"
+    assert args[4] == mock_repos
+
+
+@pytest.mark.asyncio
+@patch("server.handlers.websocket.require_auth")
+async def test_handle_ws_message_setup_admin_bypasses_require_auth(mock_require_auth):
+    """setup_admin tidak boleh pernah memanggil require_auth() -- kalau
+    ini regresi, instalasi baru tanpa admin_account tidak akan pernah
+    bisa menyelesaikan Initial Setup."""
+    mock_ws = AsyncMock()
+
+    with patch("server.handlers.websocket.handle_setup_admin", new=AsyncMock()):
+        await handle_ws_message(
+            {"type": "cmd", "action": "setup_admin", "data": {}},
+            mock_ws,
+            "127.0.0.1",
+            None,
+            None,
+            MagicMock(),
+            MagicMock(),
+        )
+
+    mock_require_auth.assert_not_called()
 
 
 @pytest.mark.asyncio

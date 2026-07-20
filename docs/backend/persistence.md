@@ -16,15 +16,21 @@ Alasan pilih SQLite atas JSON cache → [ADR-0002](../adr/0002-sqlite-over-json-
 
 ```
 persistence/
-├── db.py            Inisialisasi SQLite, connection pool
-├── schema.sql       DDL — single source of truth skema database
-├── track_repo.py    CRUD track
-├── session_repo.py  CRUD session playback
-├── artist_repo.py   CRUD artis
-├── genre_repo.py    CRUD genre
-├── library_repo.py  Query library (filter, sort, search)
-└── __init__.py      Facade Database, backward-compat import
+├── db.py                  DatabaseConnection — koneksi SQLite mentah, init schema, migrasi songs.youtube_id
+├── schema.sql              DDL — single source of truth skema database
+├── track_repo.py           TrackRepository — metadata track, play count, favorite, local path
+├── session_repo.py         SessionRepository — session token autentikasi
+├── admin_account_repo.py   AdminAccountRepository — akun admin tunggal (Fitur B, login_redesign)
+├── artist_repo.py          ArtistRepository — statistik artis, lagu per-artis, reward bandit
+├── genre_repo.py            GenreRepository — genre & lagu per-genre
+├── library_repo.py         LibraryRepository — query random songs untuk library/radio seed
+├── discover_repo.py        DiscoverRepository — query personalisasi tab Discover
+├── discover_enrich.py      enrich_artists() — batch enrichment cover+genre, dipakai discover_repo
+├── stream_cache.py         CacheResolver + ResolverDbCompat — resolve URI playback, cache
+└── __init__.py             Repositories — container 1 koneksi + 7 repo domain (bukan facade)
 ```
+
+> **Catatan:** `Database` (God Facade lama dengan method delegasi seperti `db.get_track()`) sudah **dihapus** (`PATCH-2026-07-18-084`, T2.2e). Digantikan `Repositories`, lihat [Inisialisasi Database](#inisialisasi-database) di bawah.
 
 ---
 
@@ -34,16 +40,22 @@ persistence/
 
 ```sql
 CREATE TABLE tracks (
-    id          TEXT PRIMARY KEY,        -- video_id dari YouTube
-    title       TEXT NOT NULL,
-    artist      TEXT NOT NULL,
-    duration    INTEGER NOT NULL,        -- detik
-    thumbnail   TEXT,                    -- URL thumbnail
-    file_path   TEXT,                    -- NULL jika belum didownload
-    play_count  INTEGER DEFAULT 0,
-    last_played TEXT,                    -- ISO 8601
-    added_at    TEXT NOT NULL,           -- ISO 8601
-    genre_id    INTEGER REFERENCES genres(id)
+    video_id     TEXT PRIMARY KEY,
+    title        TEXT NOT NULL,
+    artist       TEXT,
+    duration     INTEGER,
+    view_count   INTEGER,
+    thumbnail    TEXT,
+    local_path   TEXT,             -- NULL jika belum didownload
+    stream_url   VARCHAR(2048),    -- URL cache, bisa expire
+    stream_url_ts INTEGER,         -- Unix timestamp saat stream_url di-fetch
+    play_count   INTEGER DEFAULT 0,
+    last_played  INTEGER,          -- Unix timestamp
+    is_favorite  INTEGER DEFAULT 0,
+    loudness_lufs REAL,            -- NULL = belum dianalisis
+    true_peak_dbtp REAL,           -- NULL = belum dianalisis, dari ffmpeg loudnorm
+    last_position REAL DEFAULT 0.0,
+    created_at   INTEGER DEFAULT (strftime('%s','now'))
 );
 ```
 
@@ -51,33 +63,88 @@ CREATE TABLE tracks (
 
 ```sql
 CREATE TABLE sessions (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    started_at  TEXT NOT NULL,
-    ended_at    TEXT,
-    track_count INTEGER DEFAULT 0,
-    mode        TEXT DEFAULT 'normal'    -- normal | radio | shuffle
+    token       TEXT PRIMARY KEY,
+    expires_at  INTEGER NOT NULL
 );
 ```
+
+Session token login admin, dibuat oleh `server/handlers/auth.py` setelah `auth` sukses. Bukan session/riwayat pemutaran — untuk itu lihat kolom `last_played`/`play_count` di `tracks`.
+
+### `admin_account`
+
+```sql
+CREATE TABLE admin_account (
+    username        TEXT UNIQUE,
+    password_hash   TEXT,
+    created_at      INTEGER        -- unix timestamp
+);
+```
+
+Satu-satunya baris di tabel ini adalah source of truth kredensial login
+admin (Fitur B: login_redesign) — diisi lewat alur Initial Setup, bukan
+di-generate otomatis. `UNIQUE` pada `username` mencegah insert kedua kali
+(dipakai sebagai lapis pertahanan terhadap submit ganda saat setup). Lihat
+[ADR-0008](../adr/0008-admin-credentials-in-sqlite.md) untuk keputusan
+lengkap (tanpa migrasi otomatis dari file password lama, env var override
+tetap tersedia).
 
 ### `artists`
 
 ```sql
 CREATE TABLE artists (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT NOT NULL UNIQUE,
-    play_count  INTEGER DEFAULT 0,
-    last_played TEXT
+    id            INTEGER PRIMARY KEY,
+    nama          TEXT NOT NULL,
+    kategori      TEXT,
+    tahun_aktif   TEXT,
+    reward_alpha  INTEGER DEFAULT 1,   -- Thompson Sampling bandit (Sprint 3.3)
+    reward_beta   INTEGER DEFAULT 1
 );
 ```
+
+`UNIQUE INDEX idx_artists_nama` mencegah duplikat nama. `reward_alpha`/`reward_beta` dipakai `DiscoverRepository.get_bandit_ranked_artists()` untuk ranking "Untuk Kamu" ala Thompson Sampling.
 
 ### `genres`
 
 ```sql
 CREATE TABLE genres (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    name  TEXT NOT NULL UNIQUE
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama_genre  TEXT UNIQUE NOT NULL
 );
 ```
+
+### `artist_genres`
+
+```sql
+CREATE TABLE artist_genres (
+    artist_id  INTEGER,
+    genre_id   INTEGER,
+    PRIMARY KEY (artist_id, genre_id),
+    FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
+    FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
+);
+```
+
+Tabel junction many-to-many artis↔genre.
+
+### `songs`
+
+```sql
+CREATE TABLE songs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    artist_id   INTEGER,
+    judul       TEXT NOT NULL,
+    youtube_id  TEXT NOT NULL,
+    duration    INTEGER DEFAULT 0,
+    FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
+    UNIQUE (artist_id, youtube_id)
+);
+```
+
+Daftar lagu populer per-artis (seed radio mode/discover) — **beda dari
+`tracks`**, yang menyimpan track yang benar-benar pernah diputar/didownload
+user. `UNIQUE(artist_id, youtube_id)` sengaja per-artis, bukan global,
+supaya kolaborasi/duet bisa muncul sah di lebih dari satu daftar artis
+(lihat migrasi di `db.py`, `PATCH-2026-07-16-048`).
 
 > **Single Source of Truth:** Skema hanya ada di `persistence/schema.sql`. Tidak ada DDL yang diduplikasi di tempat lain.
 
@@ -89,106 +156,177 @@ CREATE TABLE genres (
 
 ```python
 class TrackRepository:
-    async def get(self, video_id: str) -> TrackInfo | None
-    async def get_all(self) -> list[TrackInfo]
-    async def save(self, track: TrackInfo) -> None
-    async def delete(self, video_id: str) -> None
+    async def get_track(self, video_id: str) -> TrackInfo | None
+    async def upsert_track(self, track: TrackInfo, stream_url: str | None = None, local_path: str | None = None) -> None
+    async def update_stream_url_only(self, video_id: str, stream_url: str) -> None
+    async def set_local_path(self, video_id: str, local_path: str | None) -> None
     async def increment_play_count(self, video_id: str) -> None
-    async def update_last_played(self, video_id: str) -> None
-    async def search(self, query: str) -> list[TrackInfo]
+    async def evict_stale_tracks(self) -> int
+    async def toggle_favorite(self, video_id: str) -> int
+    async def set_loudness(self, video_id: str, lufs: float, true_peak_dbtp: float | None = None) -> None
+    async def set_last_position(self, video_id: str, position: float) -> None
 ```
+
+`upsert_track()` hanya insert/update metadata + cache URL — `INSERT ... ON CONFLICT DO UPDATE`, dengan `stream_url`/`local_path` di-`COALESCE` (tidak menimpa nilai lama dengan `NULL`).
 
 ### `SessionRepository` (`session_repo.py`)
 
 ```python
 class SessionRepository:
-    async def start_session(self, mode: str) -> int          # returns session_id
-    async def end_session(self, session_id: int) -> None
-    async def increment_track_count(self, session_id: int) -> None
-    async def get_recent(self, limit: int = 10) -> list[Session]
+    async def create_session(self, token: str, expires_at: int) -> None
+    async def verify_session(self, token: str) -> bool
+    async def delete_session(self, token: str) -> None
+    async def cleanup_sessions(self) -> None    # hapus session yang sudah expired
+```
+
+Dikonsumsi oleh `server/handlers/auth.py` untuk login berbasis token, terpisah dari `admin_account` (kredensial) — lihat [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md).
+
+### `AdminAccountRepository` (`admin_account_repo.py`)
+
+Fitur B (login_redesign). Satu-satunya konsumen resmi tabel `admin_account`
+— `server/handlers/setup.py` (create) dan `server/handlers/auth.py` (read).
+Hashing dilakukan di caller, bukan di repo ini.
+
+```python
+class AdminAccountRepository:
+    async def create_admin_account(self, username: str, password_hash: str) -> None
+    async def get_admin_account(self) -> Row | None
+    async def admin_account_exists(self) -> bool
 ```
 
 ### `ArtistRepository` (`artist_repo.py`)
 
 ```python
 class ArtistRepository:
-    async def get_or_create(self, name: str) -> Artist
-    async def increment_play_count(self, name: str) -> None
-    async def get_top(self, limit: int = 20) -> list[Artist]
-    async def get_all(self) -> list[Artist]
+    async def increment_artist_click(self, artist_name: str) -> None
+    async def get_all_artists(self, kategori: str | None = None) -> list[str]
+    async def get_artist_songs_strict(self, artist: str, limit: int = 10) -> list[TrackInfo]
+    async def record_completion(self, artist_name: str) -> None   # bandit: track selesai diputar
+    async def record_skip(self, artist_name: str) -> None         # bandit: track di-skip
+    async def get_reward_stats(self) -> dict[str, tuple[int, int]]  # {nama: (alpha, beta)}
 ```
+
+`record_completion`/`record_skip` meng-update `reward_alpha`/`reward_beta` di tabel `artists` — input untuk ranking bandit Thompson Sampling di `DiscoverRepository.get_bandit_ranked_artists()`.
 
 ### `GenreRepository` (`genre_repo.py`)
 
 ```python
 class GenreRepository:
-    async def get_or_create(self, name: str) -> Genre
-    async def get_all(self) -> list[Genre]
+    async def increment_genre_click(self, genre_name: str) -> None
+    async def get_genre_artists(self, genre_name: str, limit: int = 4) -> list[str]
+    async def get_genre_songs(self, genre_name: str, ...) -> list[TrackInfo]
 ```
 
 ### `LibraryRepository` (`library_repo.py`)
 
-Query kompleks untuk library view — filter, sort, pagination.
-
 ```python
 class LibraryRepository:
-    async def get_library(
-        self,
-        query: str | None = None,
-        artist: str | None = None,
-        genre: str | None = None,
-        sort_by: str = "last_played",
-        sort_order: str = "desc",
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[TrackInfo]
-
-    async def get_stats(self) -> LibraryStats
-    # LibraryStats: total_tracks, total_artists, total_duration, most_played
+    async def get_random_songs(self, ...) -> list[TrackInfo]
 ```
+
+Query acak dari tabel `songs` — dipakai sebagai seed untuk radio mode / rekomendasi umum, bukan library "lagu yang pernah diputar" (itu ada di `tracks` via `TrackRepository`).
+
+### `DiscoverRepository` (`discover_repo.py`)
+
+Query personalisasi tab Discover (lihat §Discover Tab Personalization di `STATUS.md`).
+
+```python
+class DiscoverRepository:
+    async def get_bandit_ranked_artists(self, limit: int = 10) -> list[dict]   # "Untuk Kamu"
+    async def get_unheard_artists(self, limit: int = 10) -> list[dict]          # "Belum Pernah Kamu Dengar"
+    async def get_taste_spectrum(self) -> list[dict]
+    async def get_top_genre(self) -> str | None
+    async def get_genre_artists_enriched(self, genre_name: str, limit: int = 4) -> list[dict]
+    async def search_tracks(self, query: str, ...) -> list[dict]
+    async def get_artist_detail(self, nama: str) -> dict | None
+```
+
+`get_bandit_ranked_artists`/`get_unheard_artists`/`get_genre_artists_enriched` memanggil `discover_enrich.enrich_artists()` untuk batch-attach cover+genre (no N+1 query).
 
 ---
 
-## Inisialisasi Database (`db.py`)
+## Inisialisasi Database
+
+### `DatabaseConnection` (`db.py`)
+
+Handle koneksi SQLite mentah saja — tidak tahu domain (track, artist, dll).
 
 ```python
-class Database:
-    def __init__(self, path: str = "data/lunawave.db"):
-        self.path = path
+class DatabaseConnection:
+    def __init__(self, db_path: Path = DB_PATH): ...
 
-    async def initialize(self) -> None:
-        # Buat file DB jika belum ada
-        # Jalankan schema.sql
-        # Jalankan migrasi jika versi skema berbeda
+    async def init(self, schema_path: Path) -> None:
+        # Buat direktori DB jika belum ada, buka koneksi, jalankan schema.sql,
+        # lalu jalankan migrasi songs.youtube_id (composite UNIQUE, PATCH-2026-07-16-048)
 
-    async def get_connection(self) -> aiosqlite.Connection:
-        ...
+    async def close(self) -> None:
+        # Close koneksi + join worker thread aiosqlite eksplisit
+        # (mencegah zombie thread, lihat komentar ROOT-CAUSE-FIX di db.py)
 ```
 
-**Untuk testing:** gunakan `Database(":memory:")` — database in-memory yang dibuat ulang setiap test.
+### `Repositories` (`__init__.py`)
+
+Package entry point — bangun satu koneksi + tujuh repo domain, tanpa method delegasi (bukan facade).
 
 ```python
-# conftest.py
+class Repositories:
+    def __init__(self, db_path=None):
+        self.tracks: TrackRepository | None = None
+        self.sessions: SessionRepository | None = None
+        self.artists: ArtistRepository | None = None
+        self.genres: GenreRepository | None = None
+        self.library: LibraryRepository | None = None
+        self.discover: DiscoverRepository | None = None
+        self.admin_account: AdminAccountRepository | None = None
+
+    async def init(self) -> None:
+        # db_connection.init(schema.sql) lalu jalankan loop ALTER TABLE
+        # untuk kolom yang ditambahkan bertahap (is_favorite, reward_alpha/beta,
+        # loudness_lufs, last_position, true_peak_dbtp, dst -- try/except
+        # "duplicate column" diabaikan, error lain di-log), baru instansiasi
+        # ketujuh repo di atas dengan koneksi yang sama.
+
+    async def close(self) -> None: ...
+```
+
+Konsumen inject repo yang relevan langsung: `LoudnessService(repos.tracks)`, `DiscoverService(repos.discover)`, `AdminAccountRepository` via `repos.admin_account` — bukan `repos` secara keseluruhan.
+
+**Untuk testing:** gunakan `Repositories(db_path=Path(":memory:"))` — database in-memory, dibuat ulang setiap test (lihat fixture `db` di `tests/conftest.py`).
+
+```python
+# tests/conftest.py
 @pytest.fixture
 async def db():
-    database = Database(":memory:")
-    await database.initialize()
-    yield database
-    await database.close()
+    """In-memory SQLite `persistence.Repositories`, migrated and ready to use."""
+    from persistence import Repositories
+
+    repos = Repositories(db_path=Path(":memory:"))
+    await repos.init()
+    yield repos
+    await repos.close()
 ```
 
 ---
 
-## Data Statis — `artists_enriched.json`
+## Cache Resolver (`stream_cache.py`)
 
-Bukan bagian dari database runtime. File ini adalah **sumber data statis** untuk enrichment artis (genre, nama alternatif, popularitas).
+`CacheResolver` menentukan URI playback dengan prioritas: file lokal → stream URL yang di-cache → resolve baru via yt-dlp. `ResolverDbCompat` adalah adapter tipis (bukan facade baru) yang menggabungkan method `TrackRepository` + `ArtistRepository` + `DiscoverRepository` yang benar-benar dipanggil lewat `resolver.db` di beberapa konsumen lintas-domain (`PlaybackController`, `TrackLoader`, `track_ended_ops`, `event_listeners`).
+
+Detail lengkap → [backend/caching.md](caching.md)
+
+---
+
+## Data Statis — `artists_enriched.json` & `export_to_sqlite.py`
+
+Bukan bagian dari database runtime. File ini adalah **sumber data statis** untuk enrichment artis (genre, nama alternatif, popularitas), dan sekaligus data awal untuk tabel `artists`/`genres`/`artist_genres`/`songs`.
 
 ```
 data/artists_enriched.json   ← di-commit ke repo, bukan di-gitignore
+data/export_to_sqlite.py     ← script satu-kali: JSON -> SQLite (drop+recreate artists/genres/artist_genres/songs)
 data/lunawave.db             ← runtime, di-gitignore
 ```
 
-Format:
+Format `artists_enriched.json`:
 ```json
 [
   {
@@ -200,30 +338,35 @@ Format:
 ]
 ```
 
-Digunakan oleh `discover_service.py` untuk rekomendasi dan `radio/artist_selector.py` untuk mode radio.
+Digunakan oleh `services/discover_service.py` untuk rekomendasi dan `engine/radio/artist_selector.py` untuk mode radio.
 
 ---
 
 ## Migrasi Skema
 
-Migrasi dilakukan via `automation/export_to_sqlite.py` untuk data lama (dari format JSON cache).
+Dua jalur migrasi berjalan, keduanya idempotent (aman dijalankan berulang):
 
-Untuk skema baru: tambahkan file `persistence/migrations/V{N}__description.sql` dan panggil dari `db.py` saat inisialisasi.
+1. **`Repositories.init()`** (`__init__.py`) — loop `ALTER TABLE ... ADD COLUMN` untuk kolom baru yang ditambahkan bertahap seiring fitur baru (mis. `is_favorite`, `reward_alpha`/`reward_beta`, `loudness_lufs`). Error `"duplicate column"` diabaikan (berarti migrasi sudah pernah jalan); error lain (disk full, DB corrupt) di-log.
+2. **`DatabaseConnection._migrate_songs_unique_constraint()`** (`db.py`) — migrasi terstruktur satu kali dari `songs.youtube_id` yang dulu `UNIQUE` global (drop kolaborasi/duet artis kedua dst) ke `UNIQUE(artist_id, youtube_id)`. No-op di DB baru (`schema.sql` sudah pakai constraint baru).
+
+> **Jangan tambahkan `ALTER TABLE` langsung di `schema.sql`** — `executescript()` tidak punya error handling per-statement dan akan crash `OperationalError` kalau kolom sudah ada di DB lama. Tambahkan lewat loop di `Repositories.init()` (kolom baru) atau migrasi terstruktur seperti `_migrate_songs_unique_constraint` (perubahan constraint/struktur tabel).
+
+Data awal (bukan skema) diimport dari `artists_enriched.json` via `data/export_to_sqlite.py` (jalankan manual, bukan bagian startup).
 
 ---
 
 ## Testing
 
-Semua repository dapat di-test dengan SQLite in-memory:
+Semua repository dapat di-test dengan SQLite in-memory lewat fixture `db` (`Repositories(":memory:")`):
 
 ```python
-# Contoh test track_repo
-async def test_save_and_get(db):
-    repo = TrackRepository(db)
-    track = TrackInfo(video_id="abc", title="Test", artist="Artist", duration=180, thumbnail_url="")
-    await repo.save(track)
-    result = await repo.get("abc")
-    assert result.title == "Test"
+# Contoh: tests/unit/persistence/test_track_repo.py
+async def test_upsert_and_get_track_round_trip(db):
+    track = make_track()  # TrackInfo(video_id="vid1", title="Title", artist="Artist", duration=200)
+    await db.tracks.upsert_track(track, stream_url="https://stream/1", local_path="/mp3/1.mp3")
+    result = await db.tracks.get_track("vid1")
+    assert result is not None
+    assert result.title == "Title"
 ```
 
 Test → `tests/unit/persistence/`
@@ -232,7 +375,9 @@ Test → `tests/unit/persistence/`
 
 ## Dokumen Terkait
 
-- [backend/caching.md](caching.md) — Cache resolver (bukan persistence, tapi berkaitan)
+- [backend/caching.md](caching.md) — Cache resolver (`CacheResolver`/`ResolverDbCompat`) detail lengkap
+- [backend/api.md](api.md) — Action WS `setup_admin`/`auth` yang mengonsumsi `AdminAccountRepository`
 - [architecture/domain.md](../architecture/domain.md) — `TrackInfo` domain object
 - [architecture/folder_structure.md](../architecture/folder_structure.md) — Lokasi file di repo
 - [ADR-0002](../adr/0002-sqlite-over-json-cache.md) — Kenapa SQLite?
+- [ADR-0008](../adr/0008-admin-credentials-in-sqlite.md) — Kredensial admin di SQLite, tanpa migrasi otomatis

@@ -7,7 +7,9 @@ Purpose:
 
 Responsibilities:
     - Resolve BASE_DIR, cache paths, and the mpv socket path from env vars.
-    - Auto-generate a secure admin password on first run if none is set.
+    - Expose ADMIN_PASSWORD_OVERRIDE, a non-default env-var override consumed
+      only by bootstrap.services for one-time admin_account seeding (K4).
+      admin_account (SQLite) is the actual source of truth for login.
     - Validate the socket path stays within BASE_DIR on Unix.
 
 Depends on:
@@ -96,51 +98,35 @@ WEB_HOST = os.environ.get("LUNAWAVE_HOST", os.environ.get("YTGUI_HOST", "0.0.0.0
 WEB_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
 
 # Web Security
+#
+# T-B13.1: satu-satunya source of truth untuk kredensial login sekarang
+# adalah tabel admin_account di SQLite (lihat server/handlers/auth.py,
+# persistence/admin_account_repo.py), diisi lewat alur Initial Setup
+# (server/handlers/setup.py). config.py TIDAK LAGI auto-generate password,
+# TIDAK LAGI menulis cache/admin_password.txt, dan TIDAK LAGI mencetak
+# banner password saat startup (T-B14.1) -- mekanisme lama itu menulis
+# kredensial plaintext ke file cache tanpa proses konfirmasi/setup eksplisit
+# apa pun.
 ADMIN_USERNAME = os.environ.get("LUNAWAVE_ADMIN_USER", os.environ.get("YTGUI_ADMIN_USER", "admin"))
 
-IS_PASSWORD_AUTO_GENERATED = False
-_password_file = BASE_DIR / "cache" / "admin_password.txt"
-
-_raw_env_pass = None
-if "LUNAWAVE_ADMIN_PASS" in os.environ:
-    _raw_env_pass = os.environ["LUNAWAVE_ADMIN_PASS"]
-elif "YTGUI_ADMIN_PASS" in os.environ:
-    _raw_env_pass = os.environ["YTGUI_ADMIN_PASS"]
+# ADMIN_PASSWORD_OVERRIDE (K4, T-B14.2): jalur non-default, dipertahankan
+# khusus untuk provisioning non-interaktif (CI, automated deploy) yang
+# tidak bisa lewat wizard Initial Setup di browser. HANYA dibaca satu kali
+# oleh bootstrap.services._seed_admin_account_from_env() untuk mengisi
+# admin_account SAAT TABEL MASIH KOSONG; tidak pernah dipakai langsung
+# untuk verifikasi login (auth.py tidak mengimpor simbol ini), dan tidak
+# pernah menimpa akun admin yang sudah ada (K3 -- tidak ada migrasi
+# otomatis, tidak ada overwrite diam-diam).
+_raw_env_pass = os.environ.get("LUNAWAVE_ADMIN_PASS", os.environ.get("YTGUI_ADMIN_PASS"))
 
 if _raw_env_pass is not None:
     if _raw_env_pass.startswith("pbkdf2:sha256:"):
-        # Sudah di-hash sebelumnya (misalnya dari file yang di-backup)
-        ADMIN_PASSWORD = _raw_env_pass
+        # Sudah di-hash sebelumnya (misalnya dari secret manager / backup)
+        ADMIN_PASSWORD_OVERRIDE = _raw_env_pass
     else:
         # TASK-1.2: Hash password ENV var agar tidak disimpan sebagai plaintext.
-        # Ini wajib setelah TASK-1.1 menghapus plaintext fallback di verify_password.
         from core.security import hash_password
 
-        ADMIN_PASSWORD = hash_password(_raw_env_pass)
+        ADMIN_PASSWORD_OVERRIDE = hash_password(_raw_env_pass)
 else:
-    IS_PASSWORD_AUTO_GENERATED = True
-    if _password_file.exists():
-        with open(_password_file, encoding="utf-8") as f:
-            _raw_from_file = f.read().strip()
-        from core.security import hash_password
-
-        ADMIN_PASSWORD = hash_password(_raw_from_file)
-    else:
-        # Generate random password
-        from config_security import generate_admin_password
-
-        raw_password, ADMIN_PASSWORD = generate_admin_password()
-        _password_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(_password_file, "w", encoding="utf-8") as f:
-            f.write(raw_password)
-        try:
-            import stat
-
-            _password_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
-        except OSError:
-            pass
-
-        print("\n==========================================")
-        print(f"PASSWORD ADMIN GENERATED: {raw_password}")
-        print("Harap simpan password ini! Tersimpan juga di cache/admin_password.txt")
-        print("==========================================\n")
+    ADMIN_PASSWORD_OVERRIDE = None

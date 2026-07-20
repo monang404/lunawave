@@ -79,16 +79,23 @@ async def test_init_core_services_wires_and_returns_context(
     repos_instance.artists = MagicMock()
     repos_instance.discover = MagicMock()
     repos_instance.library = MagicMock()
+    repos_instance.admin_account = MagicMock()
+    repos_instance.admin_account.admin_account_exists = AsyncMock(return_value=True)
+    repos_instance.admin_account.create_admin_account = AsyncMock()
 
     nowplaying_inst = mock_nowplaying_cls.return_value
     nowplaying_inst.start = AsyncMock()
 
-    result = await init_core_services()
+    with patch("config.ADMIN_PASSWORD_OVERRIDE", None):
+        result = await init_core_services()
 
     # Returns the shared context, fully populated.
     assert result is context
     repos_instance.init.assert_awaited_once()
     nowplaying_inst.start.assert_awaited_once()
+    # ADMIN_PASSWORD_OVERRIDE unset (default) -> seeding is a pure no-op,
+    # doesn't even check admin_account_exists().
+    repos_instance.admin_account.create_admin_account.assert_not_awaited()
 
     assert context.state is not None
     assert context.mpv_ready_event is not None
@@ -124,6 +131,60 @@ async def test_init_mpv_success_sets_ready_event():
 
     context.mpv.connect.assert_awaited_once()
     context.mpv_ready_event.set.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_seed_admin_account_from_env_noop_when_override_not_set():
+    """K4: ADMIN_PASSWORD_OVERRIDE unset (default, no env var) -> seeding
+    must not even query admin_account, let alone write to it."""
+    from bootstrap.services import _seed_admin_account_from_env
+
+    repos = MagicMock()
+    repos.admin_account.admin_account_exists = AsyncMock(return_value=False)
+    repos.admin_account.create_admin_account = AsyncMock()
+
+    with patch("config.ADMIN_PASSWORD_OVERRIDE", None):
+        await _seed_admin_account_from_env(repos)
+
+    repos.admin_account.admin_account_exists.assert_not_awaited()
+    repos.admin_account.create_admin_account.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_seed_admin_account_from_env_never_overwrites_existing_account():
+    """K3: admin_account already populated -> override must not touch it,
+    even though ADMIN_PASSWORD_OVERRIDE is set."""
+    from bootstrap.services import _seed_admin_account_from_env
+
+    repos = MagicMock()
+    repos.admin_account.admin_account_exists = AsyncMock(return_value=True)
+    repos.admin_account.create_admin_account = AsyncMock()
+
+    with patch("config.ADMIN_PASSWORD_OVERRIDE", "pbkdf2:sha256:fake-hash"):
+        await _seed_admin_account_from_env(repos)
+
+    repos.admin_account.create_admin_account.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_seed_admin_account_from_env_creates_account_when_table_empty():
+    """K4: admin_account empty + ADMIN_PASSWORD_OVERRIDE set -> exactly one
+    account is created, using ADMIN_USERNAME and the already-hashed override."""
+    from bootstrap.services import _seed_admin_account_from_env
+
+    repos = MagicMock()
+    repos.admin_account.admin_account_exists = AsyncMock(return_value=False)
+    repos.admin_account.create_admin_account = AsyncMock()
+
+    with (
+        patch("config.ADMIN_PASSWORD_OVERRIDE", "pbkdf2:sha256:fake-hash"),
+        patch("config.ADMIN_USERNAME", "admin"),
+    ):
+        await _seed_admin_account_from_env(repos)
+
+    repos.admin_account.create_admin_account.assert_awaited_once_with(
+        "admin", "pbkdf2:sha256:fake-hash"
+    )
 
 
 @pytest.mark.asyncio

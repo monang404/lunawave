@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock globals
 global.store = { status: "IDLE", userRole: "client", is_online: true };
-global.dom = { loginErrorMsg: {}, portalLoginForm: { classList: { add: vi.fn() } } };
+global.dom = {
+  loginErrorMsg: {},
+  portalLoginForm: { classList: { add: vi.fn() } },
+  setupSubmitBtn: { disabled: true, textContent: "" },
+  setupErrorMsg: { textContent: "" },
+  setupConfirmErrorMsg: { textContent: "" },
+  setupScreen: { classList: { add: vi.fn(), remove: vi.fn() } },
+  portalScreen: { classList: { add: vi.fn(), remove: vi.fn() } },
+  adminUsername: { value: "someuser" },
+};
 global.window = { safeStorage: { set: vi.fn(), remove: vi.fn(), get: vi.fn() } };
 global.showLogToast = vi.fn();
 global.applyRoleUI = vi.fn();
@@ -25,6 +34,28 @@ describe("WebSocket Message Router", () => {
     expect(global.store.userRole).toBe("admin");
     expect(global.window.safeStorage.set).toHaveBeenCalledWith("lunawave_session_token", "abc");
     expect(global.showLogToast).toHaveBeenCalledWith("Akses Admin Diterima!");
+  });
+
+  it("handles setup_status success -- switches from setup-screen to portal-screen", () => {
+    wsModule.handleServerMessage({ type: "setup_status", data: { success: true } });
+    expect(global.dom.setupSubmitBtn.disabled).toBe(false);
+    expect(global.dom.setupScreen.classList.remove).toHaveBeenCalledWith("portal-active");
+    expect(global.dom.portalScreen.classList.add).toHaveBeenCalledWith("portal-active");
+    expect(global.dom.adminUsername.value).toBe("");
+    expect(global.showLogToast).toHaveBeenCalledWith("Akun admin berhasil dibuat! Silakan login.");
+  });
+
+  it("handles setup_status failure -- keeps setup-screen, shows server message", () => {
+    global.dom.setupScreen.classList.remove.mockClear();
+    global.dom.portalScreen.classList.add.mockClear();
+    wsModule.handleServerMessage({
+      type: "setup_status",
+      data: { success: false, message: "Akun admin sudah pernah dibuat. Silakan login." },
+    });
+    expect(global.dom.setupSubmitBtn.disabled).toBe(false);
+    expect(global.dom.setupErrorMsg.textContent).toBe("Akun admin sudah pernah dibuat. Silakan login.");
+    expect(global.dom.setupScreen.classList.remove).not.toHaveBeenCalled();
+    expect(global.dom.portalScreen.classList.add).not.toHaveBeenCalled();
   });
 
   it("handles log", () => {

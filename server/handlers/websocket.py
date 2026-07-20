@@ -11,6 +11,7 @@ Responsibilities:
 
 Depends on:
     - server.handlers.auth
+    - server.handlers.setup
     - server.handlers.ws_discovery
     - server.handlers.ws_download
     - server.handlers.ws_playback
@@ -37,6 +38,7 @@ from aiohttp import web
 
 from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
+from server.handlers.setup import handle_setup_admin
 from server.handlers.ws_discovery import handle_discovery_command
 from server.handlers.ws_download import handle_download_command
 from server.handlers.ws_playback import handle_playback_command
@@ -137,7 +139,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
     now = time.time()
     if action == "auth":
-        await handle_auth(ws, data, manager, client_ip, repos.sessions, now)
+        await handle_auth(ws, data, manager, client_ip, repos, now)
+        return
+
+    if action == "setup_admin":
+        # Sama seperti "auth": harus reachable SEBELUM require_auth, karena
+        # saat Initial Setup belum ada admin_account sama sekali -- tidak
+        # ada cara untuk "sudah login" pada titik ini.
+        await handle_setup_admin(ws, data, manager, client_ip, repos, now)
         return
 
     if not require_auth(manager, ws):

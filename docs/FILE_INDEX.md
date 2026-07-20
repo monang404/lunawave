@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-19
+last_verified: 2026-07-20
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-19 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-20 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,18 +24,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `core/log_config`, `engine/loudness/analyzer`, _11 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `core/log_config`, `engine/loudness/analyzer`, _10 lainnya_
 **Menggunakan:** —
-
-
----
-
-**File:** `config_security.py`
-**Fungsi:** Handles security configurations, including admin password generation and hashing.
-**Class:** —
-**Function utama:** `generate_admin_password()`
-**Digunakan oleh:** —
-**Menggunakan:** `core/security`
 
 
 ---
@@ -157,7 +147,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Provide PBKDF2-SHA256 password hashing and constant-time verification.
 **Class:** —
 **Function utama:** `hash_password()`, `verify_password()`
-**Digunakan oleh:** `config_security`, `server/handlers/auth`
+**Digunakan oleh:** `server/handlers/auth`, `server/handlers/setup`
 **Menggunakan:** —
 
 
@@ -517,7 +507,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `Repositories`
 **Function utama:** `conn()`
 **Digunakan oleh:** —
-**Menggunakan:** `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, `persistence/session_repo`, _1 lainnya_
+**Menggunakan:** `persistence/admin_account_repo`, `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, _2 lainnya_
+
+
+---
+
+**File:** `persistence/admin_account_repo.py`
+**Fungsi:** Manages the single admin_account row: the sole source of truth for login credentials under the Fitur B (login_redesign) design. Populated via the Initial Setup flow (server.handlers.setup), never auto-generated.
+**Class:** `AdminAccountRepository`
+**Function utama:** —
+**Digunakan oleh:** `persistence/__init__`
+**Menggunakan:** —
 
 
 ---
@@ -620,7 +620,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `create_app()`, `run_server()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/ports`, `engine/playback/controller`, `persistence`, `server/connection_manager`, `server/handlers/audio_stream_handler`, `server/handlers/http`, _1 lainnya_
+**Menggunakan:** `core/ports`, `engine/playback/controller`, `persistence`, `server/connection_manager`, `server/handlers/audio_stream_handler`, `server/handlers/http`, _2 lainnya_
 
 
 ---
@@ -670,7 +670,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `handle_auth()`, `require_auth()`
 **Digunakan oleh:** `server/handlers/websocket`
-**Menggunakan:** `config`, `core/security`
+**Menggunakan:** `core/security`
 
 
 ---
@@ -695,12 +695,22 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `server/handlers/setup.py`
+**Fungsi:** Handle Initial Setup: creation of the single admin_account row that becomes the sole source of login credentials (Fitur B: login_redesign, lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any admin account exists, so it lives outside the normal require_auth gate -- the same way "auth" itself is special-cased in websocket.py.
+**Class:** —
+**Function utama:** `handle_setup_admin()`, `setup_required()`
+**Digunakan oleh:** `server/app`, `server/handlers/websocket`
+**Menggunakan:** `core/security`, `server/handlers`
+
+
+---
+
 **File:** `server/handlers/websocket.py`
 **Fungsi:** Handle WebSocket connections, authenticate clients, and dispatch incoming commands to the CommandBus after rate-limit enforcement.
 **Class:** —
 **Function utama:** `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** `server/app`
-**Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, `server/handlers/ws_queue`, _2 lainnya_
+**Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _3 lainnya_
 
 
 ---
@@ -874,16 +884,6 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `launcher/auth_service.py`
-**Fungsi:** Non-UI logic for generating, persisting, and verifying the launcher's admin password file. Extracted from launcher.gui.auth_panel (T3.2) so the auth logic doesn't live inside the Tkinter dialog code.
-**Class:** —
-**Function utama:** `password_file_path()`, `password_file_exists()`, `generate_password()`, `save_password()`, `verify_password()`
-**Digunakan oleh:** —
-**Menggunakan:** —
-
-
----
-
 **File:** `launcher/dep_checker.py`
 **Fungsi:** Utility to verify required system dependencies before launching the application.
 **Class:** `DependencyChecker`
@@ -905,11 +905,11 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 **File:** `launcher/gui/auth_panel.py`
-**Fungsi:** GUI component for user authentication, password reset, and first-run setup.
+**Fungsi:** GUI hook for the "Reset Password" button. Since T-B16, the launcher no longer owns any authentication mechanism of its own — it only opens the web portal, where Initial Setup / Login (SQLite-backed admin_account, see server/handlers/setup.py) handles credentials end-to-end.
 **Class:** —
-**Function utama:** `handle_first_run()`, `on_reset_password()`, `show_new_password_dialog()`
+**Function utama:** `on_reset_password()`
 **Digunakan oleh:** `launcher/gui/ui_builder`
-**Menggunakan:** `launcher`
+**Menggunakan:** —
 
 
 ---

@@ -10,6 +10,16 @@ function initDOM() {
         adminPassword: $("admin-password"),
         adminSubmitBtn: $("admin-submit-btn"),
         loginErrorMsg: $("login-error-msg"),
+        // Setup Screen (Initial Setup, T-B9/T-B11): reuse pola sama dengan
+        // portal-screen di atas, id beda karena markup terpisah.
+        setupScreen: $("setup-screen"),
+        setupForm: $("setup-form"),
+        setupUsername: $("setup-username"),
+        setupPassword: $("setup-password"),
+        setupConfirmPassword: $("setup-confirm-password"),
+        setupConfirmErrorMsg: $("setup-confirm-error-msg"),
+        setupSubmitBtn: $("setup-submit-btn"),
+        setupErrorMsg: $("setup-error-msg"),
         logoutBtn: $("logout-btn"),
         appContainer: $("app"),
         tabHome: $("tab-home"),

@@ -73,6 +73,7 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert "/admin" in routes
     assert "/ws" in routes
     assert "/api/stream/{video_id}" in routes
+    assert "/api/setup-required" in routes
     assert "/health" in routes
     assert "/metrics" in routes
 

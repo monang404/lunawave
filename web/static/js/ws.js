@@ -99,6 +99,29 @@ function handleServerMessage(msg) {
                 }
             }
             break;
+        case "setup_status":
+            // T-B12: respons dari action "setup_admin" (server/handlers/setup.py).
+            // Tidak menyentuh store.userRole sama sekali di sini -- akun admin
+            // baru dibuat, belum login. Setelah sukses, user diarahkan ke
+            // #portal-screen (alur login normal, T-B9) untuk login dengan
+            // kredensial yang baru saja dibuat, bukan otomatis masuk sebagai admin.
+            if (dom.setupSubmitBtn) {
+                dom.setupSubmitBtn.disabled = false;
+                dom.setupSubmitBtn.textContent = "Buat Akun Admin";
+            }
+            if (msg.data.success) {
+                if (dom.setupErrorMsg) dom.setupErrorMsg.textContent = "";
+                if (dom.setupConfirmErrorMsg) dom.setupConfirmErrorMsg.textContent = "";
+                if (typeof showLogToast === "function") {
+                    showLogToast("Akun admin berhasil dibuat! Silakan login.");
+                }
+                if (dom.setupScreen) dom.setupScreen.classList.remove("portal-active");
+                if (dom.portalScreen) dom.portalScreen.classList.add("portal-active");
+                if (dom.adminUsername) dom.adminUsername.value = "";
+            } else if (dom.setupErrorMsg) {
+                dom.setupErrorMsg.textContent = msg.data.message || "Gagal membuat akun admin.";
+            }
+            break;
         case "state":
             if (typeof applyFullState === "function") {
                 applyFullState(msg.data);
