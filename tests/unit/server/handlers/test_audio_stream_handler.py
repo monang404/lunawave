@@ -235,7 +235,9 @@ async def test_serve_stream_proxy_retry_fetch_success(mock_request):
         )
         mock_cache_dir.__truediv__.return_value.exists.return_value = False
 
-        with patch("server.handlers.audio_stream_handler.web.StreamResponse") as mock_stream_response:
+        with patch(
+            "server.handlers.audio_stream_handler.web.StreamResponse"
+        ) as mock_stream_response:
             mock_resp_obj = AsyncMock()
             mock_resp_obj.headers = {}
             mock_stream_response.return_value = mock_resp_obj
@@ -385,3 +387,108 @@ async def test_serve_stream_proxy_forbidden_retry(mock_request):
 
                 assert mock_http_session.get.call_count == 2
                 assert mock_ytdlp.get_stream_url.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_client_disconnect_mid_write_no_refetch(mock_request):
+    """PATCH-2026-07-20-135 regression.
+
+    Bug found: response.write() raising ConnectionResetError (client tutup
+    tab/pindah track/seek di tengah stream) sebelumnya jatuh ke `except
+    Exception` generik yang sama dengan error stream-URL asli -> memicu
+    refetch yt-dlp yang sia-sia (attempt==0 -> stream_url=None -> continue)
+    padahal URL-nya sendiri valid dan sudah sempat mulai ngirim data (upstream
+    200). Dibuktikan dulu lewat harness terpisah sebelum ada test ini:
+    get_stream_url() terpanggil 2x untuk satu client-disconnect di kode lama.
+
+    Fix: ConnectionResetError/ConnectionAbortedError/BrokenPipeError saat
+    menulis ke response ditangkap terpisah -> return langsung tanpa retry,
+    tanpa refetch.
+    """
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+    mock_request.headers = {}
+
+    mock_db = AsyncMock()
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+    mock_ytdlp.get_stream_url.return_value = "https://example.googlevideo.com/stream"
+
+    mock_http_session = MagicMock()
+    mock_upstream = MagicMock()
+    mock_upstream.status = 200
+    mock_upstream.headers = {"Content-Type": "audio/mpeg"}
+
+    async def mock_chunked(*args, **kwargs):
+        yield b"data"
+
+    mock_upstream.content.iter_chunked = mock_chunked
+    mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app["http_session"] = mock_http_session
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        with patch(
+            "server.handlers.audio_stream_handler.web.StreamResponse"
+        ) as mock_stream_response:
+            mock_resp_obj = AsyncMock()
+            mock_resp_obj.headers = {}
+            # Simulasikan client memutus koneksi persis di tengah write().
+            mock_resp_obj.write.side_effect = ConnectionResetError(
+                "Cannot write to closing transport"
+            )
+            mock_stream_response.return_value = mock_resp_obj
+
+            resp = await serve_stream(mock_request)
+
+            assert resp == mock_resp_obj
+            # Inti fix: TIDAK ada refetch kedua ke yt-dlp untuk sekadar
+            # client yang sudah pergi.
+            assert mock_ytdlp.get_stream_url.call_count == 1
+            # response.write_eof() juga tidak perlu dipanggil krn stream
+            # sudah putus di tengah jalan.
+            mock_resp_obj.write_eof.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_genuine_url_error_still_retries(mock_request):
+    """Pembanding: error yang BUKAN client-disconnect (mis. koneksi upstream
+    ke YouTube gagal total) harus tetap lewat jalur retry/refetch lama --
+    fix di atas hanya mengecualikan disconnect, tidak melemahkan retry asli.
+    """
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+    mock_request.headers = {}
+
+    mock_db = AsyncMock()
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+    mock_ytdlp.get_stream_url.return_value = "https://example.googlevideo.com/stream"
+
+    mock_http_session = MagicMock()
+    # Upstream request itu sendiri yang gagal (bukan disconnect saat write).
+    mock_http_session.get.side_effect = TimeoutError("upstream timeout")
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app["http_session"] = mock_http_session
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        resp = await serve_stream(mock_request)
+
+        # Tetap retry seperti semula: 2 attempt -> get_stream_url 2x -> tetap
+        # gagal -> 500.
+        assert mock_ytdlp.get_stream_url.call_count == 2
+        assert isinstance(resp, web.HTTPInternalServerError)

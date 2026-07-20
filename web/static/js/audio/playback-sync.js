@@ -188,6 +188,21 @@ function unlockBrowserAudio(forcePlay) {
     if (ctx.state === 'suspended') {
         ctx.resume().then(doUnlock).catch((e) => {
             console.warn("[audio] AudioContext resume failed:", e);
+            // PATCH-AUDIO-UNLOCK-PROACTIVE-01: audioUnlocked=true di sini TIDAK
+            // berarti AudioContext benar-benar jalan -- ini cuma menandakan
+            // "boleh coba audio.play()", yang punya try/catch + fallback
+            // banner sendiri di _resumeAndPlay() kalau ditolak browser (jadi
+            // tetap aman). Yang tadinya jadi bug nyata: ctx TIDAK disimpan ke
+            // variabel modul audioCtx di jalur gagal ini, cuma dibuang begitu
+            // saja. Akibatnya document.visibilitychange handler (baris di
+            // bawah, cek `if (audioCtx && audioCtx.state === 'suspended')`)
+            // tidak pernah punya referensi buat retry resume() otomatis saat
+            // user balik ke tab -- padahal itu justru momen paling umum
+            // browser mau kasih izin resume beneran. Simpan referensinya di
+            // sini juga supaya kesempatan retry itu tidak hilang.
+            if (!audioCtx) {
+                audioCtx = ctx;
+            }
             _unlocking = false;
             audioUnlocked = true;
             _lastLoadedVideoId = null;
@@ -240,6 +255,23 @@ function syncBrowserAudio(forcePlay) {
             audio.oncanplay = null;
             audio.load();
             console.log("[audio] buffering, waiting for user gesture:", track.video_id);
+            // PATCH-AUDIO-UNLOCK-PROACTIVE-01: sebelum patch ini, kalau track
+            // ini seharusnya main (forcePlay atau status server sudah PLAYING
+            // -- kasus paling umum: client baru join/refresh ke room yang
+            // musiknya sudah jalan duluan), kode di sini cuma buffer lalu
+            // return TANPA indikasi apa pun. audio.play() tidak pernah
+            // dicoba sama sekali di jalur ini (beda dari kasus reaktif di
+            // _resumeAndPlay yang baru tampilkan banner SETELAH play()
+            // ditolak browser) -- jadi user cuma dengar senyap total, tanpa
+            // banner, tanpa toast, sampai dia tidak sengaja klik/tap sesuatu.
+            // Dibuktikan lewat eksekusi syncBrowserAudio() asli: play():0,
+            // load():1, audio.paused tetap true, tidak ada banner muncul.
+            // Fix: tampilkan banner proaktif di sini juga, supaya user tahu
+            // harus tap untuk lanjut, bukan mengira aplikasi diam/rusak.
+            if (forcePlay || store.status === "PLAYING") {
+                window.audioBlocked = true;
+                if (typeof _showTapToPlayBanner === "function") _showTapToPlayBanner();
+            }
             return;
         }
 
@@ -369,4 +401,21 @@ function updateMediaSession() {
 
     // Selalu sinkronkan status putar/jeda
     _updateMediaSessionState(store.status === "PLAYING" ? "playing" : "paused");
+}
+
+// PATCH-AUDIO-UNLOCK-PROACTIVE-01: file ini sebelumnya tidak punya
+// module.exports sama sekali (beda dari store.js/ws.js), jadi secara
+// struktural tidak bisa di-require() untuk ditest -- itu sebabnya nol
+// skenario di sini pernah dipetakan lewat test. Tambahkan exports dengan
+// pola yang sama supaya tests/frontend/ bisa load modul ASLI ini.
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        syncBrowserAudio,
+        unlockBrowserAudio,
+        getOrInitAudio,
+        _showTapToPlayBanner,
+        _hideTapToPlayBanner,
+        _resumeAndPlay,
+        initAudio,
+    };
 }

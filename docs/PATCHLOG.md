@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-20-134
+latest_patch_id: PATCH-2026-07-20-135
 
-total_entries: 134
+total_entries: 135
 
 ---
 
@@ -23,6 +23,25 @@ total_entries: 134
 > **File Terdampak:** selalu list per-baris (bukan prosa dipisah koma), supaya AI/tool bisa query "file X pernah diubah di patch mana?".
 
 
+
+---
+
+
+## [2026-07-20] audio_unlock_scenario_map_fix — Pemetaan & perbaikan skenario "musik gagal diputar di browser" / banner "Tap untuk lanjut memutar" (diminta user, seluruh temuan dibuktikan lewat eksekusi kode asli sebelum patch, bukan cuma dibaca dari dokumentasi). **Klarifikasi penting:** dua klaim awal DICABUT setelah diuji -- (1) race condition di `ConnectionManager.broadcast()` (docs/audit.md #1) ternyata SUDAH di-fix sejak PATCH-2026-07-16-065 (snapshot list sudah dipin sebelum gather()), dibuktikan test regresinya PASS di kode sekarang dan baru FAIL saat sengaja dikembalikan sementara ke pola lama; (2) `ytdlp.get_stream_url()` TERNYATA sudah punya timeout eksplisit (`asyncio.wait_for(..., timeout=YTDLP_RESOLVE_TIMEOUT_SEC=25)` di `adapters/ytdlp/resolver.py`), bukan tanpa-timeout seperti diklaim awal. Empat celah yang TERBUKTI nyata lewat eksekusi (bukan asumsi) dan diperbaiki di patch ini: **(1) Silent buffering saat join mid-session** -- client yang connect/refresh ke room yang musiknya sudah PLAYING sebelum ada gesture user (audioUnlocked=false) sebelumnya cuma buffer diam-diam tanpa indikasi apa pun; dibuktikan lewat eksekusi syncBrowserAudio() asli via Node VM sandbox (play():0, load():1, audio.paused tetap true, tidak ada banner). Fix: tampilkan banner "Tap untuk lanjut memutar" secara PROAKTIF di jalur ini juga (playback-sync.js), bukan menunggu percobaan play() ditolak browser. **(2) Radio auto-switch tanpa gesture** -- FIX-RADIO-08 di ws.js yang sudah ada sebelumnya (memanggil _resumeAndPlay() saat status PLAYING tapi audio browser stuck paused) dikonfirmasi via eksekusi ws.js asli benar-benar terpanggil tanpa gesture user apa pun; sebelumnya nol test coverage, sekarang ditambahkan regression test permanen. **(3) audioCtx hilang saat resume() awal gagal** -- unlockBrowserAudio() menandai audioUnlocked=true meski AudioContext.resume() reject (ini aman krn audio.play() punya try/catch+banner sendiri), TAPI variabel modul audioCtx tidak pernah disimpan di jalur gagal itu, sehingga visibilitychange handler (retry otomatis saat user balik ke tab) tidak pernah punya referensi utk retry resume(). Dibuktikan lewat test yg memicu visibilitychange handler asli: resumeCallCount tetap 1 (bug) vs jadi 2 (fix, retry berhasil). Fix: simpan `audioCtx = ctx` juga di jalur catch. **(4) Client disconnect mid-stream memicu refetch yt-dlp sia-sia** -- response.write() yang raise ConnectionResetError (client tutup tab/seek/pindah track di tengah stream) sebelumnya jatuh ke except Exception generik yang sama dengan error stream-URL beneran, memicu refetch yt-dlp yang sia-sia. Dibuktikan lewat simulasi write() raise ConnectionResetError: get_stream_url() terpanggil 2x untuk satu disconnect di kode lama. Fix: tangkap ConnectionResetError/ConnectionAbortedError/BrokenPipeError terpisah di audio_stream_handler.py, return langsung tanpa retry/refetch; error stream-URL asli (dibuktikan lewat test pembanding pakai TimeoutError di http_session.get) tetap lewat jalur retry seperti semula. **Testabilitas:** playback-sync.js sebelumnya tidak punya module.exports sama sekali (beda dari store.js/ws.js) sehingga secara struktural belum bisa di-require() untuk ditest -- ditambahkan exports dengan pola yang sama. Verifikasi: SEMUA fix dibuktikan dua arah (reproduksi bug di versi lama -> test FAIL, lalu PASS setelah fix dipasang balik) sebelum ditambahkan permanen. Suite lengkap setelah patch: vitest 27/27 lulus (audio-unlock.test.js baru 4 test, radio-autoswitch-no-gesture.test.js baru 3 test, tidak ada regresi di pause-race/ws-routing/store/format), pytest 667 passed + 4 skipped (test_audio_stream_handler.py 13/13 termasuk 2 test baru), ruff bersih.
+
+**ID:** `PATCH-2026-07-20-135`
+
+**Tanggal:** 2026-07-20
+
+**Ringkasan:** Pemetaan & perbaikan skenario "musik gagal diputar di browser" / banner tap-to-play, seluruh temuan dibuktikan lewat eksekusi kode asli (bukan dokumentasi). Dua klaim awal dicabut setelah diuji (race broadcast() sudah fix sejak PATCH-2026-07-16-065; get_stream_url sudah ada timeout). Empat celah nyata diperbaiki: (1) banner proaktif saat client join mid-session PLAYING sebelum ada gesture, (2) regression test utk radio auto-switch tanpa gesture (FIX-RADIO-08), (3) audioCtx kini disimpan meski resume() awal gagal supaya visibilitychange retry tidak kehilangan referensi, (4) client-disconnect mid-stream tidak lagi memicu refetch yt-dlp sia-sia. playback-sync.js kini punya module.exports supaya testable. Dibuktikan dua arah (bug repro -> fail, fix -> pass) untuk semua item. Suite lengkap: vitest 27/27, pytest 667 passed + 4 skipped, ruff bersih.
+
+**File Terdampak:**
+
+- `web/static/js/audio/playback-sync.js`
+- `server/handlers/audio_stream_handler.py`
+- `tests/frontend/audio-unlock.test.js`
+- `tests/frontend/radio-autoswitch-no-gesture.test.js`
+- `tests/unit/server/handlers/test_audio_stream_handler.py`
 
 ---
 

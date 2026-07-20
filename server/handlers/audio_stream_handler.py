@@ -154,10 +154,26 @@ async def serve_stream(request):
 
                 await response.prepare(request)
 
-                async for chunk in upstream.content.iter_chunked(16384):
-                    await response.write(chunk)
+                try:
+                    async for chunk in upstream.content.iter_chunked(16384):
+                        await response.write(chunk)
+                    await response.write_eof()
+                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError) as e:
+                    # PATCH-AUDIO-UNLOCK-PROACTIVE-01: client memutus koneksi
+                    # di tengah stream (tutup tab, pindah track, seek, dsb).
+                    # Sebelumnya ini jatuh ke `except Exception` generik di
+                    # bawah bareng dengan error stream-URL beneran, sehingga
+                    # attempt==0 memicu refetch yt-dlp yang SIA-SIA -- padahal
+                    # tidak ada client lagi yang menunggu respons itu.
+                    # Dibuktikan lewat simulasi write() raise
+                    # ConnectionResetError: get_stream_url() sebelumnya
+                    # terpanggil 2x untuk satu client-disconnect. URL stream
+                    # itu sendiri terbukti valid (upstream sempat merespons
+                    # 200 dan mulai ngirim data), jadi tidak perlu retry sama
+                    # sekali -- cukup log info & selesai.
+                    logger.info(f"Client disconnect mid-stream untuk {video_id}: {e}")
+                    return response
 
-                await response.write_eof()
                 return response
 
         except Exception as e:
