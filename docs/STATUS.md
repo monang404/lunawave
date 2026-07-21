@@ -1,6 +1,6 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-17
+last_verified: 2026-07-21
 sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md Batch 0-4.2)
 ---
 
@@ -11,14 +11,18 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 
 ## Status Fitur (dari `task_breakdown_agent.yaml`)
 
-| Fitur | Status | Selesai | Ringkasan |
+| Fitur | Status | Waktu Selesai | Ringkasan |
 |---|---|---|---|
-| Fitur A — `quick_search_discover` | ✅ Done | Sesi sebelumnya | Personalisasi tab Discover (bandit ranking, taste spectrum, filter, artist detail sheet). Detail: §Discover Tab Personalization di bawah, `PATCH-2026-07-17-070`/`-071`. |
-| Fitur B — `login_redesign` | ✅ Done | Sesi ini (T-B1..T-B19) | Kredensial admin pindah dari file auto-generate ke tabel `admin_account` (SQLite) via Initial Setup; env var override dipertahankan (K4); launcher tanpa mekanisme auth sendiri (K5); tanpa migrasi otomatis dari file password lama (K3). Keputusan lengkap: [ADR-0008](adr/0008-admin-credentials-in-sqlite.md). |
-| Fitur C — `radio_toggle_redesign` ("Night Dial") | ✅ Done | Sesi ini (`task_breakdown_radio.yaml`, Sesi 1-7) | Redesain `#radio-toggle-btn` (RFC: `docs/rfc/radio_toggle.md`) -- fix bug ukuran on/off via `height: 322px` fixed (root cause §2), moon-phase hero baru (`radio-hero.css`, `radio-hero-moon.js` self-contained/rAF terisolasi). Sesi 6 (QA headless browser, `PATCH-2026-07-20-130`): R6.1 tinggi kartu 322px identik off/on terkonfirmasi; R6.3/R6.4 klik/keyboard/swipe/guard-role OK; **bug ditemukan+fix**: rAF loop tidak berhenti saat `prefers-reduced-motion` aktif (fixed di `radio-hero-moon.js`); **bug ditemukan, belum di-fix** (sesuai DoD R6.2 -- keputusan 322px final, tidak dibuka ulang): starfield overflow di viewport 320px/360px & landscape pendek -- perlu task lanjutan terpisah. R6.5 (playback nyata >2 menit) tidak bisa diuji penuh di sandbox (mpv & akses internet YouTube tidak tersedia) -- diganti proxy stress-test rAF terisolasi (bersih, tanpa leak). Sesi 7 (`PATCH-2026-07-20-131`): hapus 233 baris CSS lama `.radio-featured`/`.centerpiece-*`/`.radio-live-badge` dari `cards.css` setelah grep-ulang dependency (kosong; 1 keyframe `transmit-radio` unrelated tersisa di `base/animations.css`, di luar scope, dicatat terpisah); `FILE_INDEX.md`/`REPORT.md` ter-regenerate; `doctor.py --strict` PASS/100. |
+| Fitur A — `quick_search_discover` | ✅ Done | 17 Jul 2026 | Personalisasi tab Discover (bandit ranking, taste spectrum, filter). Detail: §Discover Tab Personalization di bawah. |
+| Fitur B — `login_redesign` | ✅ Done | 19 Jul 2026 | Kredensial admin dipindah ke SQLite. Launcher auth via web. Keputusan lengkap: [ADR-0008](adr/0008-admin-credentials-in-sqlite.md). |
+| Fitur C — `radio_toggle_redesign` | ✅ Done | 20 Jul 2026 | UI "Night Dial" (moon-phase, starfield). Animasi rAF terisolasi dengan fallback statis. Sisa *tech debt* dibersihkan. |
 
 Kedua fitur sumber (`meta.source_features` / `meta.completed_features` di
 `task_breakdown_agent.yaml`) sekarang sama-sama selesai dan diverifikasi.
+
+**Catatan Khusus Fitur C (Night Dial):**
+- **Bug Ditemukan (belum di-fix):** Starfield overflow di viewport 320px/360px & landscape pendek. Keputusan 322px final, tidak dibuka ulang saat ini (perlu task lanjutan terpisah).
+- Evaluasi testing lengkap dapat dilihat pada `PATCH-2026-07-20-130` dan pembersihan di `PATCH-2026-07-20-131`.
 
 ## Backend Python
 

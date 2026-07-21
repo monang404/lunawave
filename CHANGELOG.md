@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added — Radio Toggle Redesign / "Night Dial" (Fitur C, selesai)
+- Implementasi desain "Night Dial" untuk toggle radio.
+- Menggunakan CSS pure-CSS starfield (`radio-hero.css`) dan animasi rAF terisolasi (`radio-hero-moon.js`) untuk fase bulan.
+- Fallback otomatis ke mode statis (tanpa rAF) jika user mengaktifkan `prefers-reduced-motion`.
+- Penghapusan 233 baris kode animasi lama (cleanup fitur lama).
+
 ### Changed — Redesain Login (Fitur B, selesai)
 - Login admin dipindah dari password auto-generate
   (`cache/admin_password.txt`) ke akun yang dibuat sendiri lewat layar
