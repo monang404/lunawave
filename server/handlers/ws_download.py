@@ -63,8 +63,10 @@ async def handle_download_command(action: str, data: dict, tracks, discover, man
                     if user_path.exists() and str(user_path) != db_track.local_path:
                         try:
                             os.remove(str(user_path))
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug(
+                                f"Gagal menghapus file legacy {user_path} (best-effort, diabaikan): {e}"
+                            )
 
                 # Update DB
                 db_track.local_path = None

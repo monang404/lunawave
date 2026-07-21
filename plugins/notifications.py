@@ -191,8 +191,8 @@ class TermuxNowPlaying:
                     stderr=asyncio.subprocess.DEVNULL,
                 )
                 await proc.wait()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Gagal menghapus notifikasi Termux (best-effort, diabaikan): {e}")
         try:
             if self._fifo_path.exists():
                 self._fifo_path.unlink()
@@ -200,5 +200,5 @@ class TermuxNowPlaying:
                 pathlib_p = __import__("pathlib").Path(p)
                 if pathlib_p.exists():
                     pathlib_p.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Gagal membersihkan fifo/action path (best-effort, diabaikan): {e}")

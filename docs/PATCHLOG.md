@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-21-137
+latest_patch_id: PATCH-2026-07-21-138
 
-total_entries: 137
+total_entries: 138
 
 ---
 
@@ -21,6 +21,49 @@ total_entries: 137
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-21-138
+
+**Tanggal:** 2026-07-21
+**Timestamp:** 05:51
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Security
+**Area:** Backend
+**Priority:** Medium
+**Title:** Log silent-except di 3 titik + tambah gate CI bandit/pip-audit/ruff
+
+**Reason:** Follow-up audit teknis: try/except/pass menelan error tanpa jejak, dan bandit/pip-audit/ruff sudah ada di requirements-dev.txt tapi belum pernah jadi gate wajib di CI
+
+**Root Cause:**
+Audit codebase menemukan 3 titik except Exception: pass (plugins/notifications.py x2, server/handlers/websocket.py, server/handlers/ws_download.py) yang menelan error best-effort cleanup tanpa logging sama sekali, menyulitkan debugging kalau error sebenarnya bukan kasus benign yang diharapkan. Terpisah, CI (.github/workflows/ci.yml) hanya menjalankan doctor.py/patchlog verify/import-linter/pytest/vitest -- bandit, pip-audit, dan ruff sudah terpasang di requirements-dev.txt tapi tidak pernah dieksekusi otomatis, jadi regresi lint/security bisa lolos ke main tanpa terdeteksi.
+
+**Solution:**
+3 except Exception: pass diganti logger.debug() dengan pesan spesifik per lokasi (notifikasi Termux, cleanup fifo/action path, balasan error ke ws, hapus file legacy) -- tetap best-effort/non-fatal, tapi sekarang ada jejak log. Tambah job security-and-lint baru di ci.yml: ruff check ., bandit -r . -c pyproject.toml, pip-audit -r requirements.txt, sebagai gate wajib terpisah dari job health-checks yang sudah ada. Sempat salah duplikasi [tool.bandit] section di pyproject.toml karena run bandit pertama tidak pakai -c pyproject.toml (pakai profil default, bukan config project yang sudah skip B104/B608/B110 dkk dengan alasan yang sudah dipertimbangkan) -- sudah dikoreksi, section asli dipertahankan, tidak ada perubahan config bandit yang sebenarnya diperlukan.
+
+**Changed Files:**
+- `plugins/notifications.py`
+- `server/handlers/websocket.py`
+- `server/handlers/ws_download.py`
+- `.github/workflows/ci.yml`
+
+**Changed Symbols:**
+- `-`
+
+**Tests:** pytest -q (711 passed, 6 skipped), doctor.py --strict (100/100 x5), ruff check . (clean), bandit -r . -c pyproject.toml (clean), pip-audit -r requirements.txt (no known vulnerabilities)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak ada perubahan pyproject.toml final -- draft penambahan [tool.bandit] baru sempat dibuat lalu di-revert setelah ketahuan section itu sudah ada dan lebih lengkap dari draft saya.
 
 ---
 

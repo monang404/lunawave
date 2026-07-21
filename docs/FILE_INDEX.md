@@ -444,7 +444,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `RadioMode`
 **Function utama:** `check_prefetch()`
 **Digunakan oleh:** `engine/radio/__init__`
-**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/radio_config`, `engine/radio/prefetcher`
+**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/prefetcher`, `engine/radio/radio_config`
 
 
 ---
@@ -1015,7 +1015,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `main()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `persistence`, `core/state`
+**Menggunakan:** `core/state`, `persistence`
 
 
 ---

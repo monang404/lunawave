@@ -192,5 +192,7 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
                     }
                 )
             )
-        except Exception:
-            pass
+        except Exception as send_err:
+            logger.debug(
+                f"Gagal mengirim balasan error ke client (koneksi mungkin sudah mati): {send_err}"
+            )
