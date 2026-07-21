@@ -22,11 +22,43 @@ Thread Safety:
 
 import asyncio
 import logging
+import re
 
-from adapters.ytdlp.ydl_options import YDL_OPTS_INFO
+from adapters.ytdlp.ydl_options import YDL_OPTS_INFO, YDL_OPTS_INFO_FALLBACK
 from config import YTDLP_RESOLVE_TIMEOUT_SEC
+from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
 
 _log = logging.getLogger(__name__)
+
+# PATCH-2026-07-20-136: klasifikasi pesan error yt-dlp. yt-dlp tidak punya
+# exception class terpisah per jenis kegagalan -- semuanya
+# yt_dlp.utils.DownloadError dengan pesan bebas -- jadi satu-satunya cara
+# membedakan "video hilang permanen" vs "butuh login" vs "rate limited" vs
+# "gangguan biasa" adalah pattern-match pesannya. Pola di bawah berdasarkan
+# pesan resmi yt-dlp per 2026-07 (extractor/youtube.py upstream).
+_BOT_CHECK_RE = re.compile(r"sign in to confirm|not a bot|confirm you.re not a bot", re.IGNORECASE)
+_RATE_LIMIT_RE = re.compile(r"\b429\b|too many requests|http error 429", re.IGNORECASE)
+_UNAVAILABLE_RE = re.compile(
+    r"video unavailable|private video|has been removed|no longer available|"
+    r"account associated with this video has been terminated|"
+    r"this video is not available|video has been deleted",
+    re.IGNORECASE,
+)
+
+
+def classify_ytdlp_error(video_id: str, exc: Exception) -> Exception | None:
+    """Cocokkan pesan exception dari yt-dlp ke salah satu typed exception.
+    Return None kalau tidak cocok pola manapun -- caller tetap pakai
+    RuntimeError generik seperti sebelumnya (perilaku lama tidak berubah
+    untuk error yang belum dikenali)."""
+    msg = str(exc)
+    if _BOT_CHECK_RE.search(msg):
+        return BotCheckError(f"YouTube meminta verifikasi login untuk {video_id}: {msg}")
+    if _RATE_LIMIT_RE.search(msg):
+        return RateLimitedError(f"Rate-limited oleh YouTube saat resolve {video_id}: {msg}")
+    if _UNAVAILABLE_RE.search(msg):
+        return VideoUnavailableError(f"Video {video_id} tidak tersedia secara permanen: {msg}")
+    return None
 
 
 class YtDlpResolver:
@@ -36,22 +68,8 @@ class YtDlpResolver:
         self._executor = executor
 
     async def get_stream_url(self, video_id: str) -> str:
-        opts = {
-            **YDL_OPTS_INFO,
-            "extract_flat": False,
-        }
-        url = f"https://www.youtube.com/watch?v={video_id}"
-        loop = asyncio.get_running_loop()
         try:
-            info = await asyncio.wait_for(
-                loop.run_in_executor(self._executor, self._extract_sync, url, opts),
-                timeout=YTDLP_RESOLVE_TIMEOUT_SEC,
-            )
-            if info:
-                stream_url = self._pick_audio_url(info)
-                if stream_url:
-                    return stream_url
-            raise RuntimeError(f"yt-dlp returned no stream URL for {video_id}")
+            return await self._resolve_once(video_id, YDL_OPTS_INFO)
         except TimeoutError:
             _log.error(
                 f"get_stream_url timed out after {YTDLP_RESOLVE_TIMEOUT_SEC}s for {video_id}"
@@ -62,8 +80,44 @@ class YtDlpResolver:
         except RuntimeError:
             raise
         except Exception as e:
+            classified = classify_ytdlp_error(video_id, e)
+            if isinstance(classified, BotCheckError):
+                # Percobaan kedua dengan player client berbeda sebelum
+                # benar-benar menyerah -- ini sering cukup untuk lolos
+                # bot-check tanpa perlu cookies/login akun.
+                _log.warning(
+                    f"Bot-check terdeteksi untuk {video_id}, mencoba ulang dengan "
+                    f"player client fallback (android)..."
+                )
+                try:
+                    return await self._resolve_once(video_id, YDL_OPTS_INFO_FALLBACK)
+                except TimeoutError:
+                    raise RuntimeError(
+                        f"Timeout saat retry fallback client untuk {video_id}"
+                    ) from None
+                except Exception as e2:
+                    classified2 = classify_ytdlp_error(video_id, e2) or classified
+                    _log.error(f"Fallback player client juga gagal untuk {video_id}: {classified2}")
+                    raise classified2 from e2
+            if classified:
+                _log.error(f"get_stream_url failed for {video_id}: {classified}")
+                raise classified from e
             _log.error(f"get_stream_url failed for {video_id}: {type(e).__name__}: {e}")
             raise RuntimeError(f"Gagal mengambil stream URL untuk {video_id}: {e}") from e
+
+    async def _resolve_once(self, video_id: str, opts: dict) -> str:
+        opts = {**opts, "extract_flat": False}
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        loop = asyncio.get_running_loop()
+        info = await asyncio.wait_for(
+            loop.run_in_executor(self._executor, self._extract_sync, url, opts),
+            timeout=YTDLP_RESOLVE_TIMEOUT_SEC,
+        )
+        if info:
+            stream_url = self._pick_audio_url(info)
+            if stream_url:
+                return stream_url
+        raise RuntimeError(f"yt-dlp returned no stream URL for {video_id}")
 
     def _extract_sync(self, url, opts):
         import yt_dlp

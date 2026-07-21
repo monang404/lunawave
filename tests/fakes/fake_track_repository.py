@@ -15,6 +15,7 @@ from core.state import TrackInfo
 class FakeTrackRepository:
     def __init__(self):
         self._tracks: dict[str, TrackInfo] = {}
+        self._unavailable: dict[str, str] = {}
         self.call_log: list[tuple] = []
 
     def seed(self, track: TrackInfo) -> None:
@@ -73,3 +74,25 @@ class FakeTrackRepository:
             self._tracks[video_id].loudness_lufs = lufs
             if true_peak is not None:
                 self._tracks[video_id].true_peak_dbtp = true_peak
+
+    async def mark_unavailable(self, track: TrackInfo, reason: str) -> None:
+        self.call_log.append(("mark_unavailable", track.video_id, reason))
+        self._unavailable[track.video_id] = reason
+        if track.video_id not in self._tracks:
+            self._tracks[track.video_id] = track
+
+    async def get_unavailable_reason(self, video_id: str) -> str | None:
+        self.call_log.append(("get_unavailable_reason", video_id))
+        return self._unavailable.get(video_id)
+
+    async def record_completion(self, artist: str) -> None:
+        # PATCH-2026-07-20-136: dipanggil queue_controller.advance_to_next()
+        # (via c.resolver.db.record_completion) -- fake ini sebelumnya tidak
+        # punya method ini sama sekali, jadi setiap test yang benar-benar
+        # menembus alur advance_to_next() penuh akan meledak AttributeError
+        # duluan sebelum sempat mencapai queue_mode.next(). No-op minimal,
+        # cukup dicatat di call_log untuk keperluan assert kalau dibutuhkan.
+        self.call_log.append(("record_completion", artist))
+
+    async def record_skip(self, artist: str) -> None:
+        self.call_log.append(("record_skip", artist))

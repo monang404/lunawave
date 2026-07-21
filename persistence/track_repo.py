@@ -191,3 +191,42 @@ class TrackRepository:
             (position, video_id),
         )
         await self._conn.commit()
+
+    async def mark_unavailable(self, track: TrackInfo, reason: str) -> None:
+        """PATCH-2026-07-20-136: tandai track sebagai permanen tidak
+        tersedia (video dihapus/private/diblokir -- dikonfirmasi lewat
+        VideoUnavailableError dari resolver) supaya CacheResolver.resolve()
+        tidak lagi membuang request yt-dlp untuk video_id ini di masa
+        depan (lihat Rule 0 di persistence/stream_cache.py).
+
+        Pakai UPSERT (bukan UPDATE polos) karena baris untuk track ini
+        belum tentu ada di DB -- kalau resolve gagal di percobaan PERTAMA
+        (mis. lagu baru dari hasil pencarian yang belum pernah berhasil
+        diputar), upsert_track() juga belum pernah dipanggil untuknya."""
+        ts = int(time.time())
+        query = """
+            INSERT INTO tracks (
+                video_id, title, artist, duration, unavailable, unavailable_reason, last_played
+            ) VALUES (?, ?, ?, ?, 1, ?, ?)
+            ON CONFLICT(video_id) DO UPDATE SET
+                unavailable=1,
+                unavailable_reason=excluded.unavailable_reason
+        """
+        await self._conn.execute(
+            query, (track.video_id, track.title, track.artist, track.duration, reason, ts)
+        )
+        await self._conn.commit()
+
+    async def get_unavailable_reason(self, video_id: str) -> str | None:
+        """Return alasan (pesan error asli) kalau track ini pernah ditandai
+        unavailable, None kalau belum pernah/tidak ada di DB. None berarti
+        "boleh dicoba" -- caller (CacheResolver) tidak perlu membedakan
+        "belum pernah dicoba" vs "tidak pernah ditandai gagal"."""
+        async with self._conn.execute(
+            "SELECT unavailable, unavailable_reason FROM tracks WHERE video_id = ?",
+            (video_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row and row["unavailable"]:
+                return row["unavailable_reason"] or "tidak diketahui"
+            return None

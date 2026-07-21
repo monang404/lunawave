@@ -115,6 +115,131 @@ class TestPlayTrack:
         assert state.current_track.video_id in ["v1", "v2"]
         assert state.status == PlayerStatus.PLAYING
 
+    async def test_video_unavailable_error_marks_track_and_sets_error_status(
+        self, controller, state, extractor, repo
+    ):
+        # PATCH-2026-07-20-136
+        from core.exceptions import VideoUnavailableError
+
+        async def raise_unavailable(*_a, **_kw):
+            raise VideoUnavailableError(
+                "Video gone123 tidak tersedia secara permanen: Private video"
+            )
+
+        extractor.get_stream_url = raise_unavailable
+        track = make_track("gone123")
+
+        real_sleep = asyncio.sleep
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()):
+            await controller.play_track(track)
+        await real_sleep(0.05)  # biarkan safe_create_task(advance) jalan, PAKAI sleep asli
+
+        assert state.status == PlayerStatus.ERROR
+        assert "Lagu tidak tersedia" in state.error_msg
+        mark_calls = [c for c in repo.call_log if c[0] == "mark_unavailable"]
+        assert len(mark_calls) == 1
+        assert mark_calls[0][1] == "gone123"
+
+    async def test_video_unavailable_error_skips_immediately_without_backoff_sleep(
+        self, controller, state, extractor
+    ):
+        # PATCH-2026-07-20-136: tidak ada gunanya menunggu sebelum pindah
+        # track kalau video-nya memang sudah pasti tidak akan pernah berhasil.
+        from core.exceptions import VideoUnavailableError
+
+        async def raise_unavailable(*_a, **_kw):
+            raise VideoUnavailableError("permanently gone")
+
+        extractor.get_stream_url = raise_unavailable
+        track = make_track("gone123")
+
+        real_sleep = asyncio.sleep
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()) as mock_sleep:
+            await controller.play_track(track)
+        await real_sleep(0.05)
+
+        mock_sleep.assert_not_called()
+
+    async def test_bot_check_error_still_backs_off_like_generic_error(
+        self, controller, state, extractor
+    ):
+        # PATCH-2026-07-20-136: bot-check/rate-limit BUKAN dianggap "pasti
+        # gagal permanen" untuk track ini secara spesifik (beda dari video
+        # unavailable) -- tetap pakai backoff yang sama seperti error biasa.
+        from core.exceptions import BotCheckError
+
+        async def raise_botcheck(*_a, **_kw):
+            raise BotCheckError("YouTube meminta verifikasi login")
+
+        extractor.get_stream_url = raise_botcheck
+        track = make_track("v1")
+
+        real_sleep = asyncio.sleep
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()) as mock_sleep:
+            await controller.play_track(track)
+        await real_sleep(0.05)
+
+        assert state.status == PlayerStatus.ERROR
+        mock_sleep.assert_called_once()
+
+    async def test_rate_limited_error_sets_error_status(self, controller, state, extractor):
+        from core.exceptions import RateLimitedError
+
+        async def raise_rate_limited(*_a, **_kw):
+            raise RateLimitedError("Rate-limited oleh YouTube")
+
+        extractor.get_stream_url = raise_rate_limited
+        track = make_track("v1")
+
+        real_sleep = asyncio.sleep
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()):
+            await controller.play_track(track)
+        await real_sleep(0.05)
+
+        assert state.status == PlayerStatus.ERROR
+        assert "RateLimitedError" in state.error_msg or "Rate-limited" in state.error_msg
+
+    async def test_mixed_failure_types_share_one_circuit_breaker_counter(
+        self, controller, state, extractor, queue_mode
+    ):
+        """Membuktikan koreksi atas temuan #5: _retry_count BUKAN penghitung
+        baru yang saya tambahkan -- ia sudah jadi circuit breaker lintas
+        TRACK & lintas JENIS ERROR sejak awal. 3 track BERBEDA yang gagal
+        berturut-turut dengan 3 JENIS ERROR BERBEDA (unavailable, bot-check,
+        generik) harus tetap menghentikan auto-advance di kegagalan ke-3,
+        bukan reset count di antaranya."""
+        from core.exceptions import BotCheckError, VideoUnavailableError
+
+        errors = iter(
+            [
+                VideoUnavailableError("gone"),
+                BotCheckError("botcheck"),
+                RuntimeError("generic network hiccup"),
+            ]
+        )
+
+        async def raise_next(*_a, **_kw):
+            raise next(errors)
+
+        extractor.get_stream_url = raise_next
+
+        real_sleep = asyncio.sleep
+        with patch("engine.playback.controller.asyncio.sleep", AsyncMock()):
+            await controller.play_track(make_track("track-a"))
+            await real_sleep(0.02)
+            await controller.play_track(make_track("track-b"))
+            await real_sleep(0.02)
+            await controller.play_track(make_track("track-c"))
+        await real_sleep(0.02)
+
+        # Setelah 3 kegagalan beruntun (lintas jenis error, lintas track),
+        # _retry_count harus di-reset ke 0. track-a & track-b (kegagalan
+        # ke-1 & ke-2) tetap sempat menjadwalkan advance seperti biasa;
+        # begitu kegagalan ke-3 (track-c) memicu breaker, TIDAK ADA advance
+        # ketiga yang dijadwalkan -- next_calls berhenti di 2, bukan 3.
+        assert controller._retry_count == 0
+        assert len(queue_mode.next_calls) == 2
+
 
 class TestOnStop:
     async def test_stop_sets_idle_and_clears_track(self, controller, state):

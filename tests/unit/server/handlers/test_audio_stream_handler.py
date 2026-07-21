@@ -32,6 +32,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 
+from core.exceptions import VideoUnavailableError
 from server.handlers.audio_stream_handler import serve_stream
 
 
@@ -89,6 +90,7 @@ async def test_serve_stream_db_fresh_no_http_session(mock_request):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "https://example.googlevideo.com/videoplayback"
     mock_row.stream_url_ts = time.time() - 10  # Fresh
@@ -118,6 +120,7 @@ async def test_serve_stream_db_stale_no_http_session(mock_request):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "https://old.googlevideo.com/videoplayback"
     mock_row.stream_url_ts = time.time() - 8000  # Stale
@@ -151,6 +154,7 @@ async def test_serve_stream_redirect_invalid_domain(mock_request):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "https://evil.com/stream"
     mock_row.stream_url_ts = time.time() - 10  # Fresh
@@ -177,6 +181,7 @@ async def test_serve_stream_redirect_invalid_scheme(mock_request):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "http://example.googlevideo.com/stream"
     mock_row.stream_url_ts = time.time() - 10  # Fresh
@@ -204,6 +209,7 @@ async def test_serve_stream_proxy_retry_fetch_success(mock_request):
     mock_request.headers = {}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_db.get_track.return_value = None
 
     mock_ytdlp = AsyncMock()
@@ -235,7 +241,9 @@ async def test_serve_stream_proxy_retry_fetch_success(mock_request):
         )
         mock_cache_dir.__truediv__.return_value.exists.return_value = False
 
-        with patch("server.handlers.audio_stream_handler.web.StreamResponse") as mock_stream_response:
+        with patch(
+            "server.handlers.audio_stream_handler.web.StreamResponse"
+        ) as mock_stream_response:
             mock_resp_obj = AsyncMock()
             mock_resp_obj.headers = {}
             mock_stream_response.return_value = mock_resp_obj
@@ -253,6 +261,7 @@ async def test_serve_stream_proxy_retry_both_fail(mock_request):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_db.get_track.return_value = None
 
     mock_ytdlp = AsyncMock()
@@ -282,6 +291,7 @@ async def test_serve_stream_proxy_range_header(mock_request):
     mock_request.headers = {"Range": "bytes=0-100"}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "https://example.googlevideo.com/stream"
     mock_row.stream_url_ts = time.time() - 10  # Fresh
@@ -334,6 +344,7 @@ async def test_serve_stream_proxy_forbidden_retry(mock_request):
     mock_request.headers = {}
 
     mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None  # PATCH-2026-07-20-136 Rule 0
     mock_row = MagicMock()
     mock_row.stream_url = "https://example.googlevideo.com/stream"
     mock_row.stream_url_ts = time.time() - 10  # Fresh
@@ -385,3 +396,214 @@ async def test_serve_stream_proxy_forbidden_retry(mock_request):
 
                 assert mock_http_session.get.call_count == 2
                 assert mock_ytdlp.get_stream_url.call_count == 1
+
+
+# --- PATCH-2026-07-20-136: Rule 0 (flag unavailable) -----------------------
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_returns_410_when_marked_unavailable_without_calling_ytdlp(
+    mock_request,
+):
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = "Private video"
+    mock_ytdlp = AsyncMock()
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        resp = await serve_stream(mock_request)
+
+        assert isinstance(resp, web.HTTPGone)
+        assert "Private video" in resp.text
+        mock_ytdlp.get_stream_url.assert_not_called()
+        mock_db.get_track.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_marks_unavailable_on_video_unavailable_error_no_http_session(
+    mock_request,
+):
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+    mock_ytdlp.get_stream_url.side_effect = VideoUnavailableError("Video unavailable")
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    # tidak ada http_session -> masuk jalur redirect
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        resp = await serve_stream(mock_request)
+
+        assert isinstance(resp, web.HTTPGone)
+        mock_db.mark_unavailable.assert_called_once()
+        # tidak boleh retry attempt kedua untuk error permanen
+        assert mock_ytdlp.get_stream_url.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_marks_unavailable_on_video_unavailable_error_proxy_path(
+    mock_request,
+):
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+    mock_request.headers = {}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+    mock_ytdlp.get_stream_url.side_effect = VideoUnavailableError("Private video")
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app["http_session"] = AsyncMock()  # proxy path (bukan redirect)
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        resp = await serve_stream(mock_request)
+
+        assert isinstance(resp, web.HTTPGone)
+        mock_db.mark_unavailable.assert_called_once()
+        assert mock_ytdlp.get_stream_url.call_count == 1  # tidak retry attempt ke-2
+
+
+# --- PATCH-2026-07-20-136: pre-buffer sebelum serve ke client --------------
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_prebuffers_before_writing_to_client(mock_request):
+    """Dengan prebuffer threshold kecil (2 chunk @4 byte = 8 byte), upstream
+    yang mengirim 3 chunk harus di-buffer 2 chunk pertama dulu (ditulis
+    sekaligus begitu threshold tercapai), baru chunk ke-3 ditulis menyusul --
+    semua isi & urutan tetap benar, cuma TIMING pengirimannya yang berubah."""
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+    mock_request.headers = {}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+
+    mock_http_session = MagicMock()
+    mock_upstream = MagicMock()
+    mock_upstream.status = 200
+    mock_upstream.headers = {"Content-Type": "audio/mpeg"}
+
+    async def mock_chunked(*args, **kwargs):
+        yield b"aaaa"
+        yield b"bbbb"
+        yield b"cccc"
+
+    mock_upstream.content.iter_chunked = mock_chunked
+    mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app["http_session"] = mock_http_session
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        with patch("server.handlers.audio_stream_handler.STREAM_URL_TTL_SEC", 3600):
+            with patch("server.handlers.audio_stream_handler.STREAM_PREBUFFER_BYTES", 8):
+                with patch(
+                    "server.handlers.audio_stream_handler.web.StreamResponse"
+                ) as mock_stream_response:
+                    mock_resp_obj = AsyncMock()
+                    mock_resp_obj.headers = {}
+                    mock_stream_response.return_value = mock_resp_obj
+                    mock_db.get_track.return_value = None
+
+                    # Butuh stream_url langsung tersedia (DB row None -> ytdlp)
+                    mock_ytdlp.get_stream_url.return_value = (
+                        "https://example.googlevideo.com/stream"
+                    )
+
+                    resp = await serve_stream(mock_request)
+
+        assert resp == mock_resp_obj
+        # Urutan & isi semua chunk tetap benar & lengkap, cuma cara
+        # penulisannya yang berubah (buffer dulu baru tulis).
+        written = [call.args[0] for call in mock_resp_obj.write.call_args_list]
+        assert written == [b"aaaa", b"bbbb", b"cccc"]
+        mock_resp_obj.write_eof.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_serve_stream_prebuffer_handles_short_stream_smaller_than_threshold(
+    mock_request,
+):
+    """Range request pendek (sisa file < ukuran prebuffer) harus tetap
+    terkirim utuh -- loop prebuffer berhenti wajar begitu upstream habis,
+    tidak menunggu/nge-hang menunggu data yang tidak akan pernah datang."""
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+    mock_request.headers = {"Range": "bytes=990-1000"}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = None
+    mock_db.get_track.return_value = None
+
+    mock_ytdlp = AsyncMock()
+    mock_ytdlp.get_stream_url.return_value = "https://example.googlevideo.com/stream"
+
+    mock_http_session = MagicMock()
+    mock_upstream = MagicMock()
+    mock_upstream.status = 206
+    mock_upstream.headers = {"Content-Type": "audio/mpeg"}
+
+    async def mock_chunked(*args, **kwargs):
+        yield b"tinychunk"  # jauh lebih kecil dari STREAM_PREBUFFER_BYTES default
+
+    mock_upstream.content.iter_chunked = mock_chunked
+    mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
+
+    mock_request.app["tracks"] = mock_db
+    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app["http_session"] = mock_http_session
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        with patch(
+            "server.handlers.audio_stream_handler.web.StreamResponse"
+        ) as mock_stream_response:
+            mock_resp_obj = AsyncMock()
+            mock_resp_obj.headers = {}
+            mock_stream_response.return_value = mock_resp_obj
+
+            resp = await serve_stream(mock_request)
+
+    assert resp == mock_resp_obj
+    written = [call.args[0] for call in mock_resp_obj.write.call_args_list]
+    assert written == [b"tinychunk"]
+    mock_resp_obj.write_eof.assert_called_once()

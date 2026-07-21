@@ -189,3 +189,33 @@ async def test_resolve_calls_ytdlp_get_stream_url_with_correct_video_id(resolver
     await resolver.resolve(track)
 
     assert ("get_stream_url", "v1") in extractor.call_log
+
+
+async def test_resolve_raises_video_unavailable_without_calling_ytdlp_when_marked(
+    resolver, repo, extractor
+):
+    """PATCH-2026-07-20-136 Rule 0: kalau video_id sudah pernah ditandai
+    unavailable, CacheResolver harus gagal cepat TANPA memanggil yt-dlp lagi
+    -- sebelumnya tidak ada mekanisme ini sama sekali, jadi video yang sudah
+    terbukti mati akan dicoba resolve lagi setiap kali dimainkan/diprefetch."""
+    from core.exceptions import VideoUnavailableError
+
+    track = make_track("v1")
+    await repo.mark_unavailable(track, "Private video")
+    extractor.stream_urls["v1"] = "https://should-never-be-fetched"
+
+    with pytest.raises(VideoUnavailableError):
+        await resolver.resolve(track)
+
+    assert ("get_stream_url", "v1") not in extractor.call_log
+
+
+async def test_resolve_proceeds_normally_when_not_marked_unavailable(resolver, repo, extractor):
+    """Sanity check: track yang TIDAK pernah ditandai unavailable tetap
+    resolve seperti biasa (Rule 0 tidak mengganggu jalur normal)."""
+    extractor.stream_urls["v2"] = "https://normal-flow"
+    track = make_track("v2")
+
+    result = await resolver.resolve(track)
+
+    assert result == "https://normal-flow"

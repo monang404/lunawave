@@ -44,3 +44,27 @@ class DownloadError(YtPlayerError):
     """Raised when yt-dlp fails to download a track."""
 
     pass
+
+
+class VideoUnavailableError(TrackResolutionError):
+    """Video dihapus/private/diblokir secara permanen -- retry tidak akan
+    pernah berhasil untuk video_id ini, harus di-skip tanpa membakar jatah
+    retry dan sebaiknya ditandai di DB agar tidak dicoba lagi di masa depan."""
+
+    pass
+
+
+class BotCheckError(TrackResolutionError):
+    """YouTube meminta verifikasi login ("Sign in to confirm you're not a
+    bot") untuk video_id ini. Retry dengan client/opsi yang sama tidak akan
+    membantu -- butuh strategi berbeda (ganti player client, atau cookies)."""
+
+    pass
+
+
+class RateLimitedError(TrackResolutionError):
+    """YouTube membatasi rate request (HTTP 429 / "Too Many Requests").
+    Retry per-track langsung memperparah rate limit -- butuh cooldown
+    global, bukan backoff per-track seperti error biasa."""
+
+    pass

@@ -33,12 +33,22 @@ async def test_websocket_flow(app_client):
     Skenario: Connect → auth → command play → state broadcast
     """
     # 1. Connect WS
+    repos = app_client.app["repos"]
+    from core.security import hash_password
+
+    pwd_hash = hash_password("test-admin-password-not-a-secret")
+    await repos.conn.execute(
+        "INSERT INTO admin_account (username, password_hash) VALUES (?, ?)", ("admin", pwd_hash)
+    )
+    await repos.conn.commit()
+
     ws = await app_client.ws_connect("/ws")
 
     # 2. Auth handshake
     await ws.send_json(
         {
-            "type": "auth",
+            "type": "cmd",
+            "action": "auth",
             "data": {"username": "admin", "password": "test-admin-password-not-a-secret"},
         }
     )
@@ -62,12 +72,10 @@ async def test_websocket_flow(app_client):
     # Dispatch play via WS
     await ws.send_json(
         {
-            "type": "command",
+            "type": "cmd",
+            "action": "play_track",
             "id": "req-2",
-            "data": {
-                "action": "play",
-                "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-            },
+            "data": {"video_id": "jNQXAC9IVRw", "title": "Me at the zoo"},
         }
     )
 
@@ -76,12 +84,12 @@ async def test_websocket_flow(app_client):
     for _ in range(30):  # max 3 detik
         try:
             msg = await asyncio.wait_for(ws.receive_json(), timeout=0.5)
-            if msg.get("type") == "state_update":
+            if msg.get("type") == "state":
                 state_data = msg["data"]
-                if state_data.get("status") in ["loading", "playing"]:
+                if state_data.get("status") in ["LOADING", "PLAYING"]:
                     received_track_started = True
                     # Assert state structure
-                    assert "track" in state_data
+                    assert "current_track" in state_data
                     assert "position" in state_data
                     break
         except TimeoutError:
@@ -89,6 +97,6 @@ async def test_websocket_flow(app_client):
 
     assert (
         received_track_started
-    ), "Did not receive state_update with loading/playing status after sending play command"
+    ), "Did not receive state with loading/playing status after sending play command"
 
     await ws.close()
