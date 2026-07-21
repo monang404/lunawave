@@ -157,6 +157,9 @@ class TermuxNowPlaying:
             self._action_paths["toggle"],
             "--media-next",
             self._action_paths["next"],
+            "--ongoing",
+            "--priority",
+            "high",
         ]
 
         try:

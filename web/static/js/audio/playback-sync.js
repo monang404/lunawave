@@ -151,6 +151,13 @@ document.addEventListener('visibilitychange', () => {
                 _resumeAndPlay(audio);
             }
         }
+        if (typeof startProgressClock === "function" && store.status === "PLAYING") startProgressClock();
+        if (typeof resumeVisualizerLoop === "function") resumeVisualizerLoop();
+        if (typeof setRadioHeroAnimState === "function" && dom.radioToggleBtn) {
+            setRadioHeroAnimState(dom.radioToggleBtn.dataset.on === "true");
+        }
+    } else {
+        if (typeof stopProgressClock === "function") stopProgressClock();
     }
 });
 

@@ -46,6 +46,7 @@ class DatabaseConnection:
         self._conn = await aiosqlite.connect(self.db_path)  # type: ignore
         self._conn.row_factory = aiosqlite.Row  # type: ignore
         await self._conn.execute("PRAGMA journal_mode=WAL")  # type: ignore
+        await self._conn.execute("PRAGMA synchronous=NORMAL")  # type: ignore
         with open(schema_path, encoding="utf-8") as f:
             schema_sql = f.read()
         await self._conn.executescript(schema_sql)  # type: ignore

@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Charging-gate loudness batch analysis (`_is_charging_or_unknown()`,
+  ditambahkan di rilis Background/Battery Survival di bawah) sekarang
+  dipanggil lewat `run_in_executor`, bukan langsung di event loop —
+  mencegah panggilan `termux-battery-status` yang lambat/hang membekukan
+  seluruh server (WS, HTTP, broadcast progress) sampai 5 detik.
+
+### Fixed — Background/Battery Survival (perf_background_battery_survival)
+- Notifikasi now-playing di Android sekarang persistent (`--ongoing`,
+  tidak bisa ter-swipe-dismiss selama track aktif) — mencegah Android
+  membekukan proses server setelah notifikasi hilang.
+- Wake-lock (`termux-wake-lock` PARTIAL) diakuisisi otomatis saat startup
+  sebagai lapisan sekunder fail-safe; langkah manual HyperOS/MIUI
+  (Autostart, battery saver "No restrictions", lock di recent-apps) tetap
+  wajib sebagai lapisan primer — didokumentasikan di `docs/CONSTRAINTS.md`.
+- Tiga loop `requestAnimationFrame` (progress bar, audio visualizer glow,
+  radio moon phase) sekarang berhenti total saat tab/layar disembunyikan
+  dan resume akurat saat kembali terlihat, mengurangi CPU/baterai
+  terbuang di background.
+- Reconnect WebSocket sekarang pakai exponential backoff (2s→4s→8s→16s→
+  30s, cap) alih-alih retry flat 2 detik terus-menerus, dan langsung
+  mencoba ulang begitu tab kembali terlihat.
+- Proses ffmpeg (analisis loudness) dan worker thread yt-dlp sekarang
+  dijalankan di prioritas CPU/IO lebih rendah; analisis loudness batch
+  juga ditunda (charging-gate) saat perangkat tidak sedang di-charge.
+- SQLite `PRAGMA synchronous=NORMAL` ditambahkan (kombinasi dengan WAL
+  yang sudah ada) untuk mengurangi fsync per-commit.
+- **Deferred:** broadcast progress adaptif per-visibility klien (PERF-5)
+  sengaja BELUM dikerjakan — menyentuh `server/handlers/websocket.py`
+  yang governed, butuh sign-off eksplisit terpisah.
+
 ### Added — Radio Toggle Redesign / "Night Dial" (Fitur C, selesai)
 - Implementasi desain "Night Dial" untuk toggle radio.
 - Menggunakan CSS pure-CSS starfield (`radio-hero.css`) dan animasi rAF terisolasi (`radio-hero-moon.js`) untuk fase bulan.

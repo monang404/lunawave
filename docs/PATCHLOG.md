@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-21-138
+latest_patch_id: PATCH-2026-07-21-140
 
-total_entries: 138
+total_entries: 140
 
 ---
 
@@ -21,6 +21,124 @@ total_entries: 138
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-21-140
+
+**Tanggal:** 2026-07-21
+**Timestamp:** 12:50
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend
+**Priority:** High
+**Title:** Fix blocking call di charging-gate loudness (regresi dari PATCH-139/PD-6)
+
+**Reason:** Review teknis pasca-PATCH-139 (baca langsung ke source, bukan cuma klaim teks) menemukan `_is_charging_or_unknown()` yang baru ditambahkan di PD-6 dipanggil secara sinkron dari path async, berpotensi freeze seluruh server.
+
+**Root Cause:**
+`_is_charging_or_unknown()` (engine/loudness/service.py, ditambahkan di PATCH-139/PD-6) memanggil `subprocess.run([...], timeout=5)` secara blocking. Fungsi ini dipanggil langsung (tanpa `run_in_executor`) di dalam `analyze_and_store()` yang async, padahal baris tepat setelahnya sudah punya pola yang benar (`loop.run_in_executor(self._executor, self.analyzer.measure_sync, uri)`). Karena LunaWave single-process asyncio dan `analyze_and_store()` dijadwalkan fire-and-forget lewat `safe_create_task()` di event loop utama, kalau `termux-battery-status` lambat/hang, bukan cuma task loudness yang freeze -- WS, HTTP, dan broadcast progress ikut berhenti sampai 5 detik, persis di device (Termux/Android) yang jadi target fix PATCH-139.
+
+**Solution:**
+`_is_charging_or_unknown()` sekarang dipanggil lewat `await loop.run_in_executor(self._executor, _is_charging_or_unknown)`, mengikuti pola `measure_sync` di baris berikutnya, sebelum `get_running_loop()` dipindah ke atas gate. Tidak ada perubahan behavior/signature fungsi itu sendiri -- murni titik pemanggilannya yang dipindah keluar dari event loop utama.
+
+**Changed Files:**
+- `engine/loudness/service.py`
+
+**Changed Symbols:**
+- `LoudnessService.analyze_and_store()`
+
+**Tests:** pytest -q tests/unit/engine/loudness/test_service.py (7 passed, termasuk test_skips_when_not_charging & test_proceeds_when_charging yang mem-patch `_is_charging_or_unknown` langsung); full suite pytest -q (716 passed, 4 skipped -- 2 test GUI tkinter di-skip karena environment sandbox review, tidak terkait fix ini); npx vitest run (20/20 passed, tidak tersentuh perubahan ini); repro manual: charging-check disimulasikan lambat 1s -> heartbeat loop lain tetap tick ~20x selama window itu (sebelum fix, event loop freeze total 1s).
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-21-139
+
+**Status:** Merged
+
+**Notes:**
+Verifikasi manual di device Termux asli (memastikan charging-gate benar-benar tidak memblokir playback/WS saat `termux-battery-status` lambat) tetap perlu dilakukan langsung di perangkat, sama seperti catatan belum-terverifikasi di PATCH-139.
+
+---
+
+## PATCH-2026-07-21-139
+
+**Tanggal:** 2026-07-21
+**Timestamp:** 11:50
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Performance
+**Area:** Backend
+**Priority:** High
+**Title:** Background/battery survival Termux: notifikasi persistent, wake-lock, rAF stop saat hidden, WS backo
+
+**Reason:** temuan.md: server LunaWave mati/baterai boros saat layar Android mati -- 7 temuan performa (PERF-1..7) dikonsolidasi jadi satu batch eksekusi (sesi 0-7) per task_breakdown_perf.yaml
+
+**Root Cause:**
+temuan.md (audit langsung ke source) mengidentifikasi 7 temuan performa/baterai (PERF-1..7) di LunaWave pada Termux/Android:
+(1) notifikasi termux-notification tidak persistent (--ongoing absen), memudahkan user/OS menghapus notifikasi lalu Android membekukan proses;
+(2) tidak ada wake-lock apapun (grep termux-wake-lock kosong), proses dibekukan Doze/HyperOS saat layar mati;
+(3) tiga loop requestAnimationFrame independen (progress clock di player.js, visualizer FFT glow, radio moon phase) terus jalan walau tab/layar disembunyikan -- hanya satu listener visibilitychange existing di playback-sync.js dan itu pun tidak punya cabang document.hidden===true;
+(4) WS client reconnect (ws.js onclose) retry flat setTimeout 2000ms tanpa backoff maupun kesadaran document.hidden;
+(5) ConnectionManager.broadcast() kirim progress 1Hz ke SEMUA klien termasuk yang backgrounded (PERF-5, deferred -- lihat Notes);
+(6) subprocess ffmpeg (loudness analyzer) dan worker thread yt-dlp (search/extract/resolve/download, shared ThreadPoolExecutor) jalan di prioritas default OS, bersaing CPU/IO dengan playback MPV, dan loudness batch analysis tidak charging-aware;
+(7) persistence/db.py hanya set PRAGMA journal_mode=WAL, synchronous masih default FULL sehingga fsync per-commit lebih sering dari perlu.
+
+**Solution:**
+Dieksekusi mengikuti docs/rfc/performa/task_breakdown_perf.yaml (sesi 0-7, PD-1..PD-7 + PD-6b):
+PD-1: tambah "--ongoing" + "--priority high" ke args termux-notification (_render(), plugins/notifications.py) -- persistent notification.
+PD-2: modul baru bootstrap/power.py (acquire_wake_lock(), fail-safe, no-op Windows/binary hilang) diwire sebagai background task non-blocking di bootstrap/startup_tasks.py; didesain sebagai lapisan SEKUNDER -- lapisan PRIMER wajib tetap setup manual HyperOS/MIUI (Autostart, battery saver No restrictions, lock recent-apps), didokumentasikan di docs/CONSTRAINTS.md karena custom OEM power policy bisa mengabaikan wake-lock/notification API standar.
+PD-3: extend listener visibilitychange existing di playback-sync.js jadi satu titik kontrol -- cabang hidden panggil stopProgressClock() (player.js), cabang visible panggil startProgressClock()/resumeVisualizerLoop()/setRadioHeroAnimState() ulang dari state DOM yang sudah dimiliki modul lain (read-only, tidak menulis store baru). visualizer.js dan radio-hero-moon.js (stepCycle/stepTween) masing-masing hanya dapat guard document.hidden self-terminating di titik reschedule rAF, tidak listener baru.
+PD-4: exponential backoff 2s->4s->8s->16s->30s (cap, reset di ws.onopen) di ws.js onclose; listener visibilitychange KEDUA (sengaja terpisah dari PD-3, scope beda) untuk retry instan begitu tab kembali visible saat reconnect pending -- dibungkus typeof document !== "undefined" supaya tidak crash di test environment:node (vitest).
+PD-5: PERF-5 (broadcast progress per-visibility, menyentuh server/handlers/websocket.py yang governed) SENGAJA DITUNDA -- lihat Notes.
+PD-6/PD-6b: engine/loudness/analyzer.py bungkus subprocess ffmpeg dengan nice -n 10 + ionice -c2 -n7 (fail-safe, cek shutil.which terpisah); engine/loudness/service.py tambah _is_charging_or_unknown() (cek termux-battery-status field "status"=="CHARGING", fail-open kalau binary/field tidak dikenali) yang men-skip analisis loudness batch saat tidak charging; adapters/ytdlp/__init__.py tambah ThreadPoolExecutor initializer _set_worker_priority() yang panggil os.setpriority(PRIO_PROCESS, 0, 10) SEKALI per worker thread lifetime -- absolut (bukan os.nice() yang relatif/kumulatif dan akan starvation karena executor reuse lintas job) -- charging-gate SENGAJA TIDAK diterapkan ke yt-dlp karena search/download harus tetap responsif seketika (PD-6).
+PD-7: tambah PRAGMA synchronous=NORMAL tepat setelah PRAGMA journal_mode=WAL di persistence/db.py.
+QA (sesi 6): pytest -q 718 passed/6 skipped/0 failed (termasuk fix regresi test_run_startup_checks_schedules_three_background_tasks: 3->4 task setelah wake_lock_acquire ditambah, dan test baru tests/unit/engine/loudness/test_service.py 7 test untuk charging-gate); npx vitest run 20/20 passed; doctor.py --strict WARN->PASS setelah FILE_INDEX.md diregenerasi (bootstrap/power.py baru).
+
+**Changed Files:**
+- `plugins/notifications.py`
+- `persistence/db.py`
+- `bootstrap/power.py`
+- `bootstrap/startup_tasks.py`
+- `web/static/js/audio/playback-sync.js`
+- `web/static/js/audio/visualizer.js`
+- `web/static/js/render/radio-hero-moon.js`
+- `web/static/js/ws.js`
+- `engine/loudness/analyzer.py`
+- `engine/loudness/service.py`
+- `adapters/ytdlp/__init__.py`
+- `docs/CONSTRAINTS.md`
+- `docs/STATUS.md`
+- `CHANGELOG.md`
+- `tests/unit/bootstrap/test_startup_tasks.py`
+- `tests/unit/engine/loudness/test_service.py`
+
+**Changed Symbols:**
+- `acquire_wake_lock()`
+- `_render()`
+- `_is_charging_or_unknown()`
+- `_set_worker_priority()`
+- `stepCycle()`
+- `stepTween()`
+- `startVisualizerLoop()`
+
+**Tests:** pytest -q (718 passed, 6 skipped, 0 failed); npx vitest run (20/20 passed); doctor.py --strict (WARN->PASS setelah FILE_INDEX regen)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+PERF-5 (F1.1, broadcast progress adaptif per-visibility klien) SENGAJA TIDAK termasuk patch ini -- deferred, butuh sign-off eksplisit terpisah karena menyentuh server/handlers/websocket.py yang governed di AI_CONTEXT.md. Didesain sebagai blok future_work terpisah di docs/rfc/performa/task_breakdown_perf.yaml, tidak masuk execution_order sesi 1-7. Tercatat eksplisit di docs/STATUS.md dan CHANGELOG.md supaya tidak terlihat seperti item yang lupa dikerjakan.
+Referensi: temuan.md (sumber standalone, diberikan terpisah dari repo) dan docs/rfc/performa/task_breakdown_perf.yaml (PD-1, PD-2, PD-3, PD-4, PD-5, PD-6, PD-6b, PD-7).
+Verifikasi manual di device Termux asli (notifikasi persistent, wake-lock aktif, niceness proses via ps/top, charging-gate loudness) belum dilakukan dari sandbox eksekusi ini -- perlu dicoba langsung di perangkat.
 
 ---
 

@@ -24,6 +24,9 @@ Thread Safety:
 """
 
 import asyncio
+import json
+import shutil
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 import structlog
@@ -32,6 +35,34 @@ from core.ports import TrackRepositoryPort
 from engine.loudness.analyzer import LoudnessAnalyzer
 
 logger = structlog.get_logger(__name__)
+
+
+def _is_charging_or_unknown() -> bool:
+    """Fail-open charging check for loudness batch analysis (PERF-6/PD-6).
+
+    Returns True (boleh jalan) kalau `termux-battery-status` tidak ada
+    (non-Termux/dev machine), kalau parsing gagal, atau kalau field yang
+    diharapkan tidak dikenali -- gating ini hanya untuk hemat baterai di
+    Termux, bukan sesuatu yang boleh memblokir analisis di environment lain.
+    """
+    binary = shutil.which("termux-battery-status")
+    if not binary:
+        return True
+
+    try:
+        result = subprocess.run(
+            [binary], capture_output=True, text=True, timeout=5, shell=False
+        )
+        data = json.loads(result.stdout)
+        # Output resmi termux-battery-status: field "status" bernilai salah
+        # satu dari "CHARGING" / "DISCHARGING" / "NOT_CHARGING" / "FULL".
+        status = data.get("status")
+        if status is None:
+            return True  # field tidak dikenali -- fail-open
+        return status == "CHARGING"
+    except Exception as e:
+        logger.debug(f"termux-battery-status check gagal, fail-open: {e}")
+        return True
 
 
 class LoudnessService:
@@ -52,6 +83,17 @@ class LoudnessService:
             return  # Sudah pernah diukur lengkap, tidak perlu ulang
 
         loop = asyncio.get_running_loop()
+        # _is_charging_or_unknown() memanggil subprocess.run(...) secara
+        # blocking (sampai 5s timeout). LunaWave single-process asyncio --
+        # kalau ini dipanggil langsung di sini, seluruh event loop (WS, HTTP,
+        # broadcast progress) ikut freeze, bukan cuma task loudness ini.
+        # Delegasikan ke executor yang sama seperti measure_sync di bawah.
+        is_charging_or_unknown = await loop.run_in_executor(
+            self._executor, _is_charging_or_unknown
+        )
+        if not is_charging_or_unknown:
+            return  # Tidak charging -- ditunda, coba lagi di play berikutnya
+
         measurement = await loop.run_in_executor(self._executor, self.analyzer.measure_sync, uri)
         if measurement is None:
             return  # Analisis gagal -- diam saja, coba lagi di play berikutnya

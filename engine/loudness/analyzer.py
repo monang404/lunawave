@@ -27,7 +27,9 @@ Thread Safety:
 """
 
 import json
+import os
 import re
+import shutil
 import subprocess
 
 import structlog
@@ -71,6 +73,14 @@ class LoudnessAnalyzer:
             "null",
             "-",
         ]
+        if os.name != "nt":
+            prefix = []
+            if shutil.which("nice"):
+                prefix += ["nice", "-n", "10"]
+            if shutil.which("ionice"):
+                prefix += ["ionice", "-c2", "-n7"]
+            if prefix:
+                cmd = prefix + cmd
         try:
             result = subprocess.run(
                 cmd,

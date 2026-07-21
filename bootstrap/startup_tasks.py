@@ -45,6 +45,7 @@ import asyncio
 import aiohttp
 import structlog
 
+from bootstrap.power import acquire_wake_lock
 from bootstrap.services import _init_mpv, context
 from core.state import PlayerStatus
 from core.task_utils import safe_create_task
@@ -108,6 +109,8 @@ async def run_startup_checks():
 
     connectivity_task = safe_create_task(check_connectivity(), name="connectivity_checker")
     ctx.tasks.append(connectivity_task)
+
+    ctx.tasks.append(safe_create_task(acquire_wake_lock(), name="wake_lock_acquire"))
 
     # MPV connect dijalankan sebagai background task — server tidak perlu menunggu.
     # _mpv_ready_event akan di-set oleh _init_mpv() saat koneksi selesai (sukses/gagal).

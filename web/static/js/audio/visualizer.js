@@ -47,7 +47,7 @@ let _vizRafId = null;
 function startVisualizerLoop() {
     if (!analyser || !dom.vinylRecord) return;
     const isBrowser = store.userRole === "client" || store.audio_output === "browser";
-    if (!isBrowser || store.status !== "PLAYING") {
+    if (!isBrowser || store.status !== "PLAYING" || document.hidden) {
         if (dom.tabHome) {
             dom.tabHome.style.removeProperty('--beat-glow-opacity');
             dom.tabHome.style.removeProperty('--beat-bg-brightness');

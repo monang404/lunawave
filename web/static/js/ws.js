@@ -1,5 +1,7 @@
 let ws = null;
 let wsReconnectTimer = null;
+let wsReconnectDelay = 2000;
+const WS_RECONNECT_MAX_DELAY = 30000;
 
 // Dirty checking removed (moved to components or obsolete)
 
@@ -22,6 +24,7 @@ function wsConnect() {
     ws.onopen = () => {
         store.is_online = true;
         hideConnectionToast();
+        wsReconnectDelay = 2000;
         if (wsReconnectTimer) {
             clearTimeout(wsReconnectTimer);
             wsReconnectTimer = null;
@@ -55,12 +58,30 @@ function wsConnect() {
         store.is_online = false;
         renderHeader();
         showConnectionToast("Koneksi terputus. Reconnecting...", "disconnected");
-        wsReconnectTimer = setTimeout(wsConnect, 2000);
+        wsReconnectTimer = setTimeout(wsConnect, wsReconnectDelay);
+        wsReconnectDelay = Math.min(wsReconnectDelay * 2, WS_RECONNECT_MAX_DELAY);
     };
 
     ws.onerror = () => {
         ws.close();
     };
+}
+
+// Listener visibilitychange TERPISAH khusus reconnect (PD-4) — scope-nya
+// beda dari titik kontrol rAF di playback-sync.js (PERF-3): begitu tab
+// kembali visible saat ada reconnect timer pending, langsung coba connect
+// tanpa menunggu sisa delay backoff. Sebaliknya, saat tab hidden, timer
+// yang sudah capped di 30s dibiarkan jalan seperti biasa (tidak perlu
+// dipause total).
+if (typeof document !== "undefined") {
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
+            wsReconnectDelay = 2000;
+            wsConnect();
+        }
+    });
 }
 
 function wsSend(action, data) {
