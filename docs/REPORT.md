@@ -19,21 +19,21 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-20 oleh `automation/generate_report.py`
+> **Auto-generated:** 2026-07-20 oleh `automation/generate_report.py`  
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 55 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 58 |
 | Total file `.py` (source, ekskl. `__pycache__`) | 111 |
 | Total file `.js` (ekskl. `.min.js`) | 39 |
 | Total file `.css` (ekskl. `.min.css`) | 24 |
 | Total class (Python) | 90 |
 | Total function/method (Python) | 495 |
 | Total baris Python | 11,534 |
-| Total baris JS (web/) | 4,681 |
-| Total baris CSS (web/) | 4,069 |
+| Total baris JS (web/) | 4,790 |
+| Total baris CSS (web/) | 4,168 |
 | Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
