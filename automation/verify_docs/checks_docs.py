@@ -126,11 +126,14 @@ def check_patchlog(docs_dir: Path) -> CheckResult:
             )
 
     # Konsistensi struktural: ID yang ADA di file vs yang berhasil di-parse
-    # penuh (Tanggal/Ringkasan/File Terdampak). Kalau beda, artinya ada
-    # entry berformat non-baku yang diam-diam kehilangan riwayatnya di mata
+    # penuh (format v2: Tanggal/Type/Area/Priority/Title/.../Changed Files/
+    # dst., lihat automation/patchlog.py). Kalau beda, artinya ada entry
+    # berformat non-baku yang diam-diam kehilangan riwayatnya di mata
     # tool AI-facing (context_pack.py, find_owner.py) -- lihat
     # PATCH-2026-07-17-074. Ini FAIL, bukan WARN, karena efeknya silent
-    # data loss di tool hilir.
+    # data loss di tool hilir. Ditambah sejak migrasi v2: entry dengan
+    # nilai enum (Type/Priority/Breaking Change/Regression Risk/Status)
+    # yang tidak valid juga masuk sini via patchlog_verify().
     parse_report = patchlog_verify(text)
     if not parse_report["ok"]:
         issues.append(

@@ -36,7 +36,10 @@ from shared.skip_dirs import SKIP_DIRS
 # Regex patterns (dipakai di berbagai cek)
 # ---------------------------------------------------------------------------
 
-PATCH_ID_RE = re.compile(r"\*\*ID:\*\*\s*`(PATCH-\d{4}-\d{2}-\d{2}-\d{3})`")
+# PATCHLOG format v2 (lihat automation/patchlog.py): ID sekarang adalah
+# heading level-2 `## PATCH-YYYY-MM-DD-NNN`, bukan lagi field `**ID:**`
+# terpisah di dalam body entry seperti format v1.
+PATCH_ID_RE = re.compile(r"^##[ \t]+(PATCH-\d{4}-\d{2}-\d{2}-\d{3})[ \t]*$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---", re.DOTALL)
 GENERATED_BEGIN_RE = re.compile(r"<!--\s*BEGIN:GENERATED\s*-->")
 GENERATED_END_RE = re.compile(r"<!--\s*END:GENERATED\s*-->")

@@ -46,9 +46,16 @@ def _make_fake_repo(root: Path) -> None:
     (root / "docs" / "STATUS.md").write_text("# Status\n", encoding="utf-8")
     (root / "docs" / "PATCHLOG.md").write_text(
         "---\nlatest_patch_id: PATCH-2026-01-01-001\ntotal_entries: 1\n---\n\n"
-        "## Entry\n\n**ID:** `PATCH-2026-01-01-001`\n\n**Tanggal:** 2026-01-01\n\n"
-        "**Ringkasan:** Buat DownloadManager.\n\n**File Terdampak:**\n\n"
-        "- `engine/download_manager.py`\n\n---\n",
+        "## PATCH-2026-01-01-001\n\n"
+        "**Tanggal:** 2026-01-01\n**Timestamp:** -\n**Git Branch:** -\n**Git Commit:** -\n"
+        "**Type:** Feature\n**Area:** Backend\n**Priority:** Medium\n"
+        "**Title:** Buat DownloadManager\n\n"
+        "**Reason:** -\n\n**Root Cause:**\n-\n\n**Solution:**\n-\n\n"
+        "**Changed Files:**\n- `engine/download_manager.py`\n\n"
+        "**Changed Symbols:**\n- (tidak ada)\n\n"
+        "**Tests:** -\n\n**Breaking Change:** No\n\n**Regression Risk:** Low\n\n"
+        "**Related Patch:** -\n\n**Status:** Merged\n\n"
+        "**Notes:**\nBuat DownloadManager.\n\n---\n",
         encoding="utf-8",
     )
     (root / "engine").mkdir()

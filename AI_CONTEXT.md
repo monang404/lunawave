@@ -1,6 +1,6 @@
 ---
-last_verified: 2026-07-18
-sprint: 3.3 (aktif) — lihat "Sprint Aktif" di bawah
+last_verified: 2026-07-21
+sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening
 ---
 
 # AI_CONTEXT.md — Baca ini sebelum menyentuh kode apapun
@@ -11,10 +11,9 @@ LunaWave adalah music player berbasis YouTube yang jalan sebagai server lokal
 Platform utama: Termux (Android) + Windows.
 Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 
-## Sprint Aktif: 3.3 (Stabilisasi & QoL)
-- Sprint 3.2 telah diselesaikan.
-- Sprint 3.3 (2026-07-15): Implementasi Thompson Sampling Bandit, Loudness Normalization, Adaptive Prefetch.
-- Sprint 3.3 (2026-07-15): Penyelesaian isu CI hang akibat *zombie thread* `yt-dlp` dan peningkatan *test coverage* (mencapai > 78%).
+## Sprint Aktif: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening
+- Sprint Phase 8 dan Tier 2 telah diselesaikan (termasuk Fitur A: Discover Personalization, Fitur B: Redesain Login, Fitur C: Radio "Night Dial").
+- Hardening dan stabilisasi codebase terus berlanjut.
 - Lihat `docs/PATCHLOG.md` untuk detail patch terbaru.
 
 ## File yang TIDAK BOLEH disentuh tanpa izin eksplisit
@@ -45,8 +44,9 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
    - Atau per-checker jika hanya ingin cek satu aspek (lihat §Developer Scripts)
 2. Jalankan `python automation/generate_file_index.py` — jika ada file/class/fungsi baru atau berubah
 3. Jalankan `python automation/generate_report.py` — jika ada penambahan/penghapusan file
-4. Prepend entry baru ke `docs/PATCHLOG.md` dengan format ID `PATCH-YYYY-MM-DD-NNN`
-5. Update `docs/STATUS.md` jika kondisi file berubah
+4. **Catat di Patchlog**: Tambahkan entry ke `docs/PATCHLOG.md` (WAJIB ikuti format v2 *field-based*. Gunakan `python automation/patchlog.py add` dengan *flag* wajib seperti `--type`, `--area`, `--title`, `--reason`, `--files`, `--root-cause`, `--solution`, `--notes`. Setelah itu, verifikasi dengan `python automation/patchlog.py verify --json`).
+5. **Update Status Proyek**: Update `docs/STATUS.md` secara manual jika kondisi file berubah, atau jika ada pergeseran status fitur di tabel "Status Fitur".
+6. **Update Changelog**: Update `CHANGELOG.md` secara manual (di bawah bagian `[Unreleased]`) JIKA DAN HANYA JIKA tugas yang baru saja diselesaikan adalah peluncuran fitur baru, perbaikan bug krusial (bukan sekadar *tech debt* internal), atau ada *breaking change* yang memengaruhi *user*.
 
 ## Output Generated — Kemana Hasilnya Disimpan
 
