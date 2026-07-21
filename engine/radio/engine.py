@@ -35,8 +35,8 @@ from core.events import LogMessageEvent, QueueUpdatedEvent
 from core.ports import ArtistRepositoryPort, LibraryRepositoryPort, MediaExtractorPort
 from core.state import AppState, PlayerStatus
 from engine.radio.artist_selector import ArtistSelector
-from engine.radio.radio_config import ARTISTS_PER_BATCH, ARTISTS_QUICK, track_task
 from engine.radio.prefetcher import RadioPrefetcher
+from engine.radio.radio_config import ARTISTS_PER_BATCH, ARTISTS_QUICK, track_task
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController

@@ -68,7 +68,8 @@ async def run_server():
         # Import lokal (bukan top-level) agar server.app.create_app /
         # server.app.run_server tetap bisa di-patch dari test lewat
         # "server.app.<nama>" (sama seperti pola asli sebelum T2.4).
-        from server.app import create_app, run_server as _web_run_server
+        from server.app import create_app
+        from server.app import run_server as _web_run_server
 
         app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos)
 

@@ -74,8 +74,8 @@ async def test_run_startup_checks_schedules_three_background_tasks():
 
 @pytest.mark.asyncio
 async def test_resume_last_track_resumes_when_position_saved():
-    from bootstrap.startup_tasks import _resume_last_track
     from bootstrap.services import context
+    from bootstrap.startup_tasks import _resume_last_track
 
     context.state = MagicMock()
     context.state.status = PlayerStatus.IDLE
@@ -101,8 +101,8 @@ async def test_resume_last_track_resumes_when_position_saved():
 
 @pytest.mark.asyncio
 async def test_resume_last_track_skips_when_mpv_errored():
-    from bootstrap.startup_tasks import _resume_last_track
     from bootstrap.services import context
+    from bootstrap.startup_tasks import _resume_last_track
 
     context.state = MagicMock()
     context.state.status = PlayerStatus.ERROR
@@ -118,8 +118,8 @@ async def test_resume_last_track_skips_when_mpv_errored():
 
 @pytest.mark.asyncio
 async def test_check_connectivity_marks_offline_on_error():
-    from bootstrap.startup_tasks import check_connectivity
     from bootstrap.services import context
+    from bootstrap.startup_tasks import check_connectivity
 
     context.state = MagicMock()
     context.http_session = MagicMock()

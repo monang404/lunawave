@@ -46,7 +46,6 @@ import pytest
 
 from adapters.mpv import MpvController
 from adapters.ytdlp import YtDlpClient
-from persistence.stream_cache import CacheResolver, ResolverDbCompat
 from core.event_bus import bus
 from core.state import AppState
 from engine.command_router import CommandRouter
@@ -56,6 +55,7 @@ from engine.queue_manager import QueueMode
 from engine.radio import RadioMode
 from engine.volume_service import VolumeService
 from persistence import Repositories
+from persistence.stream_cache import CacheResolver, ResolverDbCompat
 from plugins.lyrics_fetcher import LyricsFetcher
 from plugins.sponsorblock import SponsorBlockHandler
 from server.app import create_app

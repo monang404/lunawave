@@ -41,8 +41,8 @@ def _reset_context():
 
 @pytest.mark.asyncio
 async def test_schedule_db_maintenance_appends_task():
-    from bootstrap.services import context
     from bootstrap.maintenance import schedule_db_maintenance
+    from bootstrap.services import context
 
     context.repos = MagicMock()
     context.repos.tracks.evict_stale_tracks = AsyncMock(return_value=0)
@@ -60,8 +60,8 @@ async def test_schedule_db_maintenance_appends_task():
 
 @pytest.mark.asyncio
 async def test_db_maintenance_runs_initial_eviction_and_cleanup():
-    from bootstrap.services import context
     from bootstrap.maintenance import db_maintenance
+    from bootstrap.services import context
 
     context.repos = MagicMock()
     context.repos.tracks.evict_stale_tracks = AsyncMock(return_value=3)
@@ -78,8 +78,8 @@ async def test_db_maintenance_runs_initial_eviction_and_cleanup():
 
 @pytest.mark.asyncio
 async def test_start_mpv_watchdog_appends_task():
-    from bootstrap.services import context
     from bootstrap.maintenance import start_mpv_watchdog
+    from bootstrap.services import context
 
     context.mpv = MagicMock()
     context.state = MagicMock()
@@ -96,8 +96,8 @@ async def test_start_mpv_watchdog_appends_task():
 
 @pytest.mark.asyncio
 async def test_mpv_watchdog_sets_error_when_disconnected(monkeypatch):
-    from bootstrap.services import context
     from bootstrap import maintenance
+    from bootstrap.services import context
 
     context.mpv = MagicMock()
     context.mpv.is_available = True

@@ -199,13 +199,13 @@ async def init_core_services() -> BootstrapContext:
     ctx.http_session = aiohttp.ClientSession()
 
     # 4. Global Services Initialization
-    from persistence.stream_cache import CacheResolver, ResolverDbCompat
     from engine.loudness.service import LoudnessService
     from engine.playback.controller import PlaybackController
     from engine.queue_manager import QueueMode
     from engine.radio import RadioMode
     from engine.sleep_timer import SleepTimer
     from engine.volume_service import VolumeService
+    from persistence.stream_cache import CacheResolver, ResolverDbCompat
 
     ctx.resolver = CacheResolver(
         ResolverDbCompat(ctx.repos.tracks, ctx.repos.artists, ctx.repos.discover), ctx.ytdlp

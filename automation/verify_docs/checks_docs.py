@@ -29,9 +29,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from pathlib import Path
 
-from shared.check_result import CheckResult
-
 from patchlog import verify as patchlog_verify
+from shared.check_result import CheckResult
 
 from .doc_parsing_utils import (
     GENERATED_BEGIN_RE,
