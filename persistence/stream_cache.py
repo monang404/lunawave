@@ -29,6 +29,7 @@ import time
 import structlog
 
 from config import STREAM_URL_TTL_SEC
+from core.exceptions import VideoUnavailableError
 from core.latency_window import LatencyWindow
 from core.observability import RESOLVE_LATENCY
 from core.ports import DatabasePort, MediaExtractorPort
@@ -71,6 +72,12 @@ class ResolverDbCompat:
     async def record_skip(self, *a, **kw):
         return await self._artists.record_skip(*a, **kw)
 
+    async def mark_unavailable(self, *a, **kw):
+        return await self._tracks.mark_unavailable(*a, **kw)
+
+    async def get_unavailable_reason(self, *a, **kw):
+        return await self._tracks.get_unavailable_reason(*a, **kw)
+
 
 class CacheResolver:
     """
@@ -87,6 +94,17 @@ class CacheResolver:
 
     async def resolve(self, track: TrackInfo) -> str:
         """Returns the playback URI (local path atau YouTube URL untuk MPV)."""
+        # Rule 0: PATCH-2026-07-20-136 -- video ini sudah pernah dikonfirmasi
+        # dihapus/private/diblokir permanen (VideoUnavailableError). Jangan
+        # buang request yt-dlp lagi untuk video_id yang sudah terbukti mati;
+        # gagal cepat supaya PlaybackController langsung skip tanpa nunggu
+        # timeout resolve (YTDLP_RESOLVE_TIMEOUT_SEC detik) percuma.
+        reason = await self.db.get_unavailable_reason(track.video_id)
+        if reason:
+            raise VideoUnavailableError(
+                f"{track.title} sebelumnya sudah ditandai tidak tersedia: {reason}"
+            )
+
         row = await self.db.get_track(track.video_id)
 
         # Rule 1: Local file — ini yang benar-benar berguna

@@ -81,6 +81,12 @@ class Repositories:
             "ALTER TABLE tracks ADD COLUMN loudness_lufs REAL",
             "ALTER TABLE tracks ADD COLUMN last_position REAL DEFAULT 0.0",
             "ALTER TABLE tracks ADD COLUMN true_peak_dbtp REAL",  # H-3: true peak dari ffmpeg loudnorm
+            # PATCH-2026-07-20-136: video yang dikonfirmasi dihapus/private/
+            # diblokir permanen (VideoUnavailableError) -- CacheResolver
+            # cek ini duluan sebelum hit yt-dlp lagi (lihat Rule 0 di
+            # persistence/stream_cache.py).
+            "ALTER TABLE tracks ADD COLUMN unavailable INTEGER DEFAULT 0",
+            "ALTER TABLE tracks ADD COLUMN unavailable_reason TEXT",
         ]:
             try:
                 await self._conn_manager.conn.execute(sql)

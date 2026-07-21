@@ -85,11 +85,32 @@ STREAM_URL_TTL_SEC = 21600
 # supaya error/retry-path yang sudah ada di play_track() bisa jalan.
 YTDLP_RESOLVE_TIMEOUT_SEC = 25
 
+# PATCH-2026-07-20-136: audio_stream_handler.serve_stream() sebelumnya
+# langsung `response.prepare()` lalu proxy `iter_chunked` upstream ke client
+# TANPA buffer sama sekali -- kalau upstream (YouTube CDN) lambat/tersendat
+# di awal, client langsung ikut kena stutter karena tidak ada cushion data.
+# Buffer sekitar 64KB (~4 detik audio di bitrate umum 128kbps) sebelum mulai
+# nge-serve ke client; trade-off-nya time-to-first-byte sedikit lebih
+# lambat, tapi playback awal jauh lebih halus di jaringan yang jelek/naik-
+# turun. Untuk Range request pendek (seek dekat akhir file), buffer ini
+# otomatis cuma berisi sisa data yang ada (loop pembacaan berhenti wajar).
+STREAM_PREBUFFER_BYTES = 65536
+
 # Adaptive prefetch
 PREFETCH_DEFAULT_THRESHOLD_SEC = 30.0
 PREFETCH_SAFETY_FACTOR = 1.5
 PREFETCH_MIN_THRESHOLD_SEC = 10.0
 PREFETCH_MAX_THRESHOLD_SEC = 60.0
+
+# PATCH-2026-07-20-136: prefetch_stream_url() sebelumnya gagal 1x -> cuma
+# di-log warning, tidak pernah dicoba ulang. Di jaringan lambat/tersendat
+# sesaat, ini bikin prefetch sia-sia padahal percobaan kedua kemungkinan
+# besar berhasil -- akibatnya transisi ke track berikutnya tetap kena jeda
+# resolve on-demand seperti kalau prefetch tidak pernah ada. Retry ini
+# HANYA untuk error transient (bukan VideoUnavailableError/RateLimitedError
+# yang memang tidak akan pernah berhasil kalau diulang cepat).
+PREFETCH_RETRY_ATTEMPTS = 2
+PREFETCH_RETRY_BACKOFF_SEC = 1.0
 
 LOUDNESS_ANALYZE_TIMEOUT_SEC = 25.0
 

@@ -37,12 +37,28 @@ import time
 import structlog
 from aiohttp import web
 
-from config import CACHE_DIR, STREAM_URL_TTL_SEC
+from config import CACHE_DIR, STREAM_PREBUFFER_BYTES, STREAM_URL_TTL_SEC
+from core.exceptions import VideoUnavailableError
 from server.handlers import get_tracks_repo, get_ytdlp
 
 _STREAM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 
 logger = structlog.get_logger(__name__)
+
+
+async def _mark_video_unavailable(db, video_id: str, row, reason: str) -> None:
+    """PATCH-2026-07-20-136: handler ini cuma punya video_id, belum tentu
+    ada TrackInfo lengkap (row) di DB. Pakai row yang sudah ada kalau ada,
+    kalau tidak buat placeholder minimal -- mark_unavailable() sendiri
+    sudah UPSERT jadi aman dipanggil untuk video_id yang belum pernah
+    tersimpan sama sekali."""
+    from core.state import TrackInfo
+
+    track = row or TrackInfo(video_id=video_id, title=video_id, artist="unknown", duration=0)
+    try:
+        await db.mark_unavailable(track, reason)
+    except Exception as e:
+        logger.error(f"Gagal menandai unavailable untuk {video_id}: {e}")
 
 
 async def serve_stream(request):
@@ -64,6 +80,15 @@ async def serve_stream(request):
     ytdlp = get_ytdlp(request)
     stream_url = None
 
+    # PATCH-2026-07-20-136 Rule 0: jalur ini (dipakai saat AudioOutput.BROWSER,
+    # HTML5 <audio> proxy langsung ke sini) juga harus menghormati flag
+    # unavailable yang sama seperti CacheResolver -- kalau tidak, video yang
+    # sudah dikonfirmasi dihapus/private lewat jalur mpv tetap akan dicoba
+    # ulang tanpa henti lewat jalur browser-audio ini.
+    unavailable_reason = await db.get_unavailable_reason(video_id)
+    if unavailable_reason:
+        return web.HTTPGone(text=f"Video tidak tersedia: {unavailable_reason}")
+
     row = await db.get_track(video_id)
     if row and row.stream_url and row.stream_url_ts:
         if time.time() - row.stream_url_ts < STREAM_URL_TTL_SEC:
@@ -77,6 +102,9 @@ async def serve_stream(request):
             try:
                 stream_url = await ytdlp.get_stream_url(video_id)
                 await db.update_stream_url_only(video_id, stream_url)
+            except VideoUnavailableError as e:
+                await _mark_video_unavailable(db, video_id, row, str(e))
+                return web.HTTPGone(text=f"Video tidak tersedia: {e}")
             except Exception as e:
                 logger.error(f"Gagal fetch stream URL untuk redirect: {e}")
                 return web.HTTPServiceUnavailable(text="Stream tidak tersedia saat ini")
@@ -97,6 +125,11 @@ async def serve_stream(request):
             try:
                 stream_url = await ytdlp.get_stream_url(video_id)
                 await db.update_stream_url_only(video_id, stream_url)
+            except VideoUnavailableError as e:
+                # PATCH-2026-07-20-136: tidak ada gunanya retry attempt
+                # kedua untuk video yang sudah dikonfirmasi permanen hilang.
+                await _mark_video_unavailable(db, video_id, row, str(e))
+                return web.HTTPGone(text=f"Video tidak tersedia: {e}")
             except Exception as e:
                 if attempt == 1:
                     return web.HTTPInternalServerError(text=f"Gagal mencari stream: {e}")
@@ -154,7 +187,26 @@ async def serve_stream(request):
 
                 await response.prepare(request)
 
-                async for chunk in upstream.content.iter_chunked(16384):
+                # PATCH-2026-07-20-136: buffer beberapa chunk pertama DULU
+                # (dari upstream, belum ditulis ke client) sebelum mulai
+                # menulis apa pun ke client. Sebelumnya setiap chunk upstream
+                # langsung await response.write() satu-satu -- kalau upstream
+                # tersendat di detik-detik pertama, client langsung ikut
+                # kena stutter karena tidak ada cushion. Ini TIDAK menunda
+                # response.prepare() (header tetap terkirim cepat), cuma
+                # menunda mulai mengirim BODY sampai ada cushion data.
+                prebuffer: list[bytes] = []
+                prebuffer_size = 0
+                chunk_iter = upstream.content.iter_chunked(16384)
+                async for chunk in chunk_iter:
+                    prebuffer.append(chunk)
+                    prebuffer_size += len(chunk)
+                    if prebuffer_size >= STREAM_PREBUFFER_BYTES:
+                        break
+
+                for chunk in prebuffer:
+                    await response.write(chunk)
+                async for chunk in chunk_iter:
                     await response.write(chunk)
 
                 await response.write_eof()

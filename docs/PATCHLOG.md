@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-21-136
+latest_patch_id: PATCH-2026-07-21-137
 
-total_entries: 136
+total_entries: 137
 
 ---
 
@@ -21,6 +21,87 @@ total_entries: 136
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-21-137
+
+**Tanggal:** 2026-07-21
+**Timestamp:** 04:03
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend
+**Priority:** High
+**Title:** Fallback resilience streaming: bot-check/rate-limit/unavailable/prebuffer/prefetch-retry
+
+**Reason:** Gap-analysis fallback skenario streaming diminta user: internet mati/lambat, YouTube limit/restrict butuh login, dan skenario lain yang bikin app gagal muter lagu tanpa fallback jelas
+
+**Root Cause:**
+Gap-analysis fallback-skenario streaming (diminta user) menemukan 5 klaim awal yang lolos verifikasi kode langsung (bukan asumsi): (1) adapters/ytdlp/resolver.py sebelumnya cuma punya 3 except generik (TimeoutError/RuntimeError/Exception) -- core/exceptions.py sudah punya TrackResolutionError/DownloadError tapi 0 pemakaian di seluruh repo (dead code), jadi bot-check/rate-limit/video-hilang semua jatuh ke RuntimeError generik yang sama, tidak bisa dibedakan strateginya. (2) server/handlers/audio_stream_handler.py: response.prepare() lalu langsung iter_chunked(16384) proxy ke client tanpa buffer sama sekali -- upstream lambat di detik pertama langsung bikin client stutter. (3) services/stream_prefetch.py: kegagalan cuma logger.warning() sekali, tidak ada retry sama sekali. (4) Tidak ada mekanisme menandai video yang sudah dikonfirmasi dihapus/private permanen -- video begitu akan terus dicoba resolve ulang selamanya tiap kali diputar/diprefetch (grep unavailable|is_private|is_deleted|blacklist ke persistence/engine/adapters = 0 hasil).
+
+Investigasi awal juga sempat salah 4 kali sebelum sesi patch ini (dicabut setelah dibuktikan lewat pembacaan kode): retry_count diklaim bocor lintas-track (ternyata reset di sukses), mpv reconnect diklaim tanpa circuit breaker (ternyata ada RECONNECT_MAX_ATTEMPTS di adapters/mpv/observer.py), race prefetch-vs-ondemand diklaim berbahaya (ternyata cuma last-write-wins benign), dan yang paling signifikan: "tidak ada circuit breaker lintas-track" (klaim #5) juga salah -- controller._retry_count SUDAH berfungsi sebagai itu sejak awal (setiap kegagalan play_track APAPUN tracknya selalu _advance_to_next() dengan backoff naik, berhenti total tanpa advance setelah 3x beruntun), cuma lokasinya salah dicari (dicek di queue_controller.py, padahal yang relevan ada di play_track()'s except block sendiri).
+
+Patch ini pertama dikerjakan+diuji di branch/rilis 1.5.1 (tests/unit 701/701 lulus), lalu di-port ke develop. Saat porting, ditemukan 2 hal: (a) engine/playback/controller.py di develop identik byte-for-byte dengan baseline pra-patch 1.5.1/1.5.2 (bukan refactor independen), jadi aman ditimpa; (b) sesi kerja sebelumnya di 1.5.1 ternyata sudah mengekstrak logic except play_track() ke engine/playback/failure_ops.py (LARGE_FILE_THRESHOLD 500 LOC, pola sama seperti track_ended_ops.py) yang sempat lupa ikut disalin ke develop, ketahuan lewat ModuleNotFoundError saat test run pertama di develop -- sudah diperbaiki dengan menyalin file tersebut.
+
+**Solution:**
+(1) core/exceptions.py: 3 exception baru VideoUnavailableError/BotCheckError/RateLimitedError (subclass TrackResolutionError). adapters/ytdlp/resolver.py: classify_ytdlp_error() cocokkan regex pesan yt-dlp ke 3 tipe; bot-check retry SEKALI dengan YDL_OPTS_INFO_FALLBACK (player_client=android, adapters/ytdlp/ydl_options.py) sebelum menyerah; error tak dikenal tetap RuntimeError generik (perilaku lama tidak berubah). engine/playback/failure_ops.py (FailureOps, dipanggil dari controller.py): handle_video_unavailable() skip TANPA backoff + mark_unavailable() ke DB; handle_bot_check_or_rate_limited() tetap backoff seperti error generik; keduanya + handle_generic_error() bermuara ke advance_after_track_failure() yang sama, memakai counter controller._retry_count yang SUDAH ADA sebagai circuit breaker lintas-track (bukan mekanisme baru).
+
+(2) server/handlers/audio_stream_handler.py + config.py STREAM_PREBUFFER_BYTES=65536: buffer ~64KB pertama dari upstream SEBELUM mulai response.write() ke client. Range request pendek (<64KB sisa) tetap jalan wajar (loop berhenti begitu upstream habis).
+
+(3) services/stream_prefetch.py: retry PREFETCH_RETRY_ATTEMPTS=2x dengan backoff PREFETCH_RETRY_BACKOFF_SEC sebelum menyerah.
+
+(4) Kolom tracks.unavailable/unavailable_reason: schema.sql (DB baru) + migrasi ALTER TABLE di persistence/__init__.py (DB lama, lokasi canonical -- BUKAN persistence/db.py, sempat salah taruh di sana dulu di sesi 1.5.1 sampai ketahuan lewat test real-DB migrasi yang gagal). persistence/track_repo.py: mark_unavailable() pakai UPSERT bukan UPDATE polos (row belum tentu ada kalau resolve gagal di percobaan pertama). persistence/stream_cache.py (CacheResolver.resolve()) + audio_stream_handler.serve_stream(): Rule 0 cek flag ini duluan, skip yt-dlp kalau video sudah pernah gagal permanen. core/ports.py: TrackRepositoryPort Protocol diupdate agar kontraknya eksplisit.
+
+(5) TIDAK ada patch baru untuk "circuit breaker lintas-track" -- lihat Root Cause, klaim ini dicabut, cuma menyambungkan exception baru ke mekanisme _retry_count yang sudah ada.
+
+Bug tambahan yang ditemukan+diperbaiki selama proses (bukan direncanakan): 8 test lama tests/unit/server/handlers/test_audio_stream_handler.py pakai AsyncMock() polos yang auto-truthy -- Rule 0 baru bikin semua gagal sampai ditambah get_unavailable_reason.return_value=None eksplisit di semuanya. tests/fakes/fake_track_repository.py tidak punya record_completion()/record_skip() sama sekali (dipanggil queue_controller.advance_to_next(), AttributeError SINKRON sebelum sempat reach queue_mode.next() -- bukan di background task) -- ditambahkan no-op minimal. Migrasi kolom unavailable sempat ditaruh di persistence/db.py (lokasi yang ternyata TIDAK dipakai Repositories.init()) -- dipindah ke persistence/__init__.py yang canonical setelah test real-DB migrasi gagal.
+
+**Changed Files:**
+- `core/exceptions.py`
+- `adapters/ytdlp/ydl_options.py`
+- `adapters/ytdlp/resolver.py`
+- `engine/playback/controller.py`
+- `engine/playback/failure_ops.py`
+- `persistence/schema.sql`
+- `persistence/__init__.py`
+- `persistence/track_repo.py`
+- `persistence/stream_cache.py`
+- `core/ports.py`
+- `server/handlers/audio_stream_handler.py`
+- `services/stream_prefetch.py`
+- `config.py`
+- `tests/fakes/fake_track_repository.py`
+- `tests/unit/adapters/ytdlp/test_resolver.py`
+- `tests/unit/engine/playback/test_controller.py`
+- `tests/unit/persistence/test_track_repo.py`
+- `tests/unit/persistence/test_stream_cache.py`
+- `tests/unit/server/handlers/test_audio_stream_handler.py`
+- `tests/unit/services/test_stream_prefetch.py`
+
+**Changed Symbols:**
+- `classify_ytdlp_error()`
+- `VideoUnavailableError`
+- `BotCheckError`
+- `RateLimitedError`
+- `FailureOps`
+- `mark_unavailable()`
+- `get_unavailable_reason()`
+- `STREAM_PREBUFFER_BYTES`
+- `advance_after_track_failure()`
+
+**Tests:** 709/709 unit test develop lulus (255 di area yang disentuh langsung); ruff check bersih
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Porting dari branch 1.5.1 (sudah punya PATCH-2026-07-21-135 di sana dengan format PATCHLOG v1/prosa) ke develop yang sudah bermigrasi ke format v2 field-based (PATCH-2026-07-20-135) -- entry ini ditulis langsung dalam format v2, bukan hasil migrasi otomatis. Semua file yang disentuh (11 file produksi + 1 file baru engine/playback/failure_ops.py + 7 file test) diverifikasi identik dengan baseline pra-patch develop sebelum ditimpa, jadi tidak ada risiko menghapus pekerjaan develop-specific lain (docs update PATCH-136, patchlog migration PATCH-135, pause-race PATCH-134 -- semua di area frontend/docs, tidak bersinggungan). Verifikasi akhir: 709/709 unit test develop lulus (255 di area yang disentuh langsung), ruff check bersih di semua file .py yang diubah.
 
 ---
 

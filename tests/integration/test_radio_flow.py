@@ -49,6 +49,19 @@ async def test_radio_flow(integration_app):
 
     bus.subscribe(TrackStartedEvent, track_event)
 
+    # Seed an artist and a song in the in-memory database to prevent RuntimeError
+    repos = integration_app["repos"]
+    await repos.conn.execute("INSERT INTO artists (id, nama) VALUES (?, ?)", (1, "Me at the zoo"))
+    await repos.conn.executemany(
+        "INSERT INTO songs (artist_id, judul, youtube_id, duration) VALUES (?, ?, ?, ?)",
+        [
+            (1, "Me at the zoo", "jNQXAC9IVRw", 19),
+            (1, "Dummy 2", "dummy2", 20),
+            (1, "Dummy 3", "dummy3", 21),
+        ],
+    )
+    await repos.conn.commit()
+
     # 1. Enable radio using a famous artist seed
     integration_app["state"].radio_artist = "Me at the zoo"
     await command_bus.execute(CMD_SET_MODE, PlaybackMode.RADIO)
@@ -73,8 +86,8 @@ async def test_radio_flow(integration_app):
     prefetched = False
     for _ in range(300):
         await asyncio.sleep(0.1)
-        if len(state.queue) > 0:
+        if len(state.radio_queue) > 0:
             prefetched = True
             break
 
-    assert prefetched, "Radio did not prefetch and populate queue within 30 seconds"
+    assert prefetched, "Radio did not prefetch and populate radio_queue within 30 seconds"

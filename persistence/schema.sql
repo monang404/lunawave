@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS tracks (
     loudness_lufs REAL,          -- NULL = belum dianalisis; integrated loudness (LUFS)
     true_peak_dbtp REAL,         -- NULL = belum dianalisis; true peak (dBTP), dari ffmpeg loudnorm
     last_position REAL DEFAULT 0.0, -- position resume
+    unavailable  INTEGER DEFAULT 0, -- 1 jika video sudah dikonfirmasi hilang/private/diblokir permanen
+    unavailable_reason TEXT,        -- pesan error asli yt-dlp saat ditandai unavailable
     created_at   INTEGER DEFAULT (strftime('%s','now'))
 );
 

@@ -11,11 +11,11 @@ sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening (implementation-plan.md
 
 ## Status Fitur (dari `task_breakdown_agent.yaml`)
 
-| Fitur | Status | Waktu Selesai | Ringkasan |
-|---|---|---|---|
-| Fitur A — `quick_search_discover` | ✅ Done | 17 Jul 2026 | Personalisasi tab Discover (bandit ranking, taste spectrum, filter). Detail: §Discover Tab Personalization di bawah. |
-| Fitur B — `login_redesign` | ✅ Done | 19 Jul 2026 | Kredensial admin dipindah ke SQLite. Launcher auth via web. Keputusan lengkap: [ADR-0008](adr/0008-admin-credentials-in-sqlite.md). |
-| Fitur C — `radio_toggle_redesign` | ✅ Done | 20 Jul 2026 | UI "Night Dial" (moon-phase, starfield). Animasi rAF terisolasi dengan fallback statis. Sisa *tech debt* dibersihkan. |
+| Fitur                             | Status | Waktu Selesai | Ringkasan                                                                                                                           |
+| -----------------------------------| --------| ---------------| -------------------------------------------------------------------------------------------------------------------------------------|
+| Fitur A — `quick_search_discover` | ✅ Done | 17 Jul 2026   | Personalisasi tab Discover (bandit ranking, taste spectrum, filter). Detail: §Discover Tab Personalization di bawah.                |
+| Fitur B — `login_redesign`        | ✅ Done | 19 Jul 2026   | Kredensial admin dipindah ke SQLite. Launcher auth via web. Keputusan lengkap: [ADR-0008](adr/0008-admin-credentials-in-sqlite.md). |
+| Fitur C — `radio_toggle_redesign` | ✅ Done | 20 Jul 2026   | UI "Night Dial" (moon-phase, starfield). Animasi rAF terisolasi dengan fallback statis. Sisa *tech debt* dibersihkan.               |
 
 Kedua fitur sumber (`meta.source_features` / `meta.completed_features` di
 `task_breakdown_agent.yaml`) sekarang sama-sama selesai dan diverifikasi.

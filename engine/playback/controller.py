@@ -45,9 +45,11 @@ from core.events import (
     TrackProgressEvent,
     TrackStartedEvent,
 )
+from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
+from engine.playback.failure_ops import FailureOps
 from engine.playback.mode_ops import ModeOps
 from engine.playback.queue_controller import QueueController
 from engine.playback.queue_ops import QueueOps
@@ -88,6 +90,7 @@ class PlaybackController:
         self._queue_ops = QueueOps(self.state, self.bus, self._lock)
         self._mode_ops = ModeOps(self.state, self.bus, self._lock, self.mpv, self.radio_mode)
         self._track_ended_ops = TrackEndedOps(self)
+        self._failure_ops = FailureOps(self)
         # PATCH: T2.3.1/T2.3.2 — QueueController dan SettingsController
         # menangani command CMD_QUEUE_* dan CMD_SET_*/CMD_RADIO_RANDOMIZE/
         # CMD_LYRICS_OFFSET (diekstrak dari PlaybackController sesuai
@@ -95,6 +98,12 @@ class PlaybackController:
         # eksplisit untuk menyentuh file ❄️ Frozen ini).
         self._queue_controller = QueueController(self)
         self._settings_controller = SettingsController(self)
+        # `_retry_count` TIDAK pernah dipakai untuk retry track yang SAMA --
+        # tiap kegagalan play_track (apapun tracknya) selalu lompat ke
+        # _advance_to_next() dengan backoff naik, dan berhenti total tanpa
+        # advance lagi setelah 3x berturut-turut. Jadi counter ini sudah
+        # berfungsi sebagai circuit breaker LINTAS-TRACK (bukan cuma
+        # per-track) sejak awal -- lihat percabangan except di bawah.
         self._retry_count = 0
         self._loading = False
         self._last_position_save = 0.0
@@ -248,33 +257,20 @@ class PlaybackController:
                 if self.state.duration == 0:
                     safe_create_task(self._poll_duration(track), name="poll_duration")
 
-            except Exception as e:
-                self._loading = False  # RC-TERMUX-01: clear flag jika error
-                logger.error(f"Failed to play track {track.title}: {e}", exc_info=True)
-                self.state.status = PlayerStatus.ERROR
-                self.state.error_msg = f"Error: {e}"
-                await self.bus.publish(
-                    LogMessageEvent(
-                        message=f"Gagal memutar lagu: {track.title} | {type(e).__name__}: {str(e)}"
-                    )
-                )
+            except VideoUnavailableError as e:
+                # PATCH-2026-07-20-136: video dihapus/private/diblokir secara
+                # permanen. Detail penanganan lihat engine/playback/failure_ops.py
+                # (diekstrak dari sini supaya controller.py tetap di bawah
+                # LARGE_FILE_THRESHOLD).
+                await self._failure_ops.handle_video_unavailable(track, e)
 
-                self._retry_count += 1
-                if self._retry_count >= 3:
-                    await self.bus.publish(
-                        LogMessageEvent(
-                            message="Terlalu banyak kegagalan beruntun. Pemutaran dihentikan."
-                        )
-                    )
-                    self._retry_count = 0
-                else:
-                    backoff = 2**self._retry_count
-                    await asyncio.sleep(backoff)
-                    # Ensure we don't call _on_next if we are no longer trying to play this track
-                    if self.state.current_track == track:
-                        safe_create_task(
-                            self._advance_to_next(), name=f"advance_after_failure_{track.video_id}"
-                        )
+            except (BotCheckError, RateLimitedError) as e:
+                # PATCH-2026-07-20-136: bot-check/rate-limit -- lihat
+                # engine/playback/failure_ops.py untuk detail penanganan.
+                await self._failure_ops.handle_bot_check_or_rate_limited(track, e)
+
+            except Exception as e:
+                await self._failure_ops.handle_generic_error(track, e)
 
     async def _poll_duration(self, track: TrackInfo):
         await poll_duration(self.state, self.mpv, self.resolver, self.bus, track)
