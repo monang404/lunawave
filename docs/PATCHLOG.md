@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-146
+latest_patch_id: PATCH-2026-07-22-153
 
-total_entries: 146
+total_entries: 153
 
 ---
 
@@ -21,6 +21,287 @@ total_entries: 146
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-153
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:24
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Hilangkan nilai hardcode CSS di portal.css agar patuh pada design tokens
+
+**Reason:** Mencegah drift diam-diam karena portal.css memuat nilai warna dan radius statis yang tidak sinkron bila token diubah di masa depan
+
+**Root Cause:**
+Developer lupa mengacu pada var() saat menambahkan styling layar admin di portal.css (misal #60a5fa dan 10px)
+
+**Solution:**
+Mengubah deklarasi statis menjadi referensi token murni: #60a5fa -> var(--fm-blue) dan 10px -> var(--r-sm)
+
+**Changed Files:**
+- `web/static/css/portal.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Memastikan seluruh nilai UI penting bersumber pada satu tempat tunggal yaitu tokens.css, layar pertama aplikasi kini lebih patuh design system
+
+---
+
+## PATCH-2026-07-22-152
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:19
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Migrasi ikon custom SVG ke font Tabler di index.html
+
+**Reason:** Mengatasi inkonsistensi bobot visual dan mengurangi duplikasi aset ikon
+
+**Root Cause:**
+Lima ikon persisten (nav bar & transport control) memakai inline SVG, sementara 41 ikon lain menggunakan font Tabler (stroke 2px) sehingga tidak harmonis
+
+**Solution:**
+Mengganti 5 SVG custom menjadi tag Tabler yang setara (ti-home, ti-radio, dll)
+
+**Changed Files:**
+- `web/static/index.html`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Font Tabler sudah diload, sehingga 0-cost network dan sepenuhnya menyelesaikan isu bobot ikon
+
+---
+
+## PATCH-2026-07-22-151
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:16
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Docs
+**Area:** Docs
+**Priority:** Medium
+**Title:** Tambahkan ADR-0009 untuk keputusan tipografi Radio Mode
+
+**Reason:** Mengisi gap dokumentasi: Keputusan penggunaan font eksternal di Radio Mode belum memiliki ADR resmi sebagai referensi tetap
+
+**Root Cause:**
+Keputusan sebelumnya mengenai font Fraunces/Space Grotesk hanya tercatat di RFC yang bersifat working document, menimbulkan kecurigaan bahwa ini adalah 'drift' tak organik bagi yang tak membaca RFC penuh
+
+**Solution:**
+Membuat ADR permanen (0009) yang merangkum keputusan self-hosted & subsetting font eksternal untuk momen editorial Radio Mode
+
+**Changed Files:**
+- `docs/adr/0009-radio-mode-typography.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sekarang pengembang baru dapat langsung merujuk ke ADR untuk menghindari perombakan tipografi secara tak sengaja
+
+---
+
+## PATCH-2026-07-22-150
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:15
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tuntaskan migrasi token radius dan hapus dead code radius app
+
+**Reason:** Migrasi alias radius ke canonical (--r-sm dkk) sudah selesai di semua komponen lain, tinggal menyisakan token sampah yang tidak terpakai
+
+**Root Cause:**
+Token --fm-radius-app (36px) sama sekali tidak dipakai, dan --fm-radius-sm hanya tersisa 2 penggunaan lama di settings-sheet.css
+
+**Solution:**
+Mengganti sisa --fm-radius-sm menjadi --r-sm di settings-sheet.css, dan menghapus seluruh blok alias --fm-radius-* dari tokens.css
+
+**Changed Files:**
+- `web/static/css/tokens.css`
+- `web/static/css/components/settings-sheet.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menuntaskan satu babak tech debt desain radius tanpa mengubah UI sama sekali
+
+---
+
+## PATCH-2026-07-22-149
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:13
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tingkatkan kontras warna --fm-text-5 agar lolos standar WCAG AA
+
+**Reason:** Nilai sebelumnya (#4A5060) memiliki rasio kontras 2.11:1 melawan --bg-elevated, gagal uji aksesibilitas
+
+**Root Cause:**
+Token text-5 yang digunakan untuk sub-label atau teks sekunder memiliki luminance terlalu rendah terhadap semua surface background (bg-primary, bg-surface, bg-elevated)
+
+**Solution:**
+Menaikkan brightness token ke #6b7280 yang memberikan rasio setidaknya ~4.6:1 terhadap background tergelap/terterang sekalipun
+
+**Changed Files:**
+- `web/static/css/tokens.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Warna baru tetap memberikan kesan muted/secondary tanpa mengorbankan keterbacaan (accessibility)
+
+---
+
+## PATCH-2026-07-22-148
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:11
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Hapus redundansi deklarasi .ss-action-btn di settings-sheet.css
+
+**Reason:** Mencegah override senyap akibat deklarasi ganda dengan spesifisitas setara
+
+**Root Cause:**
+Grup selector di bagian atas file menetapkan radius var(--fm-radius-sm) (8px), sementara di bawah ada deklarasi var(--r-sm) (12px) yang menimpa secara senyap
+
+**Solution:**
+Menghapus .ss-action-btn dari grup selector gabungan di atas dan menjadikan blok spesifik di bawah sebagai satu-satunya single source of truth
+
+**Changed Files:**
+- `web/static/css/components/settings-sheet.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menghilangkan kebingungan bagi developer yang membaca bagian atas file dan berharap style tersebut efektif
+
+---
+
+## PATCH-2026-07-22-147
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:08
+**Git Branch:** develop
+**Git Commit:** 2d463d4
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Remove dead token aliases and fix --fm-radius-sm drift
+
+**Reason:** Beberapa alias CSS tidak pernah dipakai dan ada satu alias yang hardcoded nilai salah
+
+**Root Cause:**
+Desain sistem menyisakan alias lama dan hardcode --fm-radius-sm ke 8px alih-alih var(--r-sm)
+
+**Solution:**
+Menghapus 4 token yang tidak terpakai dan mengubah --fm-radius-sm menjadi referensi canonical var(--r-sm)
+
+**Changed Files:**
+- `web/static/css/tokens.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak ada regresi visual karena token lama benar-benar dead code
 
 ---
 

@@ -47,7 +47,7 @@
   display: flex; align-items: center; justify-content: center;
   color: var(--accent); font-size: 18px; flex-shrink: 0;
 }
-.portal-btn.client .portal-icon { background: rgba(96,165,250,0.12); color: #60a5fa; }
+.portal-btn.client .portal-icon { background: rgba(96,165,250,0.12); color: var(--fm-blue); }
 
 .portal-btn-title {
   display: block; font-size: var(--t-md);
@@ -68,7 +68,7 @@
 .login-input-group input {
   width: 100%; background: var(--bg-surface);
   border: 1px solid var(--border-2);
-  border-radius: 10px; padding: 12px var(--s4);
+  border-radius: var(--r-sm); padding: 12px var(--s4);
   color: var(--text-1); font-size: var(--t-md);
   font-family: var(--font); outline: none;
   caret-color: var(--accent);
@@ -79,7 +79,7 @@
 
 #admin-submit-btn {
   width: 100%; background: var(--accent); border: none;
-  border-radius: 10px; padding: 12px;
+  border-radius: var(--r-sm); padding: 12px;
   color: #090A0D; font-size: var(--t-md);
   font-weight: var(--w-semibold); font-family: var(--font);
   cursor: pointer;
@@ -109,7 +109,7 @@
 
 #setup-submit-btn {
   width: 100%; background: var(--accent); border: none;
-  border-radius: 10px; padding: 12px;
+  border-radius: var(--r-sm); padding: 12px;
   color: #090A0D; font-size: var(--t-md);
   font-weight: var(--w-semibold); font-family: var(--font);
   cursor: pointer;

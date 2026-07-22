@@ -30,11 +30,11 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | Total file `.js` (ekskl. `.min.js`) | 39 |
 | Total file `.css` (ekskl. `.min.css`) | 24 |
 | Total class (Python) | 94 |
-| Total function/method (Python) | 512 |
-| Total baris Python | 12,102 |
+| Total function/method (Python) | 518 |
+| Total baris Python | 12,237 |
 | Total baris JS (web/) | 4,828 |
-| Total baris CSS (web/) | 4,168 |
-| Ukuran DB utama (`data/lunawave.db`) | 412 KB (+ WAL 2700 KB) |
+| Total baris CSS (web/) | 4,159 |
+| Ukuran DB utama (`data/lunawave.db`) | 448 KB (+ WAL 1505 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
@@ -42,9 +42,9 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | File | Baris |
 |------|-------|
 | `engine/playback/controller.py` | 429 |
-| `persistence/discover_repo.py` | 419 |
+| `persistence/discover_repo.py` | 402 |
 | `launcher/gui/ui_builder.py` | 350 |
-| `launcher/gui/app.py` | 292 |
+| `launcher/gui/app.py` | 290 |
 | `bootstrap/services.py` | 247 |
 <!-- END:GENERATED -->
 

@@ -94,17 +94,11 @@
    --fm-text-2: #e8e8f5;
    --fm-text-3: var(--text-2);
    --fm-text-4: var(--text-3);
-   --fm-text-5: #4A5060;
+   --fm-text-5: #6b7280;
    --fm-border: var(--border-1);
    --fm-border-2: var(--border-2);
    --fm-font: var(--font);
-   --fm-radius-xs: 4px;
-   --fm-radius-sm: 8px;
-   --fm-radius-md: var(--r-sm);
-   --fm-radius-lg: var(--r-md);
-   --fm-radius-xl: var(--r-lg);
-   --fm-radius-pill: var(--r-full);
-   --fm-radius-app: 36px;
+
    --fm-shadow-sm: var(--shadow-sm);
    --fm-shadow-md: var(--shadow-md);
    --fm-transition-fast: var(--dur-fast) var(--ease);
@@ -126,19 +120,18 @@
    --space-8: var(--s8);
    --space-10: var(--s10);
    /* type aliases lama */
-   --text-xs: 10px;
+
    --text-sm: 12px;
    --text-md: 14px;
    --text-lg: 16px;
-   --text-xl: 20px;
+
    --text-2xl: 24px;
    --weight-regular: 400;
    --weight-medium: 500;
    --weight-semibold: 600;
    --weight-bold: 700;
    /* motion aliases lama */
-   --duration-fast: 100ms;
-   --duration-normal: 200ms;
+
    --duration-slow: 350ms;
    --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
    --ease-in: cubic-bezier(0.4, 0.0, 1, 1);

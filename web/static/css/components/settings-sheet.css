@@ -88,11 +88,10 @@
 
 /* Settings action buttons */
 .ss-out-btn,
-.ss-action-btn,
 .ss-view-btn {
   background: var(--bg-elevated);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--fm-radius-sm);
+  border-radius: var(--r-sm);
   padding: 5px 12px;
   color: var(--fm-text-4);
   font-family: var(--fm-font);
@@ -103,7 +102,6 @@
 }
 
 .ss-out-btn:hover,
-.ss-action-btn:hover,
 .ss-view-btn:hover {
   color: var(--fm-text-1);
   border-color: var(--accent);
@@ -113,7 +111,7 @@
 /* Download bar in settings */
 .ss-dl-bar-wrap {
   background: var(--bg-primary);
-  border-radius: var(--fm-radius-sm);
+  border-radius: var(--r-sm);
   padding: 8px 10px;
 }
 

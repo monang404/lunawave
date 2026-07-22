@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1784688106.7475076,
+    "generated_at": 1784689722.2765825,
     "source_mtimes": {
       "config.py": 1784687948.1139107,
       "main.py": 1784613351.7806077,
@@ -18,7 +18,7 @@
       "bootstrap/maintenance.py": 1784518737.3387752,
       "bootstrap/power.py": 1784685931.9858694,
       "bootstrap/services.py": 1784613351.769609,
-      "bootstrap/startup_tasks.py": 1784687999.5519047,
+      "bootstrap/startup_tasks.py": 1784689566.3548863,
       "bootstrap/__init__.py": 1784518737.3387752,
       "core/commands.py": 1784437252.0,
       "core/command_bus.py": 1784437252.0,
@@ -76,10 +76,10 @@
       "launcher/gui/ui_builder.py": 1784518743.9085298,
       "launcher/gui/__init__.py": 1784437252.0,
       "persistence/admin_account_repo.py": 1784518743.9105308,
-      "persistence/artist_repo.py": 1784687380.969608,
-      "persistence/db.py": 1784687685.7430792,
+      "persistence/artist_repo.py": 1784689566.3548863,
+      "persistence/db.py": 1784689566.3548863,
       "persistence/discover_enrich.py": 1784437252.0,
-      "persistence/discover_repo.py": 1784687713.3170722,
+      "persistence/discover_repo.py": 1784689566.3548863,
       "persistence/genre_repo.py": 1784437252.0,
       "persistence/library_repo.py": 1784686498.7615912,
       "persistence/session_repo.py": 1784437252.0,
@@ -105,7 +105,7 @@
       "server/handlers/http.py": 1784518737.3813155,
       "server/handlers/setup.py": 1784518743.9145312,
       "server/handlers/websocket.py": 1784613207.1757386,
-      "server/handlers/ws_cache.py": 1784687963.8416793,
+      "server/handlers/ws_cache.py": 1784689566.3548863,
       "server/handlers/ws_discovery.py": 1784518737.3833158,
       "server/handlers/ws_download.py": 1784613207.1757386,
       "server/handlers/ws_playback.py": 1784518737.3843157,
@@ -369,7 +369,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 81,
+      "loc": 84,
       "docstring_purpose": "WebSocket handler for managing the downloaded MP3 file cache     (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.",
       "reverse_deps": [
         "server/handlers/websocket.py",
@@ -691,7 +691,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 402,
+      "loc": 403,
       "docstring_purpose": "Repository for Discover-tab personalization queries: bandit-ranked     \"Untuk Kamu\" artists, \"Belum Pernah Kamu Dengar\" (unheard) artists,     genre taste spectrum, genre affinity, and artist detail lookup.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -879,7 +879,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 121,
+      "loc": 135,
       "docstring_purpose": "Repository for tracking artist statistics and fetching artist-specific tracks.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -904,7 +904,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 169,
+      "loc": 171,
       "docstring_purpose": "Manages the SQLite database connection lifecycle and initialization.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -2847,7 +2847,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 189,
+      "loc": 193,
       "docstring_purpose": "Stage 2 of application startup: kick off the background tasks that     must not block the web server from listening \u2014 connectivity polling,     the initial MPV connect, and resuming the last-played track. Extracted     from main.py's `main()` (T2.4) without changing call order.",
       "reverse_deps": [
         "main.py"

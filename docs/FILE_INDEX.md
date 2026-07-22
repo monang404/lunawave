@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `core/log_config`, `engine/loudness/analyzer`, _10 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _11 lainnya_
 **Menggunakan:** —
 
 
@@ -1058,7 +1058,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `check_connectivity()`, `run_startup_checks()`
 **Digunakan oleh:** `main`
-**Menggunakan:** `bootstrap/power`, `bootstrap/services`, `core/state`, `core/task_utils`
+**Menggunakan:** `bootstrap/power`, `bootstrap/services`, `config`, `core/state`, `core/task_utils`
 
 
 ---
