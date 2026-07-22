@@ -18,9 +18,8 @@
 - **🎯 Discover Personalization**: Tab Discover menampilkan rekomendasi artis yang dipersonalisasi berdasarkan selera dengaran Anda (bandit-ranked + taste spectrum).
 - **🌐 Web UI Server-Client (LunaWave)**: Dapat dijalankan sebagai backend server di Termux HP, lalu diakses secara nirkabel dari browser Laptop/PC atau HP lain di jaringan WiFi yang sama.
 - **🔒 Portal Akses Ganda (Admin & Client)**:
-  - **Admin Mode (Kontrol Penuh)**: Membutuhkan login username & password. Password dienkripsi secara kuat (*hashed* PBKDF2-SHA256) demi keamanan tingkat enterprise.
-  - **Client Mode (Dengar Saja / Intercom)**: Akses instan tanpa password. Musik akan otomatis dialirkan (streaming) ke browser klien.
-  - **Fitur Logout & Switch Mode**: Memudahkan pengguna keluar dari sesi dan beralih peran.
+  - **Admin Mode (`/admin`)**: Membutuhkan login username & password untuk kontrol penuh pemutaran musik.
+  - **Client Mode / Dengar Saja (`/`)**: Akses instan tanpa password untuk menampilkan "now playing" dan lirik secara sinkron di perangkat lain.
 - **⚡ Arsitektur Enterprise-Ready**: Dibangun dengan *Hexagonal Architecture* (*Ports and Adapters*) dan pola *CommandBus & EventBus*, dirancang untuk personal music player single-user. Struktur *EventBus* sudah menyiapkan fondasi untuk *multi-room* di masa depan (lihat ADR-0005), namun belum aktif di rilis ini. Dilengkapi dengan *Structured Logging* (JSON) untuk kemudahan *troubleshooting*.
 
 ---
@@ -89,7 +88,7 @@ start.bat
 ### 🌐 Mengakses Antarmuka Web (LunaWave)
 Saat Anda menjalankan aplikasi, server web otomatis aktif di latar belakang pada port `8765`.
 1. Buka browser di Laptop/PC atau HP lain yang satu jaringan WiFi dengan HP Termux Anda.
-2. Masukkan alamat IP HP Termux Anda dan port `8765` (Contoh: `http://192.168.1.5:8765`).
+2. Untuk mengontrol musik, akses rute `/admin` (Contoh: `http://192.168.1.5:8765/admin`). Mengakses `/` langsung akan membuka tampilan "Dengar Saja" untuk klien.
 3. **Pertama kali dijalankan**, Anda akan diarahkan ke halaman **Initial Setup** untuk membuat akun admin sendiri (username + password minimal 8 karakter). Tidak ada password yang di-generate otomatis lagi — Anda yang menentukannya sendiri, sekali, saat setup.
 4. Setelah setup selesai, gunakan kredensial itu untuk login. Untuk provisioning non-interaktif (CI, automated deploy) yang tidak bisa lewat wizard browser, kredensial awal juga bisa di-set via Environment Variable `LUNAWAVE_ADMIN_USER` dan `LUNAWAVE_ADMIN_PASS` — jalur ini hanya aktif kalau akun admin belum pernah dibuat.
 5. Klik tombol **`🚪 Keluar`** di pojok kanan atas UI Web untuk logout.

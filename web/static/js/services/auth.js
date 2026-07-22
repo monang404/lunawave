@@ -154,9 +154,6 @@ function logout() {
             window.location.href = "/admin";
         }, 150);
     } else {
-        if (dom.portalClientBtn) {
-            dom.portalClientBtn.style.display = "none";
-        }
         applyRoleUI();
         if (window.ws) {
             try {

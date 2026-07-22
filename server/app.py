@@ -40,11 +40,6 @@ from aiohttp import web
 from core.ports import MediaExtractorPort
 from engine.playback.controller import PlaybackController
 from persistence import Repositories
-from server.connection_manager import ConnectionManager
-from server.handlers.audio_stream_handler import serve_stream
-from server.handlers.http import health_check, serve_index, serve_metrics
-from server.handlers.setup import setup_required
-from server.handlers.websocket import ws_handler
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
@@ -65,6 +60,12 @@ MANAGER: web.AppKey = web.AppKey("manager")
 def create_app(
     playback_controller: PlaybackController, ytdlp: MediaExtractorPort, repos: Repositories
 ) -> web.Application:
+    from server.connection_manager import ConnectionManager
+    from server.handlers.audio_stream_handler import serve_stream
+    from server.handlers.http import health_check, serve_client, serve_index, serve_metrics
+    from server.handlers.setup import setup_required
+    from server.handlers.websocket import ws_handler
+
     app = web.Application()
     manager = ConnectionManager()
 
@@ -86,7 +87,7 @@ def create_app(
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
 
-    app.router.add_get("/", serve_index)
+    app.router.add_get("/", serve_client)
     app.router.add_get("/admin", serve_index)
     app.router.add_get("/ws", ws_handler)
     app.router.add_get("/api/stream/{video_id}", serve_stream)

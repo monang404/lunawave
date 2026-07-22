@@ -33,7 +33,7 @@ import structlog
 from aiohttp import web
 
 from core.observability import get_metrics_content
-from server.handlers import get_conn
+from server.handlers import get_conn, get_playback_controller
 
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
@@ -45,11 +45,17 @@ async def serve_index(request):
     return resp
 
 
+async def serve_client(request):
+    resp = web.FileResponse(STATIC_DIR / "client.html")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 async def health_check(request):
     conn = get_conn(request)
     db_status = "connected" if conn else "disconnected"
 
-    pc = request.app.get("playback_controller")
+    pc = get_playback_controller(request)
     mpv_ok = getattr(getattr(pc, "mpv", None), "is_connected", False)
     mpv_status = "connected" if mpv_ok else "not_started"
 

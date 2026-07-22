@@ -30,6 +30,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from aiohttp import web
 
+from server.app import CONN, PLAYBACK_CONTROLLER
 from server.handlers.http import health_check, serve_index, serve_metrics
 
 
@@ -60,8 +61,8 @@ async def test_health_check_returns_ok_when_connected(mock_request):
     mock_pc = MagicMock()
     mock_pc.mpv.is_connected = True
 
-    mock_request.app["conn"] = True
-    mock_request.app["playback_controller"] = mock_pc
+    mock_request.app[CONN] = True
+    mock_request.app[PLAYBACK_CONTROLLER] = mock_pc
 
     with patch("server.handlers.http.web.json_response") as mock_json_resp:
         mock_json_resp.return_value = "response"
@@ -76,7 +77,10 @@ async def test_health_check_returns_ok_when_connected(mock_request):
 
 @pytest.mark.asyncio
 async def test_health_check_returns_degraded_when_db_disconnected(mock_request):
-    mock_request.app["conn"] = False
+    mock_pc = MagicMock()
+    mock_pc.mpv.is_connected = False
+    mock_request.app[CONN] = False
+    mock_request.app[PLAYBACK_CONTROLLER] = mock_pc
 
     with patch("server.handlers.http.web.json_response") as mock_json_resp:
         await health_check(mock_request)

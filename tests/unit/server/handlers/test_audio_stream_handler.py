@@ -33,6 +33,7 @@ import pytest
 from aiohttp import web
 
 from core.exceptions import VideoUnavailableError
+from server.app import TRACKS, YTDLP
 from server.handlers.audio_stream_handler import serve_stream
 
 
@@ -98,8 +99,8 @@ async def test_serve_stream_db_fresh_no_http_session(mock_request):
 
     mock_ytdlp = AsyncMock()
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
         mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
@@ -129,8 +130,8 @@ async def test_serve_stream_db_stale_no_http_session(mock_request):
     mock_ytdlp = AsyncMock()
     mock_ytdlp.get_stream_url.return_value = "https://new.googlevideo.com/videoplayback"
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
         mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
@@ -160,8 +161,8 @@ async def test_serve_stream_redirect_invalid_domain(mock_request):
     mock_row.stream_url_ts = time.time() - 10  # Fresh
     mock_db.get_track.return_value = mock_row
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = AsyncMock()
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = AsyncMock()
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
         mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
@@ -187,8 +188,8 @@ async def test_serve_stream_redirect_invalid_scheme(mock_request):
     mock_row.stream_url_ts = time.time() - 10  # Fresh
     mock_db.get_track.return_value = mock_row
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = AsyncMock()
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = AsyncMock()
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
         mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
@@ -231,8 +232,8 @@ async def test_serve_stream_proxy_retry_fetch_success(mock_request):
 
     mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -269,8 +270,8 @@ async def test_serve_stream_proxy_retry_both_fail(mock_request):
 
     mock_http_session = AsyncMock()
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -311,8 +312,8 @@ async def test_serve_stream_proxy_range_header(mock_request):
 
     mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -374,8 +375,8 @@ async def test_serve_stream_proxy_forbidden_retry(mock_request):
 
     mock_upstream_200.content.iter_chunked = mock_chunked
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -411,8 +412,8 @@ async def test_serve_stream_returns_410_when_marked_unavailable_without_calling_
     mock_db.get_unavailable_reason.return_value = "Private video"
     mock_ytdlp = AsyncMock()
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
         mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
@@ -441,8 +442,8 @@ async def test_serve_stream_marks_unavailable_on_video_unavailable_error_no_http
     mock_ytdlp = AsyncMock()
     mock_ytdlp.get_stream_url.side_effect = VideoUnavailableError("Video unavailable")
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     # tidak ada http_session -> masuk jalur redirect
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -473,8 +474,8 @@ async def test_serve_stream_marks_unavailable_on_video_unavailable_error_proxy_p
     mock_ytdlp = AsyncMock()
     mock_ytdlp.get_stream_url.side_effect = VideoUnavailableError("Private video")
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = AsyncMock()  # proxy path (bukan redirect)
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -521,8 +522,8 @@ async def test_serve_stream_prebuffers_before_writing_to_client(mock_request):
     mock_upstream.content.iter_chunked = mock_chunked
     mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
@@ -584,8 +585,8 @@ async def test_serve_stream_prebuffer_handles_short_stream_smaller_than_threshol
     mock_upstream.content.iter_chunked = mock_chunked
     mock_http_session.get.return_value.__aenter__.return_value = mock_upstream
 
-    mock_request.app["tracks"] = mock_db
-    mock_request.app["ytdlp"] = mock_ytdlp
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
     mock_request.app["http_session"] = mock_http_session
 
     with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:

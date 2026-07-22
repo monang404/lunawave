@@ -26,7 +26,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 
-from server.app import create_app, run_server
+from server.app import (
+    CONN,
+    MANAGER,
+    PLAYBACK_CONTROLLER,
+    REPOS,
+    STATE,
+    TRACKS,
+    YTDLP,
+    create_app,
+    run_server,
+)
 
 
 @pytest.fixture
@@ -54,13 +64,13 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert isinstance(app, web.Application)
 
     # Check that services are in app
-    assert app["playback_controller"] == mock_playback_controller
-    assert app["state"] == mock_playback_controller.state
-    assert app["ytdlp"] == mock_ytdlp
-    assert app["repos"] == mock_repos
-    assert app["conn"] == mock_repos.conn
-    assert app["tracks"] == mock_repos.tracks
-    assert "manager" in app
+    assert app[PLAYBACK_CONTROLLER] == mock_playback_controller
+    assert app[STATE] == mock_playback_controller.state
+    assert app[YTDLP] == mock_ytdlp
+    assert app[REPOS] == mock_repos
+    assert app[CONN] == mock_repos.conn
+    assert app[TRACKS] == mock_repos.tracks
+    assert MANAGER in app
 
     # Check that routes are registered
     routes = [
