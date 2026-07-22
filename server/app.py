@@ -49,6 +49,18 @@ from server.handlers.websocket import ws_handler
 logger = structlog.get_logger(__name__)
 STATIC_DIR = Path(__file__).parent.parent / "web" / "static"
 
+# --- Application-scoped keys (web.AppKey eliminates NotAppKeyWarning) ---
+# Each key is a typed constant importable by handler accessors.
+PLAYBACK_CONTROLLER: web.AppKey[PlaybackController] = web.AppKey(
+    "playback_controller", PlaybackController
+)
+STATE: web.AppKey = web.AppKey("state")
+YTDLP: web.AppKey[MediaExtractorPort] = web.AppKey("ytdlp", MediaExtractorPort)
+REPOS: web.AppKey[Repositories] = web.AppKey("repos", Repositories)
+CONN: web.AppKey = web.AppKey("conn")
+TRACKS: web.AppKey = web.AppKey("tracks")
+MANAGER: web.AppKey = web.AppKey("manager")
+
 
 def create_app(
     playback_controller: PlaybackController, ytdlp: MediaExtractorPort, repos: Repositories
@@ -56,13 +68,13 @@ def create_app(
     app = web.Application()
     manager = ConnectionManager()
 
-    app["playback_controller"] = playback_controller
-    app["state"] = playback_controller.state
-    app["ytdlp"] = ytdlp
-    app["repos"] = repos
-    app["conn"] = repos.conn
-    app["tracks"] = repos.tracks
-    app["manager"] = manager
+    app[PLAYBACK_CONTROLLER] = playback_controller
+    app[STATE] = playback_controller.state
+    app[YTDLP] = ytdlp
+    app[REPOS] = repos
+    app[CONN] = repos.conn
+    app[TRACKS] = repos.tracks
+    app[MANAGER] = manager
     # Bug #9 fix: ClientSession sudah dibuat di main.py dan di-pass ke plugins.
     # Tidak perlu buat session baru di sini agar tidak ada resource leak.
 

@@ -12,11 +12,13 @@
 
 - **🎵 Sinkronisasi Lirik Real-Time**: Lirik berjalan otomatis (karaoke style) mengambil data dari LRCLIB.
 - **⏭️ SponsorBlock Integration**: Otomatis melompati iklan/sponsor yang disematkan di dalam video YouTube.
-- **📻 Smart Radio Autoplay**: Antrean kosong? Aplikasi akan otomatis mencari dan memutar lagu yang relevan tanpa henti.
-- **💾 Smart Caching & Download**: Lagu yang pernah diputar atau di-download manual (`[M]`) akan disimpan secara lokal. Pemutaran ulang tidak akan menyedot kuota internet.
+- **📻 Smart Radio Autoplay**: Antrean kosong? Aplikasi akan otomatis mencari dan memutar lagu yang relevan tanpa henti. Artis dipilih menggunakan **Thompson Sampling bandit** yang belajar dari selera dengaran Anda.
+- **💾 Smart Caching & Download**: Lagu yang pernah diputar atau di-download manual akan disimpan secara lokal. Pemutaran ulang tidak akan menyedot kuota internet.
+- **🔊 Loudness Normalization (EBU R128)**: Volume antar lagu diseimbangkan secara otomatis menggunakan standar broadcast EBU R128 (via ffprobe + MPV audio filter).
+- **🎯 Discover Personalization**: Tab Discover menampilkan rekomendasi artis yang dipersonalisasi berdasarkan selera dengaran Anda (bandit-ranked + taste spectrum).
 - **🌐 Web UI Server-Client (LunaWave)**: Dapat dijalankan sebagai backend server di Termux HP, lalu diakses secara nirkabel dari browser Laptop/PC atau HP lain di jaringan WiFi yang sama.
 - **🔒 Portal Akses Ganda (Admin & Client)**:
-  - **Admin Mode (Kontrol Penuh)**: Membutuhkan login username & password. Password dienkripsi secara kuat (*hashed*) demi keamanan tingkat enterprise.
+  - **Admin Mode (Kontrol Penuh)**: Membutuhkan login username & password. Password dienkripsi secara kuat (*hashed* PBKDF2-SHA256) demi keamanan tingkat enterprise.
   - **Client Mode (Dengar Saja / Intercom)**: Akses instan tanpa password. Musik akan otomatis dialirkan (streaming) ke browser klien.
   - **Fitur Logout & Switch Mode**: Memudahkan pengguna keluar dari sesi dan beralih peran.
 - **⚡ Arsitektur Enterprise-Ready**: Dibangun dengan *Hexagonal Architecture* (*Ports and Adapters*) dan pola *CommandBus & EventBus*, dirancang untuk personal music player single-user. Struktur *EventBus* sudah menyiapkan fondasi untuk *multi-room* di masa depan (lihat ADR-0005), namun belum aktif di rilis ini. Dilengkapi dengan *Structured Logging* (JSON) untuk kemudahan *troubleshooting*.
@@ -66,10 +68,20 @@ Aplikasi ini membutuhkan beberapa program eksternal untuk berjalan:
 
 ## 🚀 Cara Menjalankan
 
-Dari dalam direktori `lunawave`, jalankan perintah:
+Dari dalam direktori `lunawave`, pilih salah satu cara:
 
 ```bash
+# Cara 1 — server langsung (tanpa GUI)
 python main.py
+
+# Cara 2 — GUI launcher Tkinter (start/stop visual)
+python start.py
+
+# Cara 3 — script shell (Linux / Termux, auto-setup env)
+bash start.sh
+
+# Cara 4 — script Windows (CMD/PowerShell)
+start.bat
 ```
 
 > **Catatan Windows:** Di Windows, aplikasi akan otomatis membuka koneksi TCP internal ke MPV (via fallback) karena fitur Unix Socket tidak tersedia. Pastikan port lokal tidak terblokir firewall.
@@ -118,20 +130,22 @@ Gunakan tombol-tombol yang tersedia di **Player Bar** bagian bawah web UI untuk:
 
 ---
 
-## 📖 Buku Panduan Lengkap & Pro Tips
+## 📖 Dokumentasi Lengkap
 
-Untuk panduan yang lebih dalam mengenai rahasia kualitas audio, trik pencarian spesifik, dan fitur lirik 3-lapis, silakan baca **[Buku Panduan & Pro Tips (MANUAL_BOOK.md)](MANUAL_BOOK.md)**.
+Dokumentasi teknis lengkap ada di folder `docs/` — mulai dari arsitektur, API WebSocket, keamanan, hingga panduan kontribusi.
+
+Baca `docs/INDEX.md` sebagai titik masuk navigasi.
 
 ---
 
 ## 📁 Struktur Direktori & Sistem Log
 
 Aplikasi ini menggunakan sistem *smart caching* dan memiliki sistem log tingkat lanjut:
-- `cache/library.db` : Database SQLite penyimpan metadata, path file lokal, dan *play count*.
-- `cache/<video_id>.mp3` : File audio hasil unduhan manual (`[M]`).
+- `data/lunawave.db` : Database SQLite penyimpan metadata track, riwayat putar, artis, genre, dan sesi login.
+- `cache/mp3/<video_id>.mp3` : File audio hasil unduhan manual. Folder ini aman untuk dihapus kapanpun untuk menghemat ruang penyimpanan.
 - `lunawave.log` : Berkas log aplikasi dalam format JSON (Structured Logging) untuk observabilitas yang mudah dibaca oleh mesin/developer.
 
-Anda bisa menghapus isi folder `cache` kapanpun jika ingin menghemat ruang penyimpanan.
+Anda bisa menghapus isi folder `cache/mp3/` kapanpun jika ingin menghemat ruang penyimpanan.
 
 ---
 
@@ -142,8 +156,8 @@ Didistribusikan di bawah lisensi MIT. Anda bebas memodifikasi, mendistribusikan,
 ## 🤝 Berkontribusi & Arsitektur
 
 Bagi para *developer* atau agen AI yang ingin berkontribusi, sangat diwajibkan untuk membaca dokumen berikut demi menjaga kualitas dan konsistensi kode:
-- **[Panduan Kontribusi & Hukum Codebase (CONTRIBUTING.md)](docs/opensource/contributing.md)**
-- **[Penjelasan Arsitektur (ARCHITECTURE.md)](docs/INDEX.md)**
+- **[Panduan Kontribusi (CONTRIBUTING.md)](CONTRIBUTING.md)**
+- **[Penjelasan Arsitektur (docs/INDEX.md)](docs/INDEX.md)**
 
 ---
 Enjoy your web music experience! 🎶

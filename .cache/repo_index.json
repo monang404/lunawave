@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1784694162.5698802,
+    "generated_at": 1784700414.6107254,
     "source_mtimes": {
       "config.py": 1784687948.1139107,
       "main.py": 1784613351.7806077,
@@ -17,19 +17,19 @@
       "adapters/ytdlp/__init__.py": 1784685931.9858694,
       "bootstrap/maintenance.py": 1784518737.3387752,
       "bootstrap/power.py": 1784685931.9858694,
-      "bootstrap/services.py": 1784692782.007452,
+      "bootstrap/services.py": 1784695087.1753066,
       "bootstrap/startup_tasks.py": 1784689566.3548863,
       "bootstrap/__init__.py": 1784518737.3387752,
       "core/commands.py": 1784437252.0,
       "core/command_bus.py": 1784437252.0,
-      "core/events.py": 1784437252.0,
+      "core/events.py": 1784694611.4949944,
       "core/event_bus.py": 1784437252.0,
       "core/exceptions.py": 1784606900.0,
       "core/latency_window.py": 1784437252.0,
       "core/log_config.py": 1784437252.0,
       "core/observability.py": 1784437252.0,
       "core/ports.py": 1784693002.3392427,
-      "core/security.py": 1784437252.0,
+      "core/security.py": 1784700329.2200553,
       "core/state.py": 1784437252.0,
       "core/task_utils.py": 1784437252.0,
       "core/__init__.py": 1784437252.0,
@@ -39,13 +39,13 @@
       "engine/download_manager.py": 1784437252.0,
       "engine/queue_manager.py": 1784437252.0,
       "engine/sleep_timer.py": 1784437252.0,
-      "engine/volume_service.py": 1784437252.0,
+      "engine/volume_service.py": 1784694620.9795835,
       "engine/__init__.py": 1784437252.0,
       "engine/loudness/analyzer.py": 1784685931.993894,
       "engine/loudness/gain_calculator.py": 1784437252.0,
       "engine/loudness/service.py": 1784685931.993894,
-      "engine/playback/controller.py": 1784606900.0,
-      "engine/playback/crossfade.py": 1784437252.0,
+      "engine/playback/controller.py": 1784698234.6197715,
+      "engine/playback/crossfade.py": 1784698241.3990664,
       "engine/playback/failure_ops.py": 1784611029.2381842,
       "engine/playback/mode_ops.py": 1784437252.0,
       "engine/playback/queue_controller.py": 1784518737.3670557,
@@ -82,7 +82,7 @@
       "persistence/discover_repo.py": 1784689566.3548863,
       "persistence/genre_repo.py": 1784437252.0,
       "persistence/library_repo.py": 1784686498.7615912,
-      "persistence/session_repo.py": 1784693014.2830317,
+      "persistence/session_repo.py": 1784700347.2808602,
       "persistence/stream_cache.py": 1784606900.0,
       "persistence/track_repo.py": 1784606900.0,
       "persistence/__init__.py": 1784606900.0,
@@ -93,24 +93,24 @@
       "plugins/sponsorblock.py": 1784437252.0,
       "plugins/__init__.py": 1784437252.0,
       "scratch/check_db.py": 1784613351.7976074,
-      "server/app.py": 1784613351.800609,
+      "server/app.py": 1784700387.2475154,
       "server/broadcast_service.py": 1784518737.3793151,
       "server/connection_manager.py": 1784518743.9125347,
       "server/middleware.py": 1784437252.0,
       "server/serializers.py": 1784437252.0,
       "server/__init__.py": 1784437252.0,
       "server/handlers/audio_stream_handler.py": 1784606900.0,
-      "server/handlers/auth.py": 1784693186.3291225,
+      "server/handlers/auth.py": 1784699697.469051,
       "server/handlers/event_listeners.py": 1784518737.3813155,
       "server/handlers/http.py": 1784518737.3813155,
-      "server/handlers/setup.py": 1784694136.515095,
-      "server/handlers/websocket.py": 1784693323.6579783,
+      "server/handlers/setup.py": 1784699681.1427138,
+      "server/handlers/websocket.py": 1784700370.29537,
       "server/handlers/ws_cache.py": 1784689566.3548863,
       "server/handlers/ws_discovery.py": 1784518737.3833158,
       "server/handlers/ws_download.py": 1784613207.1757386,
       "server/handlers/ws_playback.py": 1784518737.3843157,
       "server/handlers/ws_queue.py": 1784518737.3853154,
-      "server/handlers/__init__.py": 1784518737.3793151,
+      "server/handlers/__init__.py": 1784700407.7615376,
       "services/discover_ranking.py": 1784518737.3853154,
       "services/discover_service.py": 1784518737.3863163,
       "services/stream_prefetch.py": 1784606900.0,
@@ -328,11 +328,12 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 103,
+      "loc": 115,
       "docstring_purpose": "Create and configure the aiohttp web application with all routes,     services, and EventBus listeners wired together.",
       "reverse_deps": [
         "main.py",
-        "main.py"
+        "main.py",
+        "server/handlers/__init__.py"
       ]
     },
     "server/handlers/ws_queue.py": {
@@ -391,7 +392,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 161,
+      "loc": 150,
       "docstring_purpose": "Handle WebSocket authentication, session token verification, and     per-IP login rate limiting.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -439,14 +440,15 @@
         "aiohttp",
         "core.ports",
         "core.state",
+        "server.app",
         "engine.playback.controller",
         "persistence",
         "server.connection_manager"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 72,
-      "docstring_purpose": "Shared, typed accessors for values stashed on `request.app[...]` by     server.app.create_app(). Handlers should use these instead of raw     `request.app[\"key\"]` lookups so the type of each value is explicit     (T3.7 \u2014 dulu rencana ini ditulis untuk `request.app[\"db\"]`, tapi     setelah T2.2 memecah `Database` God Facade, tidak ada lagi key     tunggal \"db\" \u2014 sudah jadi beberapa key spesifik: \"repos\", \"tracks\",     \"conn\", dst. Accessor di bawah menutupi semua key itu).",
+      "loc": 74,
+      "docstring_purpose": "Shared, typed accessors for values stashed on `request.app[...]` by     server.app.create_app(). Handlers should use these instead of raw     `request.app[KEY]` lookups so the type of each value is explicit     (T3.7 \u2014 dulu rencana ini ditulis untuk `request.app[\"db\"]`, tapi     setelah T2.2 memecah `Database` God Facade, tidak ada lagi key     tunggal \"db\" \u2014 sudah jadi beberapa key spesifik: \"repos\", \"tracks\",     \"conn\", dst. Accessor di bawah menutupi semua key itu).",
       "reverse_deps": []
     },
     "server/handlers/event_listeners.py": {
@@ -530,12 +532,14 @@
       "layer": "server",
       "classes": [],
       "functions": [
+        "check_ws_origin",
         "ws_handler",
         "handle_ws_message"
       ],
       "imports": [
         "json",
         "time",
+        "urllib.parse",
         "aiohttp",
         "structlog",
         "aiohttp",
@@ -552,7 +556,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 206,
+      "loc": 241,
       "docstring_purpose": "Handle WebSocket connections, authenticate clients, and dispatch     incoming commands to the CommandBus after rate-limit enforcement.",
       "reverse_deps": [
         "server/app.py"
@@ -819,11 +823,12 @@
         "cleanup_sessions"
       ],
       "imports": [
-        "time"
+        "time",
+        "core.security"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 62,
+      "loc": 71,
       "docstring_purpose": "Manages authentication session tokens, verifying and cleaning up expired sessions.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1045,10 +1050,11 @@
         "core.state"
       ],
       "publishes": [
+        "VolumeChangedEvent",
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 61,
+      "loc": 62,
       "docstring_purpose": "Handle volume-related commands and apply the correct volume to mpv     based on the active audio output mode.",
       "reverse_deps": [
         "bootstrap/services.py"
@@ -1158,9 +1164,10 @@
         "TrackProgressEvent",
         "TrackPauseChangedEvent",
         "TrackDurationEvent",
-        "MpvReconnectedEvent"
+        "MpvReconnectedEvent",
+        "VolumeChangedEvent"
       ],
-      "loc": 430,
+      "loc": 452,
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "server/app.py",
@@ -1323,7 +1330,7 @@
       "classes": [],
       "functions": [
         "apply_crossfade_in",
-        "check_crossfade_out"
+        "apply_crossfade_out"
       ],
       "imports": [
         "asyncio",
@@ -1331,7 +1338,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 45,
+      "loc": 52,
       "docstring_purpose": "Crossfade helpers untuk transisi halus antar track via MPV volume ramping.",
       "reverse_deps": [
         "engine/playback/controller.py",
@@ -2242,7 +2249,9 @@
       "classes": [],
       "functions": [
         "hash_password",
-        "verify_password"
+        "verify_password",
+        "hash_token",
+        "verify_token"
       ],
       "imports": [
         "base64",
@@ -2251,11 +2260,12 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 51,
-      "docstring_purpose": "Provide PBKDF2-SHA256 password hashing and constant-time verification.",
+      "loc": 70,
+      "docstring_purpose": "Provide PBKDF2-SHA256 password hashing, constant-time verification,     and SHA-256 session token hashing.",
       "reverse_deps": [
         "config.py",
         "server/handlers/auth.py",
+        "persistence/session_repo.py",
         "server/handlers/setup.py"
       ]
     },
@@ -2272,6 +2282,7 @@
         "DownloadCompleteEvent",
         "DownloadProgressEvent",
         "LogMessageEvent",
+        "VolumeChangedEvent",
         "TrackPauseChangedEvent",
         "MpvReconnectedEvent"
       ],
@@ -2282,7 +2293,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 95,
+      "loc": 100,
       "docstring_purpose": "Define all typed DomainEvent dataclasses for the LunaWave event bus.",
       "reverse_deps": [
         "server/handlers/event_listeners.py",
@@ -2889,7 +2900,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 260,
+      "loc": 261,
       "docstring_purpose": "Stage 1 of application startup: open the DB, connect core adapters     (MPV, yt-dlp), and wire every domain service used by the rest of the     app (resolver, playback controller, radio, volume, sleep timer, etc).     Extracted from main.py's `main()` (T2.4, section \"1-6\" of the original     God Function) without changing call order.",
       "reverse_deps": [
         "main.py",
@@ -3002,7 +3013,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 222,
+      "loc": 218,
       "docstring_purpose": "Handle Initial Setup: creation of the single admin_account row that     becomes the sole source of login credentials (Fitur B: login_redesign,     lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any     admin account exists, so it lives outside the normal require_auth gate     -- the same way \"auth\" itself is special-cased in websocket.py.",
       "reverse_deps": [
         "server/app.py",

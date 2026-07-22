@@ -1,5 +1,5 @@
 ---
-last_verified: 2026-07-21
+last_verified: 2026-07-22
 sprint: Phase 8 (selesai) + Tier 2 (T10-T16) + Hardening
 ---
 
@@ -19,7 +19,6 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 ## File yang TIDAK BOLEH disentuh tanpa izin eksplisit
 - `engine/playback/controller.py` — risiko tinggi, closure kompleks
 - `server/handlers/websocket.py` — jangan pecah dulu tanpa persetujuan eksplisit atau sprint plan yang jelas
-- `cache/admin_password.txt` — JANGAN commit
 - `web/static/index.html` — tidak dipecah, ini keputusan final
 
 ## Batasan teknis yang tidak boleh dilanggar
@@ -28,6 +27,8 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 - Tidak boleh ganti SQLite ke DB lain
 - Tidak boleh refactor 2 tahap sekaligus dalam 1 commit
 - Setiap file yang dipindah WAJIB ada backward-compat alias
+- **Gunakan `web.AppKey` untuk semua app state baru** — jangan pakai `app["string"]` (deprecated, NotAppKeyWarning). Lihat konstanta di `server/app.py` (PLAYBACK_CONTROLLER, STATE, YTDLP, dll.)
+- **Session token selalu di-hash SHA-256 sebelum masuk DB** — gunakan `core.security.hash_token()`, jangan simpan raw token. `persistence.session_repo` sudah handle ini transparan.
 - **Waspada Zombie Threads**: `ThreadPoolExecutor` (seperti saat membungkus `yt-dlp` atau `ffprobe`) yang hang dapat menyebabkan *non-daemon thread* tersangkut, membuat Python gagal *exit* (membuat CI/CD *hang* meski *test coverage* lulus). Eksekusi `os._exit()` pada `pytest_unconfigure` di `tests/conftest.py` menangani isu ini, jadi jangan dihapus.
 
 ## Alur kerja AI yang benar
@@ -103,8 +104,8 @@ cat docs/DEPENDENCY_GRAPH.json    # nodes, edges (import graph), events, orphan 
 # Jawab: layer arsitektur, callers, dependencies, status di STATUS.md, ADR terkait
 # Menerima path file, nama class, ATAU nama fungsi — resolusi otomatis.
 python automation/find_owner.py DownloadManager
-python automation/find_owner.py cache/db.py
-python automation/find_owner.py publish          # cari berdasarkan nama fungsi
+python automation/find_owner.py server/handlers/auth.py
+python automation/find_owner.py hash_token    # cari berdasarkan nama fungsi
 ```
 
 ```bash
@@ -166,7 +167,7 @@ Semua checker (`verify_docs`, `architecture_lint`, `verify_structure`, `verify_s
 
 `doctor.py` hanya membaca JSON ini — tidak punya logika validasi sendiri. Untuk tambah checker baru, cukup implementasikan kontrak di atas lalu daftarkan di `CHECKERS` list di `doctor.py`.
 
-### Struktur internal automation/ (untuk AI yang perlu memodifikasi tooling) (untuk AI yang perlu memodifikasi tooling)
+### Struktur internal automation/ (untuk AI yang perlu memodifikasi tooling)
 
 `automation/` kini punya dua sub-package internal:
 - **`shared/`** — utilitas bersama: `check_result.py` (dataclass `CheckResult` + fungsi `_score`/`_overall_status`), `skip_dirs.py` (`SKIP_DIRS` + `walk_py_files`), `generated_block.py` (`replace_marker_block`)
@@ -281,5 +282,8 @@ docs/
     ├── 0003-hexagonal-ports-protocol.md
     ├── 0004-command-bus-single-writer.md
     ├── 0005-websocket-single-channel.md
-    └── 0006-vanilla-js-over-framework.md
+    ├── 0006-vanilla-js-over-framework.md
+    ├── 0007-crossfade.md
+    ├── 0008-admin-credentials-in-sqlite.md
+    └── 0009-radio-mode-typography.md
 ```

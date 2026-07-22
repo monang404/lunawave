@@ -27,25 +27,25 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 |--------|-------|
 | Total folder (ekskl. `__pycache__`, `.git`) | 66 |
 | Total file `.py` (source, ekskl. `__pycache__`) | 113 |
-| Total file `.js` (ekskl. `.min.js`) | 39 |
+| Total file `.js` (ekskl. `.min.js`) | 40 |
 | Total file `.css` (ekskl. `.min.css`) | 24 |
-| Total class (Python) | 94 |
-| Total function/method (Python) | 518 |
-| Total baris Python | 12,237 |
-| Total baris JS (web/) | 4,828 |
-| Total baris CSS (web/) | 4,159 |
-| Ukuran DB utama (`data/lunawave.db`) | 448 KB (+ WAL 1505 KB) |
+| Total class (Python) | 95 |
+| Total function/method (Python) | 525 |
+| Total baris Python | 12,373 |
+| Total baris JS (web/) | 4,921 |
+| Total baris CSS (web/) | 4,166 |
+| Ukuran DB utama (`data/lunawave.db`) | 712 KB (+ WAL 4027 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 429 |
+| `engine/playback/controller.py` | 451 |
 | `persistence/discover_repo.py` | 402 |
 | `launcher/gui/ui_builder.py` | 350 |
 | `launcher/gui/app.py` | 290 |
-| `bootstrap/services.py` | 247 |
+| `bootstrap/services.py` | 260 |
 <!-- END:GENERATED -->
 
 ---

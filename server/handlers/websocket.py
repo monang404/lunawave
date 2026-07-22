@@ -6,6 +6,7 @@ Purpose:
     incoming commands to the CommandBus after rate-limit enforcement.
 
 Responsibilities:
+    - Reject WebSocket handshakes from cross-origin browser clients (CSWSH).
     - Manage ConnectionManager (connect/disconnect/broadcast to all clients).
     - Route authenticated WS actions to command_bus.execute().
 
@@ -31,6 +32,7 @@ Thread Safety:
 
 import json
 import time
+from urllib.parse import urlparse
 
 import aiohttp
 import structlog
@@ -83,7 +85,40 @@ CACHE_CMDS = {"get_cache_size", "clear_cache"}
 logger = structlog.get_logger(__name__)
 
 
+def check_ws_origin(request) -> bool:
+    """Validate the Origin header to prevent Cross-Site WebSocket Hijacking (CSWSH).
+
+    Rules:
+    - No Origin header  → allow (non-browser client: curl, Termux, Python script).
+    - Origin present    → parse its host, compare with request.host (case-insensitive).
+    - Mismatch          → deny (cross-origin browser page trying to hijack the socket).
+
+    When behind a reverse proxy / tunnel (ngrok, Cloudflare), the Host header
+    reflects the tunnel domain — Origin must match that same domain.
+    """
+    origin = request.headers.get("Origin", "")
+    if not origin:
+        # Non-browser clients don't send Origin; allow them.
+        return True
+    try:
+        origin_host = urlparse(origin).netloc  # includes port if present
+    except Exception:
+        return False
+    # request.host already contains the correct host:port from the Host header.
+    return origin_host.lower() == request.host.lower()
+
+
 async def ws_handler(request):
+    # Reject cross-origin WebSocket handshakes (CSWSH protection).
+    # Non-browser clients (no Origin header) are still allowed.
+    if not check_ws_origin(request):
+        logger.warning(
+            "WS handshake rejected: Origin mismatch",
+            origin=request.headers.get("Origin", ""),
+            host=request.host,
+        )
+        return web.Response(status=403, text="Forbidden: cross-origin WebSocket not allowed")
+
     get_playback_controller(request)
     state = get_state(request)
     manager = get_manager(request)

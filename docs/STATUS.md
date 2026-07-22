@@ -1,6 +1,6 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-21
+last_verified: 2026-07-22
 sprint:
 ---
 
@@ -8,6 +8,20 @@ sprint:
 
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
+
+## Security Hardening: session token hashing, CSWSH, web.AppKey (2026-07-22)
+
+Tiga isu keamanan & teknis diperbaiki sekaligus (PATCH-2026-07-22-166):
+
+| File | Perubahan |
+|---|---|
+| `core/security.py` | Tambah `hash_token()` (SHA-256) + `verify_token()` (constant-time) |
+| `persistence/session_repo.py` | Semua DB ops pakai `hash_token(token)` — raw token tidak pernah menyentuh DB |
+| `server/handlers/websocket.py` | Tambah `check_ws_origin()` — tolak handshake cross-origin (CSWSH) sebelum `ws.prepare()` |
+| `server/app.py` | Deklarasi 7 `web.AppKey` constants — eliminasi `NotAppKeyWarning` |
+| `server/handlers/__init__.py` | Import + pakai AppKey constants dari `server.app` |
+
+**Catatan:** Setelah restart server, sesi lama (plaintext token) otomatis invalid — user perlu login ulang sekali. Ini perilaku yang benar.
 
 ## Fix Thompson Sampling dilution (2026-07-22)
 

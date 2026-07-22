@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-164
+latest_patch_id: PATCH-2026-07-22-168
 
-total_entries: 164
+total_entries: 168
 
 ---
 
@@ -21,6 +21,180 @@ total_entries: 164
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-168
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 13:22
+**Git Branch:** develop
+**Git Commit:** 3f1e77f
+**Type:** Docs
+**Area:** AI_CONTEXT.md, README.md
+**Priority:** Medium
+**Title:** Docs audit lanjutan: update AI_CONTEXT.md dan README.md
+
+**Reason:** AI_CONTEXT.md masih referensi cache/admin_password.txt (tidak ada lagi), ADR list hanya sampai 0006, contoh find_owner.py pakai file lama, heading duplikat. README.md referensi cache/library.db dan cache/<video_id>.mp3 (path lama), link MANUAL_BOOK.md (tidak ada), link CONTRIBUTING.md salah, fitur baru (EBU R128, discover personalization, bandit) belum disebut
+
+**Root Cause:**
+Kedua file tidak diupdate seiring sprint Phase 8. README.md masih deskripsi database path versi lama (sebelum migrasi persistence/ split). MANUAL_BOOK.md tidak pernah dibuat. AI_CONTEXT.md ADR list hanya 6 entry padahal sudah ada 9 ADR.
+
+**Solution:**
+AI_CONTEXT.md: hapus cache/admin_password.txt dari freeze list, tambah web.AppKey dan hash_token sebagai batasan wajib, update ADR list (0007-0009), fix contoh find_owner, fix duplikat heading, update last_verified. README.md: fix path database/cache, ganti MANUAL_BOOK.md ref dengan link docs/INDEX.md, tambah EBU R128 dan Discover Personalization ke fitur unggulan, tambah 4 cara menjalankan, fix CONTRIBUTING.md link
+
+**Changed Files:**
+- `AI_CONTEXT.md`
+- `README.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+doctor.py tetap PASS 100/100 setelah update. Tidak ada perubahan source code.
+
+---
+
+## PATCH-2026-07-22-167
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 13:19
+**Git Branch:** develop
+**Git Commit:** 3f1e77f
+**Type:** Docs
+**Area:** docs/INDEX.md, docs/architecture/folder_structure.md, docs/architecture/backend.md, docs/security/security.md, docs/security/threat_model.md, docs/backend/persistence.md, docs/backend/api.md, docs/backend/services.md
+**Priority:** Medium
+**Title:** Docs audit: update 8 file .md yang informasinya sudah usang dibanding source code
+
+**Reason:** Source code jauh lebih maju dari dokumentasi. Banyak referensi file tidak ada, modul baru tidak terdokumentasi, dan beberapa informasi salah (FastAPI vs aiohttp, format command WS, token format, SECURITY.md status)
+
+**Root Cause:**
+Dokumentasi tidak diupdate seiring sprint Phase 8 + Hardening. Gap terbesar: bootstrap/, failure_ops, discover_repo, stream_cache, audio_stream_handler, ws_cache, semua automation tools baru tidak terdokumentasi. server/app.py masih disebut FastAPI. Token format dan CSWSH belum tercatat di security docs.
+
+**Solution:**
+Rewrite 3 file kritis (INDEX, folder_structure, backend.md). Update 5 file lain dengan tambalan spesifik: schema tracks (kolom unavailable), sessions (SHA-256 note), API format (type/action/data), CSWSH protection, logout action, radio_config constants baru, failure_ops, search_tracks method
+
+**Changed Files:**
+- `docs/INDEX.md`
+- `docs/architecture/folder_structure.md`
+- `docs/architecture/backend.md`
+- `docs/security/security.md`
+- `docs/security/threat_model.md`
+- `docs/backend/persistence.md`
+- `docs/backend/api.md`
+- `docs/backend/services.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Docs tetap PASS 100/100 di doctor.py setelah update. File auto-generated (FILE_INDEX, REPORT, PATCHLOG) tidak disentuh.
+
+---
+
+## PATCH-2026-07-22-166
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 13:07
+**Git Branch:** develop
+**Git Commit:** 3f1e77f
+**Type:** Security
+**Area:** core.security, persistence.session_repo, server.handlers.websocket, server.app, server.handlers
+**Priority:** Medium
+**Title:** Security hardening: session token hashing, CSWSH protection, web.AppKey migration
+
+**Reason:** Token sesi disimpan plaintext di DB; WS handler tidak cek Origin header (CSWSH); app state pakai string keys (NotAppKeyWarning)
+
+**Root Cause:**
+Session repo tidak hash token sebelum INSERT; ws_handler tidak validasi Origin; app.py memakai pola app[string] yang deprecated
+
+**Solution:**
+Tambah hash_token/verify_token (SHA-256) di core.security; session_repo hash semua token sebelum DB ops; tambah check_ws_origin() di ws_handler; migrasi 7 app keys ke web.AppKey constants
+
+**Changed Files:**
+- `core/security.py`
+- `persistence/session_repo.py`
+- `server/handlers/websocket.py`
+- `server/app.py`
+- `server/handlers/__init__.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi lama (plaintext token) otomatis invalid setelah restart — user perlu login ulang sekali. Klien non-browser (Termux/curl, tanpa Origin header) tetap diizinkan connect WS.
+
+---
+
+## PATCH-2026-07-22-165
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 13:00
+**Git Branch:** develop
+**Git Commit:** 3f1e77f
+**Type:** Fix
+**Area:** Core
+**Priority:** High
+**Title:** Fixed head-of-line blocking in rate limit lock during PBKDF2 hashing
+
+**Reason:** Identified deadlock pattern where rl_lock was held during CPU-heavy PBKDF2 hashing, blocking all other clients from sending commands because check_rate_limit also requires rl_lock.
+
+**Root Cause:**
+The asyncio.Lock (manager.rl_lock) was held across the entire login and setup process, including the loop.run_in_executor call for PBKDF2 (100k iterations).
+
+**Solution:**
+Narrowed the scope of the critical section by releasing rl_lock right before the hashing operation and re-acquiring it afterward to update rate limits or register the session.
+
+**Changed Files:**
+- `server/handlers/auth.py`
+- `server/handlers/setup.py`
+
+**Changed Symbols:**
+- `handle_auth`
+- `handle_setup_admin`
+
+**Tests:** Code analysis and concurrency reproduction
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Race conditions safely mitigated by re-fetching attempt lists upon re-entry and relying on sqlite3.IntegrityError for dual setup submissions.
 
 ---
 

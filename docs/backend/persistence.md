@@ -40,22 +40,24 @@ persistence/
 
 ```sql
 CREATE TABLE tracks (
-    video_id     TEXT PRIMARY KEY,
-    title        TEXT NOT NULL,
-    artist       TEXT,
-    duration     INTEGER,
-    view_count   INTEGER,
-    thumbnail    TEXT,
-    local_path   TEXT,             -- NULL jika belum didownload
-    stream_url   VARCHAR(2048),    -- URL cache, bisa expire
-    stream_url_ts INTEGER,         -- Unix timestamp saat stream_url di-fetch
-    play_count   INTEGER DEFAULT 0,
-    last_played  INTEGER,          -- Unix timestamp
-    is_favorite  INTEGER DEFAULT 0,
-    loudness_lufs REAL,            -- NULL = belum dianalisis
-    true_peak_dbtp REAL,           -- NULL = belum dianalisis, dari ffmpeg loudnorm
-    last_position REAL DEFAULT 0.0,
-    created_at   INTEGER DEFAULT (strftime('%s','now'))
+    video_id        TEXT PRIMARY KEY,
+    title           TEXT NOT NULL,
+    artist          TEXT,
+    duration        INTEGER,
+    view_count      INTEGER,
+    thumbnail       TEXT,
+    local_path      TEXT,             -- NULL jika belum didownload
+    stream_url      VARCHAR(2048),    -- URL cache, bisa expire
+    stream_url_ts   INTEGER,          -- Unix timestamp saat stream_url di-fetch
+    play_count      INTEGER DEFAULT 0,
+    last_played     INTEGER,          -- Unix timestamp
+    is_favorite     INTEGER DEFAULT 0,
+    loudness_lufs   REAL,             -- NULL = belum dianalisis
+    true_peak_dbtp  REAL,             -- NULL = belum dianalisis, dari ffmpeg loudnorm
+    last_position   REAL DEFAULT 0.0,
+    unavailable     INTEGER DEFAULT 0,       -- 1 jika video dikonfirmasi hilang/private/diblokir
+    unavailable_reason TEXT,                  -- pesan error asli yt-dlp saat ditandai unavailable
+    created_at      INTEGER DEFAULT (strftime('%s','now'))
 );
 ```
 
@@ -69,6 +71,8 @@ CREATE TABLE sessions (
 ```
 
 Session token login admin, dibuat oleh `server/handlers/auth.py` setelah `auth` sukses. Bukan session/riwayat pemutaran — untuk itu lihat kolom `last_played`/`play_count` di `tracks`.
+
+> **⚠️ Penting:** Kolom `token` menyimpan **SHA-256 hash** dari raw token (bukan token itu sendiri). Raw token hanya ada di client. Lihat `core.security.hash_token()` dan `PATCH-2026-07-22-166`.
 
 ### `admin_account`
 
@@ -174,7 +178,10 @@ class TrackRepository:
 ```python
 class SessionRepository:
     async def create_session(self, token: str, expires_at: int) -> None
+        # hash_token(token) sebelum INSERT — raw token tidak pernah masuk DB
     async def verify_session(self, token: str) -> bool
+        # query dengan hash_token(token); hapus sesi expired otomatis
+    async def extend_session(self, token: str, expires_at: int) -> None
     async def delete_session(self, token: str) -> None
     async def cleanup_sessions(self) -> None    # hapus session yang sudah expired
 ```
@@ -278,11 +285,12 @@ class Repositories:
         self.library: LibraryRepository | None = None
         self.discover: DiscoverRepository | None = None
         self.admin_account: AdminAccountRepository | None = None
+        # self.conn — koneksi aiosqlite mentah (dipakai oleh server/handlers di beberapa titik)
 
     async def init(self) -> None:
         # db_connection.init(schema.sql) lalu jalankan loop ALTER TABLE
         # untuk kolom yang ditambahkan bertahap (is_favorite, reward_alpha/beta,
-        # loudness_lufs, last_position, true_peak_dbtp, dst -- try/except
+        # loudness_lufs, last_position, true_peak_dbtp, unavailable, dst -- try/except
         # "duplicate column" diabaikan, error lain di-log), baru instansiasi
         # ketujuh repo di atas dengan koneksi yang sama.
 

@@ -103,34 +103,23 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
             )
             return
 
-        username = data.get("username", "")
-        password = data.get("password", "")
+    username = data.get("username", "")
+    password = data.get("password", "")
 
-        # T-B13.1: kredensial dibaca dari admin_account (SQLite), bukan lagi
-        # config.ADMIN_USERNAME/ADMIN_PASSWORD. Saat admin_account belum ada
-        # sama sekali (instalasi baru, belum lewat Initial Setup), pakai
-        # _DUMMY_PASSWORD_HASH agar verify_password tetap menjalankan PBKDF2
-        # penuh -- lihat catatan di _DUMMY_PASSWORD_HASH di atas modul.
-        account = await repos.admin_account.get_admin_account() if repos else None
-        stored_hash = account["password_hash"] if account else _DUMMY_PASSWORD_HASH
-        stored_username = account["username"] if account else None
+    # T-B13.1: kredensial dibaca dari admin_account (SQLite)
+    account = await repos.admin_account.get_admin_account() if repos else None
+    stored_hash = account["password_hash"] if account else _DUMMY_PASSWORD_HASH
+    stored_username = account["username"] if account else None
 
-        # PBKDF2 100k iterasi adalah kerja CPU berat (~60-180ms tergantung
-        # device) — kalau dijalankan sinkron di sini, seluruh event loop
-        # (termasuk broadcast progress ke client lain & observer mpv) ikut
-        # berhenti selama itu. Jalankan di thread executor agar event loop
-        # tetap responsif untuk client lain selagi verifikasi berjalan.
-        loop = asyncio.get_running_loop()
-        # PATCH-2026-07-16-001: verify_password SELALU dipanggil, terlepas
-        # dari username maupun ada/tidaknya admin_account, baru dicek
-        # username-nya setelah itu. Short-circuit `and` sebelumnya membuat
-        # response time berbeda antara username salah (instan) vs username
-        # benar+password salah (~60-180ms PBKDF2) -- celah timing
-        # side-channel yang bisa dipakai enumerasi username. Pola yang sama
-        # dipertahankan di sini walau sumber datanya sekarang admin_account,
-        # bukan config.
-        password_matches = await loop.run_in_executor(None, verify_password, password, stored_hash)
-        password_ok = password_matches and account is not None and username == stored_username
+    # PBKDF2 100k iterasi adalah kerja CPU berat (~60-180ms tergantung device).
+    # LOCK DILEPAS DI SINI: agar client lain (yang sekadar mengirim command biasa)
+    # tidak antre menunggu PBKDF2 selesai hanya untuk cek check_rate_limit().
+    loop = asyncio.get_running_loop()
+    password_matches = await loop.run_in_executor(None, verify_password, password, stored_hash)
+    password_ok = password_matches and account is not None and username == stored_username
+
+    # Ambil ulang lock untuk update state
+    async with manager.rl_lock:
         if password_ok:
             new_token = secrets.token_hex(16)
             if sessions:
@@ -142,6 +131,8 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
                 json.dumps({"type": "auth_status", "data": {"success": True, "token": new_token}})
             )
         else:
+            attempts = manager.login_attempts.get(client_ip, [])
+            attempts = [t for t in attempts if now - t < 300]
             attempts.append(now)
             manager.login_attempts[client_ip] = attempts
             await ws.send_str(

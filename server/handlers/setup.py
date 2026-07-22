@@ -153,53 +153,49 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             )
             return
 
-        loop = asyncio.get_running_loop()
-        password_hash = await loop.run_in_executor(None, hash_password, password)
-        try:
-            await repos.admin_account.create_admin_account(username.strip(), password_hash)
-        except sqlite3.IntegrityError:
-            # Race condition submit ganda, lapis 2: dua request nyaris
-            # bersamaan lolos cek exists() di atas, tapi UNIQUE constraint
-            # di DB menolak yang kedua -- tidak pernah overwrite diam-diam.
-            _record_failure()
-            await ws.send_str(
-                json.dumps(
-                    {
-                        "type": "setup_status",
-                        "data": {"success": False, "message": _ALREADY_SET_UP_MESSAGE},
-                    }
-                )
-            )
-            return
-        except Exception:
-            # Fallback kegagalan setup: DB corrupt, disk penuh, atau
-            # kegagalan I/O lain di luar dugaan. Penting:
-            # 1. Server TIDAK boleh crash -- exception ditangkap di sini,
-            #    bukan dibiarkan menjalar (WS handler tetap hidup untuk
-            #    client lain, aiohttp app tetap jalan).
-            # 2. Client dapat pesan jelas, TANPA membocorkan detail
-            #    internal (path DB, stack trace) -- detail lengkap hanya
-            #    masuk log server.
-            # 3. INSERT gagal berarti tidak ada row admin_account yang
-            #    tersimpan sama sekali (single atomic statement) -- tidak
-            #    pernah ada akun "kosong" yang bisa login tanpa password.
-            logger.error("setup_admin_failed", client_ip=client_ip, exc_info=True)
-            _record_failure()
-            await ws.send_str(
-                json.dumps(
-                    {
-                        "type": "setup_status",
-                        "data": {
-                            "success": False,
-                            "message": "Gagal menyimpan akun admin. Coba lagi, atau cek log server.",
-                        },
-                    }
-                )
-            )
-            return
+    # Lock dilepas saat hashing yang berat
+    loop = asyncio.get_running_loop()
+    password_hash = await loop.run_in_executor(None, hash_password, password)
 
+    try:
+        await repos.admin_account.create_admin_account(username.strip(), password_hash)
+    except sqlite3.IntegrityError:
+        # Race condition layer 2: dua request sukses melewati layer 1
+        # di atas dan masuk hashing bersamaan. Request yang kalah cepat
+        # commit DB akan kena IntegrityError ini.
+        async with manager.rl_lock:
+            attempts = manager.setup_attempts.get(client_ip, [])
+            attempts = [t for t in attempts if now - t < RATE_LIMIT_WINDOW_SEC]
+            attempts.append(now)
+            manager.setup_attempts[client_ip] = attempts
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "setup_status",
+                    "data": {"success": False, "message": _ALREADY_SET_UP_MESSAGE},
+                }
+            )
+        )
+        return
+    except Exception:
+        logger.error("setup_admin_failed", client_ip=client_ip, exc_info=True)
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "setup_status",
+                    "data": {
+                        "success": False,
+                        "message": "Gagal menyimpan akun admin. Coba lagi, atau cek log server.",
+                    },
+                }
+            )
+        )
+        return
+
+    async with manager.rl_lock:
         manager.setup_attempts.pop(client_ip, None)
-        await ws.send_str(json.dumps({"type": "setup_status", "data": {"success": True}}))
+
+    await ws.send_str(json.dumps({"type": "setup_status", "data": {"success": True}}))
 
 
 async def setup_required(request: web.Request) -> web.Response:

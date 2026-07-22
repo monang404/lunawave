@@ -85,7 +85,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 **File:** `core/events.py`
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
-**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
+**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `VolumeChangedEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** —
 **Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _12 lainnya_
 **Menggunakan:** `core/state`
@@ -144,10 +144,10 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 **File:** `core/security.py`
-**Fungsi:** Provide PBKDF2-SHA256 password hashing and constant-time verification.
+**Fungsi:** Provide PBKDF2-SHA256 password hashing, constant-time verification, and SHA-256 session token hashing.
 **Class:** —
-**Function utama:** `hash_password()`, `verify_password()`
-**Digunakan oleh:** `server/handlers/auth`, `server/handlers/setup`
+**Function utama:** `hash_password()`, `verify_password()`, `hash_token()`, `verify_token()`
+**Digunakan oleh:** `persistence/session_repo`, `server/handlers/auth`, `server/handlers/setup`
 **Menggunakan:** —
 
 
@@ -332,7 +332,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `engine/playback/crossfade.py`
 **Fungsi:** Crossfade helpers untuk transisi halus antar track via MPV volume ramping.
 **Class:** —
-**Function utama:** `apply_crossfade_in()`, `check_crossfade_out()`
+**Function utama:** `apply_crossfade_in()`, `apply_crossfade_out()`
 **Digunakan oleh:** —
 **Menggunakan:** `core/state`
 
@@ -597,7 +597,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `SessionRepository`
 **Function utama:** —
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** —
+**Menggunakan:** `core/security`
 
 
 ---
@@ -629,7 +629,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Create and configure the aiohttp web application with all routes, services, and EventBus listeners wired together.
 **Class:** —
 **Function utama:** `create_app()`, `run_server()`
-**Digunakan oleh:** —
+**Digunakan oleh:** `server/handlers/__init__`
 **Menggunakan:** `core/ports`, `engine/playback/controller`, `persistence`, `server/connection_manager`, `server/handlers/audio_stream_handler`, `server/handlers/http`, _2 lainnya_
 
 
@@ -656,11 +656,11 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 **File:** `server/handlers/__init__.py`
-**Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app["key"]` lookups so the type of each value is explicit (T3.7 — dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" — sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
+**Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app[KEY]` lookups so the type of each value is explicit (T3.7 — dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" — sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
 **Class:** —
 **Function utama:** `get_repos()`, `get_tracks_repo()`, `get_conn()`, `get_state()`, `get_manager()`, `get_ytdlp()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/ports`, `core/state`
+**Menggunakan:** `core/ports`, `core/state`, `server/app`
 
 
 ---
@@ -718,7 +718,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `server/handlers/websocket.py`
 **Fungsi:** Handle WebSocket connections, authenticate clients, and dispatch incoming commands to the CommandBus after rate-limit enforcement.
 **Class:** —
-**Function utama:** `ws_handler()`, `handle_ws_message()`
+**Function utama:** `check_ws_origin()`, `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** `server/app`
 **Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _3 lainnya_
 
