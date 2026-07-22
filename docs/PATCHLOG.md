@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-162
+latest_patch_id: PATCH-2026-07-22-164
 
-total_entries: 162
+total_entries: 164
 
 ---
 
@@ -21,6 +21,94 @@ total_entries: 162
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-164
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 12:34
+**Git Branch:** develop
+**Git Commit:** b503b4b
+**Type:** Refactor
+**Area:** Player
+**Priority:** Medium
+**Title:** Uniform crossfade duration via single constant across frontend and backend
+
+**Reason:** User reported crossfade overlap wasn't noticeable because hardcoded fetch trigger remained at 2.0s even when fade-out was adjusted.
+
+**Root Cause:**
+Hardcoded 2.0 seconds existed in three separate places (fade-out duration, early fetch trigger, and fade-in duration), breaking overlap timing when modified individually.
+
+**Solution:**
+Extracted the constant to CROSSFADE_DURATION = 5.0 in playback-sync.js and synced the backend trigger (controller.py) and loops (crossfade.py) to 5.0 seconds.
+
+**Changed Files:**
+- `web/static/js/audio/playback-sync.js`
+- `engine/playback/controller.py`
+- `engine/playback/crossfade.py`
+
+**Changed Symbols:**
+- `apply_crossfade_in`
+- `apply_crossfade_out`
+- `ontimeupdate`
+
+**Tests:** Manual validation
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Included reverting a failed attempt to apply loudness normalization in the browser using Web Audio API due to cross-origin resource sharing mutes.
+
+---
+
+## PATCH-2026-07-22-163
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:44
+**Git Branch:** develop
+**Git Commit:** b503b4b
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** PATCH-2026-07-22-163: True overlapping crossfade for browser audio
+
+**Reason:** Previous crossfade implementation failed due to timing desync with MPV and single audio element limitation
+
+**Root Cause:**
+-
+
+**Solution:**
+-
+
+**Changed Files:**
+- `web/static/js/audio/playback-sync.js`
+- `web/static/js/render/player.js`
+- `web/static/js/events/transport-events.js`
+
+**Changed Symbols:**
+- `audioPool`
+- `syncBrowserAudio`
+- `_fadeVolume`
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
 
 ---
 

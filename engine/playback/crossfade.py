@@ -29,7 +29,7 @@ from core.state import AppState, PlayerStatus
 
 async def apply_crossfade_in(mpv, state: AppState):
     await mpv.set_volume(0)
-    steps = 10
+    steps = 25
     for i in range(1, steps + 1):
         await asyncio.sleep(0.2)
         if state.status not in (PlayerStatus.PLAYING, PlayerStatus.LOADING):
@@ -39,7 +39,7 @@ async def apply_crossfade_in(mpv, state: AppState):
 
 
 async def apply_crossfade_out(mpv, state: AppState):
-    steps = 10
+    steps = 25
     start_vol = state.volume
     for i in range(steps, 0, -1):
         await asyncio.sleep(0.2)

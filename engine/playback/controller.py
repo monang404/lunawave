@@ -315,7 +315,7 @@ class PlaybackController:
                 from engine.playback.crossfade import apply_crossfade_out
 
                 remaining = self.state.duration - self.state.position
-                if remaining <= 2.0 and remaining > 0 and not self._crossfade_out_triggered:
+                if remaining <= 5.0 and remaining > 0 and not self._crossfade_out_triggered:
                     self._crossfade_out_triggered = True
                     self._fade_out_task = safe_create_task(
                         apply_crossfade_out(self.mpv, self.state), name="fade_out"
