@@ -28,6 +28,8 @@ from core.task_utils import safe_create_task
 MAX_TRACK_DURATION = 600  # 10 menit
 TRACKS_PER_ARTIST_TARGET = 3
 ARTISTS_PER_BATCH = 4
+BANDIT_QUOTA = 3
+EXPLORE_QUOTA = 1
 ARTISTS_QUICK = 2
 SEED_LIMIT = 2
 

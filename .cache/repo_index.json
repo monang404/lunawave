@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "generated_at": 1784611534.9121668,
+    "generated_at": 1784686871.0998287,
     "source_mtimes": {
       "config.py": 1784606900.0,
-      "main.py": 1784518743.9095373,
+      "main.py": 1784613351.7806077,
       "start.py": 1784437252.0,
       "adapters/__init__.py": 1784437252.0,
       "adapters/mpv/connection.py": 1784437252.0,
@@ -14,10 +14,11 @@
       "adapters/ytdlp/resolver.py": 1784611029.2381842,
       "adapters/ytdlp/searcher.py": 1784518737.3296568,
       "adapters/ytdlp/ydl_options.py": 1784606900.0,
-      "adapters/ytdlp/__init__.py": 1784437252.0,
+      "adapters/ytdlp/__init__.py": 1784685931.9858694,
       "bootstrap/maintenance.py": 1784518737.3387752,
-      "bootstrap/services.py": 1784518743.8861613,
-      "bootstrap/startup_tasks.py": 1784518737.339779,
+      "bootstrap/power.py": 1784685931.9858694,
+      "bootstrap/services.py": 1784613351.769609,
+      "bootstrap/startup_tasks.py": 1784685931.9858694,
       "bootstrap/__init__.py": 1784518737.3387752,
       "core/commands.py": 1784437252.0,
       "core/command_bus.py": 1784437252.0,
@@ -40,9 +41,9 @@
       "engine/sleep_timer.py": 1784437252.0,
       "engine/volume_service.py": 1784437252.0,
       "engine/__init__.py": 1784437252.0,
-      "engine/loudness/analyzer.py": 1784437252.0,
+      "engine/loudness/analyzer.py": 1784685931.993894,
       "engine/loudness/gain_calculator.py": 1784437252.0,
-      "engine/loudness/service.py": 1784437252.0,
+      "engine/loudness/service.py": 1784685931.993894,
       "engine/playback/controller.py": 1784606900.0,
       "engine/playback/crossfade.py": 1784437252.0,
       "engine/playback/failure_ops.py": 1784611029.2381842,
@@ -54,10 +55,10 @@
       "engine/playback/track_loader.py": 1784437252.0,
       "engine/playback/__init__.py": 1784437252.0,
       "engine/radio/artist_bandit.py": 1784437252.0,
-      "engine/radio/artist_selector.py": 1784518737.3680553,
-      "engine/radio/engine.py": 1784518737.3680553,
+      "engine/radio/artist_selector.py": 1784686490.1177516,
+      "engine/radio/engine.py": 1784613351.7686086,
       "engine/radio/prefetcher.py": 1784518737.3690555,
-      "engine/radio/radio_config.py": 1784518737.369171,
+      "engine/radio/radio_config.py": 1784686472.8510785,
       "engine/radio/track_filter.py": 1784437252.0,
       "engine/radio/track_interleaver.py": 1784437252.0,
       "engine/radio/__init__.py": 1784437252.0,
@@ -68,7 +69,7 @@
       "launcher/updater.py": 1784437252.0,
       "launcher/__init__.py": 1784437252.0,
       "launcher/__main__.py": 1784437252.0,
-      "launcher/gui/app.py": 1784518743.906404,
+      "launcher/gui/app.py": 1784686864.1833506,
       "launcher/gui/auth_panel.py": 1784518743.9074025,
       "launcher/gui/log_view.py": 1784518737.3711722,
       "launcher/gui/popups.py": 1784437252.0,
@@ -76,11 +77,11 @@
       "launcher/gui/__init__.py": 1784437252.0,
       "persistence/admin_account_repo.py": 1784518743.9105308,
       "persistence/artist_repo.py": 1784518737.3741717,
-      "persistence/db.py": 1784518737.375174,
+      "persistence/db.py": 1784685931.993894,
       "persistence/discover_enrich.py": 1784437252.0,
       "persistence/discover_repo.py": 1784518737.376176,
       "persistence/genre_repo.py": 1784437252.0,
-      "persistence/library_repo.py": 1784518737.376176,
+      "persistence/library_repo.py": 1784686498.7615912,
       "persistence/session_repo.py": 1784437252.0,
       "persistence/stream_cache.py": 1784606900.0,
       "persistence/track_repo.py": 1784606900.0,
@@ -88,11 +89,11 @@
       "plugins/lyrics_fetcher.py": 1784437252.0,
       "plugins/lyrics_parser.py": 1784437252.0,
       "plugins/lyrics_sync.py": 1784437252.0,
-      "plugins/notifications.py": 1784437252.0,
+      "plugins/notifications.py": 1784685931.993894,
       "plugins/sponsorblock.py": 1784437252.0,
       "plugins/__init__.py": 1784437252.0,
-      "scratch/check_db.py": 1784518737.3771732,
-      "server/app.py": 1784518743.9125347,
+      "scratch/check_db.py": 1784613351.7976074,
+      "server/app.py": 1784613351.800609,
       "server/broadcast_service.py": 1784518737.3793151,
       "server/connection_manager.py": 1784518743.9125347,
       "server/middleware.py": 1784437252.0,
@@ -103,10 +104,10 @@
       "server/handlers/event_listeners.py": 1784518737.3813155,
       "server/handlers/http.py": 1784518737.3813155,
       "server/handlers/setup.py": 1784518743.9145312,
-      "server/handlers/websocket.py": 1784518743.9145312,
+      "server/handlers/websocket.py": 1784613207.1757386,
       "server/handlers/ws_cache.py": 1784518737.3823166,
       "server/handlers/ws_discovery.py": 1784518737.3833158,
-      "server/handlers/ws_download.py": 1784518737.3843157,
+      "server/handlers/ws_download.py": 1784613207.1757386,
       "server/handlers/ws_playback.py": 1784518737.3843157,
       "server/handlers/ws_queue.py": 1784518737.3853154,
       "server/handlers/__init__.py": 1784518737.3793151,
@@ -134,12 +135,13 @@
         "bootstrap.services",
         "bootstrap.startup_tasks",
         "server.app",
+        "server.app",
         "socket",
         "traceback"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 155,
+      "loc": 156,
       "docstring_purpose": "Bootstrap all LunaWave subsystems and start the async aiohttp web server.",
       "reverse_deps": []
     },
@@ -319,8 +321,8 @@
         "server.handlers.http",
         "server.handlers.setup",
         "server.handlers.websocket",
-        "server.handlers.event_listeners",
         "server.broadcast_service",
+        "server.handlers.event_listeners",
         "services.stream_prefetch"
       ],
       "publishes": [],
@@ -328,6 +330,7 @@
       "loc": 103,
       "docstring_purpose": "Create and configure the aiohttp web application with all routes,     services, and EventBus listeners wired together.",
       "reverse_deps": [
+        "main.py",
         "main.py"
       ]
     },
@@ -546,7 +549,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 197,
+      "loc": 199,
       "docstring_purpose": "Handle WebSocket connections, authenticate clients, and dispatch     incoming commands to the CommandBus after rate-limit enforcement.",
       "reverse_deps": [
         "server/app.py"
@@ -572,7 +575,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 104,
+      "loc": 106,
       "docstring_purpose": "WebSocket handler for managing track download requests and status.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -792,7 +795,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 95,
+      "loc": 93,
       "docstring_purpose": "Repository for global library operations such as fetching random songs.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -896,7 +899,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 134,
+      "loc": 135,
       "docstring_purpose": "Manages the SQLite database connection lifecycle and initialization.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1430,7 +1433,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 119,
+      "loc": 136,
       "docstring_purpose": "Selects and rotates artists intelligently to maintain variety in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py",
@@ -1477,8 +1480,8 @@
         "core.ports",
         "core.state",
         "engine.radio.artist_selector",
-        "engine.radio.radio_config",
         "engine.radio.prefetcher",
+        "engine.radio.radio_config",
         "engine.playback"
       ],
       "publishes": [
@@ -1566,6 +1569,9 @@
       ],
       "imports": [
         "asyncio",
+        "json",
+        "shutil",
+        "subprocess",
         "concurrent.futures",
         "structlog",
         "core.ports",
@@ -1573,7 +1579,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 63,
+      "loc": 105,
       "docstring_purpose": "Orkestrasi analisis loudness: cek apakah track sudah pernah diukur,     kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.",
       "reverse_deps": [
         "engine/playback/track_loader.py",
@@ -1592,7 +1598,9 @@
       ],
       "imports": [
         "json",
+        "os",
         "re",
+        "shutil",
         "subprocess",
         "structlog",
         "config",
@@ -1600,7 +1608,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 105,
+      "loc": 115,
       "docstring_purpose": "Ukur integrated loudness (LUFS) sebuah track via satu-pass ffmpeg     `loudnorm` filter mode measure-only (tidak re-encode, tidak menyimpan file     baru).",
       "reverse_deps": [
         "engine/loudness/service.py"
@@ -2392,6 +2400,7 @@
         "close"
       ],
       "imports": [
+        "os",
         "concurrent.futures",
         "adapters.ytdlp.downloader",
         "adapters.ytdlp.resolver",
@@ -2399,7 +2408,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 58,
+      "loc": 81,
       "docstring_purpose": "Unified client for interacting with yt-dlp for search, extraction, and downloading.",
       "reverse_deps": []
     },
@@ -2610,8 +2619,8 @@
         "asyncio",
         "sqlite3",
         "pathlib",
-        "persistence",
-        "core.state"
+        "core.state",
+        "persistence"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2771,7 +2780,7 @@
         "TrackStartedEvent",
         "TrackPauseChangedEvent"
       ],
-      "loc": 205,
+      "loc": 208,
       "docstring_purpose": "Mirror current playback state to an Android MediaStyle notification via     termux-notification and relay button presses back via CommandBus.",
       "reverse_deps": [
         "bootstrap/services.py"
@@ -2823,13 +2832,14 @@
         "asyncio",
         "aiohttp",
         "structlog",
+        "bootstrap.power",
         "bootstrap.services",
         "core.state",
         "core.task_utils"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 117,
+      "loc": 120,
       "docstring_purpose": "Stage 2 of application startup: kick off the background tasks that     must not block the web server from listening \u2014 connectivity polling,     the initial MPV connect, and resuming the last-played track. Extracted     from main.py's `main()` (T2.4) without changing call order.",
       "reverse_deps": [
         "main.py"
@@ -2858,13 +2868,13 @@
         "plugins.notifications",
         "plugins.sponsorblock",
         "config",
-        "persistence.stream_cache",
         "engine.loudness.service",
         "engine.playback.controller",
         "engine.queue_manager",
         "engine.radio",
         "engine.sleep_timer",
-        "engine.volume_service"
+        "engine.volume_service",
+        "persistence.stream_cache"
       ],
       "publishes": [],
       "subscribes": [],
@@ -2919,7 +2929,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 45,
+      "loc": 47,
       "docstring_purpose": "Common utilities and shared logic for the radio engine components.",
       "reverse_deps": [
         "engine/radio/artist_selector.py",
@@ -3016,6 +3026,26 @@
       "docstring_purpose": "Menangani semua cabang except dari play_track() saat gagal memutar     sebuah track (video tidak tersedia permanen, bot-check/rate-limit     YouTube, atau error generik lainnya). Diekstrak dari controller.py     (PATCH-2026-07-20-136) agar file controller tetap ramping (di bawah     LARGE_FILE_THRESHOLD 500 LOC), sama seperti track_ended_ops.py.",
       "reverse_deps": [
         "engine/playback/controller.py"
+      ]
+    },
+    "bootstrap/power.py": {
+      "layer": "bootstrap",
+      "classes": [],
+      "functions": [
+        "acquire_wake_lock"
+      ],
+      "imports": [
+        "asyncio",
+        "os",
+        "shutil",
+        "structlog"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 77,
+      "docstring_purpose": "Acquire a PARTIAL wake-lock via `termux-wake-lock` on startup so the     Android/HyperOS scheduler is less likely to freeze the server process     when the screen turns off. This is a secondary, best-effort layer \u2014     the primary mitigation is the manual OS-level setup documented in     docs/CONSTRAINTS.md (Autostart, battery saver exemption, recent-apps     lock), since custom OEM power policies (HyperOS/MIUI) can ignore the     standard Android wake-lock/notification APIs entirely.",
+      "reverse_deps": [
+        "bootstrap/startup_tasks.py"
       ]
     }
   }

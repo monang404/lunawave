@@ -9,6 +9,20 @@ sprint:
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
 
+## Fix Thompson Sampling dilution (2026-07-22)
+
+Radio mode Thompson Sampling fix:
+- Dilusi personalisasi (cuma 25% lagu dari artis bandit) sudah diperbaiki.
+- Memperkenalkan `BANDIT_QUOTA` (3) dan `EXPLORE_QUOTA` (1) untuk memisah logikanya.
+- Optimasi SQL (full table scan menjadi query ter-filter oleh in-list artis).
+
+| File | Perubahan |
+|---|---|
+| `engine/radio/radio_config.py` | Tambah konstanta `BANDIT_QUOTA` & `EXPLORE_QUOTA`. |
+| `engine/radio/artist_selector.py` | Ubah `gather_batch` untuk request `k` artis dari bandit. |
+| `persistence/library_repo.py` | Optimasi CTE menggunakan `WHERE a.nama IN (...)` bila ada filter artis. |
+| `tests/unit/engine/radio/test_artist_selector.py` | Update mock `get_random_songs` signature. |
+
 ## perf_background_battery_survival (2026-07-21)
 
 Battery/background-survival fixes (server mati & baterai boros saat layar

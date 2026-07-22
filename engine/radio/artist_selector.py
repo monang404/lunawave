@@ -28,7 +28,12 @@ import random
 
 from core.ports import ArtistRepositoryPort, LibraryRepositoryPort
 from core.state import AppState
-from engine.radio.radio_config import ARTISTS_PER_BATCH, TRACKS_PER_ARTIST_TARGET
+from engine.radio.radio_config import (
+    ARTISTS_PER_BATCH,
+    BANDIT_QUOTA,
+    EXPLORE_QUOTA,
+    TRACKS_PER_ARTIST_TARGET,
+)
 from engine.radio.track_filter import TrackFilter
 from engine.radio.track_interleaver import interleave_by_artist
 
@@ -77,9 +82,9 @@ class ArtistSelector:
             ids.add(t.video_id)
         return ids
 
-    async def _sampled_seed_artist(self) -> str | None:
+    async def _sampled_seed_artists(self, k: int) -> list[str]:
         if not self._seed_artists:
-            return None
+            return []
         stats = {}
         if self.artists and getattr(self.artists, "conn", None):
             try:
@@ -92,8 +97,7 @@ class ArtistSelector:
             ArtistStat(name=name, alpha=stats.get(name, (1, 1))[0], beta=stats.get(name, (1, 1))[1])
             for name in self._seed_artists
         ]
-        picked = sample_artists(candidates, k=1)
-        return picked[0] if picked else None
+        return sample_artists(candidates, k=k)
 
     async def gather_batch(
         self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
@@ -101,14 +105,37 @@ class ArtistSelector:
         limit = max_artists * TRACKS_PER_ARTIST_TARGET
         existing = self.build_exclusion_set()
 
-        if not prioritized_artist and self._seed_artists:
-            prioritized_artist = await self._sampled_seed_artist()
+        seed_artists = []
+        if prioritized_artist:
+            seed_artists.append(prioritized_artist)
+
+        needed = max_artists - len(seed_artists)
+        if needed > 0 and self._seed_artists:
+            bandit_count = min(needed, BANDIT_QUOTA)
+            explore_count = needed - bandit_count
+
+            if bandit_count > 0:
+                sampled = await self._sampled_seed_artists(k=bandit_count)
+                for s in sampled:
+                    if s not in seed_artists:
+                        seed_artists.append(s)
+
+            still_needed = max_artists - len(seed_artists)
+            if still_needed > 0:
+                available_for_explore = list(set(self._seed_artists) - set(seed_artists))
+                if available_for_explore:
+                    explore_picked = random.sample(
+                        available_for_explore, min(still_needed, len(available_for_explore))
+                    )
+                    seed_artists.extend(explore_picked)
 
         if self.library and getattr(self.library, "conn", None):  # Use getattr for safety
             try:
-                artists = [prioritized_artist] if prioritized_artist else None
                 tracks = await self.library.get_random_songs(
-                    limit=limit, exclude_ids=existing, artists=artists
+                    limit=limit,
+                    exclude_ids=existing,
+                    artists=seed_artists if seed_artists else None,
+                    max_per_artist=TRACKS_PER_ARTIST_TARGET,
                 )
                 track_filter = TrackFilter(self.state)
                 filtered_tracks = track_filter.filter_tracks(tracks)

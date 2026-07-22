@@ -56,6 +56,11 @@ class LibraryRepository:
                 WHERE 1=1
         """
         params: list[Any] = []
+        if artists:
+            artist_placeholders = ",".join("?" for _ in artists)
+            query += f" AND a.nama IN ({artist_placeholders})"
+            params.extend(artists)
+
         if exclude_ids:
             query += f" AND s.youtube_id NOT IN ({placeholders})"
             params.extend(exclude_ids)
@@ -65,17 +70,10 @@ class LibraryRepository:
             SELECT youtube_id, judul, duration, nama
             FROM RankedSongs
             WHERE rn <= ?
+            ORDER BY RANDOM() LIMIT ?
         """
         params.append(max_per_artist)
-
-        if artists:
-            artist_placeholders = ",".join("?" for _ in artists)
-            query += f" ORDER BY CASE WHEN nama IN ({artist_placeholders}) THEN 0 ELSE 1 END, RANDOM() LIMIT ?"
-            params.extend(artists)
-            params.append(limit)
-        else:
-            query += " ORDER BY RANDOM() LIMIT ?"
-            params.append(limit)
+        params.append(limit)
 
         async with self._conn.execute(query, params) as cursor:
             rows = await cursor.fetchall()

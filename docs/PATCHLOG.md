@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-21-140
+latest_patch_id: PATCH-2026-07-22-142
 
-total_entries: 140
+total_entries: 142
 
 ---
 
@@ -21,6 +21,89 @@ total_entries: 140
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-142
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 09:21
+**Git Branch:** develop
+**Git Commit:** b94c0a5
+**Type:** Fix
+**Area:** Launcher
+**Priority:** Medium
+**Title:** Fix launcher not finding main.py
+
+**Reason:** Server process failed to start because it looked for main.py in the launcher folder
+
+**Root Cause:**
+BASE_DIR in gui/app.py resolved to launcher directory instead of project root, causing subprocess to look for main.py in the wrong directory
+
+**Solution:**
+Updated BASE_DIR path resolution by appending an extra .parent to correctly point to the project root
+
+**Changed Files:**
+- `launcher/gui/app.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-22-141
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 09:16
+**Git Branch:** develop
+**Git Commit:** b94c0a5
+**Type:** Fix
+**Area:** engine.radio
+**Priority:** Medium
+**Title:** Fix Thompson Sampling dilution in radio mode
+
+**Reason:** Radio mode was only personalizing 25% of songs and SQL query was extremely slow.
+
+**Root Cause:**
+gather_batch requested 1 artist from bandit but filled 4 slots. SQL query used ORDER BY RANDOM() on the entire table.
+
+**Solution:**
+Introduced BANDIT_QUOTA and EXPLORE_QUOTA. Sample multiple artists from bandit. Update get_random_songs to filter by artists if provided to prevent full table scan.
+
+**Changed Files:**
+- `engine/radio/radio_config.py`
+- `engine/radio/artist_selector.py`
+- `persistence/library_repo.py`
+- `tests/unit/engine/radio/test_artist_selector.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Radio batches now accurately reflect Thompson Sampling learning.
 
 ---
 

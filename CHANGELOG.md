@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- Radio Mode (Thompson Sampling) was only applying personalization to 25% of songs due to the SQL CTE querying limits incorrectly and pulling randomly from the whole database. This was fixed by separating BANDIT_QUOTA and EXPLORE_QUOTA, returning multiple artists from the bandit, and applying the artist filter before `ORDER BY RANDOM()`, making queries much faster and personalization fully effective.
 - Charging-gate loudness batch analysis (`_is_charging_or_unknown()`,
   ditambahkan di rilis Background/Battery Survival di bawah) sekarang
   dipanggil lewat `run_in_executor`, bukan langsung di event loop —
