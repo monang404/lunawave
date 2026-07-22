@@ -63,13 +63,14 @@ async def test_run_startup_checks_schedules_three_background_tasks():
 
     await run_startup_checks()
 
-    assert len(context.tasks) == 4
+    assert len(context.tasks) == 5
     names = {t.get_name() for t in context.tasks}
     assert names == {
         "connectivity_checker",
         "mpv_initial_connect",
         "resume_last_track",
         "wake_lock_acquire",
+        "cache_eviction",
     }
 
     for t in context.tasks:

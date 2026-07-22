@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "generated_at": 1784686871.0998287,
+    "generated_at": 1784688106.7475076,
     "source_mtimes": {
-      "config.py": 1784606900.0,
+      "config.py": 1784687948.1139107,
       "main.py": 1784613351.7806077,
       "start.py": 1784437252.0,
       "adapters/__init__.py": 1784437252.0,
@@ -18,7 +18,7 @@
       "bootstrap/maintenance.py": 1784518737.3387752,
       "bootstrap/power.py": 1784685931.9858694,
       "bootstrap/services.py": 1784613351.769609,
-      "bootstrap/startup_tasks.py": 1784685931.9858694,
+      "bootstrap/startup_tasks.py": 1784687999.5519047,
       "bootstrap/__init__.py": 1784518737.3387752,
       "core/commands.py": 1784437252.0,
       "core/command_bus.py": 1784437252.0,
@@ -28,7 +28,7 @@
       "core/latency_window.py": 1784437252.0,
       "core/log_config.py": 1784437252.0,
       "core/observability.py": 1784437252.0,
-      "core/ports.py": 1784606900.0,
+      "core/ports.py": 1784687381.0154867,
       "core/security.py": 1784437252.0,
       "core/state.py": 1784437252.0,
       "core/task_utils.py": 1784437252.0,
@@ -55,7 +55,7 @@
       "engine/playback/track_loader.py": 1784437252.0,
       "engine/playback/__init__.py": 1784437252.0,
       "engine/radio/artist_bandit.py": 1784437252.0,
-      "engine/radio/artist_selector.py": 1784686490.1177516,
+      "engine/radio/artist_selector.py": 1784687171.047975,
       "engine/radio/engine.py": 1784613351.7686086,
       "engine/radio/prefetcher.py": 1784518737.3690555,
       "engine/radio/radio_config.py": 1784686472.8510785,
@@ -69,17 +69,17 @@
       "launcher/updater.py": 1784437252.0,
       "launcher/__init__.py": 1784437252.0,
       "launcher/__main__.py": 1784437252.0,
-      "launcher/gui/app.py": 1784686864.1833506,
+      "launcher/gui/app.py": 1784687093.3267858,
       "launcher/gui/auth_panel.py": 1784518743.9074025,
       "launcher/gui/log_view.py": 1784518737.3711722,
       "launcher/gui/popups.py": 1784437252.0,
       "launcher/gui/ui_builder.py": 1784518743.9085298,
       "launcher/gui/__init__.py": 1784437252.0,
       "persistence/admin_account_repo.py": 1784518743.9105308,
-      "persistence/artist_repo.py": 1784518737.3741717,
-      "persistence/db.py": 1784685931.993894,
+      "persistence/artist_repo.py": 1784687380.969608,
+      "persistence/db.py": 1784687685.7430792,
       "persistence/discover_enrich.py": 1784437252.0,
-      "persistence/discover_repo.py": 1784518737.376176,
+      "persistence/discover_repo.py": 1784687713.3170722,
       "persistence/genre_repo.py": 1784437252.0,
       "persistence/library_repo.py": 1784686498.7615912,
       "persistence/session_repo.py": 1784437252.0,
@@ -105,7 +105,7 @@
       "server/handlers/http.py": 1784518737.3813155,
       "server/handlers/setup.py": 1784518743.9145312,
       "server/handlers/websocket.py": 1784613207.1757386,
-      "server/handlers/ws_cache.py": 1784518737.3823166,
+      "server/handlers/ws_cache.py": 1784687963.8416793,
       "server/handlers/ws_discovery.py": 1784518737.3833158,
       "server/handlers/ws_download.py": 1784613207.1757386,
       "server/handlers/ws_playback.py": 1784518737.3843157,
@@ -157,7 +157,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 154,
+      "loc": 155,
       "docstring_purpose": "Load and expose all environment-based runtime configuration constants     for LunaWave, including paths, ports, and the admin password.",
       "reverse_deps": [
         "main.py",
@@ -177,6 +177,7 @@
         "plugins/lyrics_fetcher.py",
         "plugins/sponsorblock.py",
         "plugins/notifications.py",
+        "bootstrap/startup_tasks.py",
         "bootstrap/services.py",
         "server/handlers/audio_stream_handler.py"
       ]
@@ -363,14 +364,16 @@
         "json",
         "os",
         "structlog",
-        "config"
+        "config",
+        "asyncio"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 64,
+      "loc": 81,
       "docstring_purpose": "WebSocket handler for managing the downloaded MP3 file cache     (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.",
       "reverse_deps": [
-        "server/handlers/websocket.py"
+        "server/handlers/websocket.py",
+        "bootstrap/startup_tasks.py"
       ]
     },
     "server/handlers/auth.py": {
@@ -682,11 +685,13 @@
       ],
       "imports": [
         "structlog",
-        "persistence.discover_enrich"
+        "persistence.discover_enrich",
+        "re",
+        "asyncio"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 420,
+      "loc": 402,
       "docstring_purpose": "Repository for Discover-tab personalization queries: bandit-ranked     \"Untuk Kamu\" artists, \"Belum Pernah Kamu Dengar\" (unheard) artists,     genre taste spectrum, genre affinity, and artist detail lookup.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -899,7 +904,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 135,
+      "loc": 169,
       "docstring_purpose": "Manages the SQLite database connection lifecycle and initialization.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1433,7 +1438,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 136,
+      "loc": 146,
       "docstring_purpose": "Selects and rotates artists intelligently to maintain variety in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py",
@@ -1859,7 +1864,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 293,
+      "loc": 291,
       "docstring_purpose": "Provide the Tkinter-based ServerManager GUI for starting, stopping,     and monitoring the LunaWave backend server.",
       "reverse_deps": []
     },
@@ -2830,16 +2835,19 @@
       ],
       "imports": [
         "asyncio",
+        "os",
         "aiohttp",
         "structlog",
         "bootstrap.power",
         "bootstrap.services",
+        "config",
         "core.state",
-        "core.task_utils"
+        "core.task_utils",
+        "server.handlers.ws_cache"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 120,
+      "loc": 189,
       "docstring_purpose": "Stage 2 of application startup: kick off the background tasks that     must not block the web server from listening \u2014 connectivity polling,     the initial MPV connect, and resuming the last-played track. Extracted     from main.py's `main()` (T2.4) without changing call order.",
       "reverse_deps": [
         "main.py"

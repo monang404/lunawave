@@ -38,26 +38,46 @@ from config import DOWNLOAD_DIR
 logger = structlog.get_logger(__name__)
 
 
+import asyncio
+
+
+def _get_cache_size_sync() -> int:
+    size = 0
+    if DOWNLOAD_DIR.exists():
+        for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    size += os.path.getsize(fp)
+                except OSError:
+                    pass
+    return size
+
+
+def _clear_cache_sync() -> None:
+    if DOWNLOAD_DIR.exists():
+        for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    os.remove(fp)
+                except OSError:
+                    pass
+
+
 async def handle_cache_command(action: str, data: dict, ws, db, manager, state):
     if action == "get_cache_size":
-        size = 0
-        if DOWNLOAD_DIR.exists():
-            for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
-                for f in files:
-                    fp = os.path.join(root, f)
-                    try:
-                        size += os.path.getsize(fp)
-                    except OSError:
-                        pass
+        loop = asyncio.get_running_loop()
+        size = await loop.run_in_executor(None, _get_cache_size_sync)
         await ws.send_str(json.dumps({"type": "cache_size", "data": {"size_bytes": size}}))
     elif action == "clear_cache":
-        if DOWNLOAD_DIR.exists():
-            for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
-                for f in files:
-                    fp = os.path.join(root, f)
-                    try:
-                        os.remove(fp)
-                    except OSError:
-                        pass
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, _clear_cache_sync)
+        if db:
+            try:
+                await db.execute("UPDATE tracks SET local_path = NULL WHERE local_path IS NOT NULL")
+                await db.commit()
+            except Exception as e:
+                logger.error(f"Error updating db after cache clear: {e}")
         await manager.broadcast({"type": "log", "data": "Cache berhasil dibersihkan"})
         await ws.send_str(json.dumps({"type": "cache_cleared", "data": {}}))

@@ -203,7 +203,7 @@ class ArtistRepository:
     async def get_artist_songs_strict(self, artist: str, limit: int = 10) -> list[TrackInfo]
     async def record_completion(self, artist_name: str) -> None   # bandit: track selesai diputar
     async def record_skip(self, artist_name: str) -> None         # bandit: track di-skip
-    async def get_reward_stats(self) -> dict[str, tuple[int, int]]  # {nama: (alpha, beta)}
+    async def get_reward_stats(self) -> dict[str, tuple[float, float]]  # {nama: (alpha, beta)}
 ```
 
 `record_completion`/`record_skip` meng-update `reward_alpha`/`reward_beta` di tabel `artists` — input untuk ranking bandit Thompson Sampling di `DiscoverRepository.get_bandit_ranked_artists()`.

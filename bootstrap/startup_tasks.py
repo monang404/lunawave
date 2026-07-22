@@ -41,12 +41,14 @@ Thread Safety:
 """
 
 import asyncio
+import os
 
 import aiohttp
 import structlog
 
 from bootstrap.power import acquire_wake_lock
 from bootstrap.services import _init_mpv, context
+from config import MAX_CACHE_SIZE_BYTES
 from core.state import PlayerStatus
 from core.task_utils import safe_create_task
 
@@ -102,6 +104,74 @@ async def _resume_last_track():
         structlog.get_logger(__name__).error(f"Gagal load last_position: {e}")
 
 
+def _evict_cache_sync(files_to_remove: list[str]) -> None:
+    for fp in files_to_remove:
+        try:
+            if os.path.exists(fp):
+                os.remove(fp)
+        except OSError:
+            pass
+
+
+async def _cache_eviction_loop():
+    ctx = context
+    while True:
+        try:
+            from server.handlers.ws_cache import _get_cache_size_sync
+
+            loop = asyncio.get_running_loop()
+            current_size = await loop.run_in_executor(None, _get_cache_size_sync)
+
+            if current_size > MAX_CACHE_SIZE_BYTES:
+                target_size = int(MAX_CACHE_SIZE_BYTES * 0.8)
+                bytes_to_free = current_size - target_size
+
+                async with ctx.repos.conn.execute(
+                    "SELECT video_id, local_path FROM tracks WHERE local_path IS NOT NULL ORDER BY COALESCE(last_played, 0) ASC"
+                ) as cursor:
+                    rows = await cursor.fetchall()
+
+                freed = 0
+                files_to_remove = []
+                video_ids_cleared = []
+
+                for row in rows:
+                    if freed >= bytes_to_free:
+                        break
+                    local_path = row["local_path"]
+                    if not local_path:
+                        continue
+
+                    try:
+                        st = os.stat(local_path)
+                        freed += st.st_size
+                        files_to_remove.append(local_path)
+                        video_ids_cleared.append(row["video_id"])
+                    except OSError:
+                        video_ids_cleared.append(row["video_id"])
+
+                if files_to_remove:
+                    await loop.run_in_executor(None, _evict_cache_sync, files_to_remove)
+
+                if video_ids_cleared:
+                    for i in range(0, len(video_ids_cleared), 100):
+                        chunk = video_ids_cleared[i : i + 100]
+                        placeholders = ",".join(["?"] * len(chunk))
+                        await ctx.repos.conn.execute(
+                            f"UPDATE tracks SET local_path = NULL WHERE video_id IN ({placeholders})",
+                            chunk,
+                        )
+                    await ctx.repos.conn.commit()
+                    structlog.get_logger(__name__).info(
+                        f"Evicted {len(video_ids_cleared)} files to free cache space"
+                    )
+
+        except Exception as e:
+            structlog.get_logger(__name__).error(f"Error in cache eviction loop: {e}")
+
+        await asyncio.sleep(900)  # Cek setiap 15 menit
+
+
 async def run_startup_checks():
     """Schedule connectivity check, MPV initial connect, and resume-last-
     track as background tasks (non-blocking), in that order."""
@@ -117,3 +187,6 @@ async def run_startup_checks():
     ctx.tasks.append(safe_create_task(_init_mpv(), name="mpv_initial_connect"))
 
     ctx.tasks.append(safe_create_task(_resume_last_track(), name="resume_last_track"))
+
+    # Background task untuk membersihkan cache MP3 (LRU)
+    ctx.tasks.append(safe_create_task(_cache_eviction_loop(), name="cache_eviction"))

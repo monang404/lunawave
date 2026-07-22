@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-142
+latest_patch_id: PATCH-2026-07-22-146
 
-total_entries: 142
+total_entries: 146
 
 ---
 
@@ -21,6 +21,172 @@ total_entries: 142
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-146
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:01
+**Git Branch:** develop
+**Git Commit:** c0e4dac
+**Type:** Performance
+**Area:** Backend
+**Priority:** Medium
+**Title:** In-memory caching untuk artist reward stats pada radio bandit
+
+**Reason:** Radio mode memanggil get_reward_stats (full-table scan) setiap refill batch
+
+**Root Cause:**
+get_reward_stats selalu query ke database meskipun data bisa di-cache
+
+**Solution:**
+Menambahkan dict _reward_cache in-memory yang menyimpan tuple alpha dan beta, serta meng-update-nya langsung di record_completion dan record_skip
+
+**Changed Files:**
+- `persistence/artist_repo.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-22-145
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 09:42
+**Git Branch:** develop
+**Git Commit:** c0e4dac
+**Type:** Performance
+**Area:** Backend
+**Priority:** High
+**Title:** Implementasi LRU Cache Eviction dan perbaikan IO blocking
+
+**Reason:** Folder downloads/ bisa tumbuh tanpa batas dan pembacaan folder cache di ws_cache.py memblokir event loop
+
+**Root Cause:**
+Tidak ada background job eviction, dan I/O filesystem dipanggil sinkron di event loop utama
+
+**Solution:**
+Menambah batas MAX_CACHE_SIZE_BYTES (1GB), background job eviction berdasarkan LRU last_played, serta memindahkan I/O ke run_in_executor
+
+**Changed Files:**
+- `config.py`
+- `server/handlers/ws_cache.py`
+- `bootstrap/startup_tasks.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Clear cache via UI kini menghapus local_path dari DB
+
+---
+
+## PATCH-2026-07-22-144
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 09:35
+**Git Branch:** develop
+**Git Commit:** c0e4dac
+**Type:** Performance
+**Area:** Backend
+**Priority:** High
+**Title:** Migrasi pencarian Discover ke FTS5 dan eksekusi paralel
+
+**Reason:** Pencarian lambat di Termux karena full table scan linear dengan ukuran library
+
+**Root Cause:**
+Penggunaan kondisi LIKE pada pencarian membuat index SQLite B-Tree tidak bisa dipakai dan query sekuensial
+
+**Solution:**
+Membuat virtual table FTS5 tracks_fts dan songs_fts yang sinkron via triggers, mengganti query dengan MATCH dan bm25(). Fetch ke kedua sumber menggunakan asyncio.gather()
+
+**Changed Files:**
+- `persistence/schema.sql`
+- `persistence/db.py`
+- `persistence/discover_repo.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+FTS5 di-backfill otomatis saat startup pertama kali
+
+---
+
+## PATCH-2026-07-22-143
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 09:30
+**Git Branch:** develop
+**Git Commit:** c0e4dac
+**Type:** Fix
+**Area:** Backend
+**Priority:** High
+**Title:** Terapkan decay pada Radio Bandit Thompson Sampling
+
+**Reason:** Bandit membeku ke histori lama karena tidak ada cap atau peluruhan
+
+**Root Cause:**
+Varians distribusi Beta mengecil saat alpha+beta sangat besar karena update record_completion/record_skip tidak memiliki mekanisme decay, membuat eksplorasi mati
+
+**Solution:**
+Menambahkan faktor decay (0.98) pada kedua nilai alpha dan beta sebelum di-increment. Serta mengubah return type dari dict stats menjadi float.
+
+**Changed Files:**
+- `persistence/artist_repo.py`
+- `core/ports.py`
+- `docs/backend/persistence.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Mengubah return type dari get_reward_stats menjadi dict[str, tuple[float, float]]
 
 ---
 

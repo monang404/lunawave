@@ -88,3 +88,49 @@ CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);
 -- via loop ALTER TABLE dengan try/except yang mengabaikan "duplicate column name".
 -- Jangan tambahkan ALTER TABLE di sini — executescript() tidak punya error handling
 -- dan akan crash dengan OperationalError jika kolom sudah ada di DB lama.
+
+-- FTS5 Tables for Discover Quick Search
+CREATE VIRTUAL TABLE IF NOT EXISTS tracks_fts USING fts5(
+    video_id UNINDEXED,
+    title,
+    artist
+);
+
+CREATE TRIGGER IF NOT EXISTS tracks_fts_ai AFTER INSERT ON tracks BEGIN
+    INSERT INTO tracks_fts(rowid, video_id, title, artist) VALUES (new.rowid, new.video_id, new.title, new.artist);
+END;
+
+CREATE TRIGGER IF NOT EXISTS tracks_fts_ad AFTER DELETE ON tracks BEGIN
+    DELETE FROM tracks_fts WHERE rowid = old.rowid;
+END;
+
+CREATE TRIGGER IF NOT EXISTS tracks_fts_au AFTER UPDATE OF video_id, title, artist ON tracks BEGIN
+    UPDATE tracks_fts SET video_id = new.video_id, title = new.title, artist = new.artist WHERE rowid = old.rowid;
+END;
+
+CREATE VIRTUAL TABLE IF NOT EXISTS songs_fts USING fts5(
+    song_id UNINDEXED,
+    title,
+    artist
+);
+
+CREATE TRIGGER IF NOT EXISTS songs_fts_ai AFTER INSERT ON songs BEGIN
+    INSERT INTO songs_fts(rowid, song_id, title, artist)
+    SELECT new.id, new.youtube_id, new.judul, a.nama FROM artists a WHERE a.id = new.artist_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS songs_fts_ad AFTER DELETE ON songs BEGIN
+    DELETE FROM songs_fts WHERE rowid = old.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS songs_fts_au AFTER UPDATE OF judul, artist_id, youtube_id ON songs BEGIN
+    UPDATE songs_fts
+    SET title = new.judul,
+        song_id = new.youtube_id,
+        artist = (SELECT nama FROM artists WHERE id = new.artist_id)
+    WHERE rowid = old.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS artists_fts_au AFTER UPDATE OF nama ON artists BEGIN
+    UPDATE songs_fts SET artist = new.nama WHERE rowid IN (SELECT id FROM songs WHERE artist_id = new.id);
+END;

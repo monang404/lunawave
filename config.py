@@ -44,6 +44,7 @@ CACHE_DIR = BASE_DIR / "cache" / "mp3"
 # Settings UI's "Ukuran Cache" / clear-cache action should actually measure,
 # since CACHE_DIR is emptied again right after each download completes.
 DOWNLOAD_DIR = BASE_DIR / "downloads"
+MAX_CACHE_SIZE_BYTES = int(os.environ.get("LUNAWAVE_CACHE_SIZE", 1073741824))  # 1 GB
 DB_PATH = BASE_DIR / "data" / "lunawave.db"
 
 # Handle Windows compatibility for Unix Sockets

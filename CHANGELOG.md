@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Performance
+- Penambahan in-memory cache untuk memori *reward stats* (parameter $\alpha$ dan $\beta$) pada modul `ArtistRepository`. Mode Radio Bandit (Thompson Sampling) tidak lagi melakukan *full-table scan* ke SQLite di setiap siklus isi ulang (*batch refill*), sehingga menghemat *overhead/round-trip* *database*.
+- Implementasi sistem peluruhan *cache* otomatis (LRU Eviction) untuk file unduhan MP3 dengan ambang batas `MAX_CACHE_SIZE_BYTES` (default 1GB) agar penyimpanan Termux tidak terkuras habis. Operasi *filesystem* sinkron seperti kueri ukuran *cache* dan pembersihan _file_ kini dipindahkan ke *thread pool* (`run_in_executor`) agar tidak lagi memblokir *event loop* utama.
+- Migrasi pencarian "Quick Search Discover" menggunakan FTS5 (Full-Text Search) dan query paralel (`asyncio.gather`), menghindari *full-table scan* secara sekuensial yang menyebabkan performa lambat pada database dengan katalog besar, terutama pada perangkat Termux/Android.
+
 ### Fixed
+- Terapkan decay pada Radio Bandit Thompson Sampling: Menambahkan faktor peluruhan waktu (decay factor 0.98) ke `reward_alpha` dan `reward_beta` pada artis setiap selesai diputar atau di-skip, untuk mencegah *non-stationary bandit problem* (eksplorasi mati akibat nilai probabilitas membeku karena histori masa lalu).
 - Radio Mode (Thompson Sampling) was only applying personalization to 25% of songs due to the SQL CTE querying limits incorrectly and pulling randomly from the whole database. This was fixed by separating BANDIT_QUOTA and EXPLORE_QUOTA, returning multiple artists from the bandit, and applying the artist filter before `ORDER BY RANDOM()`, making queries much faster and personalization fully effective.
 - Charging-gate loudness batch analysis (`_is_charging_or_unknown()`,
   ditambahkan di rilis Background/Battery Survival di bawah) sekarang

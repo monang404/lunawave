@@ -51,6 +51,7 @@ class DatabaseConnection:
             schema_sql = f.read()
         await self._conn.executescript(schema_sql)  # type: ignore
         await self._migrate_songs_unique_constraint()
+        await self._backfill_fts5_if_needed()
 
     async def _migrate_songs_unique_constraint(self) -> None:
         """PATCH-2026-07-16-048: `songs.youtube_id` used to be globally UNIQUE,
@@ -104,6 +105,41 @@ class DatabaseConnection:
         except Exception as e:
             await conn.rollback()
             logger.error("songs_migration_failed", error=str(e), error_type=type(e).__name__)
+
+    async def _backfill_fts5_if_needed(self) -> None:
+        """PATCH-2026-07-22: Backfill FTS5 tables with existing data on first run
+        after schema update, ensuring older dbs get indexed."""
+        conn = self._conn
+        try:
+            async with conn.execute("SELECT COUNT(*) FROM tracks") as cursor:
+                tracks_count = (await cursor.fetchone())[0]
+            async with conn.execute("SELECT COUNT(*) FROM tracks_fts") as cursor:
+                tracks_fts_count = (await cursor.fetchone())[0]
+
+            async with conn.execute("SELECT COUNT(*) FROM songs") as cursor:
+                songs_count = (await cursor.fetchone())[0]
+            async with conn.execute("SELECT COUNT(*) FROM songs_fts") as cursor:
+                songs_fts_count = (await cursor.fetchone())[0]
+
+            if (tracks_count > 0 and tracks_fts_count == 0) or (
+                songs_count > 0 and songs_fts_count == 0
+            ):
+                logger.info("fts5_backfill_starting")
+                await conn.execute("DELETE FROM tracks_fts")
+                await conn.execute(
+                    "INSERT INTO tracks_fts(rowid, video_id, title, artist) "
+                    "SELECT rowid, video_id, title, artist FROM tracks"
+                )
+                await conn.execute("DELETE FROM songs_fts")
+                await conn.execute(
+                    "INSERT INTO songs_fts(rowid, song_id, title, artist) "
+                    "SELECT s.id, s.youtube_id, s.judul, a.nama FROM songs s JOIN artists a ON a.id = s.artist_id"
+                )
+                await conn.commit()
+                logger.info("fts5_backfill_completed")
+        except Exception as e:
+            await conn.rollback()
+            logger.error("fts5_backfill_failed", error=str(e), error_type=type(e).__name__)
 
     async def close(self):
         if self._conn:
