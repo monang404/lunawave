@@ -31,12 +31,14 @@ from server.app import (
     MANAGER,
     PLAYBACK_CONTROLLER,
     REPOS,
+    SERVER_CLOCK,
     STATE,
     TRACKS,
     YTDLP,
     create_app,
     run_server,
 )
+from server.middleware.traffic import traffic_middleware
 
 
 @pytest.fixture
@@ -71,6 +73,9 @@ def test_create_app_registers_routes_and_services(mock_playback_controller, mock
     assert app[CONN] == mock_repos.conn
     assert app[TRACKS] == mock_repos.tracks
     assert MANAGER in app
+    # ADR-0010 O3.2: ServerClock wired via AppKey, traffic middleware registered.
+    assert SERVER_CLOCK in app
+    assert traffic_middleware in app.middlewares
 
     # Check that routes are registered
     routes = [

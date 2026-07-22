@@ -6,6 +6,8 @@ Purpose:
 
 Responsibilities:
     - Implement the core functionality described in the purpose.
+    - Track connected_at per WS and record active-session duration on
+      disconnect (ADR-0010): logged + observed to a Prometheus histogram.
 
 Depends on:
     - core.observability
@@ -22,10 +24,11 @@ Thread Safety:
 
 import asyncio
 import json
+import time
 
 import structlog
 
-from core.observability import ACTIVE_WEBSOCKETS
+from core.observability import ACTIVE_USER_SESSION_SECONDS, ACTIVE_WEBSOCKETS
 
 logger = structlog.get_logger(__name__)
 
@@ -39,9 +42,15 @@ class ConnectionManager:
         self.command_history = {}
         self.setup_attempts = {}
         self.rl_lock = asyncio.Lock()
+        # ADR-0010: connected_at per ws, dipakai untuk durasi sesi aktif.
+        # Dict biasa (bukan WeakKeyDictionary) supaya konsisten dengan
+        # struktur active_connections/authenticated_connections yang sudah
+        # ada -- entry dibersihkan sendiri di disconnect().
+        self.connected_at: dict = {}
 
     async def connect(self, ws):
         self.active_connections.append(ws)
+        self.connected_at[ws] = time.monotonic()
         ACTIVE_WEBSOCKETS.inc()
         logger.info(f"WebSocket connected. Total clients: {len(self.active_connections)}")
 
@@ -51,7 +60,24 @@ class ConnectionManager:
             ACTIVE_WEBSOCKETS.dec()
         if ws in self.authenticated_connections:
             self.authenticated_connections.remove(ws)
-        logger.info(f"WebSocket disconnected. Total clients: {len(self.active_connections)}")
+
+        duration = None
+        connected_at = self.connected_at.pop(ws, None)
+        if connected_at is not None:
+            try:
+                duration = time.monotonic() - connected_at
+                ACTIVE_USER_SESSION_SECONDS.observe(duration)
+            except Exception:
+                # Instrumentasi tidak boleh pernah menggagalkan disconnect().
+                duration = None
+
+        if duration is not None:
+            logger.info(
+                f"WebSocket disconnected duration={duration:.1f}s "
+                f"total_clients={len(self.active_connections)}"
+            )
+        else:
+            logger.info(f"WebSocket disconnected. Total clients: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
         if not self.active_connections:

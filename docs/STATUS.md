@@ -9,6 +9,27 @@ sprint:
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
 
+## Observability Baseline: log traceable, traffic/uptime/RAM, /health, [STATUS] periodik (2026-07-22)
+
+ADR-0010 **Accepted**. Lima sesi (task_breakdown_observability.yaml) selesai:
+
+| File | Perubahan |
+|---|---|
+| `core/mem_stats.py` (baru) | `get_rss_mb()` — RSS cross-platform tanpa dependency baru (proc/self/status di Linux/Termux, ctypes+psapi di Windows, `None` fail-safe) |
+| `core/server_clock.py` (baru) | `ServerClock` — uptime server berbasis `time.monotonic()` |
+| `core/observability.py` | +5 metric Prometheus: `HTTP_REQUESTS_TOTAL`, `HTTP_BYTES_TOTAL`, `WS_MESSAGES_TOTAL` (dideklarasikan, belum di-wiring — tidak ada task yang menugaskannya), `PROCESS_RSS_MB`, `ACTIVE_USER_SESSION_SECONDS` |
+| `core/log_config.py` | Split `file_renderer` (plain)/`console_renderer` (auto-color via `isatty()`, tanpa env var), correlation id (`structlog.contextvars`), `log_session_start()`/`log_session_end()` (banner sesi) |
+| `server/middleware/traffic.py` (baru, `server/middleware.py` → package) | Middleware terpusat: req_id per request, `HTTP_REQUESTS_TOTAL`/`HTTP_BYTES_TOTAL` |
+| `server/app.py` | AppKey `SERVER_CLOCK`, registrasi `traffic_middleware` |
+| `server/connection_manager.py` | `connected_at` per WS, durasi sesi ke `ACTIVE_USER_SESSION_SECONDS` saat disconnect |
+| `server/handlers/http.py` | `/health` +`uptime_seconds`, `memory_mb`, `active_connections` (fail-safe per field) |
+| `bootstrap/maintenance.py` | `status_log_task()`/`schedule_status_log()` — baris `[STATUS]` ke log tiap 15 menit, refresh `PROCESS_RSS_MB` |
+| `main.py` | `schedule_status_log()` dijadwalkan di `main()`; `log_session_start()`/`log_session_end()` di-wiring di `run_server()` (gap dari sesi 2, ditemukan & di-fix sebelum sesi 5 — lihat PATCH-2026-07-22-174) |
+
+`server/handlers/websocket.py`, `engine/playback/controller.py`, `web/static/index.html` tidak disentuh (locked_files_global dihormati). Tidak ada env var atau dependency pip baru.
+
+**Verifikasi manual:** dijalankan `python main.py` (host/port lokal, tanpa TERM/tty — mensimulasikan kondisi non-interaktif ala Termux): banner `SESSION START/END` muncul di `lunawave.log`, tidak ada byte escape ANSI, `/health` mengembalikan `memory_mb`/`uptime_seconds` terisi (bukan `null`), shutdown bersih tanpa task tersisa. Jalur Windows (`ctypes`+`psapi`) tervalidasi lewat unit test dengan mock (tidak ada mesin Windows di lingkungan verifikasi ini).
+
 ## Security Hardening: session token hashing, CSWSH, web.AppKey (2026-07-22)
 
 Tiga isu keamanan & teknis diperbaiki sekaligus (PATCH-2026-07-22-166):

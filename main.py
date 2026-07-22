@@ -43,7 +43,7 @@ import stat
 import structlog
 
 from config import BASE_DIR, WEB_HOST, WEB_PORT
-from core.log_config import setup_logging
+from core.log_config import log_session_end, log_session_start, setup_logging
 
 setup_logging()
 
@@ -53,7 +53,7 @@ try:
 except OSError:
     pass
 
-from bootstrap.maintenance import schedule_db_maintenance, start_mpv_watchdog
+from bootstrap.maintenance import schedule_db_maintenance, schedule_status_log, start_mpv_watchdog
 from bootstrap.services import context, init_core_services
 from bootstrap.startup_tasks import run_startup_checks
 
@@ -64,6 +64,9 @@ from bootstrap.startup_tasks import run_startup_checks
 # standalone startup stage.
 async def run_server():
     ctx = context
+    import os
+
+    pid = os.getpid()
     try:
         # Import lokal (bukan top-level) agar server.app.create_app /
         # server.app.run_server tetap bisa di-patch dari test lewat
@@ -99,6 +102,11 @@ async def run_server():
         # instalasi baru tanpa admin_account diarahkan ke Initial Setup
         # oleh frontend/server itu sendiri, bukan lewat banner ini.
         print("=====================================================")
+
+        # ADR-0010: baris pemisah sesi di lunawave.log (dan console), sesuai
+        # contoh output RFC observability_logging.md. Best-effort/fail-safe
+        # sendiri di sisi log_config -- tidak pernah menggagalkan startup.
+        log_session_start(pid, host=host, port=port)
 
         await _web_run_server(app, host=host, port=port)
 
@@ -139,12 +147,17 @@ async def run_server():
 
         structlog.get_logger(__name__).info("Shutdown complete.")
 
+        # ADR-0010: penutup pasangan log_session_start() di atas -- ditulis
+        # paling akhir supaya menandai proses shutdown benar-benar selesai.
+        log_session_end(pid)
+
 
 async def main():
     await init_core_services()
     await run_startup_checks()
     schedule_db_maintenance()
     start_mpv_watchdog()
+    schedule_status_log()
     await run_server()
 
 

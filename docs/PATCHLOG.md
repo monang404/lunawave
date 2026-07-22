@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-168
+latest_patch_id: PATCH-2026-07-22-175
 
-total_entries: 168
+total_entries: 175
 
 ---
 
@@ -21,6 +21,526 @@ total_entries: 168
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-175
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:36
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** Finalisasi observability_log_baseline: ADR-0010 Accepted, STATUS.md, FILE_INDEX/REPORT regen
+
+**Reason:** Sesi 5 (finalisasi) task_breakdown_observability.yaml: tandai fitur selesai, sinkronkan docs, verifikasi end-to-end
+
+**Root Cause:**
+Fitur observability_log_baseline (ADR-0010) sudah melewati sesi 1-4
+(modul dependency-free, metric Prometheus, wiring middleware/app.py/
+connection_manager, /health + task periodik [STATUS]) plus gap-fix
+wiring log_session_start()/log_session_end() ke main.py (PATCH-174),
+tapi ADR-0010 masih berstatus Proposed, docs/STATUS.md belum mencatat
+ringkasan fitur ini, docs/FILE_INDEX.md belum mengenal 3 file baru
+(core/mem_stats.py, core/server_clock.py, server/middleware/traffic.py)
+maupun perubahan server/middleware.py -> package, dan belum ada
+verifikasi end-to-end nyata (bukan cuma unit test) bahwa server benar-
+benar berjalan tanpa crash dan menghasilkan output sesuai RFC.
+
+**Solution:**
+python automation/generate_file_index.py dan python automation/
+generate_report.py dijalankan -- FILE_INDEX.md dan REPORT.md kini
+mengenal core/mem_stats.py, core/server_clock.py, server/middleware/
+traffic.py, dan server/middleware/__init__.py (package), menghilangkan
+FAIL verify_docs FILE_INDEX yang persisten sejak sesi 3. docs/STATUS.md:
+tambah 1 seksi ringkas di atas (tabel file+perubahan untuk seluruh 5
+sesi + gap-fix, mengikuti format entri lain di file ini). docs/adr/
+0010-observability-log-baseline.md: status diubah dari "Proposed" ke
+"Accepted". Verifikasi manual end-to-end dijalankan langsung (bukan
+cuma baca kode): python main.py di lingkungan non-tty/tanpa TERM
+(mensimulasikan kondisi non-interaktif ala Termux -- stdout dipipe,
+tidak ada terminal berwarna) -- server start bersih (mpv graceful
+"not available" karena tidak ter-install di sandbox, sesuai desain
+fail-safe, bukan crash), GET /health mengembalikan memory_mb dan
+uptime_seconds terisi (bukan null), lunawave.log memuat baris "====
+SESSION START ... ====" dan "==== SESSION END ... ====" yang benar,
+grep -aP '\x1b\[' lunawave.log tetap bersih tanpa ANSI byte, shutdown
+(SIGINT) bersih tanpa task tersisa (log "Shutdown complete." muncul
+sebelum SESSION END). Jalur Windows (ctypes+psapi di core/mem_stats.py)
+tidak bisa diverifikasi end-to-end karena tidak ada mesin Windows di
+lingkungan eksekusi ini -- tetap tervalidasi lewat unit test dengan
+mock ctypes yang sudah ada sejak sesi 1.
+
+**Changed Files:**
+- `docs/adr/0010-observability-log-baseline.md`
+- `docs/STATUS.md`
+- `docs/FILE_INDEX.md`
+- `docs/REPORT.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** doctor.py --json: overall FAIL 80 (hanya verify_security .gitignore, pre-existing, tidak ada FAIL baru); verify_docs/architecture_lint/verify_structure/event_graph semua PASS 100; verifikasi manual end-to-end: python main.py non-tty -- SESSION START/END banner benar, /health memory_mb & uptime_seconds terisi, lunawave.log bersih dari ANSI, shutdown bersih
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-174
+
+**Status:** Draft
+
+**Notes:**
+Sesi 5 (final) dari task_breakdown_observability.yaml, task O5.1,
+patchlog: own. Seluruh 5 sesi (O1.1/O1.2, O2.1/O2.2, O3.1/O3.2/O3.3,
+O4.1/O4.2) + 1 gap-fix (PATCH-2026-07-22-174, wiring log_session_start/
+end ke main.py yang terlewat dari sesi 2) kini selesai. doctor.py --json
+akhir: overall_status FAIL, aggregate_score 80 -- HANYA 1 checker FAIL
+tersisa (verify_security: .gitignore tidak ada sejak arsip awal,
+dikonfirmasi berulang di sesi 3/4/5 bukan disebabkan/disentuh oleh
+perubahan fitur ini, di luar scope observability_log_baseline). Semua
+checker lain (verify_docs, architecture_lint, verify_structure,
+event_graph) PASS 100. TIDAK ADA FAIL BARU dibanding baseline sesi
+3/4. Metric WS_MESSAGES_TOTAL (dideklarasikan sesi 2) tetap belum
+di-wiring -- dikonfirmasi ulang ini bukan gap: tidak ada task manapun
+di O1-O5 yang menugaskan wiring-nya (websocket.py locked, hanya boleh
+dibaca), didesain untuk dipakai fitur lain di masa depan. Locked files
+(engine/playback/controller.py, server/handlers/websocket.py,
+web/static/index.html) tidak pernah disentuh di sesi manapun. Tidak ada
+env var atau dependency pip baru ditambahkan di sepanjang fitur ini.
+
+---
+
+## PATCH-2026-07-22-174
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:33
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** main.py: wiring log_session_start()/log_session_end() (sesi 2, belum pernah dipanggil)
+
+**Reason:** ADR-0010 mensyaratkan banner SESSION START/END di lunawave.log; fungsi sudah ada sejak sesi 2 tapi tidak pernah dipanggil dari main.py
+
+**Root Cause:**
+core/log_config.py (sesi 2, O2.2, PATCH-2026-07-22-171) menambahkan
+log_session_start()/log_session_end() untuk menulis baris pemisah
+"==== SESSION START/END ... ====" ke lunawave.log dan console, sesuai
+contoh output di RFC observability_logging.md §Bentuk Output. Fungsi ini
+sudah diuji sendiri (tests/unit/core/test_log_config.py) tapi tidak pernah
+dipanggil dari main.py atau modul lain manapun -- dod O2.2 hanya menuntut
+test unit untuk fungsinya sendiri, bukan wiring ke entrypoint, dan tidak
+ada task eksplisit lain di task_breakdown_observability.yaml yang
+menyebut pemanggilannya. Akibatnya lunawave.log tidak pernah benar-benar
+memuat banner sesi di kondisi jalan sebenarnya, walau fiturnya sudah
+"selesai" menurut patchlog sesi 2.
+
+**Solution:**
+main.py: import log_session_start/log_session_end dari core.log_config
+(disatukan dengan import setup_logging yang sudah ada). Di run_server():
+pid = os.getpid() dihitung sebelum blok try (supaya tersedia juga di
+finally), log_session_start(pid, host=host, port=port) dipanggil setelah
+host/port diketahui dan tepat sebelum await _web_run_server(...) --
+sehingga banner "==== SESSION START ... ====" tercatat begitu server
+benar-benar mulai listen. log_session_end(pid) dipanggil di baris
+terakhir blok finally, setelah "Shutdown complete." di-log dan semua
+cleanup (task cancel, mpv.close, repos.close, dst) selesai -- menandai
+shutdown benar-benar selesai. Kedua pemanggilan fail-safe di sisi
+core/log_config.py sendiri (try/except di _emit_banner_line), jadi tidak
+menambah risiko crash startup/shutdown. Tidak ada perubahan pada
+log_session_start()/log_session_end() itu sendiri, hanya wiring
+pemanggilannya. tests/unit/test_main.py: tambah patch
+"main.log_session_start"/"main.log_session_end" ke test_main_smoke plus
+assert_called_once() untuk keduanya, supaya wiring ini tidak regresi diam-
+diam lagi di masa depan.
+
+**Changed Files:**
+- `main.py`
+- `tests/unit/test_main.py`
+
+**Changed Symbols:**
+- `run_server()`
+
+**Tests:** tests/unit/test_main.py (2 test, 1 updated dgn assertion baru) - passed; tests/unit (753 test, exclude launcher/gui) - passed; architecture_lint.py --json PASS 0 new_violations
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-173
+
+**Status:** Draft
+
+**Notes:**
+Gap-fix sebelum sesi 5 dari task_breakdown_observability.yaml, ditemukan
+saat verifikasi eksplisit user bahwa hasil sesi 2 sudah wiring ke main
+sebelum melanjutkan sesi 5. Bukan task O5.1 itu sendiri dan tidak
+mengubah scope-nya -- O5.1 tetap dikerjakan terpisah setelah ini.
+patchlog: own (bukan bagian patchlog_group manapun, karena bukan task
+eksplisit di yaml). Tidak menyentuh file locked (main.py dan
+core/log_config.py bukan locked_files_global). Tidak ada env var atau
+dependency pip baru. Verifikasi manual: python -c import core.log_config;
+setup_logging(); log_session_start(1234, host="0.0.0.0", port=8765);
+log_session_end(1234) -- baris banner muncul benar di lunawave.log,
+grep -aP '\x1b\[' lunawave.log tetap bersih (tidak ada ANSI). Verifikasi
+otomatis: pytest tests/unit/test_main.py (2 passed, termasuk assertion
+baru log_session_start/end called once); pytest tests/unit (753 test,
+exclude launcher/gui -- ModuleNotFoundError tkinter, pre-existing
+environment gap) - semua passed; architecture_lint.py --json: PASS, 0
+new_violations. Metric WS_MESSAGES_TOTAL (dideklarasikan sesi 2, O2.1)
+dicek juga: memang belum dipakai/wiring di kode manapun sampai saat ini,
+tapi ini BUKAN gap -- tidak ada task manapun di
+task_breakdown_observability.yaml (O3.x/O4.x) yang menugaskan wiring-nya,
+websocket.py locked (hanya boleh dibaca), jadi metric ini didekralasikan
+untuk dipakai nanti di luar scope fitur ini, sesuai desain.
+
+---
+
+## PATCH-2026-07-22-173
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:23
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** /health tambah uptime/RAM/koneksi aktif + task periodik [STATUS] ke log
+
+**Reason:** ADR-0010 butuh /health yang lebih informatif untuk monitoring dasar dan ringkasan log berkala yang human-readable tanpa harus scrape /metrics
+
+**Root Cause:**
+/health hanya melaporkan status DB dan mpv, tidak ada uptime, RAM, atau
+jumlah koneksi aktif (ADR-0010 poin 4 & 6). Tidak ada juga ringkasan
+berkala ke log yang bisa dibaca manusia untuk memantau server tanpa harus
+scrape /metrics -- padahal PROCESS_RSS_MB (gauge, ditambah di sesi 2) belum
+pernah diisi/diperbarui sama sekali sejak dibuat.
+
+**Solution:**
+server/handlers/http.py: health_check() ditambah try/except independen per
+field baru -- server_clock.uptime_seconds (via get_server_clock(request),
+AppKey baru dari sesi 3), core.mem_stats.get_rss_mb() (sudah fail-safe
+sendiri), dan len(manager.active_connections) (via get_manager(request)
+existing) -- kalau salah satu gagal, field itu jadi null tanpa menggagalkan
+field lain atau response 200-nya. Field status/db/mpv tidak diubah sama
+sekali. Tambah accessor get_server_clock() di server/handlers/__init__.py
+mengikuti pola get_conn/get_manager/get_playback_controller yang sudah ada
+(file ini tidak locked, hanya tidak disebut eksplisit di files: task O4.1 --
+diperlukan supaya http.py tidak perlu raw request.app[SERVER_CLOCK] yang
+memutus konsistensi pola accessor bertipe di modul ini).
+
+bootstrap/maintenance.py: status_log_task() -- while True + asyncio.sleep(15
+menit), lalu baca 4 sumber data secara independen (masing-masing try/except
+sendiri): ServerClock.uptime_seconds, ACTIVE_WEBSOCKETS gauge (_value.get()),
+total request lewat helper baru _sum_counter_total() (menjumlahkan semua
+sample '_total' dari Counter HTTP_REQUESTS_TOTAL lintas semua kombinasi
+label method/path/status -- exact count, bukan pendekatan), dan
+core.mem_stats.get_rss_mb() (dibungkus try/except tambahan di call site
+juga, defense-in-depth walau get_rss_mb() sendiri sudah fail-safe). RAM yang
+berhasil dibaca dipakai untuk PROCESS_RSS_MB.set() -- gauge diisi/diperbarui
+untuk pertama kalinya sejak dibuat di sesi 2, sebelumnya cuma dideklarasikan.
+Baris log final "[STATUS] uptime=Xm aktif=Y req=Z ram=WMB" (atau "n/a" per
+komponen yang gagal) ditulis lewat try/except terluar sendiri supaya
+kegagalan format string pun tidak mematikan loop. schedule_status_log()
+mengikuti pola schedule_db_maintenance()/start_mpv_watchdog() persis
+(context.tasks.append(safe_create_task(...))), sehingga otomatis ikut
+ter-cancel bersih oleh loop shutdown main.py yang sudah ada tanpa perubahan
+apa pun ke logic shutdown itu sendiri.
+
+main.py: tambah 1 baris pemanggilan schedule_status_log() di main(), sejajar
+dengan schedule_db_maintenance()/start_mpv_watchdog() yang sudah ada --
+tanpa ini task baru tidak akan pernah dijadwalkan/berjalan sama sekali.
+File ini bukan locked_files_global, hanya tidak eksplisit disebut di
+files: O4.2 -- perubahan minimal, tidak mengubah urutan/logic startup atau
+shutdown yang sudah ada.
+
+**Changed Files:**
+- `server/handlers/http.py`
+- `server/handlers/__init__.py`
+- `bootstrap/maintenance.py`
+- `main.py`
+- `tests/unit/server/handlers/test_http.py`
+- `tests/unit/bootstrap/test_maintenance.py`
+
+**Changed Symbols:**
+- `health_check()`
+- `get_server_clock()`
+- `status_log_task()`
+- `schedule_status_log()`
+- `_sum_counter_total()`
+
+**Tests:** tests/unit/server/handlers/test_http.py (9 test, 2 updated + 2 new), tests/unit/bootstrap/test_maintenance.py (7 test, 3 new) - semua passed; tests/unit (753 test, exclude launcher/gui) - semua passed; tests/integration (4 skipped, tidak ada regresi); architecture_lint.py --json PASS 0 new_violations
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-172
+
+**Status:** Draft
+
+**Notes:**
+Sesi 4 dari task_breakdown_observability.yaml (task O4.1 + O4.2, patchlog_group
+OG-3). Tidak ada env var atau dependency pip baru. server/handlers/websocket.py
+tidak disentuh (locked_files_global dihormati). Dua file disentuh di luar
+`files:` yang tertulis literal di task tapi BUKAN locked file dan diperlukan
+supaya dod terpenuhi: server/handlers/__init__.py (tambah get_server_clock(),
+konsistensi pola accessor -- O4.1) dan main.py (tambah 1 baris
+schedule_status_log() -- O4.2, tanpa ini task periodik tidak pernah berjalan
+maupun ter-cancel bersih saat shutdown seperti diminta dod).
+
+Verifikasi: pytest tests/unit (exclude tests/unit/launcher/gui yang gagal
+collect karena ModuleNotFoundError: No module named 'tkinter' -- tkinter
+tidak ter-install di sandbox eksekusi ini, pre-existing environment gap,
+tidak terkait fitur ini): 753 passed. pytest tests/integration: 4 skipped
+(tidak ada regresi). architecture_lint.py --json: PASS, 0 new_violations.
+doctor.py --json: overall_status FAIL, aggregate_score 77 -- IDENTIK dengan
+hasil sesi 3 (2 FAIL yang sama persis: verify_docs FILE_INDEX karena
+core/mem_stats.py, core/server_clock.py, server/middleware/traffic.py
+belum tercatat dan server/middleware.py masih tercatat padahal sudah jadi
+package -- regenerasi dijadwalkan sesi 5 (O5.1); verify_security karena
+.gitignore tidak ada sejak arsip awal, di luar scope fitur ini) -- TIDAK ADA
+FAIL BARU dibanding sesi 3.
+
+---
+
+## PATCH-2026-07-22-172
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:17
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** server/middleware/traffic.py + wiring app.py + connection_manager.py durasi sesi WS
+
+**Reason:** ADR-0010 butuh middleware traffic terpusat (req_id, HTTP_REQUESTS_TOTAL/HTTP_BYTES_TOTAL) dan durasi sesi WS aktif (ACTIVE_USER_SESSION_SECONDS)
+
+**Root Cause:**
+ADR-0010 butuh titik instrumentasi HTTP terpusat (bukan tersebar di tiap
+handler), correlation id per request, dan durasi sesi WebSocket aktif --
+belum ada satu pun dari ketiganya sebelum sesi ini. server/middleware.py
+juga masih berupa modul tunggal (bukan package), sehingga tidak ada tempat
+alami untuk menambah traffic.py tanpa mencampurnya dengan logic rate-limit
+WS yang sudah ada di sana.
+
+**Solution:**
+server/middleware.py dikonversi jadi package server/middleware/ (__init__.py
+tetap berisi check_rate_limit tidak berubah, plus re-export traffic_middleware)
+-- import path lama "from server.middleware import check_rate_limit" tetap
+valid, tidak ada call site yang perlu diubah. traffic.py: middleware aiohttp
+tunggal (@web.middleware) yang assign req_id 8-hex via
+structlog.contextvars.bind_contextvars() lalu reset_contextvars() di
+finally, increment HTTP_REQUESTS_TOTAL(method,path,status) dan
+HTTP_BYTES_TOTAL(direction=in|out) best-effort (try/except per metric,
+tidak pernah menggagalkan request), dan log satu baris ringkas per request
+selesai. web.HTTPException tetap di-raise ulang dengan status aslinya
+(bukan disamarkan jadi 500). server/app.py: tambah web.AppKey SERVER_CLOCK
+mengarah ke singleton core.server_clock.server_clock (pola sama dengan
+AppKey lain di file ini), daftarkan traffic_middleware ke
+web.Application(middlewares=[...]) tanpa mengubah urutan/isi middleware
+lain (memang belum ada middleware lain terdaftar di level Application --
+rate-limit WS tetap dipanggil manual di handle_ws_message, tidak diubah).
+server/connection_manager.py: tambah dict connected_at (ws -> time.monotonic()
+saat connect()), disconnect() menghitung durasi, mengamati ke
+ACTIVE_USER_SESSION_SECONDS, dan menulis log
+"WebSocket disconnected duration=...s total_clients=..." -- dibungkus
+try/except supaya kegagalan observasi metric tidak pernah menggagalkan
+disconnect() itu sendiri; juga aman dipanggil pada ws yang belum pernah
+connect() (connected_at.pop(ws, None) tidak KeyError). server/handlers/
+websocket.py TIDAK disentuh sama sekali -- ia sudah memanggil
+manager.connect(ws)/manager.disconnect(ws) apa adanya, cukup untuk
+instrumentasi baru ini bekerja tanpa refactor apa pun di file itu.
+
+**Changed Files:**
+- `server/middleware/__init__.py`
+- `server/middleware/traffic.py`
+- `server/app.py`
+- `server/connection_manager.py`
+- `tests/unit/server/middleware/test_traffic.py`
+- `tests/unit/server/test_app.py`
+- `tests/unit/server/test_connection_manager.py`
+
+**Changed Symbols:**
+- `traffic_middleware()`
+- `_short_req_id()`
+- `SERVER_CLOCK`
+- `ConnectionManager.connected_at`
+- `ConnectionManager.connect()`
+- `ConnectionManager.disconnect()`
+
+**Tests:** tests/unit/server/middleware/test_traffic.py (5 test baru), tests/unit/server/test_app.py (updated, 2 test), tests/unit/server/test_connection_manager.py (3 test baru + 3 existing) - semua passed; tests/unit (748 test, exclude launcher/gui) - semua passed
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-171
+
+**Status:** Draft
+
+**Notes:**
+Sesi 3 dari task_breakdown_observability.yaml (task O3.1 + O3.2 + O3.3,
+patchlog_group OG-2). Tidak ada env var atau dependency pip baru
+ditambahkan. server/handlers/websocket.py tidak disentuh (locked_files_global
+dihormati -- hanya dipanggil apa adanya). doctor.py --json setelah sesi ini:
+overall_status FAIL, aggregate_score 77 -- KEDUANYA PRE-EXISTING, bukan
+regresi baru dari sesi ini: (1) verify_docs FILE_INDEX FAIL karena
+core/mem_stats.py, core/server_clock.py, server/middleware/traffic.py belum
+tercatat dan server/middleware.py (dihapus, jadi package) masih tercatat --
+regenerasi FILE_INDEX memang dijadwalkan di sesi 5 (O5.1), bukan tugas sesi
+ini; (2) verify_security FAIL karena .gitignore tidak ada sama sekali di
+repo yang di-upload untuk sesi ini -- dikonfirmasi manual file itu memang
+tidak ada di arsip sejak awal, tidak disentuh atau dihapus oleh perubahan
+apa pun di sesi ini, dan di luar scope observability_log_baseline.
+architecture_lint.py --json: PASS, tidak ada NotAppKeyWarning baru.
+pytest tests/unit (748 test, exclude tests/unit/launcher/gui yang gagal
+collect karena ModuleNotFoundError: No module named 'tkinter' -- tkinter
+tidak ter-install di sandbox eksekusi ini, pre-existing environment gap,
+tidak disentuh oleh perubahan sesi ini): semua 748 passed.
+
+---
+
+## PATCH-2026-07-22-171
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:03
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** core/log_config.py: split renderer file(plain)/console(auto-color) + correlation id + session banner
+
+**Reason:** ADR-0010 butuh log human-readable/traceable: warna console auto-detect tanpa env var, req_id per request/sesi WS lewat structlog.contextvars, dan baris pemisah SESSION START/END
+
+**Root Cause:**
+simple_renderer lama satu jalur untuk file dan console (selalu plain), tidak ada correlation id per request/sesi, dan tidak ada baris pemisah sesi di log. Ditemukan juga: structlog.stdlib.ProcessorFormatter yang dipakai untuk render berbeda per-handler tidak kompatibel langsung dengan QueueHandler stdlib bawaan -- QueueHandler.prepare() men-stringify record.msg sebelum ProcessorFormatter di sisi QueueListener sempat memprosesnya sebagai dict, menyebabkan AttributeError saat runtime.
+
+**Solution:**
+simple_renderer dipecah jadi file_renderer (perilaku identik, plain ASCII selalu) dan console_renderer (menambah ANSI color berdasar _console_color_enabled() = sys.stdout.isatty() AND TERM tidak dumb/kosong -- auto-detect murni, tanpa env var baru). Ditambah structlog.contextvars.merge_contextvars di processor chain untuk req_id. Log routing memakai structlog.stdlib.ProcessorFormatter per-handler (file/console beda formatter), dipasang lewat _StructlogQueueHandler (subclass QueueHandler yang meng-override prepare() supaya TIDAK men-stringify record -- aman karena queue cuma dipakai lintas-thread dalam proses yang sama, bukan lintas proses). Tambah log_session_start()/log_session_end() yang menulis banner '==== SESSION START/END ... ====' langsung ke kedua handler (bypass processor chain, selalu plain, fail-safe try/except).
+
+**Changed Files:**
+- `core/log_config.py`
+- `tests/unit/core/test_log_config.py`
+
+**Changed Symbols:**
+- `file_renderer()`
+- `console_renderer()`
+- `_console_color_enabled()`
+- `simple_renderer`
+- `log_session_start()`
+- `log_session_end()`
+- `_StructlogQueueHandler`
+
+**Tests:** tests/unit/core/test_log_config.py (19 test, termasuk smoke test end-to-end req_id + no-ANSI-leak) - semua passed; full suite tests/unit/core/ (105 test) - semua passed; doctor.py --json overall_status WARN (pre-existing, tidak ada FAIL baru)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-22-170
+
+**Status:** Draft
+
+**Notes:**
+Sesi 2 task O2.2 dari task_breakdown_observability.yaml, patchlog: own. Backward-compat: simple_renderer = file_renderer (alias), semua 4 test lama untuk simple_renderer masih lulus tanpa perubahan assertion. Verifikasi manual: console_renderer menghasilkan ANSI hanya saat isatty()=True dan TERM valid (dicek dengan mock); file_renderer di kondisi sama tetap 100% plain. Belum ada wiring req_id assignment per-request (itu tugas middleware di sesi 3, O3.1) -- di sesi ini baru dipastikan contextvars ikut terbawa ke log line kalau di-bind manual.
+
+---
+
+## PATCH-2026-07-22-170
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:58
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** core/observability.py: tambah 5 metric Prometheus traffic/RAM/uptime sesi
+
+**Reason:** ADR-0010 butuh instrumentasi traffic HTTP/WS, RAM proses, dan durasi sesi user aktif untuk monitoring dasar
+
+**Root Cause:**
+Belum ada metric Prometheus untuk traffic HTTP/WS, RAM proses, dan durasi sesi user aktif - hanya ada metric command/event/websocket count dan resolve latency.
+
+**Solution:**
+Tambah Counter HTTP_REQUESTS_TOTAL(method,path,status), Counter HTTP_BYTES_TOTAL(direction), Counter WS_MESSAGES_TOTAL(direction), Gauge PROCESS_RSS_MB, Histogram ACTIVE_USER_SESSION_SECONDS. Metric lama (COMMAND_COUNT, COMMAND_LATENCY, EVENT_COUNT, ACTIVE_WEBSOCKETS, RESOLVE_LATENCY) tidak diubah sama sekali.
+
+**Changed Files:**
+- `core/observability.py`
+
+**Changed Symbols:**
+- `HTTP_REQUESTS_TOTAL`
+- `HTTP_BYTES_TOTAL`
+- `WS_MESSAGES_TOTAL`
+- `PROCESS_RSS_MB`
+- `ACTIVE_USER_SESSION_SECONDS`
+
+**Tests:** python automation/doctor.py --json (WARN pre-existing FILE_INDEX, tidak ada FAIL baru); verifikasi manual get_metrics_content() memuat 5 metric baru + 5 metric lama tidak berubah
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-169
+
+**Status:** Draft
+
+**Notes:**
+Sesi 2 task O2.1 dari task_breakdown_observability.yaml, patchlog: own. Metric belum dipakai di kode manapun (wiring middleware/connection_manager menyusul sesi 3). doctor.py melaporkan WARN (bukan FAIL) karena FILE_INDEX.md belum di-regenerate - ini memang dijadwalkan di sesi 5 finalisasi (generate_file_index.py), bukan regresi baru.
+
+---
+
+## PATCH-2026-07-22-169
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:57
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Backend/Observability
+**Priority:** Medium
+**Title:** Modul dependency-free: core/mem_stats.py dan core/server_clock.py
+
+**Reason:** ADR-0010: butuh baca RAM proses dan uptime server tanpa dependency pip baru (psutil pernah gagal install di Termux) dan tanpa env var baru
+
+**Root Cause:**
+Belum ada cara baca RSS proses maupun uptime server yang cross-platform (Termux/Android + Windows) tanpa dependency native compile (psutil gagal di Termux).
+
+**Solution:**
+mem_stats.py: baca /proc/self/status (VmRSS) di Linux/Termux, ctypes+psapi.GetProcessMemoryInfo di Windows, None fallback di platform lain/kegagalan apa pun, try/except menyeluruh. server_clock.py: kelas ServerClock berbasis time.monotonic() untuk uptime_seconds yang monoton, time.time() untuk start_time (wall clock), method init() untuk reset eksplisit dari main.py.
+
+**Changed Files:**
+- `core/mem_stats.py`
+- `core/server_clock.py`
+- `tests/unit/core/test_mem_stats.py`
+- `tests/unit/core/test_server_clock.py`
+
+**Changed Symbols:**
+- `get_rss_mb()`
+- `_get_rss_mb_proc()`
+- `_get_rss_mb_windows()`
+- `ServerClock`
+- `ServerClock.uptime_seconds`
+
+**Tests:** tests/unit/core/test_mem_stats.py (8 test), tests/unit/core/test_server_clock.py (4 test) - 12 passed
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-22-168
+
+**Status:** Draft
+
+**Notes:**
+Sesi 1 dari task_breakdown_observability.yaml (task O1.1 + O1.2, patchlog_group OG-1). Dependency-free, tidak import layer lain. Belum di-wiring ke server/app.py (menyusul sesi 2-3). get_rss_mb() diverifikasi manual: mengembalikan 9.59 (float) di lingkungan Linux saat ini.
 
 ---
 

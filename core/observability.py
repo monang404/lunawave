@@ -53,6 +53,42 @@ RESOLVE_LATENCY = Histogram(
     "Duration of yt-dlp stream URL resolution (Rule 3 cache miss only)",
 )
 
+# --- Observability Baseline (ADR-0010) ---
+
+# 6. Total HTTP Requests (Counter)
+HTTP_REQUESTS_TOTAL = Counter(
+    "lunawave_http_requests_total",
+    "Total number of HTTP requests handled",
+    ["method", "path", "status"],
+)
+
+# 7. Total HTTP Bytes Transferred (Counter)
+HTTP_BYTES_TOTAL = Counter(
+    "lunawave_http_bytes_total",
+    "Total bytes transferred over HTTP",
+    ["direction"],
+)
+
+# 8. Total WebSocket Messages (Counter)
+WS_MESSAGES_TOTAL = Counter(
+    "lunawave_ws_messages_total",
+    "Total number of WebSocket messages",
+    ["direction"],
+)
+
+# 9. Process RSS Memory in MB (Gauge)
+PROCESS_RSS_MB = Gauge(
+    "lunawave_process_rss_mb",
+    "Resident set size (RAM) of the current process in MB, cross-platform "
+    "(None/unavailable reads are simply skipped, gauge keeps last value)",
+)
+
+# 10. Active User Session Duration (Histogram)
+ACTIVE_USER_SESSION_SECONDS = Histogram(
+    "lunawave_active_user_session_seconds",
+    "Duration of an active WebSocket user session, from connect to disconnect",
+)
+
 
 def get_metrics_content():
     """Returns the Prometheus metrics in text format."""

@@ -38,6 +38,7 @@ import structlog
 from aiohttp import web
 
 from core.ports import MediaExtractorPort
+from core.server_clock import ServerClock, server_clock
 from engine.playback.controller import PlaybackController
 from persistence import Repositories
 
@@ -55,6 +56,8 @@ REPOS: web.AppKey[Repositories] = web.AppKey("repos", Repositories)
 CONN: web.AppKey = web.AppKey("conn")
 TRACKS: web.AppKey = web.AppKey("tracks")
 MANAGER: web.AppKey = web.AppKey("manager")
+# ADR-0010: uptime server, dipakai /health + task periodik [STATUS] (sesi 4).
+SERVER_CLOCK: web.AppKey[ServerClock] = web.AppKey("server_clock", ServerClock)
 
 
 def create_app(
@@ -65,8 +68,9 @@ def create_app(
     from server.handlers.http import health_check, serve_client, serve_index, serve_metrics
     from server.handlers.setup import setup_required
     from server.handlers.websocket import ws_handler
+    from server.middleware.traffic import traffic_middleware
 
-    app = web.Application()
+    app = web.Application(middlewares=[traffic_middleware])
     manager = ConnectionManager()
 
     app[PLAYBACK_CONTROLLER] = playback_controller
@@ -76,6 +80,9 @@ def create_app(
     app[CONN] = repos.conn
     app[TRACKS] = repos.tracks
     app[MANAGER] = manager
+    # ADR-0010: reuse the module-level singleton so main.py's server_clock.init()
+    # call (startup) and this AppKey both point at the same instance.
+    app[SERVER_CLOCK] = server_clock
     # Bug #9 fix: ClientSession sudah dibuat di main.py dan di-pass ke plugins.
     # Tidak perlu buat session baru di sini agar tidak ada resource leak.
 

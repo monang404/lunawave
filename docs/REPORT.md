@@ -19,22 +19,22 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-22 oleh `automation/generate_report.py`
+> **Auto-generated:** 2026-07-22 oleh `automation/generate_report.py`  
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 66 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 113 |
-| Total file `.js` (ekskl. `.min.js`) | 40 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 59 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 116 |
+| Total file `.js` (ekskl. `.min.js`) | 41 |
 | Total file `.css` (ekskl. `.min.css`) | 24 |
-| Total class (Python) | 95 |
-| Total function/method (Python) | 525 |
-| Total baris Python | 12,373 |
-| Total baris JS (web/) | 4,921 |
-| Total baris CSS (web/) | 4,166 |
-| Ukuran DB utama (`data/lunawave.db`) | 712 KB (+ WAL 4027 KB) |
+| Total class (Python) | 98 |
+| Total function/method (Python) | 545 |
+| Total baris Python | 12,973 |
+| Total baris JS (web/) | 5,134 |
+| Total baris CSS (web/) | 4,162 |
+| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
@@ -42,10 +42,10 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | File | Baris |
 |------|-------|
 | `engine/playback/controller.py` | 451 |
-| `persistence/discover_repo.py` | 402 |
+| `persistence/discover_repo.py` | 404 |
 | `launcher/gui/ui_builder.py` | 350 |
 | `launcher/gui/app.py` | 290 |
-| `bootstrap/services.py` | 260 |
+| `bootstrap/services.py` | 259 |
 <!-- END:GENERATED -->
 
 ---

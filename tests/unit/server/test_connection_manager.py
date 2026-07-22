@@ -51,6 +51,50 @@ async def test_connect_disconnect():
 
 
 @pytest.mark.asyncio
+async def test_connect_records_connected_at():
+    """ADR-0010 O3.3: connect() must stamp connected_at for the ws."""
+    cm = ConnectionManager()
+    ws = MockWebSocket()
+
+    await cm.connect(ws)
+    assert ws in cm.connected_at
+    assert isinstance(cm.connected_at[ws], float)
+
+
+@pytest.mark.asyncio
+async def test_disconnect_observes_session_duration_and_cleans_up():
+    """ADR-0010 O3.3: disconnect() must observe ACTIVE_USER_SESSION_SECONDS
+    and remove the ws from connected_at afterward (no leak)."""
+    import asyncio
+
+    from core.observability import ACTIVE_USER_SESSION_SECONDS
+
+    cm = ConnectionManager()
+    ws = MockWebSocket()
+
+    before = ACTIVE_USER_SESSION_SECONDS._sum.get()
+
+    await cm.connect(ws)
+    await asyncio.sleep(0.01)
+    cm.disconnect(ws)
+
+    after = ACTIVE_USER_SESSION_SECONDS._sum.get()
+    assert after > before
+    assert ws not in cm.connected_at
+
+
+@pytest.mark.asyncio
+async def test_disconnect_without_prior_connect_does_not_crash():
+    """disconnect() on a ws that was never connect()-ed (e.g. handshake
+    failed before manager.connect()) must be a safe no-op, not raise."""
+    cm = ConnectionManager()
+    ws = MockWebSocket()
+
+    cm.disconnect(ws)  # must not raise
+    assert ws not in cm.active_connections
+
+
+@pytest.mark.asyncio
 async def test_broadcast():
     cm = ConnectionManager()
     ws1 = MockWebSocket()

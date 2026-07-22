@@ -21,7 +21,7 @@ Thread Safety:
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -123,3 +123,79 @@ async def test_mpv_watchdog_sets_error_when_disconnected(monkeypatch):
 
     assert context.state.status == PlayerStatus.ERROR
     assert context.state.error_msg
+
+
+@pytest.mark.asyncio
+async def test_schedule_status_log_appends_task():
+    from bootstrap.maintenance import schedule_status_log
+    from bootstrap.services import context
+
+    schedule_status_log()
+
+    assert len(context.tasks) == 1
+    assert context.tasks[0].get_name() == "status_log"
+
+    for t in context.tasks:
+        t.cancel()
+    await asyncio.gather(*context.tasks, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_status_log_task_logs_summary_line_each_interval(monkeypatch):
+    """ADR-0010 O4.2: with time accelerated (mocked sleep), the loop must
+    run multiple iterations and emit a '[STATUS] ...' line each time,
+    without ever raising."""
+    from bootstrap import maintenance
+
+    call_count = {"n": 0}
+
+    async def _fast_sleep(_seconds):
+        call_count["n"] += 1
+        if call_count["n"] > 3:
+            raise asyncio.CancelledError()
+
+    monkeypatch.setattr(maintenance.asyncio, "sleep", _fast_sleep)
+    monkeypatch.setattr(maintenance, "STATUS_LOG_INTERVAL_SECONDS", 0)
+
+    logged = []
+    fake_logger = MagicMock()
+    fake_logger.info.side_effect = lambda msg: logged.append(msg)
+    monkeypatch.setattr(
+        maintenance.structlog, "get_logger", lambda *a, **kw: fake_logger
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await maintenance.status_log_task()
+
+    assert call_count["n"] == 4
+    assert len(logged) == 3
+    assert all(line.startswith("[STATUS] uptime=") for line in logged)
+
+
+@pytest.mark.asyncio
+async def test_status_log_task_never_crashes_when_all_sources_fail(monkeypatch):
+    """Fail-safe: even if RAM read, uptime, and metric collection all raise,
+    the loop must keep running (only the cancellation from sleep() should
+    stop it), never propagate an unrelated exception."""
+    from bootstrap import maintenance
+
+    call_count = {"n": 0}
+
+    async def _fast_sleep(_seconds):
+        call_count["n"] += 1
+        if call_count["n"] > 1:
+            raise asyncio.CancelledError()
+
+    monkeypatch.setattr(maintenance.asyncio, "sleep", _fast_sleep)
+
+    with (
+        patch("core.mem_stats.get_rss_mb", side_effect=Exception("boom")),
+        patch(
+            "core.server_clock.ServerClock.uptime_seconds",
+            new_callable=lambda: property(lambda self: (_ for _ in ()).throw(Exception("boom"))),
+        ),
+    ):
+        with pytest.raises(asyncio.CancelledError):
+            await maintenance.status_log_task()
+
+    assert call_count["n"] == 2
