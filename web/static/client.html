@@ -94,11 +94,48 @@
             background: var(--text-1);
             border-radius: 2px;
         }
+        .client-audio-cta {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 999px;
+            border: none;
+            background: var(--accent, #1db954);
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+            cursor: pointer;
+        }
+
+        /* Push the cover art and content down slightly in client mode for better balance */
+        body.client-mode .home-left-col {
+            margin-top: 10vh !important;
+        }
+        @media (max-width: 600px) {
+            body.client-mode .home-left-col {
+                margin-top: 15vh !important;
+            }
+            /* Force lyrics to show on mobile to bypass any cached mobile.css */
+            body.client-mode #tab-home .lyrics-wrap {
+                display: flex !important;
+            }
+        }
     </style>
 </head>
-<body class="client-mode" data-player-state="IDLE" data-has-lyrics="false">
+<body class="client-mode" data-active-tab="home" data-queue-empty="true" data-player-state="IDLE" data-has-lyrics="false">
 
-    <div id="app" class="fm" style="display:block; opacity:1;">
+    <button type="button" id="client-audio-cta" class="client-audio-cta">
+        <i class="ti ti-volume-2"></i> Tap untuk mulai dengar
+    </button>
+
+    <div id="app" class="fm" style="display:flex; opacity:1;">
 
         <div class="client-status-bar">
             <div class="client-badge">
@@ -109,8 +146,8 @@
             </div>
         </div>
 
-        <main class="content" id="content-area" style="padding-bottom: 120px; overflow: hidden;">
-            <section id="tab-home" class="tab-panel full-player-view active" style="display:block; opacity:1;">
+        <main class="content" id="content-area" style="padding-bottom: 120px; overflow-y: auto;">
+            <section id="tab-home" class="tab-panel full-player-view active" style="display:flex; flex-direction:column; opacity:1; min-height: 100%;">
 
                 <!-- Hidden DOM for renderNowPlaying() -->
                 <div id="np-thumbnail" style="display:none;">
@@ -120,7 +157,7 @@
                 <div id="np-dur-meta" style="display:none;"></div>
 
                 <div class="home-left-col" style="margin: 0 auto;">
-                    <div class="home-idle-view" id="home-idle-view" style="display: flex;">
+                    <div class="home-idle-view" id="home-idle-view">
                         <div class="idle-text-slider">
                             <span class="idle-text-slide">Menunggu musik dimainkan dari Admin...</span>
                         </div>
@@ -177,6 +214,7 @@
 
     <!-- Scripts -->
     <script src="/static/js/utils/format.js"></script>
+    <script src="/static/js/utils/toast.js"></script>
     <script src="/static/js/store.js"></script>
     <script src="/static/js/dom.js"></script>
     <script src="/static/js/render/now-playing.js"></script>
