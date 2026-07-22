@@ -25,6 +25,8 @@ import asyncio
 
 import pytest
 
+from server.app import REPOS
+
 
 @pytest.mark.asyncio
 async def test_websocket_flow(app_client):
@@ -33,7 +35,7 @@ async def test_websocket_flow(app_client):
     Skenario: Connect → auth → command play → state broadcast
     """
     # 1. Connect WS
-    repos = app_client.app["repos"]
+    repos = app_client.app[REPOS]
     from core.security import hash_password
 
     pwd_hash = hash_password("test-admin-password-not-a-secret")

@@ -34,6 +34,7 @@ from core.commands import CMD_SET_MODE
 from core.event_bus import bus
 from core.events import TrackStartedEvent
 from core.state import PlaybackMode
+from server.app import REPOS, STATE
 
 
 @pytest.mark.asyncio
@@ -50,7 +51,7 @@ async def test_radio_flow(integration_app):
     bus.subscribe(TrackStartedEvent, track_event)
 
     # Seed an artist and a song in the in-memory database to prevent RuntimeError
-    repos = integration_app["repos"]
+    repos = integration_app[REPOS]
     await repos.conn.execute("INSERT INTO artists (id, nama) VALUES (?, ?)", (1, "Me at the zoo"))
     await repos.conn.executemany(
         "INSERT INTO songs (artist_id, judul, youtube_id, duration) VALUES (?, ?, ?, ?)",
@@ -63,7 +64,7 @@ async def test_radio_flow(integration_app):
     await repos.conn.commit()
 
     # 1. Enable radio using a famous artist seed
-    integration_app["state"].radio_artist = "Me at the zoo"
+    integration_app[STATE].radio_artist = "Me at the zoo"
     await command_bus.execute(CMD_SET_MODE, PlaybackMode.RADIO)
 
     # Check that RadioEngine resolves at least one track and starts it
@@ -80,8 +81,8 @@ async def test_radio_flow(integration_app):
     # Wait another few seconds to ensure prefetcher adds to queue
     # The queue mode should show at least 1 track in standby
     # Since we can't easily inspect standby queue from outside,
-    # the integration_app fixture exposes state
-    state = integration_app["state"]
+    # the integration_app fixture exposes state via typed AppKey
+    state = integration_app[STATE]
 
     prefetched = False
     for _ in range(300):

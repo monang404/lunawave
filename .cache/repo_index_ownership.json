@@ -1,33 +1,30 @@
 {
   "_meta": {
-    "generated_at": 1784703385.1091323,
+    "generated_at": 1784709350.4136565,
     "source_mtimes": {
-      "core/bus.py": 1784703385.088807,
-      "engine/player.py": 1784703385.0898776,
-      "server/handler.py": 1784703385.0915065
+      "core/bus.py": 1784709350.398528,
+      "engine/player.py": 1784709350.3990586,
+      "server/handler.py": 1784709350.4001236
     }
   },
   "files": {
-    "engine/player.py": {
-      "layer": "engine",
+    "core/bus.py": {
+      "layer": "core",
       "classes": [
-        "DownloadCompleteEvent",
-        "Player"
+        "EventBus"
       ],
       "functions": [
-        "finish"
+        "publish",
+        "subscribe"
       ],
-      "imports": [
-        "core.bus"
-      ],
-      "publishes": [
-        "DownloadCompleteEvent"
-      ],
+      "imports": [],
+      "publishes": [],
       "subscribes": [],
-      "loc": 9,
+      "loc": 6,
       "docstring_purpose": "",
       "reverse_deps": [
-        "server/handler.py"
+        "server/handler.py",
+        "engine/player.py"
       ]
     },
     "server/handler.py": {
@@ -51,22 +48,25 @@
       "docstring_purpose": "",
       "reverse_deps": []
     },
-    "core/bus.py": {
-      "layer": "core",
+    "engine/player.py": {
+      "layer": "engine",
       "classes": [
-        "EventBus"
+        "DownloadCompleteEvent",
+        "Player"
       ],
       "functions": [
-        "publish",
-        "subscribe"
+        "finish"
       ],
-      "imports": [],
-      "publishes": [],
+      "imports": [
+        "core.bus"
+      ],
+      "publishes": [
+        "DownloadCompleteEvent"
+      ],
       "subscribes": [],
-      "loc": 6,
+      "loc": 9,
       "docstring_purpose": "",
       "reverse_deps": [
-        "engine/player.py",
         "server/handler.py"
       ]
     }

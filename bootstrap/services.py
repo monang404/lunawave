@@ -59,6 +59,7 @@ Thread Safety:
 """
 
 import asyncio
+import shutil
 
 import aiohttp
 import structlog
@@ -111,8 +112,6 @@ context = BootstrapContext()
 async def _init_mpv():
     """Background task: connect MPV, signal `mpv_ready_event` either way
     (success or failure) so `_resume_last_track` never hangs waiting."""
-    import shutil
-
     ctx = context
 
     if shutil.which("mpv") is None:

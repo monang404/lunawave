@@ -35,7 +35,7 @@ class DatabaseConnection:
 
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
-        self._conn = None
+        self._conn: aiosqlite.Connection | None = None
 
     @property
     def conn(self):
@@ -62,6 +62,7 @@ class DatabaseConnection:
         letting the same video appear under multiple artists. No-op on a
         fresh DB, since schema.sql already creates the new constraint."""
         conn = self._conn
+        assert conn is not None, "DB not initialised — call init() first"
         try:
             async with conn.execute(
                 "SELECT sql FROM sqlite_master WHERE type='table' AND name='songs'"
@@ -110,16 +111,17 @@ class DatabaseConnection:
         """PATCH-2026-07-22: Backfill FTS5 tables with existing data on first run
         after schema update, ensuring older dbs get indexed."""
         conn = self._conn
+        assert conn is not None, "DB not initialised — call init() first"
         try:
             async with conn.execute("SELECT COUNT(*) FROM tracks") as cursor:
-                tracks_count = (await cursor.fetchone())[0]
+                tracks_count = (await cursor.fetchone() or (0,))[0]
             async with conn.execute("SELECT COUNT(*) FROM tracks_fts") as cursor:
-                tracks_fts_count = (await cursor.fetchone())[0]
+                tracks_fts_count = (await cursor.fetchone() or (0,))[0]
 
             async with conn.execute("SELECT COUNT(*) FROM songs") as cursor:
-                songs_count = (await cursor.fetchone())[0]
+                songs_count = (await cursor.fetchone() or (0,))[0]
             async with conn.execute("SELECT COUNT(*) FROM songs_fts") as cursor:
-                songs_fts_count = (await cursor.fetchone())[0]
+                songs_fts_count = (await cursor.fetchone() or (0,))[0]
 
             if (tracks_count > 0 and tracks_fts_count == 0) or (
                 songs_count > 0 and songs_fts_count == 0

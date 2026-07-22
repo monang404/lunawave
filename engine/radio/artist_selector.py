@@ -94,7 +94,11 @@ class ArtistSelector:
         from engine.radio.artist_bandit import ArtistStat, sample_artists
 
         candidates = [
-            ArtistStat(name=name, alpha=stats.get(name, (1, 1))[0], beta=stats.get(name, (1, 1))[1])
+            ArtistStat(
+                name=name,
+                alpha=float(stats.get(name, (1.0, 1.0))[0]),
+                beta=float(stats.get(name, (1.0, 1.0))[1]),
+            )
             for name in self._seed_artists
         ]
         return sample_artists(candidates, k=k)

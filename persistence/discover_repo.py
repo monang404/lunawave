@@ -46,6 +46,8 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from typing import Any
+
 import structlog
 
 from persistence.discover_enrich import enrich_artists
@@ -236,7 +238,7 @@ class DiscoverRepository:
 
         # --- Sumber 1: tracks (cache/history, metadata lengkap) ---
         track_conds = ["tracks_fts MATCH ?"]
-        track_params = [match_query]
+        track_params: list[Any] = [match_query]
 
         if kategori:
             track_conds.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
@@ -265,7 +267,7 @@ class DiscoverRepository:
 
         # --- Sumber 2: songs JOIN artists (katalog kurasi) ---
         song_conds = ["songs_fts MATCH ?"]
-        song_params = [match_query]
+        song_params: list[Any] = [match_query]
 
         if kategori:
             song_conds.append("a.kategori = ?")

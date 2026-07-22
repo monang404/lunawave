@@ -83,9 +83,7 @@ class ServerLifecycle:
                 process.kill_process_tree(pid)
                 time.sleep(1)
             if network.check_port_in_use(port):
-                self.on_log(
-                    f"Cannot start: Port {port} is still in use after kill attempt.", "err"
-                )
+                self.on_log(f"Cannot start: Port {port} is still in use after kill attempt.", "err")
                 return
 
         self.on_log(f"Starting server on port {port}...", "accent")
@@ -93,9 +91,12 @@ class ServerLifecycle:
         self.server_process = process.ServerProcess(str(self.base_dir), port, on_log=self.on_log)
         try:
             self.server_process.start()
-            self.on_log(
-                f"Server process created — PID {self.server_process.process.pid}", "ok"
+            pid_info = (
+                f" — PID {self.server_process.process.pid}"
+                if self.server_process.process is not None
+                else ""
             )
+            self.on_log(f"Server process created{pid_info}", "ok")
             threading.Thread(target=self.wait_for_ready, args=(port,), daemon=True).start()
         except Exception as e:
             self.on_log(f"Failed to start: {e}", "err")
@@ -119,9 +120,7 @@ class ServerLifecycle:
             if not self.is_running():
                 self.on_log("Server process terminated unexpectedly.", "err")
             else:
-                self.on_log(
-                    "Server failed to respond on port in time (120s timeout).", "err"
-                )
+                self.on_log("Server failed to respond on port in time (120s timeout).", "err")
 
     def stop(self):
         if not self.is_running():

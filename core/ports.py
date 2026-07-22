@@ -109,6 +109,7 @@ class LibraryRepositoryPort(Protocol):
         limit: int = 12,
         exclude_ids: set[str] | None = None,
         artists: list[str] | None = None,
+        max_per_artist: int | None = None,
     ) -> list[TrackInfo]: ...
 
 

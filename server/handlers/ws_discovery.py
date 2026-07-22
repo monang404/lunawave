@@ -60,7 +60,7 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, discover_repo
         # "Semua" (posisi default) bikin search_tracks() selalu 0 hasil.
         kategori = kategori if kategori not in (None, "", "all") else None
         decade = data.get("decade")
-        decade = int(decade) if decade not in (None, "", "all") else None
+        decade = int(str(decade)) if decade not in (None, "", "all") else None
         results = await discover_repo.search_tracks(query, kategori=kategori, decade=decade)
         # search_tracks() returns plain DB row dicts (not TrackInfo objects),
         # so track_to_dict() doesn't apply here directly — build the same

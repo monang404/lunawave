@@ -52,6 +52,7 @@ def _reset_bootstrap_context():
 
 
 @pytest.mark.asyncio
+@patch("bootstrap.services.shutil.which", return_value="/usr/bin/mpv")
 @patch("bootstrap.services.Repositories")
 @patch("bootstrap.services.MpvController")
 @patch("bootstrap.services.YtDlpClient")
@@ -87,6 +88,7 @@ async def test_main_smoke(
     mock_ytdlp,
     mock_mpv,
     mock_db,
+    mock_which,
 ):
     from main import main
 
@@ -144,6 +146,7 @@ async def test_main_smoke(
 
 
 @pytest.mark.asyncio
+@patch("bootstrap.services.shutil.which", return_value="/usr/bin/mpv")
 @patch("bootstrap.services.Repositories")
 @patch("bootstrap.services.MpvController")
 @patch("bootstrap.services.YtDlpClient")
@@ -179,6 +182,7 @@ async def test_run_server_not_blocked_by_mpv(
     mock_ytdlp,
     mock_mpv,
     mock_db,
+    mock_which,
 ):
     """Verifikasi bahwa run_server() dipanggil sebelum mpv.connect() selesai.
     Pakai asyncio.Event untuk koordinasi deterministik — run_server mock

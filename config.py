@@ -144,7 +144,7 @@ _raw_env_pass = os.environ.get("LUNAWAVE_ADMIN_PASS", os.environ.get("YTGUI_ADMI
 if _raw_env_pass is not None:
     if _raw_env_pass.startswith("pbkdf2:sha256:"):
         # Sudah di-hash sebelumnya (misalnya dari secret manager / backup)
-        ADMIN_PASSWORD_OVERRIDE = _raw_env_pass
+        ADMIN_PASSWORD_OVERRIDE: str | None = _raw_env_pass
     else:
         # TASK-1.2: Hash password ENV var agar tidak disimpan sebagai plaintext.
         from core.security import hash_password
