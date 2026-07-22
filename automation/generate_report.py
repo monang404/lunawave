@@ -60,21 +60,6 @@ MARKER_END = "<!-- END:GENERATED -->"
 # ---------------------------------------------------------------------------
 
 
-def count_files_by_ext(root: Path, ext: str) -> int:
-    count = 0
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        count += sum(1 for f in filenames if f.endswith(ext) and not f.endswith("__init__" + ext))
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        for f in filenames:
-            if f == f"__init__{ext}":
-                fpath = Path(dirpath) / f
-                if fpath.stat().st_size > 10:
-                    count += 1
-    return count
-
-
 def count_py_files(root: Path) -> int:
     count = 0
     for _dirpath, dirnames, filenames in os.walk(root):

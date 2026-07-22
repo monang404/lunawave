@@ -44,6 +44,7 @@ from core.events import (
     TrackPauseChangedEvent,
     TrackProgressEvent,
     TrackStartedEvent,
+    VolumeChangedEvent,
 )
 from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
@@ -110,18 +111,22 @@ class PlaybackController:
         self._last_play_start_ts = 0.0
         # PATCH-2026-07-16-001: track fade-in task supaya bisa di-cancel
         self._fade_task: asyncio.Task | None = None
+        self._fade_out_task: asyncio.Task | None = None
+        self._crossfade_out_triggered = False
 
         # Subscribe events.
         # PATCH-2026-07-16-001: 3 lambda closure di bawah ini SENGAJA disimpan
         self._on_track_ended_sub = lambda e: safe_create_task(self._on_track_ended(e))
         self._on_track_progress_sub = lambda e: safe_create_task(self._on_track_progress(e))
         self._on_mpv_reconnected_sub = lambda e: safe_create_task(self._on_mpv_reconnected(e))
+        self._on_volume_changed_sub = lambda e: safe_create_task(self._on_volume_changed(e))
 
         self.bus.subscribe(TrackEndedEvent, self._on_track_ended_sub)
         self.bus.subscribe(TrackProgressEvent, self._on_track_progress_sub)
         self.bus.subscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.subscribe(TrackDurationEvent, self._on_track_duration)
         self.bus.subscribe(MpvReconnectedEvent, self._on_mpv_reconnected_sub)
+        self.bus.subscribe(VolumeChangedEvent, self._on_volume_changed_sub)
 
     def dispose(self):
         """Unsubscribe semua handler yang didaftarkan di __init__.
@@ -133,8 +138,18 @@ class PlaybackController:
         self.bus.unsubscribe(TrackPauseChangedEvent, self._on_pause_changed)
         self.bus.unsubscribe(TrackDurationEvent, self._on_track_duration)
         self.bus.unsubscribe(MpvReconnectedEvent, self._on_mpv_reconnected_sub)
+        self.bus.unsubscribe(VolumeChangedEvent, self._on_volume_changed_sub)
         if self._fade_task and not self._fade_task.done():
             self._fade_task.cancel()
+        if self._fade_out_task and not self._fade_out_task.done():
+            self._fade_out_task.cancel()
+
+    async def _on_volume_changed(self, event: VolumeChangedEvent):
+        # Kalau volume diganti manual, batalkan semua crossfade yang sedang berjalan
+        if self._fade_task and not self._fade_task.done():
+            self._fade_task.cancel()
+        if self._fade_out_task and not self._fade_out_task.done():
+            self._fade_out_task.cancel()
 
     async def _on_track_duration(self, event: TrackDurationEvent):
         if event.duration and self.state.duration == 0:
@@ -202,6 +217,9 @@ class PlaybackController:
             self.state.duration = float(track.duration)
             self.state.lyrics_lines = []
             self.state.lyrics_index = 0
+            self._crossfade_out_triggered = False
+            if self._fade_out_task and not self._fade_out_task.done():
+                self._fade_out_task.cancel()
             try:
                 loaded = await self.track_loader.load_track(track)
                 uri = loaded.uri
@@ -294,10 +312,14 @@ class PlaybackController:
             and getattr(self.state, "audio_output", AudioOutput.DEVICE) != AudioOutput.BROWSER
         ):
             if self.state.duration > 0 and self.state.status == PlayerStatus.PLAYING:
-                from engine.playback.crossfade import check_crossfade_out
+                from engine.playback.crossfade import apply_crossfade_out
 
                 remaining = self.state.duration - self.state.position
-                safe_create_task(check_crossfade_out(self.mpv, self.state, remaining))
+                if remaining <= 2.0 and remaining > 0 and not self._crossfade_out_triggered:
+                    self._crossfade_out_triggered = True
+                    self._fade_out_task = safe_create_task(
+                        apply_crossfade_out(self.mpv, self.state), name="fade_out"
+                    )
 
         if self.state.playback_mode == PlaybackMode.RADIO:
             self.radio_mode.check_prefetch(self, self.state.position, self.state.duration)

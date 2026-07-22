@@ -61,6 +61,7 @@ def make_db(session_valid: bool = False, account=None):
     db.sessions = MagicMock()
     db.sessions.verify_session = AsyncMock(return_value=session_valid)
     db.sessions.create_session = AsyncMock()
+    db.sessions.extend_session = AsyncMock()
     db.admin_account = MagicMock()
     db.admin_account.get_admin_account = AsyncMock(return_value=account)
     return db

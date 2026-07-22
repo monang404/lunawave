@@ -33,6 +33,12 @@ class SessionRepository:
         )
         await self._conn.commit()
 
+    async def extend_session(self, token: str, expires_at: int):
+        await self._conn.execute(
+            "UPDATE sessions SET expires_at = ? WHERE token = ?", (expires_at, token)
+        )
+        await self._conn.commit()
+
     async def verify_session(self, token: str) -> bool:
         now = int(time.time())
         async with self._conn.execute(

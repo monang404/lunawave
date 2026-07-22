@@ -26,7 +26,7 @@ Thread Safety:
 """
 
 from core.event_bus import EventBus
-from core.events import LogMessageEvent
+from core.events import LogMessageEvent, VolumeChangedEvent
 from core.ports import AudioPlayerPort
 from core.state import AppState, AudioOutput
 
@@ -57,4 +57,5 @@ class VolumeService:
         else:
             await self.mpv.set_volume(self.current_volume)
         self.state.volume = self.current_volume
+        await self.bus.publish(VolumeChangedEvent(volume=self.current_volume))
         await self.bus.publish(LogMessageEvent(message=f"Volume: {self.current_volume}%"))

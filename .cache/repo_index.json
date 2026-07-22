@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1784689722.2765825,
+    "generated_at": 1784694162.5698802,
     "source_mtimes": {
       "config.py": 1784687948.1139107,
       "main.py": 1784613351.7806077,
@@ -17,7 +17,7 @@
       "adapters/ytdlp/__init__.py": 1784685931.9858694,
       "bootstrap/maintenance.py": 1784518737.3387752,
       "bootstrap/power.py": 1784685931.9858694,
-      "bootstrap/services.py": 1784613351.769609,
+      "bootstrap/services.py": 1784692782.007452,
       "bootstrap/startup_tasks.py": 1784689566.3548863,
       "bootstrap/__init__.py": 1784518737.3387752,
       "core/commands.py": 1784437252.0,
@@ -28,7 +28,7 @@
       "core/latency_window.py": 1784437252.0,
       "core/log_config.py": 1784437252.0,
       "core/observability.py": 1784437252.0,
-      "core/ports.py": 1784687381.0154867,
+      "core/ports.py": 1784693002.3392427,
       "core/security.py": 1784437252.0,
       "core/state.py": 1784437252.0,
       "core/task_utils.py": 1784437252.0,
@@ -57,7 +57,7 @@
       "engine/radio/artist_bandit.py": 1784437252.0,
       "engine/radio/artist_selector.py": 1784687171.047975,
       "engine/radio/engine.py": 1784613351.7686086,
-      "engine/radio/prefetcher.py": 1784518737.3690555,
+      "engine/radio/prefetcher.py": 1784693477.6937592,
       "engine/radio/radio_config.py": 1784686472.8510785,
       "engine/radio/track_filter.py": 1784437252.0,
       "engine/radio/track_interleaver.py": 1784437252.0,
@@ -82,7 +82,7 @@
       "persistence/discover_repo.py": 1784689566.3548863,
       "persistence/genre_repo.py": 1784437252.0,
       "persistence/library_repo.py": 1784686498.7615912,
-      "persistence/session_repo.py": 1784437252.0,
+      "persistence/session_repo.py": 1784693014.2830317,
       "persistence/stream_cache.py": 1784606900.0,
       "persistence/track_repo.py": 1784606900.0,
       "persistence/__init__.py": 1784606900.0,
@@ -100,11 +100,11 @@
       "server/serializers.py": 1784437252.0,
       "server/__init__.py": 1784437252.0,
       "server/handlers/audio_stream_handler.py": 1784606900.0,
-      "server/handlers/auth.py": 1784518743.9135334,
+      "server/handlers/auth.py": 1784693186.3291225,
       "server/handlers/event_listeners.py": 1784518737.3813155,
       "server/handlers/http.py": 1784518737.3813155,
-      "server/handlers/setup.py": 1784518743.9145312,
-      "server/handlers/websocket.py": 1784613207.1757386,
+      "server/handlers/setup.py": 1784694136.515095,
+      "server/handlers/websocket.py": 1784693323.6579783,
       "server/handlers/ws_cache.py": 1784689566.3548863,
       "server/handlers/ws_discovery.py": 1784518737.3833158,
       "server/handlers/ws_download.py": 1784613207.1757386,
@@ -391,7 +391,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 160,
+      "loc": 161,
       "docstring_purpose": "Handle WebSocket authentication, session token verification, and     per-IP login rate limiting.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -552,7 +552,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 199,
+      "loc": 206,
       "docstring_purpose": "Handle WebSocket connections, authenticate clients, and dispatch     incoming commands to the CommandBus after rate-limit enforcement.",
       "reverse_deps": [
         "server/app.py"
@@ -813,6 +813,7 @@
       ],
       "functions": [
         "create_session",
+        "extend_session",
         "verify_session",
         "delete_session",
         "cleanup_sessions"
@@ -822,7 +823,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 56,
+      "loc": 62,
       "docstring_purpose": "Manages authentication session tokens, verifying and cleaning up expired sessions.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1539,7 +1540,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 167,
+      "loc": 169,
       "docstring_purpose": "Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py"
@@ -2071,6 +2072,7 @@
         "mark_unavailable",
         "get_unavailable_reason",
         "create_session",
+        "extend_session",
         "verify_session",
         "delete_session",
         "cleanup_sessions",
@@ -2107,7 +2109,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 140,
+      "loc": 141,
       "docstring_purpose": "Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.",
       "reverse_deps": [
         "server/app.py",
@@ -2875,6 +2877,7 @@
         "plugins.lyrics_fetcher",
         "plugins.notifications",
         "plugins.sponsorblock",
+        "shutil",
         "config",
         "engine.loudness.service",
         "engine.playback.controller",
@@ -2886,7 +2889,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 248,
+      "loc": 260,
       "docstring_purpose": "Stage 1 of application startup: open the DB, connect core adapters     (MPV, yt-dlp), and wire every domain service used by the rest of the     app (resolver, playback controller, radio, volume, sleep timer, etc).     Extracted from main.py's `main()` (T2.4, section \"1-6\" of the original     God Function) without changing call order.",
       "reverse_deps": [
         "main.py",
@@ -2989,6 +2992,7 @@
         "setup_required"
       ],
       "imports": [
+        "asyncio",
         "json",
         "sqlite3",
         "structlog",
@@ -2998,7 +3002,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 213,
+      "loc": 222,
       "docstring_purpose": "Handle Initial Setup: creation of the single admin_account row that     becomes the sole source of login credentials (Fitur B: login_redesign,     lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any     admin account exists, so it lives outside the normal require_auth gate     -- the same way \"auth\" itself is special-cased in websocket.py.",
       "reverse_deps": [
         "server/app.py",

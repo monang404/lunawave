@@ -88,9 +88,11 @@ class RadioPrefetcher:
             if self._standby:
                 return  # sudah ada, tidak perlu rebuild
 
-        if self._fetch_lock.locked():
-            return
         async with self._fetch_lock:
+            async with self._standby_lock:
+                if self._standby:
+                    return  # sudah ada, menghindari gather_batch redundant
+
             try:
                 tracks = await asyncio.wait_for(
                     self.artist_selector.gather_batch(max_artists=ARTISTS_PER_BATCH), timeout=30.0

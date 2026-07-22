@@ -142,6 +142,13 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         await handle_auth(ws, data, manager, client_ip, repos, now)
         return
 
+    if action == "logout":
+        token = data.get("token")
+        if token and repos and repos.sessions:
+            await repos.sessions.delete_session(token)
+        manager.authenticated_connections.discard(ws)
+        return
+
     if action == "setup_admin":
         # Sama seperti "auth": harus reachable SEBELUM require_auth, karena
         # saat Initial Setup belum ada admin_account sama sekali -- tidak

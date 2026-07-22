@@ -111,7 +111,20 @@ context = BootstrapContext()
 async def _init_mpv():
     """Background task: connect MPV, signal `mpv_ready_event` either way
     (success or failure) so `_resume_last_track` never hangs waiting."""
+    import shutil
+
     ctx = context
+
+    if shutil.which("mpv") is None:
+        structlog.get_logger(__name__).error("mpv not available: executable not found in PATH")
+        ctx.state.error_msg = (
+            "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
+            "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
+        )
+        ctx.state.status = PlayerStatus.ERROR
+        ctx.mpv_ready_event.set()
+        return
+
     try:
         await ctx.mpv.connect()
         ctx.mpv_ready_event.set()

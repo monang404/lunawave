@@ -79,6 +79,11 @@ class LogMessageEvent(DomainEvent):
 
 
 @dataclass
+class VolumeChangedEvent(DomainEvent):
+    volume: int = 0
+
+
+@dataclass
 class TrackPauseChangedEvent(DomainEvent):
     is_paused: bool = False
 

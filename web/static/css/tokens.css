@@ -6,19 +6,26 @@
 :root {
    /* ── Backgrounds ── */
    --bg-primary: #0E0E12;
+   --bg-primary-rgb: 14, 14, 18;
    --bg-surface: #151518;
+   --bg-surface-rgb: 21, 21, 24;
    --bg-elevated: #1C1C22;
+   --bg-elevated-rgb: 28, 28, 34;
 
    /* ── Accent: Amber Gold ── */
    --accent: #F2B544;
+   --accent-rgb: 242, 181, 68;
    --accent-hover: #FFC857;
    --accent-dark: #3B2B10;
-   --accent-alpha: rgba(242, 181, 68, 0.12);
+   --accent-alpha: rgba(var(--accent-rgb), 0.12);
 
    /* ── Text ── */
    --text-1: #FFFFFF;
+   --text-1-rgb: 255, 255, 255;
    --text-2: #9AA0AA;
+   --text-2-rgb: 154, 160, 170;
    --text-3: #8B92A5;
+   --text-3-rgb: 139, 146, 165;
 
    /* ── Border ── */
    --border-1: rgba(255, 255, 255, 0.04);

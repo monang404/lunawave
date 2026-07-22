@@ -1,5 +1,6 @@
 let ws = null;
 let wsReconnectTimer = null;
+let wsTokenRefreshTimer = null;
 let wsReconnectDelay = 2000;
 const WS_RECONNECT_MAX_DELAY = 30000;
 
@@ -42,6 +43,15 @@ function wsConnect() {
                 wsSend("discover");
             }
         }
+
+        if (wsTokenRefreshTimer) clearInterval(wsTokenRefreshTimer);
+        wsTokenRefreshTimer = setInterval(() => {
+            if (store.userRole === "admin" && store.is_online) {
+                const token = window.safeStorage.get("lunawave_session_token");
+                if (token) wsSend("auth", { token: token });
+            }
+        }, 3600000);
+
         renderHeader();
     };
 
@@ -55,6 +65,10 @@ function wsConnect() {
     };
 
     ws.onclose = () => {
+        if (wsTokenRefreshTimer) {
+            clearInterval(wsTokenRefreshTimer);
+            wsTokenRefreshTimer = null;
+        }
         store.is_online = false;
         renderHeader();
         showConnectionToast("Koneksi terputus. Reconnecting...", "disconnected");

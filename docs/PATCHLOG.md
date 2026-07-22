@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-22-153
+latest_patch_id: PATCH-2026-07-22-162
 
-total_entries: 153
+total_entries: 162
 
 ---
 
@@ -21,6 +21,378 @@ total_entries: 153
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-22-162
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:34
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Fix
+**Area:** Playback
+**Priority:** Medium
+**Title:** PATCH-2026-07-22-162: Fix crossfade and volume race condition
+
+**Reason:** Fake crossfade-out behavior and volume change overwrite during fade
+
+**Root Cause:**
+-
+
+**Solution:**
+-
+
+**Changed Files:**
+- `core/events.py`
+- `engine/volume_service.py`
+- `engine/playback/crossfade.py`
+- `engine/playback/controller.py`
+- `tests/unit/engine/playback/test_crossfade.py`
+
+**Changed Symbols:**
+- `VolumeChangedEvent`
+- `apply_crossfade_out`
+- `PlaybackController._on_volume_changed`
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-22-161
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:22
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Security
+**Area:** Server
+**Priority:** High
+**Title:** Fix event loop starvation and rate limiting bypass in initial setup
+
+**Reason:** Pembuatan hash password secara sinkron memblokir event loop utama, dan validasi rate limiting gagal mencatat percobaan gagal pada edge case tertentu.
+
+**Root Cause:**
+Fungsi hash_password dieksekusi sinkron di dalam websocket handler, serta rate limit increment hanya dilakukan pada error validasi input dasar.
+
+**Solution:**
+Bungkus hash_password dengan loop.run_in_executor dan buat fungsi helper _record_failure yang dipanggil di semua cabang kegagalan sebelum return.
+
+**Changed Files:**
+- `server/handlers/setup.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Mencegah event loop freeze ~100ms dan serangan DoS via submit credential saat setup.
+
+---
+
+## PATCH-2026-07-22-160
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:13
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Refactor
+**Area:** automation
+**Priority:** Medium
+**Title:** Remove unused dead code in generate_report.py
+
+**Reason:** Merapikan basis kode dengan menghapus fungsi usang yang sudah tidak dipanggil sama sekali.
+
+**Root Cause:**
+Fungsi count_files_by_ext merupakan helper peninggalan lama yang tertinggal karena evolusi script reporting.
+
+**Solution:**
+Menghapus definisi fungsi count_files_by_ext dari file.
+
+**Changed Files:**
+- `automation/generate_report.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Trivial cleanup, confirmed unused.
+
+---
+
+## PATCH-2026-07-22-159
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:11
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Performance
+**Area:** radio
+**Priority:** Medium
+**Title:** Fix race condition in RadioPrefetcher.build_standby
+
+**Reason:** Mengatasi eksekusi ganda yang sia-sia pada gather_batch akibat double-trigger saat user melakukan interaksi beruntun.
+
+**Root Cause:**
+Pengecekan _fetch_lock.locked() berada di luar context manager lock, menimbulkan TOCTOU yang membuat eksekusi mahal terjalankan 2x.
+
+**Solution:**
+Menerapkan double-checked locking secara tepat dengan re-check _standby di dalam blok self._fetch_lock.
+
+**Changed Files:**
+- `engine/radio/prefetcher.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menghemat network call & DB queries ketika user menekan 'Acak' saat antrean lagu juga sedang tipis (memanggil build_standby secara bersamaan).
+
+---
+
+## PATCH-2026-07-22-158
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:08
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Security
+**Area:** server
+**Priority:** Medium
+**Title:** Invalidate session on logout
+
+**Reason:** Mencegah token tetap valid setelah user menekan tombol Keluar.
+
+**Root Cause:**
+Fungsi logout di sisi client sebelumnya hanya menghapus token dari localStorage tanpa memberi tahu server untuk menghapus sesi dari database.
+
+**Solution:**
+Menambahkan pesan 'logout' via WebSocket yang akan memanggil sessions.delete_session(token) di server sebelum client menghapus token lokal.
+
+**Changed Files:**
+- `web/static/js/services/auth.js`
+- `server/handlers/websocket.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sekarang token benar-benar mati ketika user logout, mencegah penyalahgunaan token bekas (replay attack/curian via eksploitasi).
+
+---
+
+## PATCH-2026-07-22-157
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:04
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Security
+**Area:** server
+**Priority:** Medium
+**Title:** Implement silent token refresh and reduce TTL to 1 hour
+
+**Reason:** Mitigasi resiko XSS dengan memperpendek usia token idle dan memperpanjang token otomatis di background.
+
+**Root Cause:**
+Token sesi sebelumnya tersimpan 24 jam di localStorage, yang merupakan single point of failure jika terdapat celah XSS.
+
+**Solution:**
+Mengubah TTL token baru menjadi 3 jam dan menambahkan mekanisme refresh interval di ws.js yang mengirim ulang perintah auth untuk memperpanjang sesi di DB secara senyap.
+
+**Changed Files:**
+- `core/ports.py`
+- `persistence/session_repo.py`
+- `server/handlers/auth.py`
+- `web/static/js/ws.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Front-end audit confirms all external data currently uses escapeHtml() correctly, mitigating current immediate XSS risks.
+
+---
+
+## PATCH-2026-07-22-156
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 11:00
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Fix
+**Area:** bootstrap
+**Priority:** Medium
+**Title:** Fix 15-second delay on startup when mpv is not installed
+
+**Reason:** User was forced to wait 15 seconds watching a loading screen before being told mpv is missing.
+
+**Root Cause:**
+mpv.connect() attempts to connect to the unix/pipe socket in a loop with 10 attempts and timeouts, without checking if the executable is available first.
+
+**Solution:**
+Add a shutil.which('mpv') guard clause in _init_mpv() to immediately set error state if mpv is not found.
+
+**Changed Files:**
+- `bootstrap/services.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Resolves a UX issue where startup seemed frozen when the primary dependency was missing.
+
+---
+
+## PATCH-2026-07-22-155
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:49
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tambahkan token komponen RGB untuk dukungan warna alpha-blend
+
+**Reason:** Mengatasi keterbatasan sistem CSS variabel yang sebelumnya tidak memiliki nilai RGB dasar, sehingga elemen yang butuh transparansi alpha (seperti starfield ambient background) terpaksa memakai RGB hardcode
+
+**Root Cause:**
+tokens.css versi awal hanya menyediakan token dalam format hex statis (#9AA0AA), sehingga rgba(var(--text-2), 0.3) mustahil dilakukan via CSS native
+
+**Solution:**
+Membuat varian RGB untuk background, text, dan accent (contoh: --text-2-rgb: 154, 160, 170) di tokens.css, dan memigrasikan nilai RGB hardcode pada efek radial-gradient di app-shell.css
+
+**Changed Files:**
+- `web/static/css/tokens.css`
+- `web/static/css/layout/app-shell.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Solusi ini meminimalisir drift sekaligus memberikan keleluasaan pada developer untuk memakai modifier opacity menggunakan token standar (e.g. rgba(var(--text-1-rgb), 0.5))
+
+---
+
+## PATCH-2026-07-22-154
+
+**Tanggal:** 2026-07-22
+**Timestamp:** 10:47
+**Git Branch:** develop
+**Git Commit:** 3b8eb2d
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Hilangkan sisa nilai hex warna hardcode pada player-bar.css dan cards.css
+
+**Reason:** Mencegah drift pada styling elemen lencana dan ikon mood jika palet warna aplikasi diperbarui di masa depan
+
+**Root Cause:**
+Ada 3 nilai literal CSS (#60a5fa dan #f59e0b) yang tertinggal dan tidak tersinkronisasi dengan variabel warna utama pada tokens.css
+
+**Solution:**
+Mengganti literal #60a5fa menjadi var(--fm-blue) dan literal #f59e0b menjadi var(--fm-warn)
+
+**Changed Files:**
+- `web/static/css/components/player-bar.css`
+- `web/static/css/components/cards.css`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Pembersihan warna ini menargetkan file CSS komponen (cards, player-bar) yang sebelumnya tidak terdeteksi dalam proses audit portal.css
 
 ---
 

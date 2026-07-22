@@ -76,6 +76,7 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
         token = data.get("token")
         if token and sessions:
             if await sessions.verify_session(token):
+                await sessions.extend_session(token, int(now) + 10800)
                 manager.authenticated_connections.add(ws)
                 await ws.send_str(
                     json.dumps({"type": "auth_status", "data": {"success": True, "token": token}})
@@ -128,14 +129,12 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
         # side-channel yang bisa dipakai enumerasi username. Pola yang sama
         # dipertahankan di sini walau sumber datanya sekarang admin_account,
         # bukan config.
-        password_matches = await loop.run_in_executor(
-            None, verify_password, password, stored_hash
-        )
+        password_matches = await loop.run_in_executor(None, verify_password, password, stored_hash)
         password_ok = password_matches and account is not None and username == stored_username
         if password_ok:
             new_token = secrets.token_hex(16)
             if sessions:
-                await sessions.create_session(new_token, int(now) + 86400)
+                await sessions.create_session(new_token, int(now) + 10800)
             manager.authenticated_connections.add(ws)
             if client_ip in manager.login_attempts:
                 del manager.login_attempts[client_ip]

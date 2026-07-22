@@ -6,7 +6,7 @@ Purpose:
 
 Responsibilities:
     - Fade-in volume saat track baru mulai (apply_crossfade_in)
-    - Fade-out volume saat track mendekati akhir (check_crossfade_out)
+    - Fade-out volume saat track mendekati akhir (apply_crossfade_out)
 
 Depends on:
     - core.state
@@ -38,7 +38,14 @@ async def apply_crossfade_in(mpv, state: AppState):
         await mpv.set_volume(vol)
 
 
-async def check_crossfade_out(mpv, state: AppState, remaining: float):
-    if remaining <= 2.0 and remaining > 0:
-        fade_vol = max(0, int(state.volume * (remaining / 2.0)))
-        await mpv.set_volume(fade_vol)
+async def apply_crossfade_out(mpv, state: AppState):
+    steps = 10
+    start_vol = state.volume
+    for i in range(steps, 0, -1):
+        await asyncio.sleep(0.2)
+        if state.status not in (PlayerStatus.PLAYING, PlayerStatus.LOADING):
+            break
+        vol = int(start_vol * (i / steps))
+        await mpv.set_volume(vol)
+    if state.status in (PlayerStatus.PLAYING, PlayerStatus.LOADING):
+        await mpv.set_volume(0)
