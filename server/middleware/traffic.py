@@ -12,13 +12,17 @@ Responsibilities:
     - Increment HTTP_REQUESTS_TOTAL(method, path, status).
     - Increment HTTP_BYTES_TOTAL(direction=in|out), best-effort.
     - Log one concise line per completed request (method, path, status,
-      duration) via structlog -- except audio stream requests
-      (/api/stream/<video_id>), which are logged at DEBUG instead of INFO.
-      A single <audio> playback triggers many chunked/range GETs to that
-      endpoint (browser re-requests ranges while seeking/buffering), so at
-      INFO they drown out every other log line without adding trace value;
-      the request is still counted in HTTP_REQUESTS_TOTAL/HTTP_BYTES_TOTAL
-      either way.
+      duration) via structlog -- except "noisy" paths (see
+      _QUIET_PATH_PREFIXES below), which are logged at DEBUG instead of
+      INFO. Two categories currently qualify:
+        * /api/stream/<video_id> -- a single <audio> playback triggers many
+          chunked/range GETs to this endpoint (browser re-requests ranges
+          while seeking/buffering).
+        * /static/ -- every page load pulls in a batch of CSS/JS/icon
+          files that carry no diagnostic value of their own.
+      At INFO these drown out every other log line without adding trace
+      value; the request is still counted in
+      HTTP_REQUESTS_TOTAL/HTTP_BYTES_TOTAL either way.
 
 Depends on:
     - core.observability
@@ -43,6 +47,20 @@ from aiohttp import web
 from core.observability import HTTP_BYTES_TOTAL, HTTP_REQUESTS_TOTAL
 
 logger = structlog.get_logger(__name__)
+
+# Path prefixes whose per-request line is demoted to DEBUG instead of INFO.
+# These are high-frequency, low-signal requests (asset fetches, range/chunk
+# re-requests) that would otherwise flood lunawave.log/console without
+# adding any trace value. Metrics (HTTP_REQUESTS_TOTAL/HTTP_BYTES_TOTAL)
+# still count them regardless of log level.
+_QUIET_PATH_PREFIXES = (
+    "/api/stream/",  # audio range/chunk GETs during playback
+    "/static/",  # CSS/JS/icons/manifest served on every page load
+)
+
+
+def _is_quiet_path(path: str) -> bool:
+    return path.startswith(_QUIET_PATH_PREFIXES)
 
 
 def _short_req_id() -> str:
@@ -105,10 +123,10 @@ async def traffic_middleware(request: web.Request, handler):
 
         try:
             line = f"{request.method} {request.path} status={status} dur={dur_ms:.0f}ms"
-            if request.path.startswith("/api/stream/"):
-                # Range/chunk requests for audio playback are frequent and
-                # expected -- keep them out of the INFO log to avoid
-                # flooding it, but still emit at DEBUG for local trace.
+            if _is_quiet_path(request.path):
+                # Frequent, low-signal requests (audio range/chunk GETs,
+                # static asset fetches) -- keep them out of the INFO log to
+                # avoid flooding it, but still emit at DEBUG for local trace.
                 logger.debug(line)
             else:
                 logger.info(line)

@@ -137,6 +137,29 @@ async def test_traffic_middleware_logs_stream_requests_at_debug(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_traffic_middleware_logs_static_requests_at_debug(monkeypatch):
+    """Every page load pulls in a batch of CSS/JS/icon files under
+    /static/ -- these carry no diagnostic value and must be quiet (DEBUG)
+    by default, just like audio stream range requests."""
+    import server.middleware.traffic as traffic_module
+
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(traffic_module, "logger", fake_logger)
+
+    request = FakeRequest(method="GET", path="/static/css/app.css")
+
+    async def handler(req):
+        return web.Response(text="ok")
+
+    await traffic_module.traffic_middleware(request, handler)
+
+    assert fake_logger.calls, "expected exactly one log call"
+    level, msg = fake_logger.calls[0]
+    assert level == "debug"
+    assert "/static/css/app.css" in msg
+
+
+@pytest.mark.asyncio
 async def test_traffic_middleware_logs_other_requests_at_info(monkeypatch):
     """Non-stream endpoints keep their existing INFO-level line -- only the
     audio stream endpoint is quieted."""
