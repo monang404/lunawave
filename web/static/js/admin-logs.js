@@ -291,7 +291,7 @@ async function fetchStats() {
 
         // Render System Dashboard
         if (data.system_stats) {
-            renderSystemDashboard(data.system_stats);
+            renderSystemDashboard(data.system_stats, data.log_stats, data.metrics);
         }
 
         // Render Active Users
@@ -380,46 +380,52 @@ function getPageName(referer) {
     return 'Main Player'; // fallback
 }
 
-function renderSystemDashboard(stats) {
+function renderSystemDashboard(stats, logStats, metrics) {
     const grid = document.getElementById('sysDashGrid');
     if (!grid) return;
 
-    const cpuStr = stats.cpu_percent !== null ? `${stats.cpu_percent}%` : '--';
-    const ramStr = stats.ram_mb !== null ? `${stats.ram_mb} MB` : '--';
-    const uptimeStr = stats.uptime_seconds ? formatDuration(stats.uptime_seconds) : '--';
+    const cpuPct = stats.cpu_percent !== null ? stats.cpu_percent : null;
+    const cpuStr = cpuPct !== null ? `${cpuPct}%` : '--';
 
-    grid.innerHTML = `
+    // RAM Usage & Uptime SENGAJA tidak dipakai lagi di sini -- sudah
+    // ditampilkan persis di status bar header (val-mem, val-uptime),
+    // jadi menampilkannya lagi di sini cuma duplikasi tanpa info baru.
+    // Diganti dengan Total Requests & Error count (1 jam terakhir) --
+    // dua-duanya sudah ikut ke-fetch di /api/logs/stats (metrics,
+    // log_stats.levels) tapi sebelumnya tidak pernah dirender di tab ini.
+    const totalReqs = metrics && metrics.http_requests_total !== undefined
+        ? metrics.http_requests_total : '--';
+    const errorCount = logStats && logStats.levels
+        ? (logStats.levels.ERROR || 0) + (logStats.levels.CRITICAL || 0)
+        : 0;
+
+    // Progress bar cuma untuk CPU -- satu-satunya angka di sini yang memang
+    // persentase asli (0-100). Metrik lain tidak punya "batas atas" yang
+    // jujur untuk direpresentasikan sebagai bar, jadi sengaja tidak
+    // dipaksakan supaya tidak menyesatkan.
+    const cpuBar = cpuPct !== null
+        ? `<div class="sys-card-bar"><div class="sys-card-bar-fill" style="width:${Math.min(100, Math.max(0, cpuPct))}%"></div></div>`
+        : '';
+
+    const cards = [
+        { icon: 'ti-cpu', val: cpuStr, lbl: 'CPU Usage', extra: cpuBar },
+        { icon: 'ti-arrow-bar-to-up', val: totalReqs, lbl: 'Total Requests' },
+        { icon: 'ti-player-play-filled', val: stats.songs_played || 0, lbl: 'Songs Played' },
+        { icon: 'ti-music', val: stats.total_tracks || 0, lbl: 'Total Tracks' },
+        { icon: 'ti-users-group', val: stats.total_artists || 0, lbl: 'Total Artists' },
+        { icon: 'ti-alert-triangle', val: errorCount, lbl: 'Errors (1 Jam)' },
+    ];
+
+    grid.innerHTML = cards.map(c => `
         <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-cpu"></i></div>
-            <div class="sys-card-val">${cpuStr}</div>
-            <div class="sys-card-lbl">CPU Usage</div>
+            <div class="sys-card-icon"><i class="ti ${c.icon}"></i></div>
+            <div class="sys-card-body">
+                <div class="sys-card-val">${c.val}</div>
+                <div class="sys-card-lbl">${c.lbl}</div>
+                ${c.extra || ''}
+            </div>
         </div>
-        <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-device-floppy"></i></div>
-            <div class="sys-card-val">${ramStr}</div>
-            <div class="sys-card-lbl">RAM Usage</div>
-        </div>
-        <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-player-play-filled"></i></div>
-            <div class="sys-card-val">${stats.songs_played || 0}</div>
-            <div class="sys-card-lbl">Songs Played</div>
-        </div>
-        <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-music"></i></div>
-            <div class="sys-card-val">${stats.total_tracks || 0}</div>
-            <div class="sys-card-lbl">Total Tracks</div>
-        </div>
-        <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-users-group"></i></div>
-            <div class="sys-card-val">${stats.total_artists || 0}</div>
-            <div class="sys-card-lbl">Total Artists</div>
-        </div>
-        <div class="sys-card">
-            <div class="sys-card-icon"><i class="ti ti-clock"></i></div>
-            <div class="sys-card-val">${uptimeStr}</div>
-            <div class="sys-card-lbl">Uptime</div>
-        </div>
-    `;
+    `).join('');
 }
 
 function renderActiveUsers(users) {
@@ -457,12 +463,19 @@ function renderActiveUsers(users) {
                     </span>
                 </td>
                 <td style="vertical-align:middle; text-align:right;">
-                    ${u.uid ? `
-                    <button class="chat-btn" data-uid="${u.uid}" style="background:var(--bg-elevated); border:1px solid var(--border-2); padding:6px 12px; font-size:12px; border-radius:16px; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; position:relative;">
+                    <!-- Selalu tampilkan bubble chat, JANGAN gated di u.uid: admin harus bisa
+                         chat duluan ke client tanpa menunggu client kirim pesan pertama.
+                         client.js sudah mengirim client_uid otomatis begitu WS connect
+                         (lihat client.js::connectWS -- wsSend("get_chat_history") di
+                         window.ws.onopen), jadi u.uid biasanya sudah terisi di poll
+                         pertama setelah client terhubung. Untuk celah sangat singkat saat
+                         u.uid belum terisi, openChatPanel() (admin-logs.js) menangani ini
+                         secara graceful -- panel tetap terbuka dengan status "menunggu
+                         koneksi client", bukan tombolnya yang disembunyikan. -->
+                    <button class="chat-btn" data-uid="${u.uid || ''}" data-ip="${u.ip || ''}" style="background:var(--bg-elevated); border:1px solid var(--border-2); padding:6px 12px; font-size:12px; border-radius:16px; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; position:relative;">
                         <i class="ti ti-message-circle"></i> Chat
-                        <span class="chat-badge" id="badge-${u.uid}" style="display:none; position:absolute; top:-6px; right:-6px; background:var(--accent); color:var(--accent-dark); width:16px; height:16px; border-radius:50%; font-size:10px; font-weight:bold; align-items:center; justify-content:center;"></span>
+                        ${u.uid ? `<span class="chat-badge" id="badge-${u.uid}" style="display:none; position:absolute; top:-6px; right:-6px; background:var(--accent); color:var(--accent-dark); width:16px; height:16px; border-radius:50%; font-size:10px; font-weight:bold; align-items:center; justify-content:center;"></span>` : ''}
                     </button>
-                    ` : `<span style="color:var(--text-3); font-size:11px;" title="Client belum memuat modul chat">Chat belum siap</span>`}
                 </td>
             </tr>
         `;
@@ -470,9 +483,12 @@ function renderActiveUsers(users) {
     tbody.innerHTML = html;
 
     // Bind chat buttons (data-uid = client_uid, kunci thread chat --
-    // bukan IP, lihat server/handlers/ws_chat.py)
+    // bukan IP, lihat server/handlers/ws_chat.py). Tombol selalu ada
+    // sekarang (lihat komentar di atas render-nya) -- data-uid bisa kosong
+    // untuk celah singkat sebelum client_uid terisi, ditangani di
+    // openChatPanel().
     document.querySelectorAll('.chat-btn').forEach(btn => {
-        btn.addEventListener('click', () => openChatPanel(btn.dataset.uid));
+        btn.addEventListener('click', () => openChatPanel(btn.dataset.uid, btn.dataset.ip));
     });
 }
 
@@ -721,11 +737,23 @@ function updateBadge(uid) {
     }
 }
 
-function openChatPanel(uid) {
-    if (!uid) return;
+function openChatPanel(uid, ip) {
+    dashChatPanel.classList.add('active');
+
+    if (!uid) {
+        // client_uid belum terdaftar di server -- biasanya cuma sesaat
+        // (client.js kirim client_uid otomatis begitu WS connect, lihat
+        // catatan di renderActiveUsers). Tetap buka panel supaya admin
+        // tidak "menunggu client chat duluan", tapi jangan pura-pura
+        // punya thread yang bisa dikirimi pesan.
+        activeChatUid = null;
+        dashChatTargetIp.textContent = (ip ? `${ip} — ` : "") + "menunggu koneksi chat client...";
+        dashChatMessages.innerHTML = '<div style="text-align:center; color:var(--text-3); font-size:12px; padding:var(--s4);">Client ini belum terdaftar untuk chat. Coba lagi beberapa detik lagi setelah client selesai memuat halaman.</div>';
+        return;
+    }
+
     activeChatUid = uid;
     dashChatTargetIp.textContent = uid;
-    dashChatPanel.classList.add('active');
     unreadCounts[uid] = 0;
     updateBadge(uid);
 

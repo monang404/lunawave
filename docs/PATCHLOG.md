@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-23-215
+latest_patch_id: PATCH-2026-07-23-218
 
-total_entries: 215
+total_entries: 218
 
 ---
 
@@ -21,6 +21,130 @@ total_entries: 215
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-23-218
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:52
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Ganti kartu RAM Usage & Uptime di System Dashboard (duplikat header)
+
+**Reason:** User konfirmasi: RAM Usage dan Uptime di kartu System Dashboard (/admin/logs) memang duplikat persis dengan status bar header (val-mem, val-uptime) dan minta diganti, bukan sekadar dibiarkan sebagai catatan (lihat Notes di PATCH-2026-07-23-217).
+
+**Root Cause:**
+renderSystemDashboard() sebelumnya cuma menerima param stats (system_stats), padahal response /api/logs/stats juga sudah membawa log_stats.levels (hitungan ERROR/WARNING/dst per window) dan metrics.http_requests_total/command_count -- dua data ini sudah ke-fetch tapi belum pernah dirender di tab manapun selain Metrics Matrix (levels/categories saja, bukan ringkasan angka).
+
+**Solution:**
+web/static/js/admin-logs.js: fetchStats() sekarang mengoper data.log_stats dan data.metrics juga ke renderSystemDashboard(stats, logStats, metrics). Kartu RAM Usage diganti jadi 'Total Requests' (metrics.http_requests_total), kartu Uptime diganti jadi 'Errors (1 Jam)' (log_stats.levels.ERROR + levels.CRITICAL, window default request /api/logs/stats = 3600 detik = 1 jam, cocok dengan label). Tidak ada perubahan backend -- kedua field ini sudah tersedia di response, cuma belum dipakai di tab ini.
+
+**Changed Files:**
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- `renderSystemDashboard()`
+- `fetchStats()`
+
+**Tests:** Manual code trace: dikonfirmasi server/handlers/log_dashboard.py::get_logs_stats mengembalikan metrics.http_requests_total dan log_stats.levels (key level uppercase seperti ERROR/CRITICAL, lihat core/log_reader.py::stats()) di response yang sama yang sudah dipakai renderSystemDashboard -- tidak perlu endpoint atau query baru. Dikonfirmasi juga icon ti-arrow-bar-to-up dan ti-alert-triangle ada di bundle offline web/static/css/vendor/tabler-icons.min.css.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-23-217
+
+**Status:** Merged
+
+**Notes:**
+Errors (1 Jam) pakai window default 3600 detik dari endpoint /api/logs/stats (bukan window yang bisa diubah user dari tab Metrics Matrix) -- kalau user filter window berbeda di tab lain, angka di kartu ini tidak ikut berubah karena fetchStats() untuk Dashboard tidak mengirim query window.
+
+---
+
+## PATCH-2026-07-23-217
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:47
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Kompakkan kartu System Dashboard di admin/logs, tambah bar CPU
+
+**Reason:** User lapor tampilan tab System Dashboard (/admin/logs) tidak informatif dan tombol/kartu terlalu besar -- 6 kartu metrik (CPU, RAM, Songs Played, Total Tracks, Total Artists, Uptime) dirender dengan ikon bulat 72px, angka 32px, padding besar, shadow+blur berat, dan grid minmax(280px) sehingga makan banyak ruang vertikal untuk informasi yang sedikit. RAM Usage dan Uptime juga sudah terduplikasi persis di status bar header (val-mem, val-uptime).
+
+**Root Cause:**
+Styling .sys-card/.sys-card-icon/.sys-card-val di web/static/admin-logs.html didesain sebagai 'hero stat card' (layout vertical-center, ikon 72px lingkaran, radial glow hover, gradient text) yang cocok untuk landing page tapi berlebihan untuk dashboard metrik operasional internal -- prioritas dekorasi lebih tinggi dari densitas informasi.
+
+**Solution:**
+web/static/admin-logs.html: ganti .sys-card jadi layout horizontal compact (ikon 32px kotak rounded di kiri, value+label di kanan), hapus radial-gradient glow/blur/shadow berat, kecilkan grid minmax dari 280px ke 170px dan gap/padding container. Tambah .sys-card-bar/.sys-card-bar-fill untuk progress bar tipis. web/static/js/admin-logs.js: renderSystemDashboard() ditulis ulang jadi data-driven (array cards + map), markup ikon+body dipisah sesuai struktur CSS baru, ditambahkan bar progress KHUSUS untuk CPU (satu-satunya metrik yang benar-benar persentase 0-100 sehingga representasi bar-nya jujur -- RAM/songs/tracks/artists/uptime sengaja tidak dipaksakan jadi bar karena tidak punya batas atas yang valid).
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- `renderSystemDashboard()`
+
+**Tests:** Manual code review + preview mockup HTML/CSS terpisah yang mereplikasi token warna asli (gold accent, dark surface) untuk membandingkan before/after ukuran kartu secara visual sebelum diterapkan ke file asli.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Duplikasi RAM Usage & Uptime dengan status bar header (val-mem, val-uptime) BELUM dihapus di patch ini -- di luar scope keluhan user (ukuran kartu), dicatat di sini sebagai kandidat cleanup berikutnya kalau user mau.
+
+---
+
+## PATCH-2026-07-23-216
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:41
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Chat bubble admin selalu tampil (bukan 'Chat belum siap') + fix routing Mode Klien
+
+**Reason:** User lapor 2 hal di admin dashboard: (1) di /admin/logs, kolom chat di tabel Sesi Pengguna Aktif menampilkan teks statis 'Chat belum siap' alih-alih tombol chat, memberi kesan admin harus menunggu client kirim pesan duluan sebelum bisa membalas -- padahal admin seharusnya bisa memulai chat lebih dulu. (2) Tombol 'Mode Klien / Masuk sebagai Pendengar' di portal login (/admin) mengarah ke /client yang tidak ada route-nya di server (404), padahal client interface sesungguhnya ada di root '/'.
+
+**Root Cause:**
+(1) web/static/js/admin-logs.js::renderActiveUsers() merender tombol chat dengan ternary '${u.uid ? <button chat-btn> : <span>Chat belum siap</span>}'. u.uid (client_uid) memang baru terisi di server (manager.client_uids, lihat server/handlers/log_dashboard.py) setelah koneksi WS klien mengirim command chat pertama -- meski client.js sudah otomatis mengirim ini di window.ws.onopen, gating UI di u.uid membuat tombol chat tersembunyi total selama celah tersebut dan tidak pernah dibuka lagi lewat cara lain, sehingga secara UX terlihat seperti admin wajib menunggu client. (2) web/static/index.html baris tombol Mode Klien pakai href='/client', padahal server/app.py hanya mendaftarkan route add_get('/', serve_client) -- tidak pernah ada route '/client'.
+
+**Solution:**
+admin-logs.js: tombol chat sekarang SELALU dirender (tidak lagi digating di u.uid), pakai data-uid="${u.uid || ''}" dan data-ip tambahan sebagai konteks. openChatPanel(uid, ip) diubah supaya tetap membuka panel walau uid kosong -- menampilkan pesan status 'menunggu koneksi chat client' alih-alih menolak diam-diam (return awal dihapus). Listener tombol diupdate untuk mengoper dataset.ip juga. index.html: href tombol Mode Klien diganti dari '/client' ke '/' sesuai route asli di server/app.py.
+
+**Changed Files:**
+- `web/static/js/admin-logs.js`
+- `web/static/index.html`
+
+**Changed Symbols:**
+- `renderActiveUsers()`
+- `openChatPanel()`
+
+**Tests:** Manual code trace: dikonfirmasi server/app.py hanya expose add_get('/', serve_client) dan add_get('/admin', serve_index), tidak ada '/client' -- href baru '/' sudah cocok dengan route yang benar-benar terdaftar. Untuk chat, dikonfirmasi lewat pembacaan client.js bahwa client_uid dikirim otomatis di window.ws.onopen (wsSend('get_chat_history')) dan server/handlers/ws_chat.py::handle_chat_command mendaftarkan manager.client_uids[ws] begitu client_uid diterima -- independen dari ada/tidaknya histori chat sebelumnya, sehingga menghapus gating u.uid di UI tidak melanggar asumsi keamanan segmentasi client_uid (lihat PATCH client_uid chat) karena admin tetap tidak bisa mengirim pesan tanpa target_uid yang valid (dijaga di sisi server, ws_chat.py baris 98).
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Belum ada automated test untuk file JS ini (tests/frontend/ hanya cover pause-race, store, ws-routing) -- verifikasi murni manual code trace. Kasus u.uid kosong tetap ada sebagai celah sangat singkat (baru saja connect, get_chat_history belum sempat di-roundtrip) -- openChatPanel() sekarang menampilkan status graceful untuk kasus ini alih-alih tombolnya hilang total.
 
 ---
 
