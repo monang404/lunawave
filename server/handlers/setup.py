@@ -210,7 +210,8 @@ async def setup_required(request: web.Request) -> web.Response:
     #portal-screen (lihat T-B11.1/T-B11.2). Registrasi route-nya sendiri
     ada di T-B8 (gate websocket.py/app.py)."""
     repos = get_repos(request)
-    assert repos.admin_account is not None, "repos.init() must be called before handling requests"
+    if repos.admin_account is None:
+        raise RuntimeError("repos.init() must be called before handling requests")
     try:
         exists = await repos.admin_account.admin_account_exists()
     except Exception:

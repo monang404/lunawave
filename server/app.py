@@ -91,7 +91,8 @@ def create_app(
     from server.handlers.event_listeners import setup_event_listeners
     from services.stream_prefetch import StreamPrefetchService
 
-    assert repos.tracks is not None, "repos.init() must be called before create_app()"
+    if repos.tracks is None:
+        raise RuntimeError("repos.init() must be called before create_app()")
     prefetch_service = StreamPrefetchService(repos.tracks, ytdlp)
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)

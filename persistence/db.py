@@ -73,7 +73,8 @@ class DatabaseConnection:
         letting the same video appear under multiple artists. No-op on a
         fresh DB, since schema.sql already creates the new constraint."""
         conn = self._conn
-        assert conn is not None, "DB not initialised — call init() first"
+        if conn is None:
+            raise RuntimeError("DB not initialised — call init() first")
         try:
             async with conn.execute(
                 "SELECT sql FROM sqlite_master WHERE type='table' AND name='songs'"
@@ -131,7 +132,8 @@ class DatabaseConnection:
         """PATCH-2026-07-22: Backfill FTS5 tables with existing data on first run
         after schema update, ensuring older dbs get indexed."""
         conn = self._conn
-        assert conn is not None, "DB not initialised — call init() first"
+        if conn is None:
+            raise RuntimeError("DB not initialised — call init() first")
         try:
             async with conn.execute("SELECT COUNT(*) FROM tracks") as cursor:
                 tracks_count = (await cursor.fetchone() or (0,))[0]
