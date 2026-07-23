@@ -410,8 +410,9 @@ function renderSystemDashboard(stats, logStats, metrics) {
     const cards = [
         { icon: 'ti-cpu', val: cpuStr, lbl: 'CPU Usage', extra: cpuBar },
         { icon: 'ti-arrow-bar-to-up', val: totalReqs, lbl: 'Total Requests' },
-        { icon: 'ti-player-play-filled', val: stats.songs_played || 0, lbl: 'Songs Played' },
-        { icon: 'ti-music', val: stats.total_tracks || 0, lbl: 'Total Tracks' },
+        { icon: 'ti-player-play-filled', val: stats.songs_played || 0, lbl: 'Total Plays' },
+        { icon: 'ti-music', val: stats.total_tracks || 0, lbl: 'Total Tracks (Library)' },
+        { icon: 'ti-disc', val: stats.total_songs || 0, lbl: 'Total Katalog (Songs)' },
         { icon: 'ti-users-group', val: stats.total_artists || 0, lbl: 'Total Artists' },
         { icon: 'ti-alert-triangle', val: errorCount, lbl: 'Errors (1 Jam)' },
     ];
@@ -433,7 +434,7 @@ function renderActiveUsers(users) {
     if (!tbody) return;
 
     if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-3); padding:var(--s5);">Tidak ada pengguna aktif</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-3); padding:var(--s5); display:table-cell;">Tidak ada pengguna aktif</td></tr>';
         return;
     }
 
@@ -443,26 +444,26 @@ function renderActiveUsers(users) {
         const pageName = getPageName(u.referer);
         html += `
             <tr>
-                <td style="font-family:monospace; color:var(--accent); font-weight:bold; vertical-align:middle;">
+                <td data-label="Alamat IP" style="font-family:monospace; color:var(--accent); font-weight:bold; vertical-align:middle;">
                     <i class="ti ti-network" style="margin-right:8px; opacity:0.7;"></i>${u.ip || 'Unknown'}
                 </td>
-                <td style="vertical-align:middle;">
+                <td data-label="Halaman" style="vertical-align:middle;">
                     <span style="background: rgba(255, 204, 0, 0.1); color: var(--accent); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">
                         ${pageName}
                     </span>
                 </td>
-                <td style="vertical-align:middle;">
+                <td data-label="Perangkat" style="vertical-align:middle;">
                     <div class="device-badge">
                         <i class="ti ${dev.icon}"></i> ${dev.os} &bull; ${dev.browser}
                     </div>
                 </td>
-                <td style="vertical-align:middle;">${formatDuration(u.duration)}</td>
-                <td style="vertical-align:middle;">
+                <td data-label="Durasi" style="vertical-align:middle;">${formatDuration(u.duration)}</td>
+                <td data-label="Status" style="vertical-align:middle;">
                     <span style="display:inline-flex; align-items:center; gap:6px; color:#22c55e; border:1px solid rgba(34,197,94,0.3); padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e;"></span> Active
                     </span>
                 </td>
-                <td style="vertical-align:middle; text-align:right;">
+                <td data-label="Aksi" style="vertical-align:middle; text-align:right;">
                     <!-- Selalu tampilkan bubble chat, JANGAN gated di u.uid: admin harus bisa
                          chat duluan ke client tanpa menunggu client kirim pesan pertama.
                          client.js sudah mengirim client_uid otomatis begitu WS connect

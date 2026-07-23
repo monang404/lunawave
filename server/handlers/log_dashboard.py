@@ -91,6 +91,15 @@ async def get_logs_stats(request):
             songs_played = track_row["total_plays"] if track_row and track_row["total_plays"] else 0
             total_tracks = track_row["total_tracks"] if track_row else 0
 
+        # Katalog Radio Mode (tabel `songs`, seed per-artist) -- BEDA dari
+        # `tracks` di atas: `tracks` cuma lagu yang sudah pernah benar-benar
+        # diputar/di-cache, sedangkan `songs` adalah seluruh katalog yang
+        # dikenal sistem lewat radio seed, belum tentu semuanya pernah
+        # dimainkan. Ditambahkan sebagai metrik terpisah, bukan pengganti.
+        async with conn.execute("SELECT COUNT(*) as total_songs FROM songs") as cursor:
+            songs_row = await cursor.fetchone()
+            total_songs = songs_row["total_songs"] if songs_row else 0
+
         async with conn.execute("SELECT COUNT(*) as total_artists FROM artists") as cursor:
             artist_row = await cursor.fetchone()
             total_artists = artist_row["total_artists"] if artist_row else 0
@@ -100,6 +109,7 @@ async def get_logs_stats(request):
             "ram_mb": get_rss_mb(),
             "songs_played": songs_played,
             "total_tracks": total_tracks,
+            "total_songs": total_songs,
             "total_artists": total_artists,
             "uptime_seconds": request.app[SERVER_CLOCK].uptime_seconds,
         }
