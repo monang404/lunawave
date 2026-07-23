@@ -55,6 +55,23 @@
         }
     });
 
+    // BUG KEAMANAN (fixed): sender_name TIDAK di-escape sebelumnya sebelum
+    // masuk innerHTML, padahal sender_name 100% user-controlled dan
+    // send_chat sengaja dikecualikan dari require_auth() di websocket.py
+    // (supaya client anonim bisa chat). Siapa pun tanpa login bisa kirim
+    // sender_name berisi payload HTML/JS -> tersimpan di DB -> dijalankan
+    // di browser ADMIN saat pesan itu di-render (stored XSS, bukan cuma
+    // cosmetic). message sudah di-escape (parsial), sender_name belum sama
+    // sekali. Satukan lewat satu helper escape yang benar (bukan cuma < >).
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
     function formatTime(timestamp) {
         const d = new Date(timestamp * 1000);
         const hh = d.getHours().toString().padStart(2, '0');
@@ -64,8 +81,12 @@
 
     function renderMessage(msgData) {
         const { sender_name, message, is_admin, created_at } = msgData;
-        const myName = inputName.value.trim() || "Anonymous";
-        const isMine = sender_name === myName && !is_admin;
+        // Thread chat client selalu 1:1 dengan admin (server sudah
+        // menyaring history per client_uid), jadi cukup bedakan lewat flag
+        // is_admin -- tidak perlu (dan tidak aman) menebak "punya saya"
+        // dari nama, karena nama boleh sama antar orang dan bukan lagi
+        // dipakai sebagai kunci identitas.
+        const isMine = !is_admin;
 
         const wrap = document.createElement('div');
         wrap.className = 'chat-msg-wrap ' + (isMine ? 'mine' : 'others');
@@ -73,8 +94,8 @@
         let adminBadge = is_admin ? '<span class="admin-badge">ADMIN</span>' : '';
 
         wrap.innerHTML = `
-            <div class="chat-sender-name">${sender_name} ${adminBadge}</div>
-            <div class="chat-bubble">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            <div class="chat-sender-name">${escapeHtml(sender_name)} ${adminBadge}</div>
+            <div class="chat-bubble">${escapeHtml(message)}</div>
             <div class="chat-time">${formatTime(created_at)}</div>
         `;
 

@@ -457,19 +457,22 @@ function renderActiveUsers(users) {
                     </span>
                 </td>
                 <td style="vertical-align:middle; text-align:right;">
-                    <button class="chat-btn" data-ip="${u.ip}" style="background:var(--bg-elevated); border:1px solid var(--border-2); padding:6px 12px; font-size:12px; border-radius:16px; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; position:relative;">
+                    ${u.uid ? `
+                    <button class="chat-btn" data-uid="${u.uid}" style="background:var(--bg-elevated); border:1px solid var(--border-2); padding:6px 12px; font-size:12px; border-radius:16px; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; position:relative;">
                         <i class="ti ti-message-circle"></i> Chat
-                        <span class="chat-badge" id="badge-${u.ip.replace(/\./g, '-')}" style="display:none; position:absolute; top:-6px; right:-6px; background:var(--accent); color:var(--accent-dark); width:16px; height:16px; border-radius:50%; font-size:10px; font-weight:bold; align-items:center; justify-content:center;"></span>
+                        <span class="chat-badge" id="badge-${u.uid}" style="display:none; position:absolute; top:-6px; right:-6px; background:var(--accent); color:var(--accent-dark); width:16px; height:16px; border-radius:50%; font-size:10px; font-weight:bold; align-items:center; justify-content:center;"></span>
                     </button>
+                    ` : `<span style="color:var(--text-3); font-size:11px;" title="Client belum memuat modul chat">Chat belum siap</span>`}
                 </td>
             </tr>
         `;
     });
     tbody.innerHTML = html;
 
-    // Bind chat buttons
+    // Bind chat buttons (data-uid = client_uid, kunci thread chat --
+    // bukan IP, lihat server/handlers/ws_chat.py)
     document.querySelectorAll('.chat-btn').forEach(btn => {
-        btn.addEventListener('click', () => openChatPanel(btn.dataset.ip));
+        btn.addEventListener('click', () => openChatPanel(btn.dataset.uid));
     });
 }
 
@@ -689,8 +692,10 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-// Chat Logic
-let activeChatIp = null;
+// Chat Logic -- disegmentasi per client_uid (UUID per-browser client),
+// BUKAN per IP. IP tidak reliable sebagai kunci identitas di balik reverse
+// proxy (lihat server/handlers/ws_chat.py untuk penjelasan lengkap).
+let activeChatUid = null;
 let unreadCounts = {};
 const dashChatPanel = document.getElementById('dash-chat-panel');
 const dashChatClose = document.getElementById('dash-chat-close-btn');
@@ -699,10 +704,10 @@ const dashChatForm = document.getElementById('dash-chat-form');
 const dashChatInput = document.getElementById('dash-chat-input');
 const dashChatTargetIp = document.getElementById('dash-chat-target-ip');
 
-function updateBadge(ip) {
-    const badge = document.getElementById(`badge-${ip.replace(/\./g, '-')}`);
+function updateBadge(uid) {
+    const badge = document.getElementById(`badge-${uid}`);
     if (!badge) return;
-    const count = unreadCounts[ip] || 0;
+    const count = unreadCounts[uid] || 0;
     if (count > 0) {
         badge.style.display = 'flex';
         badge.textContent = count > 9 ? '9+' : count;
@@ -716,19 +721,20 @@ function updateBadge(ip) {
     }
 }
 
-function openChatPanel(ip) {
-    activeChatIp = ip;
-    dashChatTargetIp.textContent = ip;
+function openChatPanel(uid) {
+    if (!uid) return;
+    activeChatUid = uid;
+    dashChatTargetIp.textContent = uid;
     dashChatPanel.classList.add('active');
-    unreadCounts[ip] = 0;
-    updateBadge(ip);
+    unreadCounts[uid] = 0;
+    updateBadge(uid);
 
     // Request history
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
             type: "cmd",
             action: "get_chat_history",
-            data: { target_ip: ip }
+            data: { target_uid: uid }
         }));
     }
 
@@ -737,12 +743,12 @@ function openChatPanel(ip) {
 
 dashChatClose.addEventListener('click', () => {
     dashChatPanel.classList.remove('active');
-    activeChatIp = null;
+    activeChatUid = null;
 });
 
 dashChatForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!activeChatIp) return;
+    if (!activeChatUid) return;
     const msg = dashChatInput.value.trim();
     if (!msg) return;
 
@@ -753,7 +759,7 @@ dashChatForm.addEventListener('submit', (e) => {
             data: {
                 sender_name: "Admin",
                 message: msg,
-                target_ip: activeChatIp
+                target_uid: activeChatUid
             }
         }));
     }
@@ -808,14 +814,14 @@ function renderChatHistory(messages) {
 }
 
 function handleIncomingChat(msgData) {
-    const { client_ip } = msgData;
-    if (client_ip === activeChatIp) {
+    const { client_uid } = msgData;
+    if (client_uid === activeChatUid) {
         dashChatMessages.appendChild(createMsgEl(msgData));
         dashChatMessages.scrollTop = dashChatMessages.scrollHeight;
-    } else if (client_ip && !msgData.is_admin) {
+    } else if (client_uid && !msgData.is_admin) {
         // Unread from another client
-        unreadCounts[client_ip] = (unreadCounts[client_ip] || 0) + 1;
-        updateBadge(client_ip);
+        unreadCounts[client_uid] = (unreadCounts[client_uid] || 0) + 1;
+        updateBadge(client_uid);
     }
 }
 

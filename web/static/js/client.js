@@ -10,11 +10,31 @@ store.userRole = "client";
 // beberapa titik (mis. saat lagu selesai / crossfade), dan tanpa fungsi ini
 // terdefinisi, pemanggilan tsb akan throw ReferenceError yang menghentikan
 // eksekusi kode setelahnya (termasuk sinkronisasi audio & lirik).
+// Identitas chat per-browser, DI-GENERATE sistem (bukan diketik user) dan
+// TIDAK bergantung ke IP request.remote -- lihat PATCH client_uid chat.
+// request.remote rusak sebagai kunci segmentasi begitu server diakses lewat
+// reverse proxy (Nginx/Cloudflare Tunnel/ngrok, semua direkomendasikan di
+// README) karena semua client eksternal akan terlihat sebagai satu IP yang
+// sama (IP si proxy) -- chat history antar user yang berbeda bisa bocor
+// saling ketuker. client_uid disimpan sekali di localStorage per browser,
+// dikirim di setiap command chat, dan itu yang jadi kunci identitas asli.
+function getClientUid() {
+    const KEY = "lunawave_chat_client_uid";
+    let uid = window.safeStorage ? window.safeStorage.get(KEY) : localStorage.getItem(KEY);
+    if (!uid) {
+        uid = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+        if (window.safeStorage) window.safeStorage.set(KEY, uid);
+        else localStorage.setItem(KEY, uid);
+    }
+    return uid;
+}
+
 function wsSend(action, data) {
     // Hanya izinkan command chat untuk client mode (Client tidak bisa kontrol playback)
     if (action === "send_chat" || action === "get_chat_history") {
+        const payload = Object.assign({ client_uid: getClientUid() }, data || {});
         if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-            window.ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
+            window.ws.send(JSON.stringify({ type: "cmd", action, data: payload }));
         }
     }
 }

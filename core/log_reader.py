@@ -72,14 +72,17 @@ def _get_all_lines() -> list[str]:
 
 
 def tail(
-    limit: int = 200, category: str = None, level: str = None, query: str = None
+    limit: int = 200,
+    category: str | None = None,
+    level: str | None = None,
+    query: str | None = None,
 ) -> list[dict]:
     """
     Reads the last `limit` lines from the log files matching the given filters.
     Result is chronologically ordered (oldest to newest among the tailed lines).
     """
     lines = _get_all_lines()
-    result = []
+    result: list[dict] = []
 
     level_filter = level.upper() if level else None
     query_filter = query.lower() if query else None
@@ -121,9 +124,9 @@ def stats(window_seconds: int = 3600) -> dict:
     """
     lines = _get_all_lines()
 
-    levels_count = {}
-    categories_count = {}
-    matrix = {}
+    levels_count: dict[str, int] = {}
+    categories_count: dict[str, int] = {}
+    matrix: dict[str, dict[str, int]] = {}
 
     try:
         now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)

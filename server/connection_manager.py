@@ -52,6 +52,15 @@ class ConnectionManager:
         # ada -- entry dibersihkan sendiri di disconnect().
         self.connected_at: dict = {}
         self.client_ips: dict = {}
+        # PATCH client_uid chat: identitas chat per browser (UUID dikirim
+        # client, lihat web/static/js/client.js::getClientUid()), BUKAN
+        # request.remote. client_ips/request.remote rusak sebagai kunci
+        # segmentasi di balik reverse proxy (semua client eksternal jadi
+        # satu IP yang sama) -- lihat docs/PATCHLOG.md. Terisi lazy, baru
+        # ada begitu koneksi ini mengirim command chat pertamanya (uid
+        # tidak diketahui saat connect(), cuma saat pesan pertama datang).
+        # Dibersihkan sendiri di disconnect(), sama seperti client_ips.
+        self.client_uids: dict = {}
 
     async def connect(self, ws, request=None):
         self.active_connections.append(ws)
@@ -90,6 +99,7 @@ class ConnectionManager:
         if ws in self.authenticated_connections:
             self.authenticated_connections.remove(ws)
         self.client_ips.pop(ws, None)
+        self.client_uids.pop(ws, None)
 
         duration = None
         connected_at = self.connected_at.pop(ws, None)

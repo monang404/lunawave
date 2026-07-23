@@ -75,6 +75,14 @@ async def test_get_logs_stats_returns_json(mock_request):
             assert body == {
                 "log_stats": {"LC_APP": {"INFO": 5}},
                 "metrics": {"http_requests_total": 100.0, "command_count": 50.0},
+                # mock_request tidak menyediakan app[REPOS]/app[MANAGER] dkk
+                # (AppKey), jadi blok try di get_logs_stats() gagal di awal
+                # dan jatuh ke default kosong -- ini bukan bug endpoint,
+                # cuma fixture mock_request yang tidak lengkap. Nilai default
+                # ini yang sebelumnya tidak diekspektasikan test (stale sejak
+                # system_stats/active_users ditambahkan).
+                "system_stats": {},
+                "active_users": [],
             }
 
 

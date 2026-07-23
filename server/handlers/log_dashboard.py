@@ -118,8 +118,17 @@ async def get_logs_stats(request):
 
             connected_at = manager.connected_at.get(ws)
             duration = int(now - connected_at) if connected_at else 0
+            # uid (client_uid, lihat server/handlers/ws_chat.py) baru ada
+            # setelah koneksi ini mengirim command chat pertamanya --
+            # normalnya sudah terisi begitu client terhubung (client.js
+            # otomatis fetch riwayat chat saat connect), tapi bisa None
+            # sesaat setelah koneksi baru dibuka. ip TETAP ditampilkan ke
+            # admin sebagai info (identifikasi device secara manual), tapi
+            # uid yang dipakai sebagai kunci routing chat -- lihat catatan
+            # di ws_chat.py kenapa ip sendiri tidak reliable untuk itu.
+            uid = manager.client_uids.get(ws)
             active_users.append(
-                {"ip": ip, "user_agent": ua, "referer": referer, "duration": duration}
+                {"ip": ip, "uid": uid, "user_agent": ua, "referer": referer, "duration": duration}
             )
     except (KeyError, Exception) as e:
         import structlog

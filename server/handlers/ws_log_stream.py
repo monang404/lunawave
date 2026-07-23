@@ -25,7 +25,6 @@ Thread Safety:
 
 import asyncio
 import os
-from typing import Dict
 
 import structlog
 

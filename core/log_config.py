@@ -179,9 +179,12 @@ def _emit_banner_line(line: str) -> None:
     for handler in (_file_handler, _console_handler):
         if handler is None:
             continue
+        stream = getattr(handler, "stream", None)
+        if stream is None:
+            continue
         try:
-            handler.stream.write(line + "\n")
-            handler.stream.flush()
+            stream.write(line + "\n")
+            stream.flush()
         except Exception:
             pass
 

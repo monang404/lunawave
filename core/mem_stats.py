@@ -34,7 +34,9 @@ def get_cpu_percent() -> float | None:
     """
     if sys.platform == "win32":
         try:
-            out = subprocess.check_output("wmic cpu get loadpercentage", shell=True, text=True)
+            out = subprocess.check_output(
+                ["wmic", "cpu", "get", "loadpercentage"], shell=False, text=True
+            )
             lines = out.strip().split("\n")
             if len(lines) > 1:
                 return float(lines[-1].strip())
@@ -81,7 +83,16 @@ def _get_rss_mb_windows() -> float | None:
         import subprocess
 
         out = subprocess.check_output(
-            f"wmic process where processid={os.getpid()} get WorkingSetSize", shell=True, text=True
+            [
+                "wmic",
+                "process",
+                "where",
+                f"processid={os.getpid()}",
+                "get",
+                "WorkingSetSize",
+            ],
+            shell=False,
+            text=True,
         )
         lines = out.strip().split("\n")
         if len(lines) > 1:

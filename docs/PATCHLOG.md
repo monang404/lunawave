@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-23-212
+latest_patch_id: PATCH-2026-07-23-215
 
-total_entries: 212
+total_entries: 215
 
 ---
 
@@ -21,6 +21,155 @@ total_entries: 212
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-23-215
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:21
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend
+**Priority:** Critical
+**Title:** Fix startup crash: index client_uid dibuat sebelum kolomnya ada di DB lama
+
+**Reason:** User lapor start.py/start.sh/start.bat crash total saat startup di DB lama miliknya dengan error 'sqlite3.OperationalError: no such column: client_uid' pada persistence/db.py executescript(schema_sql), sebelum server sempat listen.
+
+**Root Cause:**
+persistence/schema.sql punya 'CREATE INDEX IF NOT EXISTS idx_chat_messages_client_uid ON chat_messages(client_uid)' di blok yang sama dengan 'CREATE TABLE IF NOT EXISTS chat_messages (...)'. Di DB LAMA (dibuat sebelum kolom client_uid ada di kode), tabel chat_messages sudah ada TANPA kolom client_uid, jadi CREATE TABLE IF NOT EXISTS di-skip (no-op) -- tapi baris CREATE INDEX setelahnya tetap dieksekusi dan gagal karena kolomnya belum ada. Migrasi 'ALTER TABLE chat_messages ADD COLUMN client_uid TEXT' yang seharusnya menambahkan kolom itu baru dijalankan SETELAH executescript(schema_sql) selesai (di persistence/__init__.py Repositories.init()), jadi keburu crash duluan -- migrasi tidak pernah sempat jalan.
+
+**Solution:**
+1) persistence/schema.sql: hapus baris CREATE INDEX idx_chat_messages_client_uid dari schema.sql (schema.sql hanya aman untuk skema yang identik sejak awal, bukan kolom yang ditambah belakangan). 2) persistence/__init__.py: tambahkan 'CREATE INDEX IF NOT EXISTS idx_chat_messages_client_uid ON chat_messages(client_uid)' ke daftar migrasi ALTER TABLE, persis SETELAH baris 'ALTER TABLE chat_messages ADD COLUMN client_uid TEXT' -- supaya index baru dibuat setelah kolomnya dipastikan ada, baik di DB baru maupun DB lama.
+
+**Changed Files:**
+- `persistence/schema.sql`
+- `persistence/__init__.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** Direproduksi manual: dibuat DB SQLite standalone dengan tabel chat_messages versi lama (tanpa kolom client_uid), lalu dijalankan persistence.db.DatabaseConnection.init() -- sebelum fix: OperationalError persis seperti laporan user; setelah fix: executescript() lolos tanpa error. Dilanjutkan dengan Repositories.init() penuh pada DB yang sama -- dikonfirmasi kolom client_uid berhasil ditambahkan (PRAGMA table_info) dan index idx_chat_messages_client_uid berhasil dibuat (query sqlite_master).
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Bug ini laten sejak client_uid chat patch (PATCH client_uid chat, lihat riwayat) ditambahkan -- baru muncul saat user real meng-upgrade dari DB lama ke versi ini, karena environment dev/test sebelumnya selalu pakai DB baru/kosong sehingga celah urutan schema.sql-vs-migrasi ini tidak pernah ter-exercise. Pola yang sama (index/constraint baru di schema.sql yang menyentuh kolom hasil ALTER TABLE) berisiko terulang untuk kolom lain di masa depan -- pertimbangkan aturan: index untuk kolom yang ditambahkan lewat migrasi ALTER TABLE harus dibuat di migrasi juga, bukan di schema.sql.
+
+---
+
+## PATCH-2026-07-23-214
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:09
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend,Test,Tooling
+**Priority:** High
+**Title:** Bereskan pytest/mypy/ruff/bandit setelah patch client_uid chat
+
+**Reason:** User minta jalankan test menyeluruh (pytest, mypy, ruff, bandit) dan pastikan semua lolos setelah PATCH-2026-07-23-213.
+
+**Root Cause:**
+1) Bug asli di ws_chat.py: variabel target_uid_send (scope send_chat) salah ketuker jadi target_uid (scope get_chat_history) di baris broadcast -- NameError kalau send_chat dipanggil, luput dari review manual karena baru ketahuan lewat mypy. 2) chat_repo.py/ws_chat.py mewarisi pola implicit-Optional dan reversed() overload dari kode chat lama. 3) core/log_reader.py, core/log_config.py, core/mem_stats.py: mypy/bandit error pre-existing (dikonfirmasi lewat baseline zip sebelum patch chat), tidak terkait patch chat_uid tapi ikut dibereskan karena user minta semua lolos. 4) test_log_dashboard.py: assertion stale, tidak update sejak system_stats/active_users ditambahkan ke response (juga sudah gagal di baseline).
+
+**Solution:**
+ws_chat.py: perbaiki bug NameError (pakai target_uid_send yang benar), tambah anotasi tipe eksplisit str|None. chat_repo.py: ganti semua default Optional implisit (x: str = None) jadi eksplisit (x: str | None = None), fix tipe tuple params query, bungkus fetchall() dengan list() sebelum reversed(). log_reader.py: anotasi tipe untuk result/levels_count/categories_count/matrix, ganti implicit Optional jadi eksplisit. log_config.py: guard None terpisah untuk handler.stream (bukan cuma handler). mem_stats.py: ganti subprocess shell=True (string wmic) jadi list args shell=False (fungsional sama, hilangkan B602). test_log_dashboard.py: update assertion supaya sesuai struktur response aktual (system_stats/active_users default kosong saat AppKey tidak tersedia di mock).
+
+**Changed Files:**
+- `server/handlers/ws_chat.py`
+- `persistence/chat_repo.py`
+- `core/log_reader.py`
+- `core/log_config.py`
+- `core/mem_stats.py`
+- `tests/unit/server/handlers/test_log_dashboard.py`
+
+**Changed Symbols:**
+- `handle_chat_command()`
+- `ChatRepository.add_message()`
+- `ChatRepository.get_recent_messages()`
+- `tail()`
+- `stats()`
+- `_emit_banner_line()`
+- `get_cpu_percent()`
+- `_get_rss_mb_windows()`
+
+**Tests:** pytest -q --ignore=tests/unit/launcher/gui (788 passed, 4 skipped, tkinter GUI di-skip sesuai instruksi user); mypy . (0 errors, 153 files); ruff check . (all checks passed); bandit -c pyproject.toml -r . (no issues)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+GUI/tkinter test (tests/unit/launcher/gui) sengaja di-skip sesuai instruksi user (device dev tidak punya tkinter) -- bukan dihapus, cuma tidak dijalankan di sesi ini.
+
+---
+
+## PATCH-2026-07-23-213
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 07:00
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Security
+**Area:** Backend,Frontend
+**Priority:** Critical
+**Title:** Fix stored XSS di chat sender_name + segmentasi chat lepas dari client_ip
+
+**Reason:** Audit fitur chat (belum sempat dirilis resmi/didokumentasikan) menemukan dua bug: (1) sender_name tidak di-escape sebelum masuk innerHTML di chat.js, padahal send_chat sengaja dikecualikan dari require_auth() -- client anonim bisa inject HTML/JS yang jalan di browser admin (stored XSS). (2) client_ip (request.remote) dipakai sebagai kunci segmentasi thread chat, padahal README sendiri menyarankan deployment lewat reverse proxy (Nginx/Cloudflare Tunnel/ngrok) -- di balik proxy semua client eksternal terlihat sebagai satu IP yang sama, sehingga chat history antar user berbeda bisa saling bocor.
+
+**Root Cause:**
+sender_name tidak pernah masuk jalur escape yang sama dengan message (cuma message yang di-replace < >). Untuk client_ip: fitur chat dirancang pakai request.remote sebagai identitas tanpa mempertimbangkan bahwa README sendiri merekomendasikan reverse proxy untuk akses eksternal, yang membuat request.remote seragam untuk semua client di baliknya.
+
+**Solution:**
+(1) Tambah helper escapeHtml() di chat.js, dipakai untuk sender_name DAN message secara konsisten. (2) Ganti kunci identitas/segmentasi chat dari client_ip ke client_uid: UUID di-generate sekali di browser (crypto.randomUUID(), disimpan di localStorage), dikirim di setiap command chat, dipetakan ke koneksi ws lewat ConnectionManager.client_uids (dibersihkan otomatis saat disconnect). chat_repo.py dan ws_chat.py pakai client_uid sebagai kunci utama; client_ip tetap disimpan tapi cuma untuk audit log. Admin dashboard (admin-logs.js, log_dashboard.py) diupdate supaya picker chat & unread badge pakai uid juga. Sekalian tambah batas panjang message/sender_name (MAX_MESSAGE_LEN, MAX_SENDER_NAME_LEN) untuk menutup vektor DoS kecil.
+
+**Changed Files:**
+- `web/static/js/chat.js`
+- `web/static/js/client.js`
+- `web/static/js/admin-logs.js`
+- `server/handlers/ws_chat.py`
+- `server/connection_manager.py`
+- `server/handlers/log_dashboard.py`
+- `persistence/chat_repo.py`
+- `persistence/__init__.py`
+- `persistence/schema.sql`
+
+**Changed Symbols:**
+- `escapeHtml()`
+- `getClientUid()`
+- `wsSend()`
+- `handle_chat_command()`
+- `ChatRepository.add_message()`
+- `ChatRepository.get_recent_messages()`
+- `ConnectionManager.client_uids`
+- `openChatPanel()`
+- `handleIncomingChat()`
+
+**Tests:** -
+
+**Breaking Change:** Yes
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Breaking untuk instalasi existing: chat history lama tidak akan cocok ke client_uid manapun (client_uid kosong untuk pesan lama) sampai user kirim pesan baru dari browser yang sudah generate client_uid; ini disengaja, tidak ada migrasi otomatis client_ip->client_uid karena tidak ada cara aman menebak siapa pemilik pesan lama. websocket.py TIDAK disentuh sama sekali (governed file) -- semua perubahan lewat data payload yang sudah diteruskan apa adanya ke handle_chat_command(). Belum ada test otomatis untuk fitur chat (belum ada sebelumnya juga) -- disarankan ditambahkan terpisah.
 
 ---
 

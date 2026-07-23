@@ -92,6 +92,16 @@ class Repositories:
             "ALTER TABLE tracks ADD COLUMN unavailable INTEGER DEFAULT 0",
             "ALTER TABLE tracks ADD COLUMN unavailable_reason TEXT",
             "ALTER TABLE chat_messages ADD COLUMN client_ip TEXT",
+            # PATCH client_uid chat: client_ip di atas tidak lagi dipakai
+            # sebagai kunci segmentasi (rusak di balik reverse proxy) --
+            # kolom baru ini yang jadi identitas asli. client_ip masih
+            # disimpan untuk audit saja.
+            "ALTER TABLE chat_messages ADD COLUMN client_uid TEXT",
+            # Index untuk client_uid dipindah ke sini (bukan di schema.sql) karena
+            # pada DB lama kolomnya baru ada SETELAH baris ALTER TABLE di atas jalan --
+            # kalau index ini ada di schema.sql, executescript() akan crash duluan
+            # (lihat catatan di persistence/schema.sql).
+            "CREATE INDEX IF NOT EXISTS idx_chat_messages_client_uid ON chat_messages(client_uid)",
         ]:
             try:
                 await self._conn_manager.conn.execute(sql)
