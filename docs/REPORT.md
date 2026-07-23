@@ -19,33 +19,33 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-23 oleh `automation/generate_report.py`
+> **Auto-generated:** 2026-07-23 oleh `automation/generate_report.py`  
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 62 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 118 |
-| Total file `.js` (ekskl. `.min.js`) | 41 |
-| Total file `.css` (ekskl. `.min.css`) | 24 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 70 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 124 |
+| Total file `.js` (ekskl. `.min.js`) | 42 |
+| Total file `.css` (ekskl. `.min.css`) | 25 |
 | Total class (Python) | 98 |
-| Total function/method (Python) | 552 |
-| Total baris Python | 13,847 |
-| Total baris JS (web/) | 5,134 |
-| Total baris CSS (web/) | 4,162 |
-| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
+| Total function/method (Python) | 580 |
+| Total baris Python | 14,814 |
+| Total baris JS (web/) | 6,104 |
+| Total baris CSS (web/) | 4,506 |
+| Ukuran DB utama (`data/lunawave.db`) | 872 KB (+ WAL 4027 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 461 |
+| `engine/playback/controller.py` | 468 |
 | `persistence/discover_repo.py` | 446 |
-| `launcher/gui/ui_builder.py` | 350 |
-| `engine/radio/engine.py` | 292 |
-| `launcher/gui/app.py` | 290 |
+| `launcher/gui/ui_builder.py` | 353 |
+| `launcher/gui/app.py` | 297 |
+| `engine/radio/engine.py` | 288 |
 <!-- END:GENERATED -->
 
 ---

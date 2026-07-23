@@ -1,3 +1,4 @@
+"""Repository for chat messages interaction."""
 from typing import Any, Dict, List
 
 import aiosqlite

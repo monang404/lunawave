@@ -1,3 +1,5 @@
+"""WebSocket handlers for admin-client live chat."""
+
 import json
 from typing import Any, Dict
 
