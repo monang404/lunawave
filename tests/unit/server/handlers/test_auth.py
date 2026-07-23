@@ -61,6 +61,7 @@ def make_db(session_valid: bool = False, account=None):
     db.sessions = MagicMock()
     db.sessions.verify_session = AsyncMock(return_value=session_valid)
     db.sessions.create_session = AsyncMock()
+    db.sessions.extend_session = AsyncMock()
     db.admin_account = MagicMock()
     db.admin_account.get_admin_account = AsyncMock(return_value=account)
     return db
@@ -321,3 +322,126 @@ class TestRequireAuth:
         mgr = make_manager()
         ws = make_ws()
         assert require_auth(mgr, ws) is False
+
+
+# ---------------------------------------------------------------------------
+# Logging (task_breakdown_logging.yaml L2.1 -- G1 kritis: nol logging auth
+# sebelumnya). Semua event category=LC_AUTH, component="ws.auth" (L-D1).
+# Tidak pernah field password/token/stored_hash (LOGGING_STANDARD.md
+# §8/§12.1) -- diverifikasi lewat capture_logs di setiap test di bawah.
+# ---------------------------------------------------------------------------
+
+
+class TestAuthLogging:
+    _FORBIDDEN_KEYS = {"password", "token", "stored_hash"}
+
+    @staticmethod
+    def _assert_no_secret_fields(cap):
+        for entry in cap:
+            leaked = TestAuthLogging._FORBIDDEN_KEYS & set(entry.keys())
+            assert not leaked, f"secret field(s) {leaked} found in log entry: {entry}"
+
+    @pytest.mark.asyncio
+    async def test_valid_token_logs_auth_token_verified(self):
+        import structlog.testing
+
+        from core.log_categories import LC_AUTH
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        db = make_db(session_valid=True)
+
+        with structlog.testing.capture_logs() as cap:
+            await handle_auth(ws, {"token": "valid_token"}, mgr, "127.0.0.1", db, now=1000)
+
+        self._assert_no_secret_fields(cap)
+        events = [e["event"] for e in cap]
+        assert "auth_token_verified" in events
+        entry = next(e for e in cap if e["event"] == "auth_token_verified")
+        assert entry["log_level"] == "info"
+        assert entry["category"] == LC_AUTH
+        assert entry["client_ip"] == "127.0.0.1"
+
+    @pytest.mark.asyncio
+    async def test_rate_limit_logs_auth_rate_limited_warning(self):
+        import structlog.testing
+
+        from core.log_categories import LC_AUTH
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        mgr.login_attempts = {"127.0.0.1": [999, 999, 999, 999, 999]}  # 5 recent attempts
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
+
+        with structlog.testing.capture_logs() as cap:
+            await handle_auth(ws, {}, mgr, "127.0.0.1", db, now=1000)
+
+        self._assert_no_secret_fields(cap)
+        entry = next(e for e in cap if e["event"] == "auth_rate_limited")
+        assert entry["log_level"] == "warning"
+        assert entry["category"] == LC_AUTH
+        assert entry["client_ip"] == "127.0.0.1"
+        assert entry["attempt_count"] == 5
+
+    @pytest.mark.asyncio
+    async def test_successful_login_logs_succeeded_and_session_created(self):
+        import structlog.testing
+
+        from core.log_categories import LC_AUTH
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
+
+        with patch("asyncio.get_running_loop") as mock_loop:
+            mock_loop.return_value.run_in_executor = AsyncMock(return_value=True)
+            with structlog.testing.capture_logs() as cap:
+                await handle_auth(
+                    ws,
+                    {"username": "admin", "password": "correct"},
+                    mgr,
+                    "127.0.0.1",
+                    db,
+                    now=1000,
+                )
+
+        self._assert_no_secret_fields(cap)
+        events = {e["event"] for e in cap}
+        assert "auth_login_succeeded" in events
+        assert "auth_session_created" in events
+        for event_name in ("auth_login_succeeded", "auth_session_created"):
+            entry = next(e for e in cap if e["event"] == event_name)
+            assert entry["log_level"] == "info"
+            assert entry["category"] == LC_AUTH
+            assert entry["client_ip"] == "127.0.0.1"
+
+    @pytest.mark.asyncio
+    async def test_failed_login_logs_rejected_at_info_not_warning(self):
+        """L-D2: satu percobaan gagal individual adalah INFO (kejadian
+        normal yang diharapkan sesekali), bukan WARNING -- WARNING baru
+        dipakai di auth_rate_limited saat ambang terlampaui."""
+        import structlog.testing
+
+        from core.log_categories import LC_AUTH
+        from server.handlers.auth import handle_auth
+
+        ws = make_ws()
+        mgr = make_manager()
+        db = make_db(session_valid=False, account=ADMIN_ACCOUNT)
+
+        with patch("asyncio.get_running_loop") as mock_loop:
+            mock_loop.return_value.run_in_executor = AsyncMock(return_value=False)
+            with structlog.testing.capture_logs() as cap:
+                await handle_auth(
+                    ws, {"username": "admin", "password": "wrong"}, mgr, "127.0.0.1", db, now=1000
+                )
+
+        self._assert_no_secret_fields(cap)
+        entry = next(e for e in cap if e["event"] == "auth_login_rejected")
+        assert entry["log_level"] == "info"
+        assert entry["category"] == LC_AUTH
+        assert entry["client_ip"] == "127.0.0.1"
+        assert entry["reason"] == "invalid_credentials"

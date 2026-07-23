@@ -122,6 +122,17 @@ function logout() {
     store.userRole = "portal";
     store.adminUsername = "";
     store.adminPassword = "";
+
+    // Kirim pesan logout ke server untuk invalidate session
+    const token = safeStorage.get("lunawave_session_token");
+    if (token) {
+        try {
+            wsSend("logout", { token: token });
+        } catch (e) {
+            console.warn("Failed to send logout command:", e);
+        }
+    }
+
     safeStorage.remove("lunawave_user_role");
     safeStorage.remove("lunawave_admin_username");
     safeStorage.remove("lunawave_admin_password");
@@ -143,9 +154,6 @@ function logout() {
             window.location.href = "/admin";
         }, 150);
     } else {
-        if (dom.portalClientBtn) {
-            dom.portalClientBtn.style.display = "none";
-        }
         applyRoleUI();
         if (window.ws) {
             try {

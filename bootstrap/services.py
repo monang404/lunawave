@@ -59,6 +59,7 @@ Thread Safety:
 """
 
 import asyncio
+import shutil
 
 import aiohttp
 import structlog
@@ -66,6 +67,7 @@ import structlog
 from adapters.mpv import MpvController
 from adapters.ytdlp import YtDlpClient
 from core.event_bus import bus
+from core.log_categories import LC_AUTH, LC_EXTERNAL
 from core.state import AppState, PlayerStatus
 from engine.command_router import CommandRouter
 from engine.download_manager import DownloadManager
@@ -73,6 +75,8 @@ from persistence import Repositories
 from plugins.lyrics_fetcher import LyricsFetcher
 from plugins.notifications import TermuxNowPlaying
 from plugins.sponsorblock import SponsorBlockHandler
+
+logger = structlog.get_logger(component="system.services")
 
 
 class BootstrapContext:
@@ -112,11 +116,31 @@ async def _init_mpv():
     """Background task: connect MPV, signal `mpv_ready_event` either way
     (success or failure) so `_resume_last_track` never hangs waiting."""
     ctx = context
+
+    if shutil.which("mpv") is None:
+        logger.critical(
+            "mpv_initial_connect_failed",
+            category=LC_EXTERNAL,
+            reason="executable_not_found",
+        )
+        ctx.state.error_msg = (
+            "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
+            "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
+        )
+        ctx.state.status = PlayerStatus.ERROR
+        ctx.mpv_ready_event.set()
+        return
+
     try:
         await ctx.mpv.connect()
         ctx.mpv_ready_event.set()
     except Exception as e:
-        structlog.get_logger(__name__).error(f"mpv not available: {e}")
+        logger.critical(
+            "mpv_initial_connect_failed",
+            category=LC_EXTERNAL,
+            error_type=type(e).__name__,
+            error=str(e),
+        )
         ctx.state.error_msg = (
             "MPV tidak ditemukan. Jalankan: pkg install mpv (Termux) "
             "atau install MPV dan tambahkan ke PATH (Windows/Linux)."
@@ -151,15 +175,17 @@ async def _seed_admin_account_from_env(repos):
     if ADMIN_PASSWORD_OVERRIDE is None:
         return
     if await repos.admin_account.admin_account_exists():
-        structlog.get_logger(__name__).info(
+        logger.info(
             "admin_account_seed_skipped_already_exists",
+            category=LC_AUTH,
             reason="ADMIN_PASSWORD_OVERRIDE env var di-set tapi admin_account "
             "sudah ada -- tidak di-overwrite (K3).",
         )
         return
     await repos.admin_account.create_admin_account(ADMIN_USERNAME, ADMIN_PASSWORD_OVERRIDE)
-    structlog.get_logger(__name__).info(
+    logger.info(
         "admin_account_seeded_from_env",
+        category=LC_AUTH,
         username=ADMIN_USERNAME,
         reason="admin_account kosong + ADMIN_PASSWORD_OVERRIDE di-set (K4, "
         "jalur provisioning non-interaktif, bukan alur default).",
@@ -199,13 +225,13 @@ async def init_core_services() -> BootstrapContext:
     ctx.http_session = aiohttp.ClientSession()
 
     # 4. Global Services Initialization
-    from persistence.stream_cache import CacheResolver, ResolverDbCompat
     from engine.loudness.service import LoudnessService
     from engine.playback.controller import PlaybackController
     from engine.queue_manager import QueueMode
     from engine.radio import RadioMode
     from engine.sleep_timer import SleepTimer
     from engine.volume_service import VolumeService
+    from persistence.stream_cache import CacheResolver, ResolverDbCompat
 
     ctx.resolver = CacheResolver(
         ResolverDbCompat(ctx.repos.tracks, ctx.repos.artists, ctx.repos.discover), ctx.ytdlp

@@ -3,7 +3,6 @@ const dom = {};
 function initDOM() {
     Object.assign(dom, {
         portalScreen: $("portal-screen"),
-        portalClientBtn: $("portal-client-btn"),
         portalAdminBtn: $("portal-admin-btn"),
         portalLoginForm: $("portal-login-form"),
         adminUsername: $("admin-username"),

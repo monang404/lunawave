@@ -43,9 +43,12 @@ import stat
 import structlog
 
 from config import BASE_DIR, WEB_HOST, WEB_PORT
-from core.log_config import setup_logging
+from core.log_categories import LC_LIFECYCLE
+from core.log_config import log_session_end, log_session_start, setup_logging
 
 setup_logging()
+
+logger = structlog.get_logger(component="core.main")
 
 try:
     log_path = BASE_DIR / "lunawave.log"
@@ -53,7 +56,7 @@ try:
 except OSError:
     pass
 
-from bootstrap.maintenance import schedule_db_maintenance, start_mpv_watchdog
+from bootstrap.maintenance import schedule_db_maintenance, schedule_status_log, start_mpv_watchdog
 from bootstrap.services import context, init_core_services
 from bootstrap.startup_tasks import run_startup_checks
 
@@ -64,11 +67,15 @@ from bootstrap.startup_tasks import run_startup_checks
 # standalone startup stage.
 async def run_server():
     ctx = context
+    import os
+
+    pid = os.getpid()
     try:
         # Import lokal (bukan top-level) agar server.app.create_app /
         # server.app.run_server tetap bisa di-patch dari test lewat
         # "server.app.<nama>" (sama seperti pola asli sebelum T2.4).
-        from server.app import create_app, run_server as _web_run_server
+        from server.app import create_app
+        from server.app import run_server as _web_run_server
 
         app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos)
 
@@ -99,6 +106,11 @@ async def run_server():
         # oleh frontend/server itu sendiri, bukan lewat banner ini.
         print("=====================================================")
 
+        # ADR-0010: baris pemisah sesi di lunawave.log (dan console), sesuai
+        # contoh output RFC observability_logging.md. Best-effort/fail-safe
+        # sendiri di sisi log_config -- tidak pernah menggagalkan startup.
+        log_session_start(pid, host=host, port=port)
+
         await _web_run_server(app, host=host, port=port)
 
     except asyncio.CancelledError:
@@ -110,7 +122,13 @@ async def run_server():
             if t.done() and not t.cancelled():
                 exc = t.exception()
                 if exc:
-                    structlog.get_logger(__name__).error(f"Task {t.get_name()} crashed: {exc}")
+                    logger.error(
+                        "background_task_crashed",
+                        category=LC_LIFECYCLE,
+                        task_name=t.get_name(),
+                        error_type=type(exc).__name__,
+                        error=str(exc),
+                    )
                     print(f"\n[FATAL ERROR] App crashed due to task failure: {exc}")
                     traceback.print_exception(type(exc), exc, exc.__traceback__)
 
@@ -136,7 +154,11 @@ async def run_server():
         await ctx.http_session.close()
         await ctx.repos.close()
 
-        structlog.get_logger(__name__).info("Shutdown complete.")
+        logger.info("shutdown_completed", category=LC_LIFECYCLE)
+
+        # ADR-0010: penutup pasangan log_session_start() di atas -- ditulis
+        # paling akhir supaya menandai proses shutdown benar-benar selesai.
+        log_session_end(pid)
 
 
 async def main():
@@ -144,6 +166,7 @@ async def main():
     await run_startup_checks()
     schedule_db_maintenance()
     start_mpv_watchdog()
+    schedule_status_log()
     await run_server()
 
 

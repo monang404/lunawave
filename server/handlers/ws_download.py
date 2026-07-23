@@ -29,10 +29,11 @@ from pathlib import Path
 import structlog
 
 from core.command_bus import CMD_DOWNLOAD, command_bus
+from core.log_categories import LC_DOWNLOAD
 from server.serializers import dict_to_track, track_to_dict
 from services.discover_service import DiscoverService
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.download")
 
 
 async def handle_download_command(action: str, data: dict, tracks, discover, manager, state):
@@ -50,7 +51,13 @@ async def handle_download_command(action: str, data: dict, tracks, discover, man
                     try:
                         os.remove(db_track.local_path)
                     except Exception as e:
-                        logger.error(f"Gagal menghapus file lokal {db_track.local_path}: {e}")
+                        logger.error(
+                            "download_local_file_delete_failed",
+                            category=LC_DOWNLOAD,
+                            local_path=db_track.local_path,
+                            error_type=type(e).__name__,
+                            error=str(e),
+                        )
 
                 # Fallback legacy: coba hapus dari downloads/ dengan berbagai ekstensi
                 # (dulu .mp3, sekarang bisa .opus/.m4a/dll setelah C-1 fix)
@@ -63,8 +70,14 @@ async def handle_download_command(action: str, data: dict, tracks, discover, man
                     if user_path.exists() and str(user_path) != db_track.local_path:
                         try:
                             os.remove(str(user_path))
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug(
+                                "download_legacy_file_delete_failed",
+                                category=LC_DOWNLOAD,
+                                legacy_path=str(user_path),
+                                error_type=type(e).__name__,
+                                error=str(e),
+                            )
 
                 # Update DB
                 db_track.local_path = None

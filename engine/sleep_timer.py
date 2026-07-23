@@ -31,7 +31,7 @@ import structlog
 from core.command_bus import CMD_STOP, command_bus
 from core.events import LogMessageEvent
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.sleep_timer")
 
 
 class SleepTimer:

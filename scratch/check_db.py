@@ -15,8 +15,8 @@ import asyncio
 import sqlite3
 from pathlib import Path
 
-from persistence import Repositories
 from core.state import TrackInfo
+from persistence import Repositories
 
 
 async def main():

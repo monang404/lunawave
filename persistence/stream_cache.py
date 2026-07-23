@@ -25,6 +25,7 @@ Thread Safety:
 
 import os
 import time
+from typing import Any
 
 import structlog
 
@@ -35,7 +36,7 @@ from core.observability import RESOLVE_LATENCY
 from core.ports import DatabasePort, MediaExtractorPort
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.stream_cache")
 
 
 class ResolverDbCompat:
@@ -87,7 +88,7 @@ class CacheResolver:
     3. Stale -> fetch new stream URL from yt-dlp, save to DB, return it
     """
 
-    def __init__(self, db: DatabasePort, ytdlp: MediaExtractorPort):
+    def __init__(self, db: "DatabasePort | Any", ytdlp: MediaExtractorPort):
         self.db = db
         self.ytdlp = ytdlp
         self.latency_window = LatencyWindow()

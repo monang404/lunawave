@@ -16,9 +16,8 @@ function initTransportEvents() {
             if (typeof renderPlayBtn === "function") renderPlayBtn();
             if (typeof renderNowPlaying === "function") renderNowPlaying();
             if (typeof renderQueue === "function") renderQueue();
-            if (store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
-                unlockBrowserAudio(wantsPlay);
-                syncBrowserAudio(wantsPlay);
+            if (wantsPlay && store.audio_output === "browser" && typeof syncBrowserAudio === "function") {
+                unlockBrowserAudio(true);
             }
             wsSend("toggle_pause");
         }
@@ -65,6 +64,14 @@ function initTransportEvents() {
         window.isDraggingVol = false;
         dom.volSlider.addEventListener("input", () => {
             window.isDraggingVol = true;
+            if (typeof _fadeIntervals !== "undefined") {
+                _fadeIntervals.forEach((interval, idx) => {
+                    if (interval) {
+                        clearInterval(interval);
+                        _fadeIntervals[idx] = null;
+                    }
+                });
+            }
             store.volume = parseInt(dom.volSlider.value);
             if (dom.pbVolLabel) dom.pbVolLabel.textContent = store.volume + "%";
             if (store.audio_output === "browser" && typeof getOrInitAudio === "function") {

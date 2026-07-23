@@ -5,10 +5,11 @@ Purpose:
     Manages authentication session tokens, verifying and cleaning up expired sessions.
 
 Responsibilities:
-    - Implement the core functionality described in the purpose.
+    - Store and verify session tokens by their SHA-256 hash (never the raw token).
+    - Clean up expired sessions.
 
 Depends on:
-    None
+    core.security (hash_token)
 
 Subscribes to:
     None
@@ -22,21 +23,33 @@ Thread Safety:
 
 import time
 
+from core.security import hash_token
+
 
 class SessionRepository:
     def __init__(self, conn):
         self._conn = conn
 
     async def create_session(self, token: str, expires_at: int):
+        """Store the SHA-256 hash of token, never the raw token."""
         await self._conn.execute(
-            "INSERT INTO sessions (token, expires_at) VALUES (?, ?)", (token, expires_at)
+            "INSERT INTO sessions (token, expires_at) VALUES (?, ?)",
+            (hash_token(token), expires_at),
+        )
+        await self._conn.commit()
+
+    async def extend_session(self, token: str, expires_at: int):
+        await self._conn.execute(
+            "UPDATE sessions SET expires_at = ? WHERE token = ?",
+            (expires_at, hash_token(token)),
         )
         await self._conn.commit()
 
     async def verify_session(self, token: str) -> bool:
         now = int(time.time())
+        token_hash = hash_token(token)
         async with self._conn.execute(
-            "SELECT expires_at FROM sessions WHERE token = ?", (token,)
+            "SELECT expires_at FROM sessions WHERE token = ?", (token_hash,)
         ) as cursor:
             row = await cursor.fetchone()
             if row and row["expires_at"] > now:
@@ -46,7 +59,7 @@ class SessionRepository:
             return False
 
     async def delete_session(self, token: str):
-        await self._conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        await self._conn.execute("DELETE FROM sessions WHERE token = ?", (hash_token(token),))
         await self._conn.commit()
 
     async def cleanup_sessions(self):

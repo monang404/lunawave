@@ -37,6 +37,29 @@ jobs:
           pip install import-linter
           lint-imports
 
+  security-and-lint:
+    name: Security & Lint (bandit, pip-audit, ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: ruff — lint
+        run: ruff check .
+
+      - name: bandit — static security scan (config di pyproject.toml)
+        run: bandit -r . -c pyproject.toml
+
+      - name: pip-audit — cek CVE di dependency pinned
+        run: pip-audit -r requirements.txt
+
   python-tests:
     name: Python Tests (pytest)
     runs-on: ubuntu-latest

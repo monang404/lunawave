@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-21
+last_verified: 2026-07-22
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-21 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-22 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `core/log_config`, `engine/loudness/analyzer`, _10 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _11 lainnya_
 **Menggunakan:** —
 
 
@@ -85,7 +85,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 **File:** `core/events.py`
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
-**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
+**Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `VolumeChangedEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** —
 **Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _12 lainnya_
 **Menggunakan:** `core/state`
@@ -113,12 +113,42 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**File:** `core/log_config.py`
-**Fungsi:** Configure structlog and stdlib logging with an async queue handler, rotating file output, and a compact single-line renderer.
+**File:** `core/log_categories.py`
+**Fungsi:** Closed set of `category` constants for structured logging, per the §4 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows; the audit/implementation-plan docs say "14 kategori standar" but the actual table has 15 -- this module follows the table, the normative spec, not the prose count). Category groups log lines by *domain of the event*, never by the Python module/file that emitted them (see §4 anti-pattern #7).
 **Class:** —
-**Function utama:** `simple_renderer()`, `setup_logging()`
+**Function utama:** —
+**Digunakan oleh:** `server/handlers/auth`
+**Menggunakan:** —
+
+
+---
+
+**File:** `core/log_config.py`
+**Fungsi:** Configure structlog and stdlib logging with an async queue handler, rotating file output, and per-handler rendering (plain file, optional auto-colored console).
+**Class:** —
+**Function utama:** `file_renderer()`, `console_renderer()`, `setup_logging()`, `log_session_start()`, `log_session_end()`
 **Digunakan oleh:** `main`
 **Menggunakan:** `config`
+
+
+---
+
+**File:** `core/log_context.py`
+**Fungsi:** Thin wrappers over structlog.contextvars for the three correlation fields defined in docs/rfc/logging_standard/LOGGING_STANDARD.md §5.2: session_id (one WebSocket connection), request_id (one Command Bus execution), correlation_id (one flow that crosses separately scheduled asyncio tasks, e.g. a radio cycle triggering a prefetch, or a download whose progress hook runs in a separate task).
+**Class:** —
+**Function utama:** `bind_session()`, `unbind_session()`, `bind_request()`, `unbind_request()`, `bind_correlation()`, `unbind_correlation()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
+**File:** `core/mem_stats.py`
+**Fungsi:** Baca penggunaan RAM (RSS) proses saat ini secara cross-platform tanpa dependency pip baru (tidak pakai psutil — lihat ADR-0010).
+**Class:** —
+**Function utama:** `get_rss_mb()`
+**Digunakan oleh:** `server/handlers/http`
+**Menggunakan:** —
 
 
 ---
@@ -127,7 +157,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.
 **Class:** —
 **Function utama:** `get_metrics_content()`
-**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `persistence/stream_cache`, `server/connection_manager`, `server/handlers/http`
+**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `persistence/stream_cache`, `server/connection_manager`, `server/handlers/http`, _1 lainnya_
 **Menggunakan:** —
 
 
@@ -144,10 +174,20 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 **File:** `core/security.py`
-**Fungsi:** Provide PBKDF2-SHA256 password hashing and constant-time verification.
+**Fungsi:** Provide PBKDF2-SHA256 password hashing, constant-time verification, and SHA-256 session token hashing.
 **Class:** —
-**Function utama:** `hash_password()`, `verify_password()`
-**Digunakan oleh:** `server/handlers/auth`, `server/handlers/setup`
+**Function utama:** `hash_password()`, `verify_password()`, `hash_token()`, `verify_token()`
+**Digunakan oleh:** `persistence/session_repo`, `server/handlers/auth`, `server/handlers/setup`
+**Menggunakan:** —
+
+
+---
+
+**File:** `core/server_clock.py`
+**Fungsi:** Menyimpan waktu mulai server dan menghitung uptime, tanpa dependency apa pun di luar stdlib.
+**Class:** `ServerClock`
+**Function utama:** `init()`, `start_time()`, `uptime_seconds()`
+**Digunakan oleh:** `server/app`
 **Menggunakan:** —
 
 
@@ -312,7 +352,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `engine/loudness/service.py`
 **Fungsi:** Orkestrasi analisis loudness: cek apakah track sudah pernah diukur, kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.
 **Class:** `LoudnessService`
-**Function utama:** —
+**Function utama:** `_is_charging_or_unknown()`
 **Digunakan oleh:** —
 **Menggunakan:** `core/ports`, `engine/loudness/analyzer`
 
@@ -332,7 +372,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `engine/playback/crossfade.py`
 **Fungsi:** Crossfade helpers untuk transisi halus antar track via MPV volume ramping.
 **Class:** —
-**Function utama:** `apply_crossfade_in()`, `check_crossfade_out()`
+**Function utama:** `apply_crossfade_in()`, `apply_crossfade_out()`
 **Digunakan oleh:** —
 **Menggunakan:** `core/state`
 
@@ -444,7 +484,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `RadioMode`
 **Function utama:** `check_prefetch()`
 **Digunakan oleh:** `engine/radio/__init__`
-**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/radio_config`, `engine/radio/prefetcher`
+**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/prefetcher`, `engine/radio/radio_config`
 
 
 ---
@@ -597,7 +637,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `SessionRepository`
 **Function utama:** —
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** —
+**Menggunakan:** `core/security`
 
 
 ---
@@ -629,8 +669,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Create and configure the aiohttp web application with all routes, services, and EventBus listeners wired together.
 **Class:** —
 **Function utama:** `create_app()`, `run_server()`
-**Digunakan oleh:** —
-**Menggunakan:** `core/ports`, `engine/playback/controller`, `persistence`, `server/connection_manager`, `server/handlers/audio_stream_handler`, `server/handlers/http`, _2 lainnya_
+**Digunakan oleh:** `server/handlers/__init__`
+**Menggunakan:** `core/ports`, `core/server_clock`, `engine/playback/controller`, `persistence`
 
 
 ---
@@ -649,18 +689,18 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Manages active WebSocket connections and broadcasts events to connected clients.
 **Class:** `ConnectionManager`
 **Function utama:** `disconnect()`
-**Digunakan oleh:** `server/app`, `server/broadcast_service`
+**Digunakan oleh:** `server/broadcast_service`
 **Menggunakan:** `core/observability`
 
 
 ---
 
 **File:** `server/handlers/__init__.py`
-**Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app["key"]` lookups so the type of each value is explicit (T3.7 — dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" — sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
+**Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app[KEY]` lookups so the type of each value is explicit (T3.7 — dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" — sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
 **Class:** —
 **Function utama:** `get_repos()`, `get_tracks_repo()`, `get_conn()`, `get_state()`, `get_manager()`, `get_ytdlp()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/ports`, `core/state`
+**Menggunakan:** `core/ports`, `core/state`, `server/app`
 
 
 ---
@@ -669,7 +709,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Proxy cached/streamed MP3 audio for a track, including range-request support for seeking. Split out of server/handlers/http.py (T3.4) so the streaming/range-request logic isn't bundled with the SPA/health/ metrics endpoints.
 **Class:** —
 **Function utama:** `serve_stream()`
-**Digunakan oleh:** `server/app`
+**Digunakan oleh:** —
 **Menggunakan:** `config`, `core/exceptions`, `server/handlers`
 
 
@@ -680,7 +720,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `handle_auth()`, `require_auth()`
 **Digunakan oleh:** `server/handlers/websocket`
-**Menggunakan:** `core/security`
+**Menggunakan:** `core/log_categories`, `core/security`
 
 
 ---
@@ -698,9 +738,9 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `server/handlers/http.py`
 **Fungsi:** Serve the SPA index, health check, and Prometheus metrics endpoints over HTTP.
 **Class:** —
-**Function utama:** `serve_index()`, `health_check()`, `serve_metrics()`
-**Digunakan oleh:** `server/app`
-**Menggunakan:** `core/observability`, `server/handlers`
+**Function utama:** `serve_index()`, `serve_client()`, `health_check()`, `serve_metrics()`
+**Digunakan oleh:** —
+**Menggunakan:** `core/mem_stats`, `core/observability`, `server/handlers`
 
 
 ---
@@ -709,7 +749,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Handle Initial Setup: creation of the single admin_account row that becomes the sole source of login credentials (Fitur B: login_redesign, lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any admin account exists, so it lives outside the normal require_auth gate -- the same way "auth" itself is special-cased in websocket.py.
 **Class:** —
 **Function utama:** `handle_setup_admin()`, `setup_required()`
-**Digunakan oleh:** `server/app`, `server/handlers/websocket`
+**Digunakan oleh:** `server/handlers/websocket`
 **Menggunakan:** `core/security`, `server/handlers`
 
 
@@ -718,8 +758,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **File:** `server/handlers/websocket.py`
 **Fungsi:** Handle WebSocket connections, authenticate clients, and dispatch incoming commands to the CommandBus after rate-limit enforcement.
 **Class:** —
-**Function utama:** `ws_handler()`, `handle_ws_message()`
-**Digunakan oleh:** `server/app`
+**Function utama:** `check_ws_origin()`, `ws_handler()`, `handle_ws_message()`
+**Digunakan oleh:** —
 **Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _3 lainnya_
 
 
@@ -773,14 +813,25 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Menggunakan:** `core/command_bus`, `core/state`, `server/serializers`
 
 
+
 ---
 
-**File:** `server/middleware.py`
-**Fungsi:** Enforce per-IP command rate limiting for WebSocket clients.
+**File:** `server/middleware/__init__.py`
+**Fungsi:** Package for server-side middleware: per-IP WS command rate limiting (this file, unchanged) and the aiohttp HTTP traffic middleware added in ADR-0010 (server.middleware.traffic).
 **Class:** —
 **Function utama:** `check_rate_limit()`
-**Digunakan oleh:** `server/handlers/websocket`
-**Menggunakan:** —
+**Digunakan oleh:** —
+**Menggunakan:** `server/middleware/traffic`
+
+
+---
+
+**File:** `server/middleware/traffic.py`
+**Fungsi:** Centralized aiohttp middleware for HTTP traffic instrumentation (ADR-0010 decision OD-3): assign a short correlation id (req_id) per request, count traffic metrics, and log one summary line per request.
+**Class:** —
+**Function utama:** `traffic_middleware()`
+**Digunakan oleh:** `server/middleware/__init__`
+**Menggunakan:** `core/observability`
 
 
 ---
@@ -1015,7 +1066,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `main()`
 **Digunakan oleh:** —
-**Menggunakan:** `persistence`, `core/state`
+**Menggunakan:** `core/state`, `persistence`
 
 
 ---
@@ -1024,11 +1075,21 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ## bootstrap/
 
 **File:** `bootstrap/maintenance.py`
-**Fungsi:** Stage 3 of application startup: schedule the periodic DB maintenance loop and the MPV connection watchdog as background tasks. Extracted from main.py's `main()` (T2.4) without changing call order.
+**Fungsi:** Stage 3 of application startup: schedule the periodic DB maintenance loop and the MPV connection watchdog as background tasks. Extracted from main.py's `main()` (T2.4) without changing call order. Also schedules the ADR-0010 periodic `[STATUS]` summary log.
 **Class:** —
-**Function utama:** `db_maintenance()`, `schedule_db_maintenance()`, `mpv_watchdog()`, `start_mpv_watchdog()`
+**Function utama:** `db_maintenance()`, `schedule_db_maintenance()`, `mpv_watchdog()`, `start_mpv_watchdog()`, `status_log_task()`, `schedule_status_log()`
 **Digunakan oleh:** `main`
 **Menggunakan:** `bootstrap/services`, `core/state`, `core/task_utils`
+
+
+---
+
+**File:** `bootstrap/power.py`
+**Fungsi:** Acquire a PARTIAL wake-lock via `termux-wake-lock` on startup so the Android/HyperOS scheduler is less likely to freeze the server process when the screen turns off. This is a secondary, best-effort layer — the primary mitigation is the manual OS-level setup documented in docs/CONSTRAINTS.md (Autostart, battery saver exemption, recent-apps lock), since custom OEM power policies (HyperOS/MIUI) can ignore the standard Android wake-lock/notification APIs entirely.
+**Class:** —
+**Function utama:** `acquire_wake_lock()`
+**Digunakan oleh:** `bootstrap/startup_tasks`
+**Menggunakan:** —
 
 
 ---
@@ -1048,7 +1109,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `check_connectivity()`, `run_startup_checks()`
 **Digunakan oleh:** `main`
-**Menggunakan:** `bootstrap/services`, `core/state`, `core/task_utils`
+**Menggunakan:** `bootstrap/power`, `bootstrap/services`, `config`, `core/state`, `core/task_utils`
 
 
 ---
@@ -1056,7 +1117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**96/96** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**102/102** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi 🎉)_

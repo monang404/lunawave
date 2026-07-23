@@ -6,6 +6,7 @@ Purpose:
     incoming commands to the CommandBus after rate-limit enforcement.
 
 Responsibilities:
+    - Reject WebSocket handshakes from cross-origin browser clients (CSWSH).
     - Manage ConnectionManager (connect/disconnect/broadcast to all clients).
     - Route authenticated WS actions to command_bus.execute().
 
@@ -31,11 +32,13 @@ Thread Safety:
 
 import json
 import time
+from urllib.parse import urlparse
 
 import aiohttp
 import structlog
 from aiohttp import web
 
+from core.log_categories import LC_COMMAND, LC_SECURITY, LC_SESSION
 from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
 from server.handlers.setup import handle_setup_admin
@@ -80,10 +83,44 @@ DOWNLOAD_CMDS = {"download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
 
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.handler")
+
+
+def check_ws_origin(request) -> bool:
+    """Validate the Origin header to prevent Cross-Site WebSocket Hijacking (CSWSH).
+
+    Rules:
+    - No Origin header  → allow (non-browser client: curl, Termux, Python script).
+    - Origin present    → parse its host, compare with request.host (case-insensitive).
+    - Mismatch          → deny (cross-origin browser page trying to hijack the socket).
+
+    When behind a reverse proxy / tunnel (ngrok, Cloudflare), the Host header
+    reflects the tunnel domain — Origin must match that same domain.
+    """
+    origin = request.headers.get("Origin", "")
+    if not origin:
+        # Non-browser clients don't send Origin; allow them.
+        return True
+    try:
+        origin_host = urlparse(origin).netloc  # includes port if present
+    except Exception:
+        return False
+    # request.host already contains the correct host:port from the Host header.
+    return origin_host.lower() == request.host.lower()
 
 
 async def ws_handler(request):
+    # Reject cross-origin WebSocket handshakes (CSWSH protection).
+    # Non-browser clients (no Origin header) are still allowed.
+    if not check_ws_origin(request):
+        logger.warning(
+            "ws_handshake_rejected_origin_mismatch",
+            category=LC_SECURITY,
+            origin=request.headers.get("Origin", ""),
+            host=request.host,
+        )
+        return web.Response(status=403, text="Forbidden: cross-origin WebSocket not allowed")
+
     get_playback_controller(request)
     state = get_state(request)
     manager = get_manager(request)
@@ -122,7 +159,9 @@ async def ws_handler(request):
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(
+            "ws_connection_error", category=LC_SESSION, error_type=type(e).__name__, error=str(e)
+        )
     finally:
         manager.disconnect(ws)
 
@@ -140,6 +179,13 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
     now = time.time()
     if action == "auth":
         await handle_auth(ws, data, manager, client_ip, repos, now)
+        return
+
+    if action == "logout":
+        token = data.get("token")
+        if token and repos and repos.sessions:
+            await repos.sessions.delete_session(token)
+        manager.authenticated_connections.discard(ws)
         return
 
     if action == "setup_admin":
@@ -182,7 +228,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
             await handle_cache_command(action, data, ws, repos, manager, state)
     except Exception as e:
-        logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
+        logger.error(
+            "ws_command_handling_failed",
+            category=LC_COMMAND,
+            command_action=action,
+            error_type=type(e).__name__,
+            error=str(e),
+            exc_info=True,
+        )
         try:
             await ws.send_str(
                 json.dumps(
@@ -192,5 +245,10 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
                     }
                 )
             )
-        except Exception:
-            pass
+        except Exception as send_err:
+            logger.debug(
+                "ws_error_reply_send_failed",
+                category=LC_COMMAND,
+                error_type=type(send_err).__name__,
+                error=str(send_err),
+            )

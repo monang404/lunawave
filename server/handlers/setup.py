@@ -32,16 +32,18 @@ Thread Safety:
     Worker thread (async; protected by manager.rl_lock).
 """
 
+import asyncio
 import json
 import sqlite3
 
 import structlog
 from aiohttp import web
 
+from core.log_categories import LC_AUTH
 from core.security import hash_password
 from server.handlers import get_repos
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.setup")
 
 MIN_PASSWORD_LENGTH = 8
 RATE_LIMIT_WINDOW_SEC = 300  # 5 menit -- sama dengan window login_attempts di auth.py
@@ -99,13 +101,16 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             )
             return
 
+        def _record_failure():
+            attempts.append(now)
+            manager.setup_attempts[client_ip] = attempts
+
         username = data.get("username", "")
         password = data.get("password", "")
 
         error = _validate_setup_input(username, password)
         if error:
-            attempts.append(now)
-            manager.setup_attempts[client_ip] = attempts
+            _record_failure()
             await ws.send_str(
                 json.dumps({"type": "setup_status", "data": {"success": False, "message": error}})
             )
@@ -123,7 +128,13 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             # Fallback kegagalan setup (lihat catatan lengkap di except
             # Exception setelah create_admin_account di bawah): DB tidak
             # bisa dibaca sama sekali -> jangan lanjut ke hashing/insert.
-            logger.error("setup_admin_exists_check_failed", client_ip=client_ip, exc_info=True)
+            logger.error(
+                "setup_admin_exists_check_failed",
+                category=LC_AUTH,
+                client_ip=client_ip,
+                exc_info=True,
+            )
+            _record_failure()
             await ws.send_str(
                 json.dumps(
                     {
@@ -137,6 +148,7 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             )
             return
         if already_exists:
+            _record_failure()
             await ws.send_str(
                 json.dumps(
                     {
@@ -147,50 +159,49 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             )
             return
 
-        password_hash = hash_password(password)
-        try:
-            await repos.admin_account.create_admin_account(username.strip(), password_hash)
-        except sqlite3.IntegrityError:
-            # Race condition submit ganda, lapis 2: dua request nyaris
-            # bersamaan lolos cek exists() di atas, tapi UNIQUE constraint
-            # di DB menolak yang kedua -- tidak pernah overwrite diam-diam.
-            await ws.send_str(
-                json.dumps(
-                    {
-                        "type": "setup_status",
-                        "data": {"success": False, "message": _ALREADY_SET_UP_MESSAGE},
-                    }
-                )
-            )
-            return
-        except Exception:
-            # Fallback kegagalan setup: DB corrupt, disk penuh, atau
-            # kegagalan I/O lain di luar dugaan. Penting:
-            # 1. Server TIDAK boleh crash -- exception ditangkap di sini,
-            #    bukan dibiarkan menjalar (WS handler tetap hidup untuk
-            #    client lain, aiohttp app tetap jalan).
-            # 2. Client dapat pesan jelas, TANPA membocorkan detail
-            #    internal (path DB, stack trace) -- detail lengkap hanya
-            #    masuk log server.
-            # 3. INSERT gagal berarti tidak ada row admin_account yang
-            #    tersimpan sama sekali (single atomic statement) -- tidak
-            #    pernah ada akun "kosong" yang bisa login tanpa password.
-            logger.error("setup_admin_failed", client_ip=client_ip, exc_info=True)
-            await ws.send_str(
-                json.dumps(
-                    {
-                        "type": "setup_status",
-                        "data": {
-                            "success": False,
-                            "message": "Gagal menyimpan akun admin. Coba lagi, atau cek log server.",
-                        },
-                    }
-                )
-            )
-            return
+    # Lock dilepas saat hashing yang berat
+    loop = asyncio.get_running_loop()
+    password_hash = await loop.run_in_executor(None, hash_password, password)
 
+    try:
+        await repos.admin_account.create_admin_account(username.strip(), password_hash)
+    except sqlite3.IntegrityError:
+        # Race condition layer 2: dua request sukses melewati layer 1
+        # di atas dan masuk hashing bersamaan. Request yang kalah cepat
+        # commit DB akan kena IntegrityError ini.
+        async with manager.rl_lock:
+            attempts = manager.setup_attempts.get(client_ip, [])
+            attempts = [t for t in attempts if now - t < RATE_LIMIT_WINDOW_SEC]
+            attempts.append(now)
+            manager.setup_attempts[client_ip] = attempts
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "setup_status",
+                    "data": {"success": False, "message": _ALREADY_SET_UP_MESSAGE},
+                }
+            )
+        )
+        return
+    except Exception:
+        logger.error("setup_admin_failed", category=LC_AUTH, client_ip=client_ip, exc_info=True)
+        await ws.send_str(
+            json.dumps(
+                {
+                    "type": "setup_status",
+                    "data": {
+                        "success": False,
+                        "message": "Gagal menyimpan akun admin. Coba lagi, atau cek log server.",
+                    },
+                }
+            )
+        )
+        return
+
+    async with manager.rl_lock:
         manager.setup_attempts.pop(client_ip, None)
-        await ws.send_str(json.dumps({"type": "setup_status", "data": {"success": True}}))
+
+    await ws.send_str(json.dumps({"type": "setup_status", "data": {"success": True}}))
 
 
 async def setup_required(request: web.Request) -> web.Response:
@@ -199,13 +210,15 @@ async def setup_required(request: web.Request) -> web.Response:
     #portal-screen (lihat T-B11.1/T-B11.2). Registrasi route-nya sendiri
     ada di T-B8 (gate websocket.py/app.py)."""
     repos = get_repos(request)
+    if repos.admin_account is None:
+        raise RuntimeError("repos.init() must be called before handling requests")
     try:
         exists = await repos.admin_account.admin_account_exists()
     except Exception:
         # Fallback kegagalan setup: DB corrupt/disk penuh saat startup
         # tidak boleh menjatuhkan seluruh server -- request ini gagal
         # dengan jelas (503), bukan 500 generik/stack trace bocor.
-        logger.error("setup_required_check_failed", exc_info=True)
+        logger.error("setup_required_check_failed", category=LC_AUTH, exc_info=True)
         return web.json_response(
             {"error": "Gagal memeriksa status setup. Cek log server."}, status=503
         )

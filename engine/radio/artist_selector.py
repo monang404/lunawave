@@ -23,16 +23,23 @@ Thread Safety:
     Main thread (async event loop).
 """
 
-import logging
 import random
 
+import structlog
+
+from core.log_categories import LC_RADIO
 from core.ports import ArtistRepositoryPort, LibraryRepositoryPort
 from core.state import AppState
-from engine.radio.radio_config import ARTISTS_PER_BATCH, TRACKS_PER_ARTIST_TARGET
+from engine.radio.radio_config import (
+    ARTISTS_PER_BATCH,
+    BANDIT_QUOTA,
+    EXPLORE_QUOTA,
+    TRACKS_PER_ARTIST_TARGET,
+)
 from engine.radio.track_filter import TrackFilter
 from engine.radio.track_interleaver import interleave_by_artist
 
-_log = logging.getLogger(__name__)
+logger = structlog.get_logger(component="radio.artist_selector")
 
 
 class ArtistSelector:
@@ -57,7 +64,12 @@ class ArtistSelector:
             if self.artists and self.artists.conn:
                 self._seed_artists = await self.artists.get_all_artists()
         except Exception as e:
-            _log.warning(f"Gagal load artis dari DB: {e}")
+            logger.warning(
+                "radio_seed_artists_load_failed",
+                category=LC_RADIO,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
         if not self._seed_artists:
             # Bug #3 fix: pesan error sebut path DB yang benar
@@ -77,23 +89,31 @@ class ArtistSelector:
             ids.add(t.video_id)
         return ids
 
-    async def _sampled_seed_artist(self) -> str | None:
+    async def _sampled_seed_artists(self, k: int) -> list[str]:
         if not self._seed_artists:
-            return None
+            return []
         stats = {}
         if self.artists and getattr(self.artists, "conn", None):
             try:
                 stats = await self.artists.get_reward_stats()
             except Exception as e:
-                _log.warning(f"Gagal ambil reward stats: {e}")
+                logger.warning(
+                    "radio_reward_stats_fetch_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         from engine.radio.artist_bandit import ArtistStat, sample_artists
 
         candidates = [
-            ArtistStat(name=name, alpha=stats.get(name, (1, 1))[0], beta=stats.get(name, (1, 1))[1])
+            ArtistStat(
+                name=name,
+                alpha=float(stats.get(name, (1.0, 1.0))[0]),
+                beta=float(stats.get(name, (1.0, 1.0))[1]),
+            )
             for name in self._seed_artists
         ]
-        picked = sample_artists(candidates, k=1)
-        return picked[0] if picked else None
+        return sample_artists(candidates, k=k)
 
     async def gather_batch(
         self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
@@ -101,18 +121,46 @@ class ArtistSelector:
         limit = max_artists * TRACKS_PER_ARTIST_TARGET
         existing = self.build_exclusion_set()
 
-        if not prioritized_artist and self._seed_artists:
-            prioritized_artist = await self._sampled_seed_artist()
+        seed_artists = []
+        if prioritized_artist:
+            seed_artists.append(prioritized_artist)
+
+        needed = max_artists - len(seed_artists)
+        if needed > 0 and self._seed_artists:
+            bandit_count = min(needed, BANDIT_QUOTA)
+            explore_count = needed - bandit_count
+
+            if bandit_count > 0:
+                sampled = await self._sampled_seed_artists(k=bandit_count)
+                for s in sampled:
+                    if s not in seed_artists:
+                        seed_artists.append(s)
+
+            still_needed = max_artists - len(seed_artists)
+            if still_needed > 0:
+                available_for_explore = list(set(self._seed_artists) - set(seed_artists))
+                if available_for_explore:
+                    explore_picked = random.sample(
+                        available_for_explore, min(still_needed, len(available_for_explore))
+                    )
+                    seed_artists.extend(explore_picked)
 
         if self.library and getattr(self.library, "conn", None):  # Use getattr for safety
             try:
-                artists = [prioritized_artist] if prioritized_artist else None
                 tracks = await self.library.get_random_songs(
-                    limit=limit, exclude_ids=existing, artists=artists
+                    limit=limit,
+                    exclude_ids=existing,
+                    artists=seed_artists if seed_artists else None,
+                    max_per_artist=TRACKS_PER_ARTIST_TARGET,
                 )
                 track_filter = TrackFilter(self.state)
                 filtered_tracks = track_filter.filter_tracks(tracks)
                 return interleave_by_artist(filtered_tracks)
             except Exception as e:
-                _log.warning(f"Gagal mengambil lagu acak dari DB: {e}")
+                logger.warning(
+                    "radio_random_tracks_fetch_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         return []

@@ -40,8 +40,9 @@ import structlog
 from config import LYRICS_API_BASE
 from core.event_bus import EventBus
 from core.events import LyricsUpdatedEvent
+from core.log_categories import LC_EXTERNAL
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="lyrics.fetcher")
 
 from core.state import TrackInfo
 
@@ -159,9 +160,14 @@ class LyricsFetcher:
             # 3. Ultimate Fallback: gunakan pustaka syncedlyrics untuk mencari di Musixmatch, NetEase, dll.
             if not lrc:
                 logger.info(
-                    "lrclib failed. Falling back to syncedlyrics (Musixmatch/NetEase/etc)..."
+                    "lyrics_lrclib_fallback",
+                    category=LC_EXTERNAL,
                 )
-                logger.info(f"syncedlyrics query: {search_query}")
+                logger.info(
+                    "lyrics_syncedlyrics_query",
+                    category=LC_EXTERNAL,
+                    search_query=search_query,
+                )
                 import syncedlyrics  # lazy import — modul besar, hanya dipakai di fallback terakhir ini
 
                 loop = asyncio.get_running_loop()
@@ -170,7 +176,9 @@ class LyricsFetcher:
                         loop.run_in_executor(None, syncedlyrics.search, search_query), timeout=5.0
                     )
                 except TimeoutError:
-                    logger.warning("syncedlyrics timeout (5.0s)")
+                    logger.warning(
+                        "lyrics_syncedlyrics_timeout", category=LC_EXTERNAL, timeout_seconds=5.0
+                    )
                     lrc = None
 
             if self._current_generation == gen:
@@ -182,13 +190,22 @@ class LyricsFetcher:
                     self.state.lyrics_lines = [text for _, text in self.lyrics_data]
                     self.state.lyrics_timestamps = [t for t, _ in self.lyrics_data]
                     await self._bus.publish(LyricsUpdatedEvent())
-                    logger.info(f"Lyrics: fetched {len(self.lyrics_data)} lines")
+                    logger.info(
+                        "lyrics_fetched",
+                        category=LC_EXTERNAL,
+                        line_count=len(self.lyrics_data),
+                    )
                 else:
-                    logger.info("Lyrics: No lyrics found anywhere")
+                    logger.info("lyrics_not_found", category=LC_EXTERNAL)
 
         except Exception as e:
             if self._current_generation == gen:
-                logger.debug(f"Lyrics fetch failed: {e}")
+                logger.debug(
+                    "lyrics_fetch_failed",
+                    category=LC_EXTERNAL,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         finally:
             if self._current_generation == gen:
                 self.state.lyrics_loading = False

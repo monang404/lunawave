@@ -17,15 +17,17 @@ LunaWave adalah aplikasi **self-hosted** — berjalan di mesin pribadi atau serv
 
 ---
 
-## Kandidat Threat (Belum Dianalisis Formal)
+## Kandidat Threat & Status Mitigasi
 
-| Threat | Vektor | Likelihood (Estimasi) |
-|---|---|---|
-| Session token dicuri via XSS | Frontend JS yang inject HTML dari sumber eksternal | Rendah — tidak ada user-generated content |
-| Path traversal via filename download | URL atau nama file dari yt-dlp tidak di-sanitasi | Sedang |
-| Command injection ke yt-dlp/MPV | URL yang mengandung shell metacharacter | Sedang — perlu audit `subprocess` calls |
-| Akses tanpa autentikasi | WebSocket tanpa token valid | Rendah — ada auth layer, perlu audit coverage |
-| Dependency vulnerability | Library Python/npm yang outdated | Sedang — ditangani `pip-audit` di CI |
+| Threat | Vektor | Likelihood (Estimasi) | Status Mitigasi |
+|---|---|---|---|
+| Session token dicuri via DB leak | File DB bocor (backup, misconfig expose) | Rendah | ✅ **Dimitigasi** — token disimpan sebagai SHA-256 hash (bukan plaintext); bocornya DB tidak langsung memberikan sesi aktif |
+| Cross-Site WebSocket Hijacking (CSWSH) | Halaman berbahaya domain lain membuka WS ke server | Rendah | ✅ **Dimitigasi** — `ws_handler` validasi `Origin` header; klien non-browser (tanpa Origin) tetap diizinkan |
+| Session token dicuri via XSS | Frontend JS yang inject HTML dari sumber eksternal | Rendah | ⚠️ Belum dianalisis formal — tidak ada user-generated content, risiko rendah |
+| Path traversal via filename download | URL atau nama file dari yt-dlp tidak di-sanitasi | Sedang | ⚠️ Perlu audit `adapters/ytdlp/downloader.py` |
+| Command injection ke yt-dlp/MPV | URL yang mengandung shell metacharacter | Sedang | ⚠️ Perlu audit `subprocess` calls; yt-dlp dipanggil via Python API, bukan shell |
+| Akses tanpa autentikasi | WebSocket tanpa token valid | Rendah | ✅ Ada auth layer (`require_auth()`), rate limit 5x/5menit per IP |
+| Dependency vulnerability | Library Python/npm yang outdated | Sedang | ⚠️ Ditangani `pip-audit` di CI |
 
 ---
 
@@ -63,6 +65,10 @@ Initial Setup lagi (efeknya logout paksa dari sesi admin lama). Env var
 override (`LUNAWAVE_ADMIN_PASS` / `YTGUI_ADMIN_PASS`, keputusan K4) tetap
 tersedia sebagai jalur non-default terpisah untuk deployment non-interaktif
 — ini bukan mekanisme migrasi, hanya aktif kalau di-set eksplisit.
+
+**Tambahan (PATCH-2026-07-22-166):** setelah patch hashing token, sesi lama
+(yang menyimpan raw token di DB) juga otomatis invalid setelah restart
+server — ini konsekuensi yang diharapkan, bukan regresi.
 
 Detail lengkap keputusan ini bersama K4 (env var override dipertahankan)
 dan K5 (launcher tanpa mekanisme auth sendiri, tombol Reset Password

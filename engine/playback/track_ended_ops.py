@@ -31,10 +31,11 @@ import asyncio
 import structlog
 
 from core.events import LogMessageEvent, QueueUpdatedEvent, TrackEndedEvent
+from core.log_categories import LC_PLAYBACK
 from core.state import AppState, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.track_ended_ops")
 
 # Grace period untuk membedakan event 'stop' basi (dari track lama, akibat
 # transisi mpv.play() yang internally stop dulu track lama) dengan stop asli
@@ -57,7 +58,11 @@ class TrackEndedOps:
     async def on_track_ended(self, event: TrackEndedEvent):
         c = self.controller
         reason = event.reason
-        logger.info(f"[AUTOPLAY] Track ended with reason: {reason}")
+        logger.info(
+            "track_ended",
+            category=LC_PLAYBACK,
+            reason=reason,
+        )
 
         # Build payload for next to prevent double-skip if track changes concurrently
         next_data = {}
@@ -75,7 +80,7 @@ class TrackEndedOps:
     async def _handle_stop(self, next_data: dict):
         c = self.controller
         if c._loading:
-            logger.info("[AUTOPLAY] Ignoring end-file 'stop' during track transition")
+            logger.info("track_end_stop_ignored_during_transition", category=LC_PLAYBACK)
             return
 
         # RACE-FIX: event 'stop' dari mpv untuk track LAMA bisa nyampe telat
@@ -94,7 +99,7 @@ class TrackEndedOps:
         if elapsed <= GRACE_WINDOW_SECONDS:
             await asyncio.sleep(0.35)
             if c.state.status == PlayerStatus.PLAYING:
-                logger.info("[AUTOPLAY] Ignoring stale 'stop' event -- track baru sudah PLAYING")
+                logger.info("track_end_stop_ignored_stale", category=LC_PLAYBACK)
                 return
         if c.state.status not in (PlayerStatus.IDLE,):
             c.state.status = PlayerStatus.IDLE

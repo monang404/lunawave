@@ -15,6 +15,7 @@ Responsibilities:
     serve_stream.
 
 Depends on:
+    - core.mem_stats
     - core.observability
 
 Subscribes to:
@@ -32,10 +33,11 @@ from pathlib import Path
 import structlog
 from aiohttp import web
 
+from core.mem_stats import get_rss_mb
 from core.observability import get_metrics_content
-from server.handlers import get_conn
+from server.handlers import get_conn, get_manager, get_playback_controller, get_server_clock
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="server.http")
 STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
 
@@ -45,19 +47,44 @@ async def serve_index(request):
     return resp
 
 
+async def serve_client(request):
+    resp = web.FileResponse(STATIC_DIR / "client.html")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 async def health_check(request):
     conn = get_conn(request)
     db_status = "connected" if conn else "disconnected"
 
-    pc = request.app.get("playback_controller")
+    pc = get_playback_controller(request)
     mpv_ok = getattr(getattr(pc, "mpv", None), "is_connected", False)
     mpv_status = "connected" if mpv_ok else "not_started"
+
+    # ADR-0010: field tambahan, tidak pernah menggagalkan /health kalau
+    # salah satu sumbernya bermasalah -- fallback None (JSON null).
+    try:
+        server_clock = get_server_clock(request)
+        uptime_seconds = round(server_clock.uptime_seconds, 1)
+    except Exception:
+        uptime_seconds = None
+
+    memory_mb = get_rss_mb()  # sudah fail-safe (None kalau gagal/tidak didukung)
+
+    try:
+        manager = get_manager(request)
+        active_connections = len(manager.active_connections)
+    except Exception:
+        active_connections = None
 
     return web.json_response(
         {
             "status": "ok" if db_status == "connected" else "degraded",
             "db": db_status,
             "mpv": mpv_status,
+            "uptime_seconds": uptime_seconds,
+            "memory_mb": memory_mb,
+            "active_connections": active_connections,
         }
     )
 

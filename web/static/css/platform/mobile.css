@@ -1,10 +1,6 @@
 /* ══ LunaWave mobile.css — Small Screen Overrides ══ */
 
 @media (max-width: 600px) {
-  #tab-home .lyrics-wrap {
-    display: none !important;
-  }
-
   .idle-text-slide {
     font-size: 18px;
     white-space: normal;

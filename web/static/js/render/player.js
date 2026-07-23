@@ -204,16 +204,7 @@ function _renderProgressCore(posOverride) {
     if (store.audio_output === "browser" && typeof getOrInitAudio === "function") {
         const _audioEl = getOrInitAudio();
         if (_audioEl) {
-            if (store.crossfade_enabled && dur > 0) {
-                const remaining = dur - pos;
-                let fadeVol = store.volume / 100;
-                if (remaining <= 2.0 && remaining > 0) {
-                    fadeVol = Math.max(0, fadeVol * (remaining / 2.0));
-                } else if (pos <= 2.0) {
-                    fadeVol = Math.max(0, fadeVol * (pos / 2.0));
-                }
-                _audioEl.volume = fadeVol;
-            } else if (!window.isDraggingVol) {
+            if (!window.isDraggingVol && typeof _fadeIntervals !== "undefined" && !_fadeIntervals[activeAudioIndex]) {
                 _audioEl.volume = Math.max(0, Math.min(1, store.volume / 100));
             }
         }

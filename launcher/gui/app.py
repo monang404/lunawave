@@ -36,7 +36,7 @@ from pathlib import Path
 from launcher import network
 
 # ── Config ────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SERVER_PORT = int(os.environ.get("LUNAWAVE_PORT", os.environ.get("YTGUI_PORT", 8765)))
 PYTHON = sys.executable
 
@@ -177,9 +177,7 @@ class ServerManager(tk.Tk):
         def _show_popup():
             from launcher.gui.popups import show_server_ready_popup
 
-            show_server_ready_popup(
-                self, port, BG, ACCENT, TEXT_1, TEXT_2, GREEN, BORDER, BG_CARD
-            )
+            show_server_ready_popup(self, port, BG, ACCENT, TEXT_1, TEXT_2, GREEN, BORDER, BG_CARD)
 
         self._safe_after(0, _show_popup)
 

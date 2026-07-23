@@ -92,7 +92,7 @@
 }
 
 .mood-energetic .mood-icon {
-  color: #f59e0b;
+  color: var(--fm-warn);
 }
 
 /* Discover List Items */

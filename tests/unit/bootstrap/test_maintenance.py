@@ -21,7 +21,7 @@ Thread Safety:
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -41,8 +41,8 @@ def _reset_context():
 
 @pytest.mark.asyncio
 async def test_schedule_db_maintenance_appends_task():
-    from bootstrap.services import context
     from bootstrap.maintenance import schedule_db_maintenance
+    from bootstrap.services import context
 
     context.repos = MagicMock()
     context.repos.tracks.evict_stale_tracks = AsyncMock(return_value=0)
@@ -60,8 +60,8 @@ async def test_schedule_db_maintenance_appends_task():
 
 @pytest.mark.asyncio
 async def test_db_maintenance_runs_initial_eviction_and_cleanup():
-    from bootstrap.services import context
     from bootstrap.maintenance import db_maintenance
+    from bootstrap.services import context
 
     context.repos = MagicMock()
     context.repos.tracks.evict_stale_tracks = AsyncMock(return_value=3)
@@ -78,8 +78,8 @@ async def test_db_maintenance_runs_initial_eviction_and_cleanup():
 
 @pytest.mark.asyncio
 async def test_start_mpv_watchdog_appends_task():
-    from bootstrap.services import context
     from bootstrap.maintenance import start_mpv_watchdog
+    from bootstrap.services import context
 
     context.mpv = MagicMock()
     context.state = MagicMock()
@@ -96,8 +96,8 @@ async def test_start_mpv_watchdog_appends_task():
 
 @pytest.mark.asyncio
 async def test_mpv_watchdog_sets_error_when_disconnected(monkeypatch):
-    from bootstrap.services import context
     from bootstrap import maintenance
+    from bootstrap.services import context
 
     context.mpv = MagicMock()
     context.mpv.is_available = True
@@ -123,3 +123,82 @@ async def test_mpv_watchdog_sets_error_when_disconnected(monkeypatch):
 
     assert context.state.status == PlayerStatus.ERROR
     assert context.state.error_msg
+
+
+@pytest.mark.asyncio
+async def test_schedule_status_log_appends_task():
+    from bootstrap.maintenance import schedule_status_log
+    from bootstrap.services import context
+
+    schedule_status_log()
+
+    assert len(context.tasks) == 1
+    assert context.tasks[0].get_name() == "status_log"
+
+    for t in context.tasks:
+        t.cancel()
+    await asyncio.gather(*context.tasks, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_status_log_task_logs_summary_line_each_interval(monkeypatch):
+    """ADR-0010 O4.2: with time accelerated (mocked sleep), the loop must
+    run multiple iterations and emit a '[STATUS] ...' line each time,
+    without ever raising."""
+    from bootstrap import maintenance
+
+    call_count = {"n": 0}
+
+    async def _fast_sleep(_seconds):
+        call_count["n"] += 1
+        if call_count["n"] > 3:
+            raise asyncio.CancelledError()
+
+    monkeypatch.setattr(maintenance.asyncio, "sleep", _fast_sleep)
+    monkeypatch.setattr(maintenance, "STATUS_LOG_INTERVAL_SECONDS", 0)
+
+    logged = []
+    fake_logger = MagicMock()
+    fake_logger.info.side_effect = lambda msg, **kwargs: logged.append(msg)
+    # `logger` is bound once at module import time (component=... per L-D1),
+    # not re-fetched per call -- patch the module-level instance directly,
+    # the same pattern used in tests/unit/server/middleware/test_traffic.py,
+    # instead of patching structlog.get_logger (which no longer has any
+    # effect after the logger object already exists).
+    monkeypatch.setattr(maintenance, "logger", fake_logger)
+
+    with pytest.raises(asyncio.CancelledError):
+        await maintenance.status_log_task()
+
+    assert call_count["n"] == 4
+    assert len(logged) == 3
+    assert all(line == "status_snapshot" for line in logged)
+
+
+@pytest.mark.asyncio
+async def test_status_log_task_never_crashes_when_all_sources_fail(monkeypatch):
+    """Fail-safe: even if RAM read, uptime, and metric collection all raise,
+    the loop must keep running (only the cancellation from sleep() should
+    stop it), never propagate an unrelated exception."""
+    from bootstrap import maintenance
+
+    call_count = {"n": 0}
+
+    async def _fast_sleep(_seconds):
+        call_count["n"] += 1
+        if call_count["n"] > 1:
+            raise asyncio.CancelledError()
+
+    monkeypatch.setattr(maintenance.asyncio, "sleep", _fast_sleep)
+
+    with (
+        patch("core.mem_stats.get_rss_mb", side_effect=Exception("boom")),
+        patch(
+            "core.server_clock.ServerClock.uptime_seconds",
+            new_callable=lambda: property(lambda self: (_ for _ in ()).throw(Exception("boom"))),
+        ),
+    ):
+        with pytest.raises(asyncio.CancelledError):
+            await maintenance.status_log_task()
+
+    assert call_count["n"] == 2

@@ -118,7 +118,8 @@ async def test_init_core_services_wires_and_returns_context(
 
 
 @pytest.mark.asyncio
-async def test_init_mpv_success_sets_ready_event():
+@patch("bootstrap.services.shutil.which", return_value="/usr/bin/mpv")
+async def test_init_mpv_success_sets_ready_event(mock_which):
     from bootstrap.services import _init_mpv, context
 
     context.state = MagicMock()
@@ -188,7 +189,8 @@ async def test_seed_admin_account_from_env_creates_account_when_table_empty():
 
 
 @pytest.mark.asyncio
-async def test_init_mpv_failure_sets_error_state_and_ready_event():
+@patch("bootstrap.services.shutil.which", return_value="/usr/bin/mpv")
+async def test_init_mpv_failure_sets_error_state_and_ready_event(mock_which):
     from bootstrap.services import _init_mpv, context
 
     context.state = MagicMock()

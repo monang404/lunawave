@@ -46,11 +46,14 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from typing import Any
+
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from persistence.discover_enrich import enrich_artists
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.discover")
 
 
 class DiscoverRepository:
@@ -89,7 +92,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (limit,)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting bandit ranked artists: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="bandit_ranked_artists",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -116,7 +125,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (limit,)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting unheard artists: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="unheard_artists",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -159,7 +174,13 @@ class DiscoverRepository:
             async with self._conn.execute(query) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting taste spectrum: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="taste_spectrum",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return rows
@@ -198,7 +219,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (genre_name, limit)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting genre artists enriched: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="genre_artists_enriched",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -210,48 +237,9 @@ class DiscoverRepository:
         decade: int | None = None,
         limit: int = 20,
     ) -> list[dict]:
-        """Quick Search Discover: cari lagu berdasarkan judul/nama artis,
-        dengan matching ala mesin pencari (tokenized, bukan harus frasa
-        eksak) dan cakupan gabungan 2 sumber data, dengan filter opsional
-        kategori (Solo/Band, K1) dan/atau dekade (K2).
-
-        Kenapa 2 sumber (BUG: sebelumnya cuma `tracks`, lihat
-        PATCH-2026-07-19 investigasi "1 artis harusnya 10 lagu, kok cuma
-        muncul 1"):
-        - `tracks`: cache/history video yang SUDAH pernah diputar/dicoba
-          resolve. `tracks.artist` diisi dari uploader/channel YouTube
-          (lihat adapters/ytdlp/searcher.py: artist=entry.get("uploader")),
-          BUKAN nama artis kanonik -- best-effort, bisa meleset kalau video
-          diunggah ulang channel lain.
-        - `songs` JOIN `artists`: katalog kurasi per-artis (artist_id FK
-          reliable ke artists.id) -- sumber yang sama dipakai
-          get_artist_detail() untuk nampilin "hingga 10 lagu" per artis.
-          Banyak lagu di sini BELUM PERNAH di-cache ke `tracks` (belum
-          pernah diputar), jadi tanpa sumber ini search cuma nemu sebagian
-          kecil dari katalog yang sebenarnya ada.
-        Baris dengan video_id yang sama di kedua sumber: versi `tracks`
-        dipakai (metadata lebih lengkap -- duration/view_count real,
-        is_favorite, is_cached), versi `songs` di-skip.
-
-        Kenapa tokenized (bukan LIKE frasa utuh seperti sebelumnya): query
-        dipecah per kata, tiap kata wajib match (AND) di title ATAU artist,
-        tapi urutan/posisi antar kata bebas -- supaya "fals iwan" tetap
-        ketemu "Iwan Fals", dan satu kata yang typo di tengah frasa panjang
-        tidak menggagalkan seluruh frasa seperti model lama.
-
-        Untuk kategori/decade: filter pada bagian `songs` JOIN langsung ke
-        `artists` (reliable). Filter pada bagian `tracks` tetap best-effort
-        subquery by nama seperti sebelumnya (keterbatasan sama seperti
-        get_taste_spectrum(), tracks.artist bukan FK ke artists.id).
-
-        Ranking: hasil yang match FRASA UTUH (bukan cuma token terpisah)
-        diprioritaskan di atas hasil token-only match, baru diurut
-        alfabetis di dalam masing-masing kelompok. Tidak ada skor
-        relevansi yang lebih canggih (mis. typo-tolerance/FTS5) di layer
-        ini -- kalau nanti dibutuhkan, itu perluasan terpisah, bukan bagian
-        patch ini (hindari 2 refactor sekaligus, lihat AI_CONTEXT.md).
-
-        Return [] untuk query kosong/whitespace-only, tanpa query DB.
+        """Quick Search Discover: cari lagu menggunakan FTS5 (Full-Text Search)
+        untuk pencarian berkecepatan tinggi, paralel, dan otomatis merangking
+        hasil berbasis relevansi bm25.
         """
         if not self._conn:
             return []
@@ -264,17 +252,19 @@ class DiscoverRepository:
         if not tokens:
             return []
 
-        def _token_conditions(title_col: str, artist_col: str) -> tuple[list[str], list]:
-            conds: list[str] = []
-            params: list = []
-            for tok in tokens:
-                pat = f"%{tok}%"
-                conds.append(f"({title_col} LIKE ? OR {artist_col} LIKE ?)")
-                params.extend([pat, pat])
-            return conds, params
+        import re
+
+        safe_tokens = [re.sub(r"[^\w\s]", "", t) for t in tokens]
+        safe_tokens = [t for t in safe_tokens if t]
+        if not safe_tokens:
+            return []
+
+        match_query = " ".join([f'"{t}"*' for t in safe_tokens])
 
         # --- Sumber 1: tracks (cache/history, metadata lengkap) ---
-        track_conds, track_params = _token_conditions("t.title", "t.artist")
+        track_conds = ["tracks_fts MATCH ?"]
+        track_params: list[Any] = [match_query]
+
         if kategori:
             track_conds.append("t.artist IN (SELECT nama FROM artists WHERE kategori = ?)")
             track_params.append(kategori)
@@ -289,17 +279,21 @@ class DiscoverRepository:
             track_params.extend([decade, decade + 10])
 
         sql_tracks = f"""
-            SELECT video_id, title, artist, duration, thumbnail,
-                   local_path, view_count, is_favorite
-            FROM tracks t
+            SELECT t.video_id, t.title, t.artist, t.duration, t.thumbnail,
+                   t.local_path, t.view_count, t.is_favorite,
+                   bm25(tracks_fts) AS rank
+            FROM tracks_fts fts
+            JOIN tracks t ON t.rowid = fts.rowid
             WHERE {" AND ".join(track_conds)}
-            ORDER BY t.title ASC
+            ORDER BY rank
             LIMIT ?
         """
         track_params_full = track_params + [limit]
 
         # --- Sumber 2: songs JOIN artists (katalog kurasi) ---
-        song_conds, song_params = _token_conditions("s.judul", "a.nama")
+        song_conds = ["songs_fts MATCH ?"]
+        song_params: list[Any] = [match_query]
+
         if kategori:
             song_conds.append("a.kategori = ?")
             song_params.append(kategori)
@@ -311,22 +305,36 @@ class DiscoverRepository:
 
         sql_songs = f"""
             SELECT s.youtube_id AS video_id, s.judul AS title, a.nama AS artist,
-                   s.duration AS duration
-            FROM songs s
+                   s.duration AS duration,
+                   bm25(songs_fts) AS rank
+            FROM songs_fts fts
+            JOIN songs s ON s.id = fts.rowid
             JOIN artists a ON a.id = s.artist_id
             WHERE {" AND ".join(song_conds)}
-            ORDER BY s.judul ASC
+            ORDER BY rank
             LIMIT ?
         """
         song_params_full = song_params + [limit]
 
         try:
-            async with self._conn.execute(sql_tracks, track_params_full) as cursor:
-                track_rows = [dict(r) for r in await cursor.fetchall()]
-            async with self._conn.execute(sql_songs, song_params_full) as cursor:
-                song_rows = [dict(r) for r in await cursor.fetchall()]
+            import asyncio
+
+            async def _fetch_tracks():
+                async with self._conn.execute(sql_tracks, track_params_full) as cursor:
+                    return [dict(r) for r in await cursor.fetchall()]
+
+            async def _fetch_songs():
+                async with self._conn.execute(sql_songs, song_params_full) as cursor:
+                    return [dict(r) for r in await cursor.fetchall()]
+
+            track_rows, song_rows = await asyncio.gather(_fetch_tracks(), _fetch_songs())
         except Exception as e:
-            logger.error(f"Error searching tracks: {e}")
+            logger.error(
+                "search_tracks_query_failed",
+                category=LC_PERSISTENCE,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         # --- Gabung + dedup (tracks menang atas songs untuk video_id sama) ---
@@ -341,6 +349,7 @@ class DiscoverRepository:
                 "local_path": r["local_path"],
                 "view_count": r["view_count"],
                 "is_favorite": r["is_favorite"],
+                "rank": r["rank"],
             }
         for r in song_rows:
             if r["video_id"] in merged:
@@ -354,18 +363,24 @@ class DiscoverRepository:
                 "local_path": None,
                 "view_count": None,
                 "is_favorite": 0,
+                "rank": r["rank"],
             }
 
-        # --- Ranking: frasa utuh > token-only, lalu alfabetis ---
+        # --- Ranking: frasa utuh > token-only, lalu bm25 rank ---
         full_phrase = q.lower()
 
         def _sort_key(row: dict):
             title_l = (row["title"] or "").lower()
             artist_l = (row["artist"] or "").lower()
             is_phrase_match = full_phrase in title_l or full_phrase in artist_l
-            return (0 if is_phrase_match else 1, title_l)
+            return (0 if is_phrase_match else 1, row["rank"])
 
         rows = sorted(merged.values(), key=_sort_key)
+
+        # Bersihkan field rank internal
+        for r in rows:
+            r.pop("rank", None)
+
         return rows[:limit]
 
     async def get_artist_detail(self, nama: str) -> dict | None:
@@ -382,7 +397,13 @@ class DiscoverRepository:
             ) as cursor:
                 artist_row = await cursor.fetchone()
         except Exception as e:
-            logger.error(f"Error getting artist detail: {e}")
+            logger.error(
+                "artist_detail_query_failed",
+                category=LC_PERSISTENCE,
+                artist_name=nama,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return None
 
         if not artist_row:
@@ -404,7 +425,13 @@ class DiscoverRepository:
             ) as cursor:
                 song_rows = await cursor.fetchall()
         except Exception as e:
-            logger.error(f"Error getting artist detail songs: {e}")
+            logger.error(
+                "artist_detail_songs_query_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist["nama"],
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             song_rows = []
 
         detail["songs"] = [

@@ -29,8 +29,8 @@ from dataclasses import dataclass
 @dataclass
 class ArtistStat:
     name: str
-    alpha: int = 1  # jumlah selesai (+prior)
-    beta: int = 1  # jumlah skip (+prior)
+    alpha: float = 1.0  # jumlah selesai (+prior)
+    beta: float = 1.0  # jumlah skip (+prior)
 
 
 def sample_artists(candidates: list[ArtistStat], k: int) -> list[str]:

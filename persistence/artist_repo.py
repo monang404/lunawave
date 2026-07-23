@@ -22,14 +22,16 @@ Thread Safety:
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.artist_repo")
 
 
 class ArtistRepository:
     def __init__(self, conn):
         self._conn = conn
+        self._reward_cache: dict[str, tuple[float, float]] | None = None
 
     @property
     def conn(self):
@@ -45,7 +47,13 @@ class ArtistRepository:
             )
             await self._conn.commit()
         except Exception as e:
-            logger.error(f"Error incrementing artist click: {e}")
+            logger.error(
+                "artist_click_increment_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def get_all_artists(self, kategori: str | None = None) -> list[str]:
         if kategori:
@@ -90,12 +98,21 @@ class ArtistRepository:
             return
         try:
             await self._conn.execute(
-                "UPDATE artists SET reward_alpha = COALESCE(reward_alpha, 1) + 1 WHERE nama = ?",
+                "UPDATE artists SET reward_alpha = (COALESCE(reward_alpha, 1) * 0.98) + 1, reward_beta = COALESCE(reward_beta, 1) * 0.98 WHERE nama = ?",
                 (artist_name,),
             )
             await self._conn.commit()
+            if self._reward_cache is not None:
+                a, b = self._reward_cache.get(artist_name, (1.0, 1.0))
+                self._reward_cache[artist_name] = ((a * 0.98) + 1.0, b * 0.98)
         except Exception as e:
-            logger.error(f"Error recording completion: {e}")
+            logger.error(
+                "artist_reward_completion_record_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def record_skip(self, artist_name: str) -> None:
         """Track skip dini — reward negatif untuk bandit."""
@@ -103,18 +120,34 @@ class ArtistRepository:
             return
         try:
             await self._conn.execute(
-                "UPDATE artists SET reward_beta = COALESCE(reward_beta, 1) + 1 WHERE nama = ?",
+                "UPDATE artists SET reward_alpha = COALESCE(reward_alpha, 1) * 0.98, reward_beta = (COALESCE(reward_beta, 1) * 0.98) + 1 WHERE nama = ?",
                 (artist_name,),
             )
             await self._conn.commit()
+            if self._reward_cache is not None:
+                a, b = self._reward_cache.get(artist_name, (1.0, 1.0))
+                self._reward_cache[artist_name] = (a * 0.98, (b * 0.98) + 1.0)
         except Exception as e:
-            logger.error(f"Error recording skip: {e}")
+            logger.error(
+                "artist_reward_skip_record_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
-    async def get_reward_stats(self) -> dict[str, tuple[int, int]]:
-        """Ambil {nama_artis: (alpha, beta)} untuk semua artis."""
+    async def get_reward_stats(self) -> dict[str, tuple[float, float]]:
+        """Ambil {nama_artis: (alpha, beta)} untuk semua artis.
+        Di-cache di in-memory untuk mencegah full-table scan DB setiap radio batch refill.
+        """
+        if self._reward_cache is not None:
+            return self._reward_cache
+
         if not self._conn:
             return {}
         query = "SELECT nama, COALESCE(reward_alpha, 1) as a, COALESCE(reward_beta, 1) as b FROM artists"
         async with self._conn.execute(query) as cursor:
             rows = await cursor.fetchall()
-        return {row["nama"]: (row["a"], row["b"]) for row in rows}
+
+        self._reward_cache = {row["nama"]: (float(row["a"]), float(row["b"])) for row in rows}
+        return self._reward_cache

@@ -23,6 +23,7 @@ LunaWave adalah proyek open source self-hosted. Jika menemukan vulnerability:
 | Akses file di luar `cache/mp3/` | Vulnerability di MPV atau yt-dlp itu sendiri |
 | Hardcoded credentials | Serangan yang butuh akses fisik ke server |
 | Path traversal via URL/filename | |
+| Cross-Site WebSocket Hijacking (CSWSH) | |
 
 ---
 
@@ -67,7 +68,7 @@ htmlcov/
 
 ```bash
 # Bandit — static analysis untuk security issue Python
-bandit -r lunawave/ -c pyproject.toml
+bandit -r . -c pyproject.toml
 
 # pip-audit — cek vulnerability di dependencies
 pip-audit -r requirements.txt
@@ -79,51 +80,61 @@ Kedua tool sudah terintegrasi di CI — lihat → [../devops/ci_cd.md](../devops
 
 ## Autentikasi WebSocket
 
-LunaWave menggunakan token-based auth untuk WebSocket. Hal yang harus dijaga:
+LunaWave menggunakan token-based auth untuk WebSocket.
 
-- Token di-generate dengan entropi cukup (`secrets.token_urlsafe(32)`)
-- Token tidak di-log dalam bentuk plaintext
-- Session expired menggunakan **waktu absolut** (bukan monotonic clock) — lihat ADR-0004
-- `ADMIN_ONLY_ACTIONS` harus mencakup semua command yang bersifat destruktif
+### Alur Autentikasi
+
+1. Client kirim `{"type": "cmd", "action": "auth", "data": {"username": "...", "password": "..."}}` via WS
+2. Server verifikasi password dengan PBKDF2-SHA256 (100k iterasi, via `core.security.verify_password`)
+3. Jika sukses, server issue token: `secrets.token_hex(16)` (128-bit entropy)
+4. Token **di-hash dengan SHA-256** sebelum disimpan di tabel `sessions` — raw token tidak pernah masuk DB
+5. Client simpan token; kirim ulang sebagai `{"token": "..."}` untuk sesi berikutnya
+6. Server hash token yang diterima → bandingkan dengan hash di DB (constant-time compare)
+
+### Hal yang Harus Dijaga
+
+- Token di-generate dengan entropi cukup (`secrets.token_hex(16)` = 128-bit)
+- Token **tidak di-log** dalam bentuk plaintext
+- Token di-hash SHA-256 sebelum disimpan di DB — bocornya DB tidak langsung memberikan akses
+- Session expired menggunakan **waktu absolut** (Unix timestamp), bukan monotonic clock
+- Rate limit 5x/5 menit per IP untuk percobaan password
 
 ```python
-# Contoh yang benar
-import secrets
-token = secrets.token_urlsafe(32)
+# Implementasi aktual (core/security.py)
+import hashlib, secrets
+
+# Hash password (simpan di admin_account)
+hash_password(password)   # PBKDF2-SHA256, 100k iterasi, random salt
+
+# Issue & hash token (simpan di sessions)
+token = secrets.token_hex(16)        # raw token → kirim ke client
+hash_token(token)                    # SHA-256 → simpan di DB
+
+# Verifikasi token dari client
+verify_token(raw_token, stored_hash) # constant-time compare
 
 # Yang harus dihindari
 import time
 expiry = time.monotonic() + 3600  # ← BUG: monotonic tidak valid sebagai timestamp absolut
 ```
 
+### Perlindungan CSWSH (Cross-Site WebSocket Hijacking)
+
+`ws_handler` memvalidasi header `Origin` sebelum `ws.prepare()` (implementasi di `server/handlers/websocket.py`):
+
+- Tidak ada `Origin` header → diizinkan (klien non-browser: curl, Termux, Python script)
+- `Origin` ada, host cocok dengan `Host` header → diizinkan
+- `Origin` ada, host **tidak cocok** → ditolak `HTTP 403` sebelum koneksi WS terbuka
+
+Ini penting karena README merekomendasikan expose server via tunnel (ngrok/Cloudflare).
+
 ---
 
 ## `SECURITY.md` (Root Repo)
 
-File `SECURITY.md` di root repo adalah standar GitHub untuk disclosure policy. Harus dibuat sebelum repo dipublikasi.
+> **Status:** ✅ Sudah ada di root repo.
 
-**Isi minimal:**
-
-```markdown
-# Security Policy
-
-## Supported Versions
-
-| Version | Supported |
-|---|---|
-| latest | ✅ |
-
-## Reporting a Vulnerability
-
-Please do not report security vulnerabilities through public GitHub issues.
-
-Send a report to [email/GitHub Security Advisory link].
-
-We will respond within 72 hours and aim to release a fix within 14 days
-for critical vulnerabilities.
-```
-
-> **Status:** ❌ Belum ada. Buat sebelum repo dipublikasi.
+File `SECURITY.md` di root repo mengikuti standar GitHub untuk disclosure policy.
 
 ---
 
@@ -133,4 +144,4 @@ for critical vulnerabilities.
 - Bandit config → [../devops/tooling.md](../devops/tooling.md)
 - CI security audit → [../devops/ci_cd.md](../devops/ci_cd.md)
 - Open source readiness checklist → [../opensource/readiness.md](../opensource/readiness.md)
-- ADR autentikasi → [../adr/0004-command-bus-single-writer.md](../adr/0004-command-bus-single-writer.md)
+- ADR autentikasi & kredensial admin → [../adr/0008-admin-credentials-in-sqlite.md](../adr/0008-admin-credentials-in-sqlite.md)

@@ -22,6 +22,7 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from adapters.ytdlp.downloader import YtDlpDownloader
@@ -29,11 +30,33 @@ from adapters.ytdlp.resolver import YtDlpResolver
 from adapters.ytdlp.searcher import YtDlpSearcher
 
 
+def _set_worker_priority():
+    """ThreadPoolExecutor initializer -- jalan sekali per worker thread saat
+    thread itu pertama kali dibuat (bukan per job). Menurunkan prioritas CPU
+    worker yt-dlp (search/extract/resolve/download, semua dibungkus lewat
+    executor yang sama) supaya tidak bersaing dengan playback MPV.
+
+    Pakai os.setpriority(PRIO_PROCESS, 0, N) -- ABSOLUT, bukan os.nice() yang
+    relatif/kumulatif (PD-6b) -- walau di sini sudah cukup sekali per thread
+    lifetime lewat initializer, tetap absolut supaya aman kalau titik
+    pemanggilan ini nanti berubah. Fail-safe: AttributeError (platform tidak
+    dukung) / PermissionError (tidak diizinkan) ditelan diam-diam, tidak
+    pernah raise -- initializer yang raise akan membuat seluruh worker
+    thread gagal dibuat.
+    """
+    if os.name == "nt":
+        return
+    try:
+        os.setpriority(os.PRIO_PROCESS, 0, 10)
+    except (AttributeError, PermissionError):
+        pass
+
+
 class YtDlpClient:
     """Facade — API identik dengan engine/ytdlp_client.py lama."""
 
     def __init__(self):
-        self._executor = ThreadPoolExecutor(max_workers=4)
+        self._executor = ThreadPoolExecutor(max_workers=4, initializer=_set_worker_priority)
         self._searcher = YtDlpSearcher(self._executor)
         self._resolver = YtDlpResolver(self._executor)
         self._downloader = YtDlpDownloader(self._executor)

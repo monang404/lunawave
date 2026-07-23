@@ -2,11 +2,15 @@
 Module: core.security
 
 Purpose:
-    Provide PBKDF2-SHA256 password hashing and constant-time verification.
+    Provide PBKDF2-SHA256 password hashing, constant-time verification,
+    and SHA-256 session token hashing.
 
 Responsibilities:
     - Hash a plaintext password with a random 16-byte salt.
     - Verify a plaintext password against a stored pbkdf2 hash string.
+    - Hash a session token (SHA-256, no salt needed — token entropy is already
+      128-bit from secrets.token_hex(16)) before storing in the DB.
+    - Verify a raw session token against a stored SHA-256 digest.
 
 Depends on:
     None
@@ -48,3 +52,18 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return secrets.compare_digest(key, expected_key)
     except Exception:
         return False
+
+
+def hash_token(token: str) -> str:
+    """Hash a session token with SHA-256 for storage in the DB.
+
+    Session tokens are generated via secrets.token_hex(16) (128-bit entropy),
+    so a single-pass SHA-256 without salt is sufficient — no PBKDF2 needed.
+    Returns a 64-character hex digest.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def verify_token(token: str, token_hash: str) -> bool:
+    """Constant-time comparison of a raw token against its stored SHA-256 hash."""
+    return secrets.compare_digest(hash_token(token), token_hash)

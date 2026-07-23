@@ -21,14 +21,16 @@ Thread Safety:
 """
 
 import asyncio
-import logging
 import re
+
+import structlog
 
 from adapters.ytdlp.ydl_options import YDL_OPTS_INFO, YDL_OPTS_INFO_FALLBACK
 from config import YTDLP_RESOLVE_TIMEOUT_SEC
 from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
+from core.log_categories import LC_RESOLVE
 
-_log = logging.getLogger(__name__)
+logger = structlog.get_logger(component="ytdlp.resolver")
 
 # PATCH-2026-07-20-136: klasifikasi pesan error yt-dlp. yt-dlp tidak punya
 # exception class terpisah per jenis kegagalan -- semuanya
@@ -71,8 +73,11 @@ class YtDlpResolver:
         try:
             return await self._resolve_once(video_id, YDL_OPTS_INFO)
         except TimeoutError:
-            _log.error(
-                f"get_stream_url timed out after {YTDLP_RESOLVE_TIMEOUT_SEC}s for {video_id}"
+            logger.error(
+                "stream_resolve_timeout",
+                category=LC_RESOLVE,
+                video_id=video_id,
+                timeout_sec=YTDLP_RESOLVE_TIMEOUT_SEC,
             )
             raise RuntimeError(
                 f"Timeout ({YTDLP_RESOLVE_TIMEOUT_SEC}s) saat mengambil stream URL untuk {video_id}"
@@ -85,9 +90,11 @@ class YtDlpResolver:
                 # Percobaan kedua dengan player client berbeda sebelum
                 # benar-benar menyerah -- ini sering cukup untuk lolos
                 # bot-check tanpa perlu cookies/login akun.
-                _log.warning(
-                    f"Bot-check terdeteksi untuk {video_id}, mencoba ulang dengan "
-                    f"player client fallback (android)..."
+                logger.warning(
+                    "stream_resolve_bot_check_retry",
+                    category=LC_RESOLVE,
+                    video_id=video_id,
+                    fallback_client="android",
                 )
                 try:
                     return await self._resolve_once(video_id, YDL_OPTS_INFO_FALLBACK)
@@ -97,12 +104,30 @@ class YtDlpResolver:
                     ) from None
                 except Exception as e2:
                     classified2 = classify_ytdlp_error(video_id, e2) or classified
-                    _log.error(f"Fallback player client juga gagal untuk {video_id}: {classified2}")
+                    logger.error(
+                        "stream_resolve_fallback_failed",
+                        category=LC_RESOLVE,
+                        video_id=video_id,
+                        error_type=type(classified2).__name__,
+                        error=str(classified2),
+                    )
                     raise classified2 from e2
             if classified:
-                _log.error(f"get_stream_url failed for {video_id}: {classified}")
+                logger.error(
+                    "stream_resolve_failed",
+                    category=LC_RESOLVE,
+                    video_id=video_id,
+                    error_type=type(classified).__name__,
+                    error=str(classified),
+                )
                 raise classified from e
-            _log.error(f"get_stream_url failed for {video_id}: {type(e).__name__}: {e}")
+            logger.error(
+                "stream_resolve_failed",
+                category=LC_RESOLVE,
+                video_id=video_id,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             raise RuntimeError(f"Gagal mengambil stream URL untuk {video_id}: {e}") from e
 
     async def _resolve_once(self, video_id: str, opts: dict) -> str:

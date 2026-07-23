@@ -218,26 +218,10 @@
                         <div class="main-ctrl">
                             <button class="btn-shuffle" aria-label="Shuffle" id="btn-shuffle"><i
                                     class="ti ti-arrows-shuffle" aria-hidden="true"></i></button>
-                            <button class="btn-prev" aria-label="Previous" id="btn-prev"><svg
-                                    class="svg-filled-icon player-icon-svg" xmlns="http://www.w3.org/2000/svg"
-                                    width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                    <path
-                                        d="M19.496 4.136l-12 7a1 1 0 0 0 0 1.728l12 7a1 1 0 0 0 1.504 -.864v-14a1 1 0 0 0 -1.504 -.864z" />
-                                    <path
-                                        d="M4 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" />
-                                </svg>
-                            </button>
+                            <button class="btn-prev" aria-label="Previous" id="btn-prev"><i class="ti ti-player-track-prev" aria-hidden="true"></i></button>
                             <button class="btn-play" aria-label="Play/Pause" id="btn-play"><i class="ti ti-player-play"
                                     style="font-size:15px;color:#fff" aria-hidden="true"></i></button>
-                            <button class="btn-next" aria-label="Next" id="btn-next"><svg
-                                    class="svg-filled-icon player-icon-svg" xmlns="http://www.w3.org/2000/svg"
-                                    width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                    <path
-                                        d="M3 5v14a1 1 0 0 0 1.504 .864l12 -7a1 1 0 0 0 0 -1.728l-12 -7a1 1 0 0 0 -1.504 .864z" />
-                                    <path
-                                        d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" />
-                                </svg>
-                            </button>
+                            <button class="btn-next" aria-label="Next" id="btn-next"><i class="ti ti-player-track-next" aria-hidden="true"></i></button>
                             <button class="btn-repeat" aria-label="Repeat" id="btn-repeat"><i class="ti ti-repeat"
                                     aria-hidden="true"></i></button>
                         </div>
@@ -524,30 +508,19 @@
         <!-- ═══ Navigation Bar ═══ -->
         <nav class="navrow" id="nav-bar" role="tablist">
             <button class="nav-btn" data-tab="home" id="nav-home" role="tab" aria-selected="false">
-                <svg class="svg-filled-icon nav-icon-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                    viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l-10 9l1.5 1.5l1.5 -1.3v9.8h6v-6h4v6h6v-9.8l1.5 1.3l1.5 -1.5z" />
-                </svg>
+                <i class="ti ti-home" aria-hidden="true"></i>
                 <span>Home</span>
             </button>
             <button class="nav-btn" data-tab="search" id="nav-search" role="tab" aria-selected="false">
                 <i class="ti ti-search" aria-hidden="true"></i><span>Search</span>
             </button>
             <button class="nav-btn" data-tab="radio" id="nav-radio" role="tab" aria-selected="false">
-                <svg class="svg-filled-icon nav-icon-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                    viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M20 6H8.3l8.26-3.34L15.88 1 3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-13 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm11 8h-8v-2h8v2zm0-4h-8v-2h8v2z" />
-                </svg>
+                <i class="ti ti-radio" aria-hidden="true"></i>
                 <span>Radio</span>
             </button>
 
             <button class="nav-btn" data-tab="discover" id="nav-discover" role="tab" aria-selected="false">
-                <svg class="svg-filled-icon nav-icon-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                    viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z" />
-                </svg>
+                <i class="ti ti-compass" aria-hidden="true"></i>
                 <span>Discover</span>
             </button>
         </nav>

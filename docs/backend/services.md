@@ -59,6 +59,7 @@ Sub-modul:
 | `queue_ops.py` | Operasi queue level-rendah dipakai `queue_controller.py` |
 | `crossfade.py` | Logic crossfade (fade in/out volume) |
 | `track_ended_ops.py` | Penanganan saat track selesai diputar |
+| `failure_ops.py` | Penanganan gagal load / error track (skip, retry, mark unavailable) |
 
 ⚠️ File ini di-freeze dari perubahan struktural tanpa izin eksplisit — lihat `AI_CONTEXT.md`.
 
@@ -103,11 +104,11 @@ Sub-modul:
 |---|---|---|
 | `engine.py` | `RadioMode` — lifecycle (`on_activated`/`on_deactivated`), `next`, `_start`, `_fetch_and_play_initial` (tombol Acak) | |
 | `prefetcher.py` (`RadioPrefetcher`) | Standby prefetch batch berikutnya secara background | Async task |
-| `artist_selector.py` (`ArtistSelector`) | `gather_batch()` pilih artis + lagu, terapkan `TrackFilter` | |
+| `artist_selector.py` (`ArtistSelector`) | `gather_batch()` pilih artis via bandit (BANDIT_QUOTA artis) + explore (EXPLORE_QUOTA acak) + ambil lagu, terapkan `TrackFilter` | |
 | `track_filter.py` (`TrackFilter`) | Filter duplikat, recently-played, blacklist | ⚠️ Bug-prone |
 | `track_interleaver.py` | Interleave lagu antar-artis agar tidak menumpuk per-artis | |
 | `artist_bandit.py` | Thompson Sampling reward tracking (dipakai bareng `ArtistRepository.record_completion/record_skip`) | |
-| `radio_config.py` | Konstanta (`ARTISTS_PER_BATCH`, `ARTISTS_QUICK`), helper `track_task` | |
+| `radio_config.py` | Konstanta: `BANDIT_QUOTA` (jumlah artis dari bandit per batch), `EXPLORE_QUOTA` (artis eksplorasi acak), `ARTISTS_PER_BATCH`, `ARTISTS_QUICK`; helper `track_task` | |
 
 Test → `tests/unit/engine/radio/` — `test_track_filter.py` prioritas tertinggi.
 
@@ -173,7 +174,7 @@ Test → `tests/unit/engine/test_volume_service.py`
 
 ### `services/discover_service.py`
 
-`DiscoverService` — wrapper tipis di atas `DiscoverRepository` (lihat [backend/persistence.md](persistence.md#discoverrepository-discover_repopy)), bukan lagi rule-based sederhana di layer service. Method: `get_recent`, `get_favorites`, `get_cached`, `get_featured_artists`, `get_featured_genres`, `get_for_you` (bandit-ranked), `get_unheard`, `get_genre_affinity`, `get_taste_spectrum`, `get_artist_detail`. Detail konsumsi end-to-end (WS handler, frontend) → §Discover Tab Personalization di `STATUS.md`.
+`DiscoverService` — wrapper tipis di atas `DiscoverRepository` (lihat [backend/persistence.md](persistence.md#discoverrepository-discover_repopy)), bukan lagi rule-based sederhana di layer service. Method: `get_recent`, `get_favorites`, `get_cached`, `get_featured_artists`, `get_featured_genres`, `get_for_you` (bandit-ranked), `get_unheard`, `get_genre_affinity`, `get_taste_spectrum`, `get_artist_detail`, `search_tracks` (FTS5 quick search). Detail konsumsi end-to-end (WS handler, frontend) → §Discover Tab Personalization di `STATUS.md`.
 
 Test → `tests/unit/services/test_discover_service.py`
 

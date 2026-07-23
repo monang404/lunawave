@@ -28,6 +28,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from server.app import REPOS
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -111,7 +113,9 @@ class TestHandleSetupAdminSuccess:
         mgr = make_manager()
         repos = make_repos(exists=False)
 
-        with patch("server.handlers.setup.hash_password", return_value="pbkdf2:sha256:hashed") as hp:
+        with patch(
+            "server.handlers.setup.hash_password", return_value="pbkdf2:sha256:hashed"
+        ) as hp:
             await handle_setup_admin(
                 ws,
                 {"username": "admin", "password": "longenough123"},
@@ -165,7 +169,12 @@ class TestHandleSetupAdminDoubleSubmit:
         repos = make_repos(exists=True)
 
         await handle_setup_admin(
-            ws, {"username": "admin", "password": "longenough123"}, mgr, "127.0.0.1", repos, now=1000
+            ws,
+            {"username": "admin", "password": "longenough123"},
+            mgr,
+            "127.0.0.1",
+            repos,
+            now=1000,
         )
 
         repos.admin_account.create_admin_account.assert_not_awaited()
@@ -188,7 +197,12 @@ class TestHandleSetupAdminDoubleSubmit:
         )
 
         await handle_setup_admin(
-            ws, {"username": "admin", "password": "longenough123"}, mgr, "127.0.0.1", repos, now=1000
+            ws,
+            {"username": "admin", "password": "longenough123"},
+            mgr,
+            "127.0.0.1",
+            repos,
+            now=1000,
         )
 
         sent = json.loads(ws.send_str.call_args[0][0])
@@ -274,13 +288,16 @@ class TestHandleSetupAdminFailureFallback:
         ws = make_ws()
         mgr = make_manager()
         repos = make_repos(exists=False)
-        repos.admin_account.create_admin_account = AsyncMock(
-            side_effect=OSError("disk I/O error")
-        )
+        repos.admin_account.create_admin_account = AsyncMock(side_effect=OSError("disk I/O error"))
 
         # Tidak boleh raise -- ini yang membuktikan "server tetap start".
         await handle_setup_admin(
-            ws, {"username": "admin", "password": "longenough123"}, mgr, "127.0.0.1", repos, now=1000
+            ws,
+            {"username": "admin", "password": "longenough123"},
+            mgr,
+            "127.0.0.1",
+            repos,
+            now=1000,
         )
 
         sent = json.loads(ws.send_str.call_args[0][0])
@@ -301,7 +318,12 @@ class TestHandleSetupAdminFailureFallback:
         )
 
         await handle_setup_admin(
-            ws, {"username": "admin", "password": "longenough123"}, mgr, "127.0.0.1", repos, now=1000
+            ws,
+            {"username": "admin", "password": "longenough123"},
+            mgr,
+            "127.0.0.1",
+            repos,
+            now=1000,
         )
 
         repos.admin_account.create_admin_account.assert_not_awaited()
@@ -320,15 +342,12 @@ class TestSetupRequiredEndpointFailureFallback:
             side_effect=sqlite3.OperationalError("database disk image is malformed")
         )
         request = MagicMock()
-        request.app = {"repos": repos}
+        request.app = {REPOS: repos}
 
         resp = await setup_required(request)
 
         assert resp.status == 503
         assert "database disk image" not in json.loads(resp.body)["error"]
-
-
-
 
 
 class TestSetupRequiredEndpoint:
@@ -338,7 +357,7 @@ class TestSetupRequiredEndpoint:
 
         repos = make_repos(exists=False)
         request = MagicMock()
-        request.app = {"repos": repos}
+        request.app = {REPOS: repos}
 
         resp = await setup_required(request)
 
@@ -350,7 +369,7 @@ class TestSetupRequiredEndpoint:
 
         repos = make_repos(exists=True)
         request = MagicMock()
-        request.app = {"repos": repos}
+        request.app = {REPOS: repos}
 
         resp = await setup_required(request)
 

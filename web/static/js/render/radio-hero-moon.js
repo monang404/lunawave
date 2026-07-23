@@ -134,6 +134,11 @@
       currentPhase = (cycleStartPhase + elapsed / CYCLE_SECONDS) % 1;
     }
     render(currentPhase);
+    if (document.hidden) {
+      rafId = null;
+      mode = "idle";
+      return;
+    }
     rafId = requestAnimationFrame(stepCycle);
   }
 
@@ -145,6 +150,11 @@
     currentPhase = (tweenStartPhase + shortestDelta(tweenStartPhase, tweenTargetPhase) * eased + 1) % 1;
     render(currentPhase);
     if (t < 1) {
+      if (document.hidden) {
+        rafId = null;
+        mode = "idle";
+        return;
+      }
       rafId = requestAnimationFrame(stepTween);
     } else {
       mode = "idle";

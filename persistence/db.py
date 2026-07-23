@@ -26,8 +26,9 @@ import aiosqlite
 import structlog
 
 from config import DB_PATH
+from core.log_categories import LC_PERSISTENCE
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.db")
 
 
 class DatabaseConnection:
@@ -35,7 +36,7 @@ class DatabaseConnection:
 
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
-        self._conn = None
+        self._conn: aiosqlite.Connection | None = None
 
     @property
     def conn(self):
@@ -43,13 +44,25 @@ class DatabaseConnection:
 
     async def init(self, schema_path: Path):
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = await aiosqlite.connect(self.db_path)  # type: ignore
-        self._conn.row_factory = aiosqlite.Row  # type: ignore
-        await self._conn.execute("PRAGMA journal_mode=WAL")  # type: ignore
-        with open(schema_path, encoding="utf-8") as f:
-            schema_sql = f.read()
-        await self._conn.executescript(schema_sql)  # type: ignore
+        try:
+            self._conn = await aiosqlite.connect(self.db_path)  # type: ignore
+            self._conn.row_factory = aiosqlite.Row  # type: ignore
+            await self._conn.execute("PRAGMA journal_mode=WAL")  # type: ignore
+            await self._conn.execute("PRAGMA synchronous=NORMAL")  # type: ignore
+            with open(schema_path, encoding="utf-8") as f:
+                schema_sql = f.read()
+            await self._conn.executescript(schema_sql)  # type: ignore
+        except Exception as e:
+            logger.critical(
+                "db_init_failed",
+                category=LC_PERSISTENCE,
+                db_path=str(self.db_path),
+                error_type=type(e).__name__,
+                error=str(e),
+            )
+            raise
         await self._migrate_songs_unique_constraint()
+        await self._backfill_fts5_if_needed()
 
     async def _migrate_songs_unique_constraint(self) -> None:
         """PATCH-2026-07-16-048: `songs.youtube_id` used to be globally UNIQUE,
@@ -60,20 +73,26 @@ class DatabaseConnection:
         letting the same video appear under multiple artists. No-op on a
         fresh DB, since schema.sql already creates the new constraint."""
         conn = self._conn
+        if conn is None:
+            raise RuntimeError("DB not initialised — call init() first")
         try:
             async with conn.execute(
                 "SELECT sql FROM sqlite_master WHERE type='table' AND name='songs'"
             ) as cursor:
                 row = await cursor.fetchone()
         except Exception as e:
-            logger.error("songs_migration_check_failed", error=str(e))
+            logger.error("songs_migration_check_failed", category=LC_PERSISTENCE, error=str(e))
             return
 
         if not row or "youtube_id TEXT NOT NULL" in row[0]:
             # Table doesn't exist yet, or already has the new (non-globally-unique) schema.
             return
 
-        logger.info("songs_migration_starting", reason="global_unique_youtube_id_detected")
+        logger.info(
+            "songs_migration_starting",
+            category=LC_PERSISTENCE,
+            reason="global_unique_youtube_id_detected",
+        )
         try:
             await conn.execute("ALTER TABLE songs RENAME TO songs_old_migration")
             await conn.execute(
@@ -99,10 +118,57 @@ class DatabaseConnection:
             )
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id)")
             await conn.commit()
-            logger.info("songs_migration_completed")
+            logger.info("songs_migration_completed", category=LC_PERSISTENCE)
         except Exception as e:
             await conn.rollback()
-            logger.error("songs_migration_failed", error=str(e), error_type=type(e).__name__)
+            logger.error(
+                "songs_migration_failed",
+                category=LC_PERSISTENCE,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+
+    async def _backfill_fts5_if_needed(self) -> None:
+        """PATCH-2026-07-22: Backfill FTS5 tables with existing data on first run
+        after schema update, ensuring older dbs get indexed."""
+        conn = self._conn
+        if conn is None:
+            raise RuntimeError("DB not initialised — call init() first")
+        try:
+            async with conn.execute("SELECT COUNT(*) FROM tracks") as cursor:
+                tracks_count = (await cursor.fetchone() or (0,))[0]
+            async with conn.execute("SELECT COUNT(*) FROM tracks_fts") as cursor:
+                tracks_fts_count = (await cursor.fetchone() or (0,))[0]
+
+            async with conn.execute("SELECT COUNT(*) FROM songs") as cursor:
+                songs_count = (await cursor.fetchone() or (0,))[0]
+            async with conn.execute("SELECT COUNT(*) FROM songs_fts") as cursor:
+                songs_fts_count = (await cursor.fetchone() or (0,))[0]
+
+            if (tracks_count > 0 and tracks_fts_count == 0) or (
+                songs_count > 0 and songs_fts_count == 0
+            ):
+                logger.info("fts5_backfill_starting", category=LC_PERSISTENCE)
+                await conn.execute("DELETE FROM tracks_fts")
+                await conn.execute(
+                    "INSERT INTO tracks_fts(rowid, video_id, title, artist) "
+                    "SELECT rowid, video_id, title, artist FROM tracks"
+                )
+                await conn.execute("DELETE FROM songs_fts")
+                await conn.execute(
+                    "INSERT INTO songs_fts(rowid, song_id, title, artist) "
+                    "SELECT s.id, s.youtube_id, s.judul, a.nama FROM songs s JOIN artists a ON a.id = s.artist_id"
+                )
+                await conn.commit()
+                logger.info("fts5_backfill_completed", category=LC_PERSISTENCE)
+        except Exception as e:
+            await conn.rollback()
+            logger.error(
+                "fts5_backfill_failed",
+                category=LC_PERSISTENCE,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
 
     async def close(self):
         if self._conn:

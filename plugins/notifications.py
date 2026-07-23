@@ -40,9 +40,10 @@ from config import BASE_DIR
 from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE, command_bus
 from core.event_bus import EventBus
 from core.events import TrackPauseChangedEvent, TrackStartedEvent
+from core.log_categories import LC_SYSTEM
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="system.notifications")
 
 NOTIFICATION_ID = "lunawave_nowplaying"
 _SOCK_DIR = BASE_DIR / "cache" / "sockets"
@@ -73,7 +74,7 @@ class TermuxNowPlaying:
 
     async def start(self):
         if not shutil.which("termux-notification"):
-            logger.info("termux-notification not found, now-playing notification disabled.")
+            logger.info("notification_binary_not_found", category=LC_SYSTEM)
             return
 
         self._available = True
@@ -96,7 +97,12 @@ class TermuxNowPlaying:
                 script_path.chmod(0o755)
                 self._action_paths[token] = str(script_path)
         except OSError as e:
-            logger.warning(f"Failed to set up now-playing notification: {e}")
+            logger.warning(
+                "notification_setup_failed",
+                category=LC_SYSTEM,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             self._available = False
             return
 
@@ -114,7 +120,12 @@ class TermuxNowPlaying:
             except FileNotFoundError:
                 time.sleep(1)
             except Exception as e:
-                logger.warning(f"Now-playing FIFO reader error: {e}")
+                logger.warning(
+                    "notification_fifo_reader_failed",
+                    category=LC_SYSTEM,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
                 time.sleep(1)
 
     async def _handle_token(self, token: str):
@@ -157,6 +168,9 @@ class TermuxNowPlaying:
             self._action_paths["toggle"],
             "--media-next",
             self._action_paths["next"],
+            "--ongoing",
+            "--priority",
+            "high",
         ]
 
         try:
@@ -165,7 +179,12 @@ class TermuxNowPlaying:
             )
             await proc.wait()
         except Exception as e:
-            logger.warning(f"termux-notification render failed: {e}")
+            logger.warning(
+                "notification_render_failed",
+                category=LC_SYSTEM,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def cleanup(self):
         self._stop.set()
@@ -191,8 +210,13 @@ class TermuxNowPlaying:
                     stderr=asyncio.subprocess.DEVNULL,
                 )
                 await proc.wait()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "notification_remove_failed",
+                    category=LC_SYSTEM,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         try:
             if self._fifo_path.exists():
                 self._fifo_path.unlink()
@@ -200,5 +224,10 @@ class TermuxNowPlaying:
                 pathlib_p = __import__("pathlib").Path(p)
                 if pathlib_p.exists():
                     pathlib_p.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "notification_cleanup_failed",
+                category=LC_SYSTEM,
+                error_type=type(e).__name__,
+                error=str(e),
+            )

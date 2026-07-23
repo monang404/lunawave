@@ -37,7 +37,7 @@ from core.ports import LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import TrackInfo
 from core.task_utils import safe_create_task
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.track_loader")
 
 
 @dataclass

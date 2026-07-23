@@ -85,7 +85,9 @@ PATCHLOG = PROJECT_ROOT / "docs" / "PATCHLOG.md"
 
 # Heading per entry: satu-satunya sumber ID (menggantikan **ID:** field lama
 # dari format v1).
-ENTRY_HEADING_RE = re.compile(r"^##[ \t]+(?P<id>PATCH-\d{4}-\d{2}-\d{2}-\d{3})[ \t]*$", re.MULTILINE)
+ENTRY_HEADING_RE = re.compile(
+    r"^##[ \t]+(?P<id>PATCH-\d{4}-\d{2}-\d{2}-\d{3})[ \t]*$", re.MULTILINE
+)
 
 # Regex generik satu pola untuk SEMUA field "**Nama:** nilai" atau
 # "**Nama:**\nblok...". Menambah field baru di masa depan tidak perlu regex
@@ -102,8 +104,18 @@ LIST_FIELDS = ("Changed Files", "Changed Symbols")
 # menandakan belum diklasifikasi, bukan pura-pura sudah lengkap.
 ENUM_FIELDS = {
     "Type": {
-        "Feature", "Fix", "Refactor", "Performance", "Cleanup", "Security",
-        "Test", "Docs", "Build", "CI", "Breaking", "Unclassified",
+        "Feature",
+        "Fix",
+        "Refactor",
+        "Performance",
+        "Cleanup",
+        "Security",
+        "Test",
+        "Docs",
+        "Build",
+        "CI",
+        "Breaking",
+        "Unclassified",
     },
     "Priority": {"Critical", "High", "Medium", "Low", "Unclassified"},
     "Breaking Change": {"Yes", "No", "Unclassified"},
@@ -114,12 +126,31 @@ ENUM_FIELDS = {
 # Field header (grouped, tanpa baris kosong di antaranya) vs field body
 # (blok panjang, dipisah baris kosong sebelum/sesudah) — urutan ini WAJIB
 # konsisten di semua entry, baru maupun hasil migrasi.
-HEADER_FIELDS = ["Tanggal", "Timestamp", "Git Branch", "Git Commit", "Type", "Area", "Priority", "Title"]
+HEADER_FIELDS = [
+    "Tanggal",
+    "Timestamp",
+    "Git Branch",
+    "Git Commit",
+    "Type",
+    "Area",
+    "Priority",
+    "Title",
+]
 INLINE_FIELDS = ["Reason", "Tests", "Breaking Change", "Regression Risk", "Related Patch", "Status"]
 BLOCK_FIELDS = ["Root Cause", "Solution", "Notes"]
-FIELD_ORDER = HEADER_FIELDS + ["Reason", "Root Cause", "Solution"] + list(LIST_FIELDS) + [
-    "Tests", "Breaking Change", "Regression Risk", "Related Patch", "Status", "Notes",
-]
+FIELD_ORDER = (
+    HEADER_FIELDS
+    + ["Reason", "Root Cause", "Solution"]
+    + list(LIST_FIELDS)
+    + [
+        "Tests",
+        "Breaking Change",
+        "Regression Risk",
+        "Related Patch",
+        "Status",
+        "Notes",
+    ]
+)
 
 
 def _split_into_chunks(text: str) -> list[str]:
@@ -282,7 +313,7 @@ def suggest_area(files: list[str]):
     """Usulan `Area` dari prefix path -- SARAN saja, tidak pernah dipaksa.
     CLI `add` tetap mewajibkan --area eksplisit; ini hanya dipakai untuk
     pesan bantuan saat --area tidak diisi."""
-    votes = Counter()
+    votes: Counter[str] = Counter()
     for f in files:
         for prefix, area in AREA_PREFIX_MAP:
             if f.startswith(prefix):
@@ -424,20 +455,32 @@ def add_entry(
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_add = sub.add_parser("add", help="Tambah entry baru (format v2)")
-    p_add.add_argument("--type", required=True, choices=sorted(ENUM_FIELDS["Type"] - {"Unclassified"}))
+    p_add.add_argument(
+        "--type", required=True, choices=sorted(ENUM_FIELDS["Type"] - {"Unclassified"})
+    )
     p_add.add_argument("--area", required=True, help="Mis. Frontend/Backend/Tooling/Docs/Test")
-    p_add.add_argument("--priority", default="Medium", choices=sorted(ENUM_FIELDS["Priority"] - {"Unclassified"}))
+    p_add.add_argument(
+        "--priority", default="Medium", choices=sorted(ENUM_FIELDS["Priority"] - {"Unclassified"})
+    )
     p_add.add_argument("--title", required=True, help="Satu kalimat, <=100 karakter")
     p_add.add_argument("--reason", required=True)
     p_add.add_argument("--files", required=True, help="Comma-separated")
-    p_add.add_argument("--symbols", default="", help="Comma-separated, mis. 'markPendingToggle(),X'")
+    p_add.add_argument(
+        "--symbols", default="", help="Comma-separated, mis. 'markPendingToggle(),X'"
+    )
     p_add.add_argument("--tests", default="-")
-    p_add.add_argument("--breaking", default="Unclassified", choices=sorted(ENUM_FIELDS["Breaking Change"]))
-    p_add.add_argument("--risk", default="Unclassified", choices=sorted(ENUM_FIELDS["Regression Risk"]))
+    p_add.add_argument(
+        "--breaking", default="Unclassified", choices=sorted(ENUM_FIELDS["Breaking Change"])
+    )
+    p_add.add_argument(
+        "--risk", default="Unclassified", choices=sorted(ENUM_FIELDS["Regression Risk"])
+    )
     p_add.add_argument("--status", default="Draft", choices=sorted(ENUM_FIELDS["Status"]))
     p_add.add_argument("--related", default="-")
     p_add.add_argument("--root-cause", dest="root_cause", default=None)

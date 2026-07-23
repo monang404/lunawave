@@ -35,12 +35,20 @@ berhasil `auth`, hanya action `auth` dan `setup_admin` yang diterima —
 action lain ditolak dengan pesan error `"Akses ditolak. Silakan login
 sebagai Admin."` (lihat `require_auth()` di `server/handlers/websocket.py`).
 
+> **CSWSH Protection:** Server memvalidasi header `Origin` saat handshake.
+> Browser dari domain lain akan mendapat `HTTP 403` sebelum koneksi WS terbuka.
+> Klien non-browser (curl, Termux, Python) yang tidak mengirim `Origin` tetap
+> diizinkan connect (lihat `check_ws_origin()` di `websocket.py`).
+
 ### Format Pesan — Client → Server (Command)
+
+Semua command dikirim dengan format:
 
 ```json
 {
-  "cmd": "string",
-  "payload": {}
+  "type": "cmd",
+  "action": "nama_action",
+  "data": {}
 }
 ```
 
@@ -48,13 +56,8 @@ sebagai Admin."` (lihat `require_auth()` di `server/handlers/websocket.py`).
 
 ```json
 {
-  "type": "state | full_state | error",
-  "playback": {},
-  "queue": [],
-  "volume": 75,
-  "mode": "normal | radio | shuffle",
-  "downloads": [],
-  "radio": null
+  "type": "state | error | auth_status | setup_status | lyric_line | download_progress",
+  "data": {}
 }
 ```
 
@@ -71,7 +74,8 @@ harus reachable sebelum `require_auth()`.
 | Action | Payload | Keterangan |
 |---|---|---|
 | `setup_admin` | `{"username": "admin", "password": "..."}` | Buat akun admin (satu kali saja). Ditolak (`success: false`) kalau akun sudah ada. Rate limit 5x/5menit per IP. |
-| `auth` | `{"username": "admin", "password": "..."}` atau `{"token": "..."}` | Login dengan kredensial, atau verifikasi token sesi yang sudah ada. Rate limit 5x/5menit per IP untuk percobaan password. |
+| `auth` | `{"username": "admin", "password": "..."}` atau `{"token": "..."}` | Login dengan kredensial, atau verifikasi token sesi yang sudah ada. Rate limit 5x/5menit per IP untuk percobaan password. Token yang diterima server di-hash SHA-256 sebelum dicari di DB. |
+| `logout` | `{"token": "..."}` | Hapus sesi dari DB dan cabut koneksi dari authenticated set. |
 
 Respons dikirim sebagai `setup_status` / `auth_status`:
 
@@ -109,15 +113,16 @@ form yang tepat (Setup vs Login), client memanggil `GET /api/setup-required`
 | `next` | `{}` | Skip ke track berikutnya |
 | `prev` | `{}` | Kembali ke track sebelumnya |
 | `seek` | `{"position": 42.5}` | Seek ke posisi (detik) |
-| `volume_set` | `{"volume": 75}` | Set volume (0–100) |
-| `volume_up` | `{}` | Volume naik |
-| `volume_down` | `{}` | Volume turun |
+| `volume_set` | `{"volume": 75}` | Set volume (0–**150**) |
+| `volume_up` | `{}` | Volume naik (+5) |
+| `volume_down` | `{}` | Volume turun (-5) |
 | `set_mode` | `{"mode": "QUEUE\|RADIO"}` | Ganti mode playback |
 | `set_output` | `{"output": "browser\|device"}` | Ganti output audio |
 | `set_loop` | `{"mode": "off\|track\|queue"}` | Set loop mode |
 | `set_speed` | `{"speed": 1.5}` | Set kecepatan putar (0.25–4.0) |
 | `set_sleep_timer` | `{"minutes": 15}` | Sleep timer (0 = off) |
 | `set_crossfade` | `{"enabled": true}` | Toggle crossfade |
+| `set_loudness_normalization` | `{"enabled": true}` | Toggle EBU R128 loudness normalization |
 | `set_sponsorblock` | `{"enabled": true}` | Toggle SponsorBlock |
 | `lyrics_offset` | `{"offset": -0.5}` | Adjust lyrics offset (detik) |
 
@@ -149,8 +154,10 @@ form yang tepat (Setup vs Login), client memanggil `GET /api/setup-required`
 
 | Command | Payload | Keterangan |
 |---|---|---|
-| `search` | `{"query": "bohemian rhapsody"}` | Cari track |
-| `discover` | `{}` | Dapatkan data discover (recent, cached) |
+| `search` | `{"query": "bohemian rhapsody"}` | Cari track via yt-dlp |
+| `discover` | `{}` | Dapatkan data discover (for_you, taste_spectrum, dll.) |
+| `discover_search` | `{"query": "radiohead"}` | Quick search di database lokal (FTS5) |
+| `get_artist_detail` | `{"artist": "Radiohead"}` | Detail artis: lagu, genre, stats bandit |
 
 ### Cache
 

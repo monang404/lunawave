@@ -34,10 +34,11 @@ from typing import Any, TypeVar
 import structlog
 
 from core.events import DomainEvent
+from core.log_categories import LC_EVENT
 from core.observability import EVENT_COUNT
 from core.task_utils import safe_create_task
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="core.event_bus")
 
 E = TypeVar("E", bound=DomainEvent)
 
@@ -126,7 +127,12 @@ class EventBus:
                         await h(event)
                     except Exception as e:
                         logger.error(
-                            f"Async Handler {getattr(h, '__name__', h)} error on '{event_type.__name__}': {e}",
+                            "event_handler_failed",
+                            category=LC_EVENT,
+                            handler_name=getattr(h, "__name__", str(h)),
+                            event_type=event_type.__name__,
+                            error_type=type(e).__name__,
+                            error=str(e),
                             exc_info=True,
                         )
 
@@ -136,7 +142,12 @@ class EventBus:
                     handler(event)
                 except Exception as e:
                     logger.error(
-                        f"Handler {getattr(handler, '__name__', handler)} error on '{event_type.__name__}': {e}",
+                        "event_handler_failed",
+                        category=LC_EVENT,
+                        handler_name=getattr(handler, "__name__", str(handler)),
+                        event_type=event_type.__name__,
+                        error_type=type(e).__name__,
+                        error=str(e),
                         exc_info=True,
                     )
 
