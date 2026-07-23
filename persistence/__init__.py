@@ -44,6 +44,7 @@ logger = structlog.get_logger(component="persistence.init")
 
 from persistence.admin_account_repo import AdminAccountRepository
 from persistence.artist_repo import ArtistRepository
+from persistence.chat_repo import ChatRepository
 from persistence.db import DatabaseConnection
 from persistence.discover_repo import DiscoverRepository
 from persistence.genre_repo import GenreRepository
@@ -69,6 +70,7 @@ class Repositories:
         self.library: LibraryRepository | None = None
         self.discover: DiscoverRepository | None = None
         self.admin_account: AdminAccountRepository | None = None
+        self.chat: ChatRepository | None = None
 
     async def init(self):
         schema_path = Path(__file__).parent / "schema.sql"
@@ -89,6 +91,7 @@ class Repositories:
             # persistence/stream_cache.py).
             "ALTER TABLE tracks ADD COLUMN unavailable INTEGER DEFAULT 0",
             "ALTER TABLE tracks ADD COLUMN unavailable_reason TEXT",
+            "ALTER TABLE chat_messages ADD COLUMN client_ip TEXT",
         ]:
             try:
                 await self._conn_manager.conn.execute(sql)
@@ -112,6 +115,7 @@ class Repositories:
         self.library = LibraryRepository(conn)
         self.discover = DiscoverRepository(conn)
         self.admin_account = AdminAccountRepository(conn)
+        self.chat = ChatRepository(conn)
 
     async def close(self):
         await self._conn_manager.close()

@@ -32,6 +32,7 @@ import structlog
 from core.log_categories import LC_SESSION
 from core.log_context import bind_session, unbind_session
 from core.observability import ACTIVE_USER_SESSION_SECONDS, ACTIVE_WEBSOCKETS
+from server.handlers.ws_log_stream import cleanup_log_viewer
 
 logger = structlog.get_logger(component="ws.connection")
 
@@ -50,10 +51,23 @@ class ConnectionManager:
         # struktur active_connections/authenticated_connections yang sudah
         # ada -- entry dibersihkan sendiri di disconnect().
         self.connected_at: dict = {}
+        self.client_ips: dict = {}
 
-    async def connect(self, ws):
+    async def connect(self, ws, request=None):
         self.active_connections.append(ws)
         self.connected_at[ws] = time.monotonic()
+        req = request or getattr(ws, "_req", None)
+        user_agent = req.headers.get("User-Agent", "") if req else ""
+        referer = req.headers.get("Referer", "") if req else ""
+        if not referer and req:
+            page = req.query.get("page", "")
+            if page:
+                referer = page
+        self.client_ips[ws] = {
+            "ip": getattr(req, "remote", "Unknown") if req else "Unknown",
+            "user_agent": user_agent,
+            "referer": referer,
+        }
         ACTIVE_WEBSOCKETS.inc()
         # L5.1: session_id sekali per koneksi, sama pola dengan req_id di
         # server/middleware/traffic.py -- aktif sepanjang hidup task
@@ -69,11 +83,13 @@ class ConnectionManager:
         )
 
     def disconnect(self, ws):
+        cleanup_log_viewer(ws)
         if ws in self.active_connections:
             self.active_connections.remove(ws)
             ACTIVE_WEBSOCKETS.dec()
         if ws in self.authenticated_connections:
             self.authenticated_connections.remove(ws)
+        self.client_ips.pop(ws, None)
 
         duration = None
         connected_at = self.connected_at.pop(ws, None)

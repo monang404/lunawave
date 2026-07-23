@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="/static/css/layout/grid.css">
     <link rel="stylesheet" href="/static/css/components/player-bar.css">
     <link rel="stylesheet" href="/static/css/components/lyrics.css">
+    <link rel="stylesheet" href="/static/css/components/chat.css">
 
     <!-- Platform Overrides -->
     <link rel="stylesheet" href="/static/css/platform/mobile.css">
@@ -102,16 +103,29 @@
             z-index: 200;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 14px 24px;
+            gap: 12px;
+            padding: 16px 28px;
             border-radius: 999px;
-            border: none;
-            background: var(--accent, #1db954);
-            color: #fff;
-            font-weight: 600;
-            font-size: 15px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+            border: 1px solid var(--border-3);
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-weight: 700;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px var(--accent-alpha);
             cursor: pointer;
+            animation: pulse-cta 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+            transition: var(--fm-transition-normal);
+        }
+        .client-audio-cta:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 15px 40px var(--accent-alpha);
+            background: var(--accent-hover);
+        }
+        @keyframes pulse-cta {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
         }
 
         /* Push the cover art and content down slightly in client mode for better balance */
@@ -158,8 +172,10 @@
 
                 <div class="home-left-col" style="margin: 0 auto;">
                     <div class="home-idle-view" id="home-idle-view">
-                        <div class="idle-text-slider">
-                            <span class="idle-text-slide">Menunggu musik dimainkan dari Admin...</span>
+                        <div class="idle-text-slider" style="background: rgba(255,255,255,0.03); padding: 12px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                            <span class="idle-text-slide" style="color: var(--text-2); font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                                <i class="ti ti-loader" style="animation: spin 2s linear infinite;"></i> Menunggu musik dimainkan dari Admin...
+                            </span>
                         </div>
                     </div>
 
@@ -207,10 +223,65 @@
 
     </div>
 
+    <!-- ═══ Chat Floating Action Button ═══ -->
+    <button id="chat-fab" class="chat-fab" aria-label="Open Chat">
+        <i class="ti ti-message-circle-2"></i>
+        <span id="chat-unread-badge" class="chat-unread-badge" style="display:none;"></span>
+    </button>
+
+    <!-- ═══ Chat Panel ═══ -->
+    <div id="chat-panel" class="chat-panel">
+        <div class="chat-header">
+            <div class="chat-title">
+                <i class="ti ti-messages"></i> Live Chat & Requests
+            </div>
+            <button id="chat-close-btn" class="chat-close-btn"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <!-- Messages will be injected here -->
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-name-row">
+                <input type="text" id="chat-name-input" placeholder="Nama Anda..." maxlength="20" />
+            </div>
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="chat-msg-input" placeholder="Ketik pesan atau request lagu..." autocomplete="off" />
+                <button type="submit" id="chat-send-btn"><i class="ti ti-send"></i></button>
+            </form>
+        </div>
+    </div>
+
     <!-- Hidden sheet so lyric renderer doesn't crash if it tries to modify it -->
     <div id="lyrics-sheet" style="display:none;">
         <div id="lyrics-content"></div>
     </div>
+
+    <script>
+    (function () {
+        "use strict";
+        if (!('serviceWorker' in navigator)) return;
+        var didCleanup = false;
+        var unregisterAll = navigator.serviceWorker.getRegistrations()
+            .then(function (regs) {
+                if (!regs.length) return;
+                didCleanup = true;
+                return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }).catch(function (e) {});
+        var clearCaches = ('caches' in window)
+            ? caches.keys().then(function (keys) {
+                if (!keys.length) return;
+                didCleanup = true;
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }).catch(function (e) {})
+            : Promise.resolve();
+        Promise.all([unregisterAll, clearCaches]).then(function () {
+            if (didCleanup && !sessionStorage.getItem('sw_client_kill_reloaded')) {
+                sessionStorage.setItem('sw_client_kill_reloaded', '1');
+                location.reload();
+            }
+        });
+    })();
+    </script>
 
     <!-- Scripts -->
     <script src="/static/js/utils/format.js"></script>
@@ -221,5 +292,6 @@
     <script src="/static/js/render/lyrics.js"></script>
     <script src="/static/js/audio/playback-sync.js"></script>
     <script src="/static/js/client.js"></script>
+    <script src="/static/js/chat.js"></script>
 </body>
 </html>

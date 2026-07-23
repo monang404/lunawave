@@ -7,8 +7,8 @@ const WS_RECONNECT_MAX_DELAY = 30000;
 // Dirty checking removed (moved to components or obsolete)
 
 function wsConnect() {
-    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${protocol}//${location.host}/ws`;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = protocol + "//" + window.location.host + "/ws?page=" + encodeURIComponent(window.location.pathname);
 
     showConnectionToast("Menghubungkan...", "connecting");
 
@@ -19,7 +19,7 @@ function wsConnect() {
         ws.close();
     }
 
-    ws = new WebSocket(url);
+    ws = new WebSocket(wsUrl);
     window.ws = ws;
 
     ws.onopen = () => {
@@ -43,6 +43,9 @@ function wsConnect() {
                 wsSend("discover");
             }
         }
+
+        // Fetch chat history
+        wsSend("get_chat_history");
 
         if (wsTokenRefreshTimer) clearInterval(wsTokenRefreshTimer);
         wsTokenRefreshTimer = setInterval(() => {
@@ -399,6 +402,12 @@ function handleServerMessage(msg) {
             break;
         case "cache_cleared":
             if (dom.ssCacheSub) dom.ssCacheSub.textContent = "0.00 MB";
+            break;
+        case "chat_history":
+            if (window.ChatModule) window.ChatModule.onHistory(msg.data);
+            break;
+        case "chat_message":
+            if (window.ChatModule) window.ChatModule.onNewMessage(msg.data);
             break;
     }
 }

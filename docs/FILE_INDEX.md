@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-22
+last_verified: 2026-07-23
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â€” JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-22 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-23 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** â€” perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** â€”
 **Function utama:** â€”
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _11 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _13 lainnya_
 **Menggunakan:** â€”
 
 
@@ -35,7 +35,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `run_server()`, `main()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `config`, `core/log_config`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`
+**Menggunakan:** `config`, `core/log_categories`, `core/log_config`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`
 
 
 ---
@@ -58,7 +58,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `CommandBus`
 **Function utama:** `register()`, `unregister()`, `reset()`
 **Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, `server/handlers/ws_download`, _2 lainnya_
-**Menggunakan:** `core/commands`, `core/observability`
+**Menggunakan:** `core/commands`, `core/log_categories`, `core/log_context`, `core/observability`
 
 
 ---
@@ -78,7 +78,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `EventBus`
 **Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`
 **Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/services`, `engine/download_manager`, `engine/playback/controller`, `engine/volume_service`, _3 lainnya_
-**Menggunakan:** `core/events`, `core/observability`, `core/task_utils`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/observability`, `core/task_utils`
 
 
 ---
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Closed set of `category` constants for structured logging, per the Â§4 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows; the audit/implementation-plan docs say "14 kategori standar" but the actual table has 15 -- this module follows the table, the normative spec, not the prose count). Category groups log lines by *domain of the event*, never by the Python module/file that emitted them (see Â§4 anti-pattern #7).
 **Class:** â€”
 **Function utama:** â€”
-**Digunakan oleh:** `server/handlers/auth`
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _39 lainnya_
 **Menggunakan:** â€”
 
 
@@ -127,7 +127,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Configure structlog and stdlib logging with an async queue handler, rotating file output, and per-handler rendering (plain file, optional auto-colored console).
 **Class:** â€”
 **Function utama:** `file_renderer()`, `console_renderer()`, `setup_logging()`, `log_session_start()`, `log_session_end()`
-**Digunakan oleh:** `main`
+**Digunakan oleh:** `launcher/preflight`, `main`
 **Menggunakan:** `config`
 
 
@@ -137,8 +137,18 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Thin wrappers over structlog.contextvars for the three correlation fields defined in docs/rfc/logging_standard/LOGGING_STANDARD.md Â§5.2: session_id (one WebSocket connection), request_id (one Command Bus execution), correlation_id (one flow that crosses separately scheduled asyncio tasks, e.g. a radio cycle triggering a prefetch, or a download whose progress hook runs in a separate task).
 **Class:** â€”
 **Function utama:** `bind_session()`, `unbind_session()`, `bind_request()`, `unbind_request()`, `bind_correlation()`, `unbind_correlation()`
-**Digunakan oleh:** â€”
+**Digunakan oleh:** `core/command_bus`, `engine/download_manager`, `engine/radio/engine`, `engine/radio/prefetcher`, `server/connection_manager`
 **Menggunakan:** â€”
+
+
+---
+
+**File:** `core/log_reader.py`
+**Fungsi:** Provide utilities to parse and tail lunawave.log files for dashboard and observability purposes.
+**Class:** â€”
+**Function utama:** `parse_line()`, `tail()`, `stats()`
+**Digunakan oleh:** `server/handlers/log_dashboard`, `server/handlers/ws_log_stream`
+**Menggunakan:** `config`
 
 
 ---
@@ -156,8 +166,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `core/observability.py`
 **Fungsi:** Expose Prometheus metric singletons and an OpenTelemetry tracer for application-wide instrumentation.
 **Class:** â€”
-**Function utama:** `get_metrics_content()`
-**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `persistence/stream_cache`, `server/connection_manager`, `server/handlers/http`, _1 lainnya_
+**Function utama:** `get_metrics_content()`, `get_counter_value()`
+**Digunakan oleh:** `core/command_bus`, `core/event_bus`, `persistence/stream_cache`, `server/connection_manager`, `server/handlers/http`, _2 lainnya_
 **Menggunakan:** â€”
 
 
@@ -208,7 +218,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `safe_create_task()`
 **Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/maintenance`, `bootstrap/startup_tasks`, `core/event_bus`, `engine/download_manager`, _8 lainnya_
-**Menggunakan:** â€”
+**Menggunakan:** `core/log_categories`
 
 
 ---
@@ -231,7 +241,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `MpvConnection`
 **Function utama:** `reader()`, `writer()`
 **Digunakan oleh:** `adapters/mpv/__init__`
-**Menggunakan:** `config`, `core/exceptions`
+**Menggunakan:** `config`, `core/exceptions`, `core/log_categories`
 
 
 ---
@@ -241,7 +251,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `MpvIPC`
 **Function utama:** `pop_pending()`, `cancel_all_pending()`
 **Digunakan oleh:** `adapters/mpv/__init__`
-**Menggunakan:** â€”
+**Menggunakan:** `core/log_categories`
 
 
 ---
@@ -251,7 +261,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `MpvObserver`
 **Function utama:** â€”
 **Digunakan oleh:** `adapters/mpv/__init__`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/task_utils`
+**Menggunakan:** `core/event_bus`, `core/events`, `core/log_categories`, `core/task_utils`
 
 
 ---
@@ -281,7 +291,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `YtDlpResolver`
 **Function utama:** `classify_ytdlp_error()`
 **Digunakan oleh:** `adapters/ytdlp/__init__`
-**Menggunakan:** `adapters/ytdlp/ydl_options`, `config`, `core/exceptions`
+**Menggunakan:** `adapters/ytdlp/ydl_options`, `config`, `core/exceptions`, `core/log_categories`
 
 
 ---
@@ -324,7 +334,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `DownloadManager`
 **Function utama:** `_update_progress()`
 **Digunakan oleh:** `bootstrap/services`
-**Menggunakan:** `core/command_bus`, `core/event_bus`, `core/events`, `core/ports`, `core/state`, `core/task_utils`
+**Menggunakan:** `core/command_bus`, `core/event_bus`, `core/events`, `core/log_categories`, `core/log_context`, `core/ports`, _2 lainnya_
 
 
 ---
@@ -334,7 +344,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `LoudnessMeasurement(NamedTuple)`, `LoudnessAnalyzer`
 **Function utama:** `measure_sync()`
 **Digunakan oleh:** `engine/loudness/service`
-**Menggunakan:** `config`
+**Menggunakan:** `config`, `core/log_categories`
 
 
 ---
@@ -354,7 +364,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `LoudnessService`
 **Function utama:** `_is_charging_or_unknown()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `core/ports`, `engine/loudness/analyzer`
+**Menggunakan:** `core/log_categories`, `core/ports`, `engine/loudness/analyzer`
 
 
 ---
@@ -364,7 +374,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `PlaybackController`
 **Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/exceptions`, `core/ports`, `core/state`, `core/task_utils`, _9 lainnya_
+**Menggunakan:** `core/event_bus`, `core/events`, `core/exceptions`, `core/log_categories`, `core/ports`, `core/state`, _10 lainnya_
 
 
 ---
@@ -384,7 +394,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `FailureOps`
 **Function utama:** â€”
 **Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `core/events`, `core/state`, `core/task_utils`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/state`, `core/task_utils`
 
 
 ---
@@ -394,7 +404,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `ModeOps`
 **Function utama:** â€”
 **Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/ports`, `core/state`, `engine/radio`
 
 
 ---
@@ -434,7 +444,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TrackEndedOps`
 **Function utama:** `poll_duration()`
 **Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `core/events`, `core/state`, `core/task_utils`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/state`, `core/task_utils`
 
 
 ---
@@ -474,7 +484,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `ArtistSelector`
 **Function utama:** `reset_rotation()`, `build_exclusion_set()`
 **Digunakan oleh:** `engine/radio/engine`
-**Menggunakan:** `core/ports`, `core/state`, `engine/radio/radio_config`, `engine/radio/track_filter`, `engine/radio/track_interleaver`
+**Menggunakan:** `core/log_categories`, `core/ports`, `core/state`, `engine/radio/radio_config`, `engine/radio/track_filter`, `engine/radio/track_interleaver`
 
 
 ---
@@ -484,7 +494,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `RadioMode`
 **Function utama:** `check_prefetch()`
 **Digunakan oleh:** `engine/radio/__init__`
-**Menggunakan:** `core/events`, `core/ports`, `core/state`, `engine/radio/artist_selector`, `engine/radio/prefetcher`, `engine/radio/radio_config`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/log_context`, `core/ports`, `core/state`, `engine/radio/artist_selector`, _2 lainnya_
 
 
 ---
@@ -494,7 +504,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `RadioPrefetcher`
 **Function utama:** `cancel_tasks()`, `trigger_build_standby()`, `check_prefetch()`
 **Digunakan oleh:** `engine/radio/engine`
-**Menggunakan:** `config`, `core/state`, `engine/radio/radio_config`
+**Menggunakan:** `config`, `core/log_categories`, `core/log_context`, `core/state`, `engine/radio/radio_config`
 
 
 ---
@@ -514,7 +524,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TrackFilter`
 **Function utama:** `filter_tracks()`
 **Digunakan oleh:** `engine/radio/artist_selector`
-**Menggunakan:** `core/state`, `engine/radio/track_interleaver`
+**Menggunakan:** `core/log_categories`, `core/state`, `engine/radio/track_interleaver`
 
 
 ---
@@ -557,7 +567,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `Repositories`
 **Function utama:** `conn()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `persistence/admin_account_repo`, `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, `persistence/library_repo`, _2 lainnya_
+**Menggunakan:** `core/log_categories`, `persistence/admin_account_repo`, `persistence/artist_repo`, `persistence/db`, `persistence/discover_repo`, `persistence/genre_repo`, _3 lainnya_
 
 
 ---
@@ -577,7 +587,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `ArtistRepository`
 **Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** `core/state`
+**Menggunakan:** `core/log_categories`, `core/state`
 
 
 ---
@@ -587,7 +597,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `DatabaseConnection`
 **Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** `config`
+**Menggunakan:** `config`, `core/log_categories`
 
 
 ---
@@ -607,7 +617,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `DiscoverRepository`
 **Function utama:** `conn()`
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** `persistence/discover_enrich`
+**Menggunakan:** `core/log_categories`, `persistence/discover_enrich`
 
 
 ---
@@ -617,7 +627,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `GenreRepository`
 **Function utama:** â€”
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** `core/state`
+**Menggunakan:** `core/log_categories`, `core/state`
 
 
 ---
@@ -657,7 +667,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TrackRepository`
 **Function utama:** â€”
 **Digunakan oleh:** `persistence/__init__`
-**Menggunakan:** `core/state`
+**Menggunakan:** `core/log_categories`, `core/state`
 
 
 ---
@@ -670,7 +680,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `create_app()`, `run_server()`
 **Digunakan oleh:** `server/handlers/__init__`
-**Menggunakan:** `core/ports`, `core/server_clock`, `engine/playback/controller`, `persistence`
+**Menggunakan:** `core/log_categories`, `core/ports`, `core/server_clock`, `engine/playback/controller`, `persistence`
 
 
 ---
@@ -690,7 +700,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `ConnectionManager`
 **Function utama:** `disconnect()`
 **Digunakan oleh:** `server/broadcast_service`
-**Menggunakan:** `core/observability`
+**Menggunakan:** `core/log_categories`, `core/log_context`, `core/observability`, `server/handlers/ws_log_stream`
 
 
 ---
@@ -710,7 +720,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `serve_stream()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `config`, `core/exceptions`, `server/handlers`
+**Menggunakan:** `config`, `core/exceptions`, `core/log_categories`, `server/handlers`
 
 
 ---
@@ -730,7 +740,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `setup_event_listeners()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `core/events`, `core/task_utils`, `server/broadcast_service`, `services/stream_prefetch`
+**Menggunakan:** `core/events`, `core/log_categories`, `core/task_utils`, `server/broadcast_service`, `services/stream_prefetch`
 
 
 ---
@@ -738,9 +748,19 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `server/handlers/http.py`
 **Fungsi:** Serve the SPA index, health check, and Prometheus metrics endpoints over HTTP.
 **Class:** â€”
-**Function utama:** `serve_index()`, `serve_client()`, `health_check()`, `serve_metrics()`
-**Digunakan oleh:** â€”
+**Function utama:** `serve_index()`, `serve_client()`, `health_check()`, `require_local_or_token()`, `serve_metrics()`
+**Digunakan oleh:** `server/handlers/log_dashboard`
 **Menggunakan:** `core/mem_stats`, `core/observability`, `server/handlers`
+
+
+---
+
+**File:** `server/handlers/log_dashboard.py`
+**Fungsi:** Provide HTTP endpoints for the Logging Dashboard (tail, stats, and HTML).
+**Class:** â€”
+**Function utama:** `serve_log_dashboard()`, `get_logs_tail()`, `get_logs_stats()`
+**Digunakan oleh:** â€”
+**Menggunakan:** `core/log_reader`, `core/observability`, `server/handlers/http`
 
 
 ---
@@ -750,7 +770,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `handle_setup_admin()`, `setup_required()`
 **Digunakan oleh:** `server/handlers/websocket`
-**Menggunakan:** `core/security`, `server/handlers`
+**Menggunakan:** `core/log_categories`, `core/security`, `server/handlers`
 
 
 ---
@@ -760,7 +780,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `check_ws_origin()`, `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, `server/handlers/ws_playback`, _3 lainnya_
+**Menggunakan:** `core/log_categories`, `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, _5 lainnya_
 
 
 ---
@@ -770,7 +790,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `handle_cache_command()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `config`
+**Menggunakan:** `config`, `core/log_categories`
 
 
 ---
@@ -790,7 +810,17 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `handle_download_command()`
 **Digunakan oleh:** `server/handlers/websocket`
-**Menggunakan:** `core/command_bus`, `server/serializers`, `services/discover_service`
+**Menggunakan:** `core/command_bus`, `core/log_categories`, `server/serializers`, `services/discover_service`
+
+
+---
+
+**File:** `server/handlers/ws_log_stream.py`
+**Fungsi:** Provide WebSocket handler for live log tailing.
+**Class:** â€”
+**Function utama:** `handle_log_stream_command()`, `cleanup_log_viewer()`
+**Digunakan oleh:** `server/connection_manager`, `server/handlers/websocket`
+**Menggunakan:** `config`, `core/log_reader`
 
 
 ---
@@ -813,7 +843,6 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Menggunakan:** `core/command_bus`, `core/state`, `server/serializers`
 
 
-
 ---
 
 **File:** `server/middleware/__init__.py`
@@ -831,7 +860,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `traffic_middleware()`
 **Digunakan oleh:** `server/middleware/__init__`
-**Menggunakan:** `core/observability`
+**Menggunakan:** `core/log_categories`, `core/observability`
 
 
 ---
@@ -874,7 +903,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `StreamPrefetchService`
 **Function utama:** â€”
 **Digunakan oleh:** `server/handlers/event_listeners`
-**Menggunakan:** `config`, `core/exceptions`, `core/ports`
+**Menggunakan:** `config`, `core/exceptions`, `core/log_categories`, `core/ports`
 
 
 ---
@@ -887,7 +916,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `LyricsFetcher`
 **Function utama:** `cleanup()`
 **Digunakan oleh:** `bootstrap/services`
-**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/state`
+**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/log_categories`, `core/state`
 
 
 ---
@@ -917,7 +946,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `TermuxNowPlaying`
 **Function utama:** `_blocking_read_loop()`
 **Digunakan oleh:** `bootstrap/services`
-**Menggunakan:** `config`, `core/command_bus`, `core/event_bus`, `core/events`, `core/state`
+**Menggunakan:** `config`, `core/command_bus`, `core/event_bus`, `core/events`, `core/log_categories`, `core/state`
 
 
 ---
@@ -927,7 +956,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `SponsorBlockHandler`
 **Function utama:** `cleanup()`
 **Digunakan oleh:** `bootstrap/services`
-**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/ports`, `core/state`
+**Menggunakan:** `config`, `core/event_bus`, `core/events`, `core/log_categories`, `core/ports`, `core/state`
 
 
 ---
@@ -948,8 +977,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `launcher/dep_checker.py`
 **Fungsi:** Utility to verify required system dependencies before launching the application.
 **Class:** `DependencyChecker`
-**Function utama:** `check_dependencies()`
-**Digunakan oleh:** â€”
+**Function utama:** `check_dependencies()`, `check_port()`, `mpv_version()`
+**Digunakan oleh:** `launcher/preflight`
 **Menggunakan:** â€”
 
 
@@ -1011,6 +1040,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Function utama:** `check_port_in_use()`, `get_pid_occupying_port()`
 **Digunakan oleh:** â€”
 **Menggunakan:** â€”
+
+
+---
+
+**File:** `launcher/preflight.py`
+**Fungsi:** Unified preflight check for LunaWave to be called by both start.sh and start.bat.
+**Class:** â€”
+**Function utama:** `print_info()`, `print_ok()`, `print_warn()`, `print_err()`, `log_result()`, `run()`
+**Digunakan oleh:** â€”
+**Menggunakan:** `launcher/dep_checker`, `core/log_config`, `core/log_categories`
 
 
 ---
@@ -1079,7 +1118,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `db_maintenance()`, `schedule_db_maintenance()`, `mpv_watchdog()`, `start_mpv_watchdog()`, `status_log_task()`, `schedule_status_log()`
 **Digunakan oleh:** `main`
-**Menggunakan:** `bootstrap/services`, `core/state`, `core/task_utils`
+**Menggunakan:** `bootstrap/services`, `core/log_categories`, `core/state`, `core/task_utils`
 
 
 ---
@@ -1089,7 +1128,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `acquire_wake_lock()`
 **Digunakan oleh:** `bootstrap/startup_tasks`
-**Menggunakan:** â€”
+**Menggunakan:** `core/log_categories`
 
 
 ---
@@ -1099,7 +1138,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `BootstrapContext`
 **Function utama:** `init_core_services()`
 **Digunakan oleh:** `bootstrap/maintenance`, `bootstrap/startup_tasks`, `main`
-**Menggunakan:** `adapters/mpv`, `adapters/ytdlp`, `core/event_bus`, `core/state`, `engine/command_router`, `engine/download_manager`, _4 lainnya_
+**Menggunakan:** `adapters/mpv`, `adapters/ytdlp`, `core/event_bus`, `core/log_categories`, `core/state`, `engine/command_router`, _5 lainnya_
 
 
 ---
@@ -1109,7 +1148,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `check_connectivity()`, `run_startup_checks()`
 **Digunakan oleh:** `main`
-**Menggunakan:** `bootstrap/power`, `bootstrap/services`, `config`, `core/state`, `core/task_utils`
+**Menggunakan:** `bootstrap/power`, `bootstrap/services`, `config`, `core/log_categories`, `core/state`, `core/task_utils`
 
 
 ---
@@ -1117,7 +1156,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 ## ðŸ“‹ Checklist Dokumentasi Docstring
 
-**102/102** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**105/105** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi ðŸŽ‰)_

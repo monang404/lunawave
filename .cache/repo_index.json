@@ -1,124 +1,128 @@
 {
   "_meta": {
-    "generated_at": 1784772545.3234205,
+    "generated_at": 1784779910.468964,
     "source_mtimes": {
       "config.py": 1784727796.0,
-      "main.py": 1784771967.8287213,
+      "main.py": 1784779339.7429187,
       "start.py": 1784727796.0,
       "adapters/__init__.py": 1784727796.0,
-      "adapters/mpv/connection.py": 1784768125.0,
-      "adapters/mpv/ipc.py": 1784768128.0,
-      "adapters/mpv/observer.py": 1784771975.359439,
+      "adapters/mpv/connection.py": 1784776282.6078262,
+      "adapters/mpv/ipc.py": 1784776282.6088276,
+      "adapters/mpv/observer.py": 1784776282.6088276,
       "adapters/mpv/__init__.py": 1784727796.0,
       "adapters/ytdlp/downloader.py": 1784727796.0,
-      "adapters/ytdlp/resolver.py": 1784770624.0,
+      "adapters/ytdlp/resolver.py": 1784776282.6098263,
       "adapters/ytdlp/searcher.py": 1784727796.0,
       "adapters/ytdlp/ydl_options.py": 1784727796.0,
       "adapters/ytdlp/__init__.py": 1784727796.0,
-      "bootstrap/maintenance.py": 1784771981.8795483,
-      "bootstrap/power.py": 1784771989.0983765,
-      "bootstrap/services.py": 1784765993.0,
-      "bootstrap/startup_tasks.py": 1784770685.0,
+      "bootstrap/maintenance.py": 1784776380.7941134,
+      "bootstrap/power.py": 1784776282.6118784,
+      "bootstrap/services.py": 1784776282.612402,
+      "bootstrap/startup_tasks.py": 1784776282.6133966,
       "bootstrap/__init__.py": 1784727796.0,
       "core/commands.py": 1784727796.0,
-      "core/command_bus.py": 1784768624.0,
+      "core/command_bus.py": 1784776282.6143963,
       "core/events.py": 1784727796.0,
-      "core/event_bus.py": 1784770612.0,
+      "core/event_bus.py": 1784776282.6143963,
       "core/exceptions.py": 1784727796.0,
       "core/latency_window.py": 1784727796.0,
-      "core/log_categories.py": 1784762507.0,
+      "core/log_categories.py": 1784776282.6153982,
       "core/log_config.py": 1784727796.0,
-      "core/log_context.py": 1784762523.0,
+      "core/log_context.py": 1784776282.6163933,
+      "core/log_reader.py": 1784778781.418013,
       "core/mem_stats.py": 1784727796.0,
-      "core/observability.py": 1784727796.0,
+      "core/observability.py": 1784778564.5690372,
       "core/ports.py": 1784727796.0,
       "core/security.py": 1784727796.0,
       "core/server_clock.py": 1784727796.0,
       "core/state.py": 1784727796.0,
-      "core/task_utils.py": 1784770603.0,
+      "core/task_utils.py": 1784776282.6173947,
       "core/__init__.py": 1784727796.0,
       "data/export_to_sqlite.py": 1784727796.0,
       "data/__init__.py": 1784727796.0,
-      "engine/command_router.py": 1784765078.0,
-      "engine/download_manager.py": 1784770587.0,
+      "engine/command_router.py": 1784776282.623393,
+      "engine/download_manager.py": 1784776282.6243956,
       "engine/queue_manager.py": 1784727796.0,
-      "engine/sleep_timer.py": 1784764724.0,
+      "engine/sleep_timer.py": 1784776282.633397,
       "engine/volume_service.py": 1784727796.0,
       "engine/__init__.py": 1784727796.0,
-      "engine/loudness/analyzer.py": 1784768112.0,
+      "engine/loudness/analyzer.py": 1784776282.6243956,
       "engine/loudness/gain_calculator.py": 1784727796.0,
-      "engine/loudness/service.py": 1784770597.0,
-      "engine/playback/controller.py": 1784770774.0,
+      "engine/loudness/service.py": 1784776282.625394,
+      "engine/playback/controller.py": 1784776282.6263945,
       "engine/playback/crossfade.py": 1784727796.0,
-      "engine/playback/failure_ops.py": 1784769909.0,
-      "engine/playback/mode_ops.py": 1784769287.0,
+      "engine/playback/failure_ops.py": 1784776282.627396,
+      "engine/playback/mode_ops.py": 1784776282.627396,
       "engine/playback/queue_controller.py": 1784727796.0,
       "engine/playback/queue_ops.py": 1784727796.0,
       "engine/playback/settings_controller.py": 1784727796.0,
-      "engine/playback/track_ended_ops.py": 1784771997.6681008,
-      "engine/playback/track_loader.py": 1784764672.0,
+      "engine/playback/track_ended_ops.py": 1784776282.629396,
+      "engine/playback/track_loader.py": 1784776282.629396,
       "engine/playback/__init__.py": 1784727796.0,
       "engine/radio/artist_bandit.py": 1784727796.0,
-      "engine/radio/artist_selector.py": 1784768074.0,
-      "engine/radio/engine.py": 1784768764.0,
-      "engine/radio/prefetcher.py": 1784769894.0,
+      "engine/radio/artist_selector.py": 1784776282.6303945,
+      "engine/radio/engine.py": 1784776282.6303945,
+      "engine/radio/prefetcher.py": 1784776282.6313958,
       "engine/radio/radio_config.py": 1784727796.0,
-      "engine/radio/track_filter.py": 1784770040.0,
+      "engine/radio/track_filter.py": 1784776282.6323936,
       "engine/radio/track_interleaver.py": 1784727796.0,
       "engine/radio/__init__.py": 1784727796.0,
-      "launcher/dep_checker.py": 1784727796.0,
+      "launcher/dep_checker.py": 1784778690.353666,
       "launcher/network.py": 1784727796.0,
+      "launcher/preflight.py": 1784778781.4953692,
       "launcher/process.py": 1784727796.0,
       "launcher/server_lifecycle.py": 1784727796.0,
       "launcher/updater.py": 1784727796.0,
       "launcher/__init__.py": 1784727796.0,
       "launcher/__main__.py": 1784727796.0,
-      "launcher/gui/app.py": 1784727796.0,
+      "launcher/gui/app.py": 1784779902.377074,
       "launcher/gui/auth_panel.py": 1784727796.0,
       "launcher/gui/log_view.py": 1784727796.0,
       "launcher/gui/popups.py": 1784727796.0,
-      "launcher/gui/ui_builder.py": 1784727796.0,
+      "launcher/gui/ui_builder.py": 1784779902.317588,
       "launcher/gui/__init__.py": 1784727796.0,
       "persistence/admin_account_repo.py": 1784727796.0,
-      "persistence/artist_repo.py": 1784768174.0,
-      "persistence/db.py": 1784765986.0,
+      "persistence/artist_repo.py": 1784776282.6353972,
+      "persistence/db.py": 1784776558.0123453,
       "persistence/discover_enrich.py": 1784727796.0,
-      "persistence/discover_repo.py": 1784768141.0,
-      "persistence/genre_repo.py": 1784768155.0,
+      "persistence/discover_repo.py": 1784776282.6363964,
+      "persistence/genre_repo.py": 1784776282.6373959,
       "persistence/library_repo.py": 1784727796.0,
       "persistence/session_repo.py": 1784727796.0,
-      "persistence/stream_cache.py": 1784764939.0,
-      "persistence/track_repo.py": 1784768160.0,
-      "persistence/__init__.py": 1784764968.0,
-      "plugins/lyrics_fetcher.py": 1784772006.7695272,
+      "persistence/stream_cache.py": 1784776282.6383958,
+      "persistence/track_repo.py": 1784776282.6383958,
+      "persistence/__init__.py": 1784776282.6343963,
+      "plugins/lyrics_fetcher.py": 1784776282.6393945,
       "plugins/lyrics_parser.py": 1784727796.0,
       "plugins/lyrics_sync.py": 1784727796.0,
-      "plugins/notifications.py": 1784772014.7903259,
-      "plugins/sponsorblock.py": 1784770706.0,
+      "plugins/notifications.py": 1784776282.6403952,
+      "plugins/sponsorblock.py": 1784776282.6413949,
       "plugins/__init__.py": 1784727796.0,
       "scratch/check_db.py": 1784613351.7976074,
-      "server/app.py": 1784768056.0,
+      "server/app.py": 1784779592.6505294,
       "server/broadcast_service.py": 1784727796.0,
-      "server/connection_manager.py": 1784767850.0,
+      "server/connection_manager.py": 1784779748.396082,
       "server/serializers.py": 1784727796.0,
       "server/__init__.py": 1784727796.0,
-      "server/handlers/audio_stream_handler.py": 1784769884.0,
-      "server/handlers/auth.py": 1784762688.0,
-      "server/handlers/event_listeners.py": 1784772023.9425375,
-      "server/handlers/http.py": 1784765127.0,
-      "server/handlers/setup.py": 1784765127.0,
-      "server/handlers/websocket.py": 1784772402.2210147,
-      "server/handlers/ws_cache.py": 1784768042.0,
+      "server/handlers/audio_stream_handler.py": 1784776282.645401,
+      "server/handlers/auth.py": 1784776282.646398,
+      "server/handlers/event_listeners.py": 1784776282.646398,
+      "server/handlers/http.py": 1784779525.5122538,
+      "server/handlers/log_dashboard.py": 1784779546.5046837,
+      "server/handlers/setup.py": 1784776578.0361283,
+      "server/handlers/websocket.py": 1784779734.473603,
+      "server/handlers/ws_cache.py": 1784776282.6493976,
       "server/handlers/ws_discovery.py": 1784727796.0,
-      "server/handlers/ws_download.py": 1784770582.0,
-      "server/handlers/ws_playback.py": 1784764724.0,
+      "server/handlers/ws_download.py": 1784776282.6503983,
+      "server/handlers/ws_log_stream.py": 1784779671.8093076,
+      "server/handlers/ws_playback.py": 1784776282.6513958,
       "server/handlers/ws_queue.py": 1784727796.0,
-      "server/handlers/__init__.py": 1784765134.0,
-      "server/middleware/traffic.py": 1784765127.0,
+      "server/handlers/__init__.py": 1784776414.7329926,
+      "server/middleware/traffic.py": 1784776380.80011,
       "server/middleware/__init__.py": 1784727796.0,
       "services/discover_ranking.py": 1784727796.0,
       "services/discover_service.py": 1784727796.0,
-      "services/stream_prefetch.py": 1784770643.0,
+      "services/stream_prefetch.py": 1784776282.6533968,
       "services/__init__.py": 1784727796.0
     }
   },
@@ -144,11 +148,13 @@
         "server.app",
         "server.app",
         "socket",
-        "traceback"
+        "traceback",
+        "core.observability",
+        "core.server_clock"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 178,
+      "loc": 203,
       "docstring_purpose": "Bootstrap all LunaWave subsystems and start the async aiohttp web server.",
       "reverse_deps": []
     },
@@ -186,7 +192,9 @@
         "plugins/sponsorblock.py",
         "plugins/notifications.py",
         "bootstrap/startup_tasks.py",
-        "bootstrap/services.py"
+        "bootstrap/services.py",
+        "core/log_reader.py",
+        "server/handlers/ws_log_stream.py"
       ]
     },
     "start.py": {
@@ -284,11 +292,12 @@
         "structlog",
         "core.log_categories",
         "core.log_context",
-        "core.observability"
+        "core.observability",
+        "server.handlers.ws_log_stream"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 124,
+      "loc": 126,
       "docstring_purpose": "Manages active WebSocket connections and broadcasts events to connected clients.",
       "reverse_deps": [
         "server/broadcast_service.py",
@@ -316,6 +325,7 @@
         "server.connection_manager",
         "server.handlers.audio_stream_handler",
         "server.handlers.http",
+        "server.handlers.log_dashboard",
         "server.handlers.setup",
         "server.handlers.websocket",
         "server.middleware.traffic",
@@ -325,7 +335,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 141,
+      "loc": 146,
       "docstring_purpose": "Create and configure the aiohttp web application with all routes,     services, and EventBus listeners wired together.",
       "reverse_deps": [
         "main.py",
@@ -476,6 +486,7 @@
         "serve_index",
         "serve_client",
         "health_check",
+        "require_local_or_token",
         "serve_metrics"
       ],
       "imports": [
@@ -490,10 +501,11 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 115,
+      "loc": 119,
       "docstring_purpose": "Serve the SPA index, health check, and Prometheus metrics endpoints     over HTTP.",
       "reverse_deps": [
-        "server/app.py"
+        "server/app.py",
+        "server/handlers/log_dashboard.py"
       ]
     },
     "server/handlers/__init__.py": {
@@ -579,7 +591,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 220,
+      "loc": 226,
       "docstring_purpose": "Handle Initial Setup: creation of the single admin_account row that     becomes the sole source of login credentials (Fitur B: login_redesign,     lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any     admin account exists, so it lives outside the normal require_auth gate     -- the same way \"auth\" itself is special-cased in websocket.py.",
       "reverse_deps": [
         "server/app.py",
@@ -651,6 +663,7 @@
         "server.handlers.setup",
         "server.handlers.ws_discovery",
         "server.handlers.ws_download",
+        "server.handlers.ws_log_stream",
         "server.handlers.ws_playback",
         "server.handlers.ws_queue",
         "server.middleware",
@@ -659,7 +672,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 246,
+      "loc": 258,
       "docstring_purpose": "Handle WebSocket connections, authenticate clients, and dispatch     incoming commands to the CommandBus after rate-limit enforcement.",
       "reverse_deps": [
         "server/app.py"
@@ -1044,7 +1057,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 184,
+      "loc": 200,
       "docstring_purpose": "Manages the SQLite database connection lifecycle and initialization.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1714,7 +1727,7 @@
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 293,
+      "loc": 289,
       "docstring_purpose": "Manages the state and playback progression for the radio mode feature.",
       "reverse_deps": [
         "engine/radio/__init__.py"
@@ -1795,7 +1808,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 117,
+      "loc": 113,
       "docstring_purpose": "Orkestrasi analisis loudness: cek apakah track sudah pernah diukur,     kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.",
       "reverse_deps": [
         "engine/playback/track_loader.py",
@@ -1902,18 +1915,23 @@
         "DependencyChecker"
       ],
       "functions": [
-        "check_dependencies"
+        "check_dependencies",
+        "check_port",
+        "mpv_version"
       ],
       "imports": [
         "importlib.util",
-        "shutil"
+        "shutil",
+        "socket",
+        "subprocess"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 49,
+      "loc": 76,
       "docstring_purpose": "Utility to verify required system dependencies before launching the application.",
       "reverse_deps": [
-        "launcher/server_lifecycle.py"
+        "launcher/server_lifecycle.py",
+        "launcher/preflight.py"
       ]
     },
     "launcher/updater.py": {
@@ -2045,7 +2063,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 351,
+      "loc": 354,
       "docstring_purpose": "Constructs the main user interface layout and elements for the launcher.",
       "reverse_deps": [
         "launcher/gui/app.py"
@@ -2076,7 +2094,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 291,
+      "loc": 298,
       "docstring_purpose": "Provide the Tkinter-based ServerManager GUI for starting, stopping,     and monitoring the LunaWave backend server.",
       "reverse_deps": []
     },
@@ -2247,7 +2265,8 @@
         "bootstrap/maintenance.py",
         "bootstrap/startup_tasks.py",
         "bootstrap/services.py",
-        "bootstrap/power.py"
+        "bootstrap/power.py",
+        "launcher/preflight.py"
       ]
     },
     "core/log_context.py": {
@@ -2446,23 +2465,26 @@
       "layer": "core",
       "classes": [],
       "functions": [
-        "get_metrics_content"
+        "get_metrics_content",
+        "get_counter_value"
       ],
       "imports": [
         "prometheus_client"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 96,
+      "loc": 128,
       "docstring_purpose": "Expose Prometheus metric singletons and an OpenTelemetry tracer for     application-wide instrumentation.",
       "reverse_deps": [
+        "main.py",
         "server/connection_manager.py",
         "server/middleware/traffic.py",
         "server/handlers/http.py",
         "persistence/stream_cache.py",
         "core/command_bus.py",
         "core/event_bus.py",
-        "bootstrap/maintenance.py"
+        "bootstrap/maintenance.py",
+        "server/handlers/log_dashboard.py"
       ]
     },
     "core/command_bus.py": {
@@ -2561,7 +2583,8 @@
       "loc": 199,
       "docstring_purpose": "Configure structlog and stdlib logging with an async queue handler,     rotating file output, and per-handler rendering (plain file, optional     auto-colored console).",
       "reverse_deps": [
-        "main.py"
+        "main.py",
+        "launcher/preflight.py"
       ]
     },
     "core/security.py": {
@@ -2733,6 +2756,7 @@
       "loc": 55,
       "docstring_purpose": "Menyimpan waktu mulai server dan menghitung uptime, tanpa dependency     apa pun di luar stdlib.",
       "reverse_deps": [
+        "main.py",
         "server/app.py",
         "server/handlers/__init__.py",
         "bootstrap/maintenance.py"
@@ -2896,7 +2920,7 @@
         "TrackEndedEvent"
       ],
       "subscribes": [],
-      "loc": 198,
+      "loc": 196,
       "docstring_purpose": "Observes and dispatches asynchronous events emitted by the MPV player.",
       "reverse_deps": [
         "adapters/mpv/__init__.py"
@@ -3059,7 +3083,7 @@
         "LyricsUpdatedEvent"
       ],
       "subscribes": [],
-      "loc": 211,
+      "loc": 213,
       "docstring_purpose": "Fetch synchronized lyrics from lrclib.net and syncedlyrics, then     update the active lyric index on each playback progress event.",
       "reverse_deps": [
         "bootstrap/services.py"
@@ -3176,7 +3200,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 232,
+      "loc": 230,
       "docstring_purpose": "Stage 3 of application startup: schedule the periodic DB maintenance     loop and the MPV connection watchdog as background tasks. Extracted     from main.py's `main()` (T2.4) without changing call order. Also     schedules the ADR-0010 periodic `[STATUS]` summary log.",
       "reverse_deps": [
         "main.py"
@@ -3303,6 +3327,101 @@
       "loc": 46,
       "docstring_purpose": "Auto-generated module docstring.",
       "reverse_deps": []
+    },
+    "core/log_reader.py": {
+      "layer": "core",
+      "classes": [],
+      "functions": [
+        "parse_line",
+        "tail",
+        "stats"
+      ],
+      "imports": [
+        "re",
+        "datetime",
+        "pathlib",
+        "config"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 169,
+      "docstring_purpose": "Provide utilities to parse and tail lunawave.log files for dashboard and     observability purposes.",
+      "reverse_deps": [
+        "server/handlers/log_dashboard.py",
+        "server/handlers/ws_log_stream.py"
+      ]
+    },
+    "launcher/preflight.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [
+        "print_info",
+        "print_ok",
+        "print_warn",
+        "print_err",
+        "log_result",
+        "run"
+      ],
+      "imports": [
+        "sys",
+        "argparse",
+        "structlog",
+        "launcher.dep_checker",
+        "core.log_config",
+        "core.log_categories"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 114,
+      "docstring_purpose": "Unified preflight check for LunaWave to be called by both start.sh and start.bat.",
+      "reverse_deps": []
+    },
+    "server/handlers/log_dashboard.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "serve_log_dashboard",
+        "get_logs_tail",
+        "get_logs_stats"
+      ],
+      "imports": [
+        "pathlib",
+        "aiohttp",
+        "core.log_reader",
+        "core.observability",
+        "server.handlers.http"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 82,
+      "docstring_purpose": "Provide HTTP endpoints for the Logging Dashboard (tail, stats, and HTML).",
+      "reverse_deps": [
+        "server/app.py"
+      ]
+    },
+    "server/handlers/ws_log_stream.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "handle_log_stream_command",
+        "cleanup_log_viewer"
+      ],
+      "imports": [
+        "asyncio",
+        "os",
+        "typing",
+        "structlog",
+        "config",
+        "core.log_reader"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 107,
+      "docstring_purpose": "Provide WebSocket handler for live log tailing.",
+      "reverse_deps": [
+        "server/connection_manager.py",
+        "server/handlers/websocket.py"
+      ]
     }
   }
 }

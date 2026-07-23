@@ -66,6 +66,7 @@ class ServerManager(tk.Tk):
         self._btn_stop = None
         self._btn_restart = None
         self._btn_open = None
+        self._btn_dashboard = None
         self._port_entry = None
         self._btn_kill_conflict = None
         self._pid_label = None
@@ -201,6 +202,7 @@ class ServerManager(tk.Tk):
             self._btn_stop.config(state="normal")
             self._btn_restart.config(state="normal")
             self._btn_open.config(state="normal")
+            self._btn_dashboard.config(state="normal")
             self._port_entry.config(state="disabled")
             self._btn_kill_conflict.pack_forget()
         else:
@@ -219,6 +221,7 @@ class ServerManager(tk.Tk):
                 self._btn_stop.config(state="disabled")
                 self._btn_restart.config(state="disabled")
                 self._btn_open.config(state="normal")
+                self._btn_dashboard.config(state="disabled")
                 self._port_entry.config(state="normal")
 
                 self._conflict_pid = conflict_pid
@@ -236,6 +239,7 @@ class ServerManager(tk.Tk):
                 self._btn_stop.config(state="disabled")
                 self._btn_restart.config(state="disabled")
                 self._btn_open.config(state="disabled")
+                self._btn_dashboard.config(state="disabled")
                 self._port_entry.config(state="normal")
                 self._btn_kill_conflict.pack_forget()
 
@@ -275,6 +279,9 @@ class ServerManager(tk.Tk):
 
     def _on_open(self):
         webbrowser.open(f"http://localhost:{self.server_port}")
+
+    def _on_open_dashboard(self):
+        webbrowser.open(f"http://localhost:{self.server_port}/admin/logs")
 
     def _on_kill_conflict(self):
         self.lifecycle.kill_conflict(self.server_port)

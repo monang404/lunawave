@@ -34,42 +34,16 @@ if defined YTGUI_ADMIN_PASS set "LUNAWAVE_ADMIN_PASS=%YTGUI_ADMIN_PASS%"
 
 echo  [*] Initializing Environment Variables...
 
-echo  [*] Checking Python Dependencies...
-set "DEPS_OK=1"
-python -c "import sys, importlib.util; missing = [m for m in ['aiohttp', 'aiosqlite', 'yt_dlp', 'syncedlyrics', 'structlog', 'prometheus_client', 'opentelemetry'] if importlib.util.find_spec(m) is None]; sys.exit(1 if missing else 0)" > nul 2>&1
-if errorlevel 1 (
-    echo      [-] Ada modul yang belum terinstall.
-    echo          Jalankan: pip install -r requirements.txt
-    set "DEPS_OK=0"
-)
-
-if "%DEPS_OK%"=="1" (
-    echo      [+] All Python dependencies are satisfied.
-) else (
-    echo.
-    echo  [!] WARNING: Some dependencies are missing.
-    echo      Please run: pip install -r requirements.txt
-    echo.
-    ping 127.0.0.1 -n 4 > nul
-)
-
-echo  [*] Verifying MPV Installation...
-where mpv > nul 2>&1
+python -m launcher.preflight --host "%LUNAWAVE_HOST%" --port "%LUNAWAVE_PORT%"
 if %ERRORLEVEL% neq 0 (
-    echo      [-] MPV not found in system PATH.
-    echo          Download from: https://mpv.io/installation/
-    echo          Then add mpv.exe to your system PATH.
     echo.
-    ping 127.0.0.1 -n 4 > nul
-) else (
-    echo      [+] MPV detected.
+    echo  [X] Preflight check failed. Server will not start.
+    pause
+    exit /b 1
 )
 
 echo  [*] Cleaning Up Previous Sessions...
 taskkill /F /IM mpv.exe > nul 2>&1
-for /f "tokens=5" %%a in ('netstat -ano ^| find ":%LUNAWAVE_PORT% "') do (
-    if not "%%a"=="0" taskkill /F /PID %%a > nul 2>&1
-)
 
 :: ----------------------------------------------------------
 ::  ADMIN ACCESS INFO

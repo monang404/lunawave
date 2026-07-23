@@ -124,7 +124,11 @@ async def traffic_middleware(request: web.Request, handler):
 
         try:
             line = f"{request.method} {request.path} status={status} dur={dur_ms:.0f}ms"
-            if _is_quiet_path(request.path):
+            if status >= 500:
+                logger.error(line, category=LC_LIFECYCLE)
+            elif status >= 400:
+                logger.warning(line, category=LC_LIFECYCLE)
+            elif _is_quiet_path(request.path):
                 # Frequent, low-signal requests (audio range/chunk GETs,
                 # static asset fetches) -- keep them out of the INFO log to
                 # avoid flooding it, but still emit at DEBUG for local trace.

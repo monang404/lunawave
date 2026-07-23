@@ -134,3 +134,13 @@ END;
 CREATE TRIGGER IF NOT EXISTS artists_fts_au AFTER UPDATE OF nama ON artists BEGIN
     UPDATE songs_fts SET artist = new.nama WHERE rowid IN (SELECT id FROM songs WHERE artist_id = new.id);
 END;
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_admin INTEGER DEFAULT 0,
+    client_ip TEXT,
+    created_at INTEGER DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);

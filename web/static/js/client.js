@@ -11,7 +11,12 @@ store.userRole = "client";
 // terdefinisi, pemanggilan tsb akan throw ReferenceError yang menghentikan
 // eksekusi kode setelahnya (termasuk sinkronisasi audio & lirik).
 function wsSend(action, data) {
-    // no-op secara sengaja
+    // Hanya izinkan command chat untuk client mode (Client tidak bisa kontrol playback)
+    if (action === "send_chat" || action === "get_chat_history") {
+        if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+            window.ws.send(JSON.stringify({ type: "cmd", action, data: data || {} }));
+        }
+    }
 }
 
 // Function yang sama persis dengan yang ada di ws.js, untuk memastikan
@@ -115,6 +120,14 @@ function handleServerMessage(data) {
             if (typeof renderLyrics === 'function') renderLyrics();
             break;
 
+        case "chat_history":
+            if (window.ChatModule) window.ChatModule.onHistory(data.data);
+            break;
+
+        case "chat_message":
+            if (window.ChatModule) window.ChatModule.onNewMessage(data.data);
+            break;
+
         default:
             break;
     }
@@ -122,12 +135,13 @@ function handleServerMessage(data) {
 
 function connectWS() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = protocol + "//" + window.location.host + "/ws";
-
+    const wsUrl = protocol + "//" + window.location.host + "/ws?page=" + encodeURIComponent(window.location.pathname);
     window.ws = new WebSocket(wsUrl);
 
     window.ws.onopen = () => {
         updateWSStatus(true);
+        // Fetch history on connect
+        wsSend("get_chat_history");
     };
 
     window.ws.onmessage = (event) => {

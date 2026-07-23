@@ -528,3 +528,12 @@ pertanyaan berikut hanya dari isinya sendiri:
 
 Jika sebuah baris log tidak bisa menjawab kelima pertanyaan ini, ia belum
 memenuhi standar ini.
+
+---
+
+## 13. Lapisan Penyajian — Dashboard Logging
+
+LunaWave menyediakan antarmuka grafis untuk observabilitas melalui Dashboard Logging di `/admin/logs`.
+Endpoint dashboard (`/admin/logs`), serta API pendukungnya (`/api/logs/tail`, `/api/logs/stats`), bertindak murni sebagai **konsumen read-only** dari standar logging ini.
+Mereka *tidak* mengubah format logging dan *tidak* menjadi bagian dari taksonomi logging itu sendiri.
+Dashboard menyajikan log secara interaktif dengan memanfaatkan parsing Regex pada `lunawave.log` (berdasarkan `_LEVEL_COLORS` dan format `file_renderer`) dan streaming batch melalui WebSocket (`log_tail`).

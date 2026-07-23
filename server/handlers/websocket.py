@@ -44,6 +44,7 @@ from server.handlers.auth import handle_auth, require_auth
 from server.handlers.setup import handle_setup_admin
 from server.handlers.ws_discovery import handle_discovery_command
 from server.handlers.ws_download import handle_download_command
+from server.handlers.ws_log_stream import handle_log_stream_command
 from server.handlers.ws_playback import handle_playback_command
 from server.handlers.ws_queue import handle_queue_command
 from server.middleware import check_rate_limit
@@ -81,6 +82,7 @@ QUEUE_CMDS = {
 DISCOVERY_CMDS = {"search", "discover", "get_artist_detail", "discover_search"}
 DOWNLOAD_CMDS = {"download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
+CHAT_CMDS = {"send_chat", "get_chat_history"}
 
 
 logger = structlog.get_logger(component="ws.handler")
@@ -129,7 +131,7 @@ async def ws_handler(request):
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    await manager.connect(ws)
+    await manager.connect(ws, request)
 
     try:
         # include_lyrics=True: initial snapshot butuh lirik penuh karena
@@ -195,7 +197,9 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
         await handle_setup_admin(ws, data, manager, client_ip, repos, now)
         return
 
-    if not require_auth(manager, ws):
+    is_admin = require_auth(manager, ws)
+
+    if action not in CHAT_CMDS and not is_admin:
         await ws.send_str(
             json.dumps(
                 {
@@ -227,6 +231,12 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
             from server.handlers.ws_cache import handle_cache_command
 
             await handle_cache_command(action, data, ws, repos, manager, state)
+        elif action in CHAT_CMDS:
+            from server.handlers.ws_chat import handle_chat_command
+
+            await handle_chat_command(action, data, ws, repos, manager, is_admin, client_ip)
+        elif action == "log_tail":
+            await handle_log_stream_command(data.get("action"), ws)
     except Exception as e:
         logger.error(
             "ws_command_handling_failed",

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-23-187
+latest_patch_id: PATCH-2026-07-23-212
 
-total_entries: 187
+total_entries: 212
 
 ---
 
@@ -21,6 +21,1049 @@ total_entries: 187
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-23-212
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 12:36
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Fullstack
+**Priority:** Medium
+**Title:** Live Chat & Song Requests
+
+**Reason:** Client tidak bisa request lagu karena tidak ada sarana interaksi dengan Admin.
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan chat room persisten berbasis WebSocket dengan identifikasi badge Admin.
+
+**Changed Files:**
+- `persistence/schema.sql`
+- `persistence/chat_repo.py`
+- `persistence/__init__.py`
+- `server/handlers/ws_chat.py`
+- `server/handlers/websocket.py`
+- `web/static/index.html`
+- `web/static/css/components/chat.css`
+- `web/static/js/chat.js`
+- `web/static/js/ws.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-211
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 12:29
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Fullstack
+**Priority:** Medium
+**Title:** Pelacakan Halaman Web Aktif
+
+**Reason:** Admin bingung mengapa muncul 2 IP yang sama. Padahal karena beda tab/halaman.
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan ekstraksi Referer HTTP Headers di ConnectionManager. Menampilkannya di UI Admin Log.
+
+**Changed Files:**
+- `server/connection_manager.py`
+- `server/handlers/log_dashboard.py`
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-210
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 12:25
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Refactor
+**Area:** Fullstack
+**Priority:** Medium
+**Title:** Perbaikan UI Dashboard & Pelacakan User Agent
+
+**Reason:** Tampilan dashboard dirasa kurang profesional dan data durasi berantakan (banyak desimal). RAM selalu --. Ingin lihat info perangkat user.
+
+**Root Cause:**
+RAM None karena ctypes gagal di Windows, Uptime tidak di-floor.
+
+**Solution:**
+Beralih ke wmic untuk RAM. UI dirapikan dengan Glassmorphism dan hover efek dinamis. Menyertakan User-Agent parser di backend dan frontend.
+
+**Changed Files:**
+- `core/mem_stats.py`
+- `server/connection_manager.py`
+- `server/handlers/log_dashboard.py`
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-209
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 12:12
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Fullstack
+**Priority:** Medium
+**Title:** Tab System Dashboard & User Info
+
+**Reason:** Pengguna membutuhkan visualisasi menyeluruh terkait pemakaian resource (CPU & RAM) serta aktivitas user lain yang terhubung.
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Memperluas fungsi stats di log_dashboard.py untuk menyuntikkan data system (wmic cpu, rss mb) dan daftar IP dari ConnectionManager. Menyajikan data tersebut dalam 2 Tab baru di antarmuka web admin.
+
+**Changed Files:**
+- `core/mem_stats.py`
+- `server/connection_manager.py`
+- `server/handlers/log_dashboard.py`
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-208
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:50
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Backend
+**Priority:** Medium
+**Title:** Menangani Error 404 pada Favicon
+
+**Reason:** Browser secara otomatis meminta favicon.ico sehingga selalu memicu log ERROR/WARNING 404 pada dashboard
+
+**Root Cause:**
+Endpoint /favicon.ico belum diatur di aiohttp route sehingga browser yang mencarinya otomatis mendapatkan status 404.
+
+**Solution:**
+Menambahkan route khusus untuk /favicon.ico di server/app.py yang menyajikan file web/static/icons/icon-192.png sebagai ikon web.
+
+**Changed Files:**
+- `server/app.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-207
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:48
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Fitur Copy Text untuk Log
+
+**Reason:** Pengguna butuh cara cepat menyalin log error dari UI untuk pelaporan atau dianalisis
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan tombol 'Copy' tersembunyi (muncul saat hover) pada setiap baris log di Live Tail. Teks yang disalin diformat menjadi satu baris bersih yang memuat Waktu, Level, Kategori, Komponen, Pesan, dan seluruh fields ekstra.
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-206
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:44
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Perbaikan Render Matriks & Otentikasi WebSocket
+
+**Reason:** Layar Metrics Matrix kosong dan terus-menerus muncul peringatan WebSocket terputus padahal user sudah login
+
+**Root Cause:**
+JavaScript mengambil variabel JSON data.matrix yang salah letak (seharusnya data.log_stats.matrix) menyebabkan fungsi render gagal senyap. Selain itu, pengambilan token auth dari localStorage memakai kunci 'lunawave_session' padahal sistem utama LunaWave menyimpannya sebagai 'lunawave_session_token'.
+
+**Solution:**
+Memperbaiki referensi letak JSON matrix di admin-logs.js dan mengganti kunci localStorage yang benar agar WebSocket log_tail bisa mengotentikasi dirinya dengan sukses.
+
+**Changed Files:**
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-205
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:41
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tab Metrics Matrix (Dashboard Log Interaktif)
+
+**Reason:** Pengguna kesulitan memantau log secara real-time dan membutuhkan ringkasan tabel yang bisa diklik untuk menelusuri sumber masalah
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan struktur Tab pada UI dashboard ('Live Tail' dan 'Metrics Matrix'). Modifikasi backend log_reader.stats() agar mengembalikan matriks dua dimensi. Di frontend, matriks tersebut di-render menjadi tabel yang sel angkanya bisa diklik; saat diklik, ia akan otomatis berpindah ke tab Live Tail dengan filter kategori dan level yang sesuai terpasang.
+
+**Changed Files:**
+- `core/log_reader.py`
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-204
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:37
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Backend
+**Priority:** Medium
+**Title:** Level Log Akurat Berdasarkan HTTP Status Code
+
+**Reason:** Kegagalan akses HTTP seperti 404 (favicon) tidak masuk ke filter WARNING/ERROR
+
+**Root Cause:**
+Middleware traffic HTTP (traffic.py) selalu mencetak ringkasan request sebagai logger.info() terlepas dari apakah request tersebut gagal (404, 500) atau berhasil.
+
+**Solution:**
+Memodifikasi traffic_middleware agar mengevaluasi status code; jika >=500 akan menggunakan logger.error(), jika >=400 logger.warning(), selebihnya tetap logger.info() atau logger.debug() untuk rute sepi (quiet).
+
+**Changed Files:**
+- `server/middleware/traffic.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-203
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:34
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Backend
+**Priority:** Medium
+**Title:** Perbaikan Timezone UTC pada Kalkulasi Log Stats
+
+**Reason:** Bagian Global Metrics kosong karena endpoint /api/logs/stats gagal mengkalkulasi waktu dengan benar
+
+**Root Cause:**
+Fungsi log_reader.stats() membandingkan stempel waktu log (yang ditulis dalam format UTC oleh structlog) dengan waktu lokal server (datetime.datetime.now()), sehingga selisih waktu (>7 jam) membuat semua log dianggap terlalu usang untuk dihitung.
+
+**Solution:**
+Menggunakan datetime.datetime.now(datetime.UTC) untuk memastikan kalkulasi jendela waktu statistik selalu berbasis UTC agar sinkron dengan format lunawave.log.
+
+**Changed Files:**
+- `core/log_reader.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-202
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:31
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Perbaikan Filter Kategori & Global Metrics Dinamis
+
+**Reason:** Filter kategori tidak bekerja dan metrik global statis (tidak menampilkan kategori)
+
+**Root Cause:**
+Nilai select dropdown kategori masih menggunakan konstanta enum (LC_LIFECYCLE), sedangkan log_reader backend sudah mem-parsing menjadi string huruf kecil (lifecycle). Metrik global sebelumnya di-hardcode ke jumlah request HTTP/Command.
+
+**Solution:**
+Menyamakan value HTML dropdown menjadi lowercase sesuai backend, dan merombak Global Metrics agar digenerate secara dinamis dari API log stats. Setiap card metrik kategori kini dapat diklik untuk memfilter log secara interaktif.
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-201
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:28
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Render Log Tiga Kolom (Horizontal) & Ekstraksi Status HTTP
+
+**Reason:** Pengguna merasa tampilan sebelumnya (dua kolom vertikal) terlalu memakan tempat dan log traffic terlihat masih seperti string mentah
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Mengubah layout log menjadi baris tunggal horizontal (Ikon, Waktu, Kategori, Pesan, lalu Chips). Selain itu, JavaScript sekarang secara khusus mendeteksi string 'status=XXX' dan 'dur=XXXms' untuk mengekstraknya otomatis menjadi chip dengan ikon visual checkmark hijau (sukses).
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-200
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:25
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Render Log Interaktif Bergaya Web
+
+**Reason:** Pengguna menginginkan agar log tidak dirender mentah seperti di terminal
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Mengubah createLogLineElement untuk merender log dalam format dua kolom (meta & content) dengan badge/chip dinamis untuk setiap pasang field-value, termasuk highlighting khusus untuk durasi dan error.
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-199
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:22
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Premium UI Styling untuk Dashboard Logging
+
+**Reason:** Dashboard terlihat mencolok dan tidak seragam dengan estetika premium aplikasi utama
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Mengganti styling bawaan admin-logs.html agar menggunakan CSS framework utama aplikasi (tokens.css, typography.css) serta menambahkan ikon tabler-icons
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-198
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:19
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Perbaikan Fallback & WS Auth di Dashboard Logs
+
+**Reason:** Dashboard log /admin/logs tidak bisa live karena koneksi WebSocket ditolak (belum login Admin)
+
+**Root Cause:**
+Endpoint WebSocket /ws menuntut koneksi terautentikasi (admin login) untuk semua command termasuk log_tail, sementara dashboard log bisa diakses tanpa login jika di localhost
+
+**Solution:**
+Menambahkan fallback otomatis ke mekanisme HTTP polling (fetch) tiap 2 detik dengan fungsi deduplikasi (Set) jika WebSocket gagal atau ditolak. Selain itu, menyertakan token sesi otomatis jika user kebetulan sudah login sebagai admin.
+
+**Changed Files:**
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-23-197
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:13
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Cleanup
+**Area:** Global
+**Priority:** Medium
+**Title:** Sesi 10: Verifikasi Akhir Logging Redesign
+
+**Reason:** Memastikan seluruh sistem stabil, mematuhi standar, dan lulus tes
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menjalankan doctor.py --strict dan architecture_lint.py. Seluruh fitur redesain logging, dashboard, UI launcher, dan log backend telah terintegrasi tanpa regresi.
+
+**Changed Files:**
+- `docs/rfc/redesign_logging/task_breakdown_logging_redesign.yaml`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+RFC Redesign Logging Dashboard selesai 100%.
+
+---
+
+## PATCH-2026-07-23-196
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:12
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Docs
+**Area:** Logging
+**Priority:** Medium
+**Title:** Sesi 9: Dokumentasi Dashboard Logging & Security
+
+**Reason:** Memberikan panduan operasional dan menegaskan aturan keamanan dashboard observabilitas
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan bagian Lapisan Penyajian di LOGGING_STANDARD.md. Memperbarui README.md dengan URL /admin/logs. Menegaskan syarat X-Metrics-Token atau akses localhost di SECURITY.md.
+
+**Changed Files:**
+- `docs/rfc/logging_standard/LOGGING_STANDARD.md`
+- `README.md`
+- `SECURITY.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 9 selesai. Semua perubahan terdokumentasi sesuai standar.
+
+---
+
+## PATCH-2026-07-23-195
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:12
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Launcher
+**Priority:** Medium
+**Title:** Sesi 8: Tombol Buka Dashboard Logging di GUI
+
+**Reason:** Memberikan akses cepat ke logging dashboard langsung dari desktop launcher
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambahkan tombol baru pada ui_builder.py sejajar dengan tombol Open Portal, serta mendefinisikan event handler webbrowser.open ke /admin/logs di app.py. Tombol ini memiliki state enabled/disabled seirama dengan tombol Open Portal.
+
+**Changed Files:**
+- `launcher/gui/ui_builder.py`
+- `launcher/gui/app.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 8 selesai. Desktop launcher sekarang memiliki tombol pintas ke Logs.
+
+---
+
+## PATCH-2026-07-23-194
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:11
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Sesi 7: Frontend dashboard admin-logs
+
+**Reason:** Memberikan antarmuka grafis untuk membaca dan memantau log secara real-time
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Membuat web/static/admin-logs.html dan web/static/js/admin-logs.js yang melakukan fetch tail/stats dan koneksi WS live tail. Tombol unduh menggunakan Blob client-side dari endpoint tail.
+
+**Changed Files:**
+- `web/static/admin-logs.html`
+- `web/static/js/admin-logs.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 7 selesai. UI logging dashboard dengan live tailing aktif.
+
+---
+
+## PATCH-2026-07-23-193
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:09
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** WebSocket
+**Priority:** Medium
+**Title:** Sesi 6: Live tailing log via WebSocket
+
+**Reason:** Mendukung stream log langsung ke klien tanpa poling HTTP
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Membuat server/handlers/ws_log_stream.py. Menambahkan dispatch 'log_tail' di websocket.py. Memastikan loop tail dibersihkan otomatis pada disconnect di connection_manager.py.
+
+**Changed Files:**
+- `server/handlers/ws_log_stream.py`
+- `server/handlers/websocket.py`
+- `server/connection_manager.py`
+- `tests/unit/server/handlers/test_ws_log_stream.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 6 selesai. File LOCKED websocket.py berhasil di-update secara minimal sesuai aturan.
+
+---
+
+## PATCH-2026-07-23-192
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:06
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Server
+**Priority:** Medium
+**Title:** Sesi 5: Backend endpoint dashboard logging
+
+**Reason:** Menyediakan endpoint untuk membaca dan menampilkan log server
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Membuat server/handlers/log_dashboard.py untuk serve HTML dashboard, /api/logs/tail, dan /api/logs/stats dengan proteksi token. Meregistrasi rute di server/app.py.
+
+**Changed Files:**
+- `server/handlers/http.py`
+- `server/handlers/log_dashboard.py`
+- `server/app.py`
+- `tests/unit/server/handlers/test_log_dashboard.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 5 selesai. Rute dashboard sudah terdaftar di aplikasi.
+
+---
+
+## PATCH-2026-07-23-191
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:02
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Refactor
+**Area:** Main
+**Priority:** Medium
+**Title:** Sesi 4: main.py — banner terstruktur + ringkasan shutdown
+
+**Reason:** Mengubah output print manual menjadi logging terstruktur
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Mengubah banner startup menjadi event startup_summary. Menambahkan event session_summary saat shutdown dengan metric uptime dan total requests.
+
+**Changed Files:**
+- `main.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 4 selesai. Main.py menggunakan structlog untuk banner dan ringkasan sesi.
+
+---
+
+## PATCH-2026-07-23-190
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 11:01
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Refactor
+**Area:** Launcher
+**Priority:** Medium
+**Title:** Sesi 3: Pembersihan start.sh/bat dan app.py
+
+**Reason:** Menghapus duplikasi logika pengecekan dari script shell
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Mengubah start.sh dan start.bat untuk menggunakan launcher.preflight. Memverifikasi app.py tidak mengandung logika pengecekan redundan. Update README.md tentang CLI args.
+
+**Changed Files:**
+- `start.sh`
+- `start.bat`
+- `README.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 3 selesai. start.sh dan start.bat sekarang menjadi wrapper tipis untuk preflight.
+
+---
+
+## PATCH-2026-07-23-189
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 10:53
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Refactor
+**Area:** Launcher
+**Priority:** Medium
+**Title:** Sesi 2: Sentralisasi Preflight Check & Dependency Cek
+
+**Reason:** Menggabungkan logika pengecekan dari start.sh/bat ke dalam launcher/preflight.py
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Menambah fungsi check_port dan mpv_version di dep_checker.py. Membuat launcher/preflight.py yang mengeksekusi DependencyChecker dan me-log hasilnya ke lunawave.log serta ke terminal.
+
+**Changed Files:**
+- `launcher/dep_checker.py`
+- `launcher/preflight.py`
+- `tests/unit/launcher/test_dep_checker.py`
+- `tests/unit/launcher/test_preflight.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 2 selesai. Script ini sekarang dipanggil sebagai langkah pertama boot server.
+
+---
+
+## PATCH-2026-07-23-188
+
+**Tanggal:** 2026-07-23
+**Timestamp:** 10:50
+**Git Branch:** develop
+**Git Commit:** a57252a
+**Type:** Feature
+**Area:** Backend/Logging
+**Priority:** Medium
+**Title:** Sesi 1: Infrastruktur bersama parser log (R1.1) & helper metrics (R1.2)
+
+**Reason:** Persiapan infrastruktur untuk dashboard logging dan entrypoint redesain
+
+**Root Cause:**
+N/A
+
+**Solution:**
+Membuat core/log_reader.py dengan parser regex dan fungsi tail/stats. Menambah get_counter_value() di core/observability.py untuk membaca metric secara safe.
+
+**Changed Files:**
+- `core/log_reader.py`
+- `core/observability.py`
+- `tests/unit/core/test_log_reader.py`
+- `tests/unit/core/test_observability.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesi 1 selesai. Kedua modul adalah modul utilitas independen dan tidak mengubah behavior aplikasi eksisting.
 
 ---
 
