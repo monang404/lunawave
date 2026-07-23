@@ -29,9 +29,10 @@ import structlog
 
 from config import PREFETCH_RETRY_ATTEMPTS, PREFETCH_RETRY_BACKOFF_SEC, STREAM_URL_TTL_SEC
 from core.exceptions import RateLimitedError, VideoUnavailableError
+from core.log_categories import LC_PERSISTENCE, LC_RESOLVE
 from core.ports import MediaExtractorPort, TrackRepositoryPort
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="resolve.stream_prefetch")
 
 
 class StreamPrefetchService:
@@ -70,25 +71,48 @@ class StreamPrefetchService:
                 try:
                     await self.db.mark_unavailable(track, str(e))
                 except Exception as mark_err:
-                    logger.error(f"Gagal menandai unavailable saat prefetch {video_id}: {mark_err}")
-                logger.info(f"Prefetch dibatalkan, video tidak tersedia: {video_id} | {e}")
+                    logger.error(
+                        "prefetch_mark_unavailable_failed",
+                        category=LC_PERSISTENCE,
+                        video_id=video_id,
+                        error_type=type(mark_err).__name__,
+                        error=str(mark_err),
+                    )
+                logger.info(
+                    "prefetch_cancelled_video_unavailable",
+                    category=LC_RESOLVE,
+                    video_id=video_id,
+                    reason=str(e),
+                )
                 return
             except RateLimitedError as e:
                 # Retry cepat pada prefetch (background, tidak kritis) malah
                 # berisiko memperparah rate-limit yang sedang dialami jalur
                 # playback utama. Cukup log & serahkan ke jalur play utama.
-                logger.warning(f"Pre-fetch dibatalkan (rate-limited) untuk {video_id}: {e}")
+                logger.warning(
+                    "prefetch_cancelled_rate_limited",
+                    category=LC_RESOLVE,
+                    video_id=video_id,
+                    error=str(e),
+                )
                 return
             except Exception as e:
                 last_error = e
                 if attempt < PREFETCH_RETRY_ATTEMPTS - 1:
                     logger.info(
-                        f"Pre-fetch percobaan {attempt + 1}/{PREFETCH_RETRY_ATTEMPTS} gagal "
-                        f"untuk {video_id}, coba lagi: {e}"
+                        "prefetch_retry_attempt_failed",
+                        category=LC_RESOLVE,
+                        video_id=video_id,
+                        attempt=attempt + 1,
+                        max_attempts=PREFETCH_RETRY_ATTEMPTS,
+                        error=str(e),
                     )
                     await asyncio.sleep(PREFETCH_RETRY_BACKOFF_SEC * (attempt + 1))
 
         logger.warning(
-            f"Pre-fetch stream URL gagal untuk {video_id} setelah "
-            f"{PREFETCH_RETRY_ATTEMPTS} percobaan: {last_error}"
+            "prefetch_failed_after_retries",
+            category=LC_RESOLVE,
+            video_id=video_id,
+            attempt_count=PREFETCH_RETRY_ATTEMPTS,
+            error=str(last_error),
         )

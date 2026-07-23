@@ -33,10 +33,11 @@ import structlog
 from config import SPONSORBLOCK_CATS
 from core.event_bus import EventBus
 from core.events import LogMessageEvent, TrackProgressEvent
+from core.log_categories import LC_EXTERNAL
 from core.ports import AudioPlayerPort
 from core.state import AppState
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="sponsorblock")
 SPONSORBLOCK_API = "https://sponsor.ajay.app/api/skipSegments"
 
 
@@ -95,14 +96,25 @@ class SponsorBlockHandler:
                     if resp.status == 200:
                         data = await resp.json()
                         self.segments = [(seg["segment"][0], seg["segment"][1]) for seg in data]
-                        logger.info(f"SponsorBlock: {len(self.segments)} segments for {video_id}")
+                        logger.info(
+                            "sponsorblock_segments_fetched",
+                            category=LC_EXTERNAL,
+                            video_id=video_id,
+                            segment_count=len(self.segments),
+                        )
                     elif resp.status == 404:
                         pass  # No segments for this video, that's normal
             finally:
                 if close_after:
                     await session.close()
         except Exception as e:
-            logger.debug(f"SponsorBlock fetch failed: {e}")
+            logger.debug(
+                "sponsorblock_fetch_failed",
+                category=LC_EXTERNAL,
+                video_id=video_id,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def _on_progress(self, event: TrackProgressEvent):
         """Called every ~1.0s (throttled) by MpvController. Seeks past sponsored segments."""

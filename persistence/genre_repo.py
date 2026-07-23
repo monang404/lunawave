@@ -22,9 +22,10 @@ Thread Safety:
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.genre_repo")
 
 
 class GenreRepository:
@@ -41,7 +42,13 @@ class GenreRepository:
             )
             await self._conn.commit()
         except Exception as e:
-            logger.error(f"Error incrementing genre click: {e}")
+            logger.error(
+                "genre_click_increment_failed",
+                category=LC_PERSISTENCE,
+                genre_name=genre_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def get_genre_artists(self, genre_name: str, limit: int = 4) -> list[str]:
         if not self._conn:
@@ -59,7 +66,13 @@ class GenreRepository:
                 async for row in cursor:
                     artists.append(row["nama"])
         except Exception as e:
-            logger.error(f"Error getting genre artists: {e}")
+            logger.error(
+                "genre_artists_query_failed",
+                category=LC_PERSISTENCE,
+                genre_name=genre_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
         return artists
 
     async def get_genre_songs(

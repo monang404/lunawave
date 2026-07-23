@@ -42,11 +42,12 @@ from core.events import (
     TrackProgressEvent,
     TrackStartedEvent,
 )
+from core.log_categories import LC_LIFECYCLE
 from core.task_utils import safe_create_task
 from server.broadcast_service import BroadcastService
 from services.stream_prefetch import StreamPrefetchService
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="server.event_listeners")
 
 
 def setup_event_listeners(
@@ -136,4 +137,4 @@ def setup_event_listeners(
     bus.subscribe(LogMessageEvent, _on_log_message)
     bus.subscribe(TrackPauseChangedEvent, _on_pause_changed)
     bus.subscribe(DownloadProgressEvent, _on_download_progress)
-    logger.info("EventBus subscriptions set up for Web Server")
+    logger.info("event_subscriptions_registered", category=LC_LIFECYCLE)

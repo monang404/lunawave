@@ -52,6 +52,8 @@ def _reset_bootstrap_context():
 
 
 @pytest.mark.asyncio
+@patch("main.log_session_end")
+@patch("main.log_session_start")
 @patch("bootstrap.services.shutil.which", return_value="/usr/bin/mpv")
 @patch("bootstrap.services.Repositories")
 @patch("bootstrap.services.MpvController")
@@ -89,6 +91,8 @@ async def test_main_smoke(
     mock_mpv,
     mock_db,
     mock_which,
+    mock_log_session_start,
+    mock_log_session_end,
 ):
     from main import main
 
@@ -140,6 +144,13 @@ async def test_main_smoke(
     mock_run_server.assert_awaited_once()
     nowplaying_inst.start.assert_awaited_once()
     nowplaying_inst.cleanup.assert_awaited_once()
+
+    # ADR-0010: main.run_server() wajib menandai awal & akhir sesi lewat
+    # log_session_start()/log_session_end() (core.log_config) -- ini
+    # sebelumnya didefinisikan di sesi 2 tapi belum pernah dipanggil dari
+    # mana pun sampai fix ini.
+    mock_log_session_start.assert_called_once()
+    mock_log_session_end.assert_called_once()
 
     # Allow event loop to process task cancellations
     await asyncio.sleep(0.05)

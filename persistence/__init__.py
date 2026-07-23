@@ -38,7 +38,9 @@ from pathlib import Path
 
 import structlog
 
-logger = structlog.get_logger(__name__)
+from core.log_categories import LC_PERSISTENCE
+
+logger = structlog.get_logger(component="persistence.init")
 
 from persistence.admin_account_repo import AdminAccountRepository
 from persistence.artist_repo import ArtistRepository
@@ -97,6 +99,7 @@ class Repositories:
                 if "duplicate column" not in str(e).lower():
                     logger.error(
                         "db_migration_failed",
+                        category=LC_PERSISTENCE,
                         sql=sql,
                         error=str(e),
                         error_type=type(e).__name__,

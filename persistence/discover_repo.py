@@ -50,9 +50,10 @@ from typing import Any
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from persistence.discover_enrich import enrich_artists
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.discover")
 
 
 class DiscoverRepository:
@@ -91,7 +92,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (limit,)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting bandit ranked artists: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="bandit_ranked_artists",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -118,7 +125,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (limit,)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting unheard artists: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="unheard_artists",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -161,7 +174,13 @@ class DiscoverRepository:
             async with self._conn.execute(query) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting taste spectrum: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="taste_spectrum",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return rows
@@ -200,7 +219,13 @@ class DiscoverRepository:
             async with self._conn.execute(query, (genre_name, limit)) as cursor:
                 rows = [dict(r) for r in await cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting genre artists enriched: {e}")
+            logger.error(
+                "discover_query_failed",
+                category=LC_PERSISTENCE,
+                query_type="genre_artists_enriched",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         return await enrich_artists(self._conn, rows)
@@ -304,7 +329,12 @@ class DiscoverRepository:
 
             track_rows, song_rows = await asyncio.gather(_fetch_tracks(), _fetch_songs())
         except Exception as e:
-            logger.error(f"Error searching tracks: {e}")
+            logger.error(
+                "search_tracks_query_failed",
+                category=LC_PERSISTENCE,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return []
 
         # --- Gabung + dedup (tracks menang atas songs untuk video_id sama) ---
@@ -367,7 +397,13 @@ class DiscoverRepository:
             ) as cursor:
                 artist_row = await cursor.fetchone()
         except Exception as e:
-            logger.error(f"Error getting artist detail: {e}")
+            logger.error(
+                "artist_detail_query_failed",
+                category=LC_PERSISTENCE,
+                artist_name=nama,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return None
 
         if not artist_row:
@@ -389,7 +425,13 @@ class DiscoverRepository:
             ) as cursor:
                 song_rows = await cursor.fetchall()
         except Exception as e:
-            logger.error(f"Error getting artist detail songs: {e}")
+            logger.error(
+                "artist_detail_songs_query_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist["nama"],
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             song_rows = []
 
         detail["songs"] = [

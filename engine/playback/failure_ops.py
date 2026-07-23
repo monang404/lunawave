@@ -46,10 +46,11 @@ import asyncio
 import structlog
 
 from core.events import LogMessageEvent
+from core.log_categories import LC_PLAYBACK
 from core.state import PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.failure_ops")
 
 
 class FailureOps:
@@ -62,7 +63,12 @@ class FailureOps:
     async def handle_video_unavailable(self, track: TrackInfo, e: Exception) -> None:
         c = self.c
         c._loading = False
-        logger.warning(f"Video permanen tidak tersedia, skip tanpa retry: {e}")
+        logger.warning(
+            "track_permanently_unavailable",
+            category=LC_PLAYBACK,
+            video_id=track.video_id,
+            reason=str(e),
+        )
         c.state.status = PlayerStatus.ERROR
         c.state.error_msg = f"Lagu tidak tersedia: {track.title}"
         safe_create_task(
@@ -79,7 +85,18 @@ class FailureOps:
     async def handle_bot_check_or_rate_limited(self, track: TrackInfo, e: Exception) -> None:
         c = self.c
         c._loading = False
-        logger.error(f"Gagal memutar {track.title} ({type(e).__name__}): {e}")
+        # L8.1 (G8/L-D4): field baru vs stream_resolve_failed resolver.py --
+        # consecutive_failures (state circuit-breaker cross-track yang hanya
+        # diketahui di sini, bukan di resolver.py) menjustifikasi log ulang
+        # di boundary playback ini (§11.4: titik final paling informatif).
+        logger.error(
+            "track_play_failed",
+            category=LC_PLAYBACK,
+            video_id=track.video_id,
+            error_type=type(e).__name__,
+            error=str(e),
+            consecutive_failures=c._retry_count + 1,
+        )
         c.state.status = PlayerStatus.ERROR
         c.state.error_msg = str(e)
         await c.bus.publish(LogMessageEvent(message=f"{type(e).__name__}: {track.title} — {e}"))
@@ -88,7 +105,17 @@ class FailureOps:
     async def handle_generic_error(self, track: TrackInfo, e: Exception) -> None:
         c = self.c
         c._loading = False  # RC-TERMUX-01: clear flag jika error
-        logger.error(f"Failed to play track {track.title}: {e}", exc_info=True)
+        # L8.1 (G8/L-D4): consecutive_failures = field baru yang tidak
+        # diketahui resolver.py, menjustifikasi log ulang di boundary ini.
+        logger.error(
+            "track_play_failed",
+            category=LC_PLAYBACK,
+            video_id=track.video_id,
+            error_type=type(e).__name__,
+            error=str(e),
+            exc_info=True,
+            consecutive_failures=c._retry_count + 1,
+        )
         c.state.status = PlayerStatus.ERROR
         c.state.error_msg = f"Error: {e}"
         await c.bus.publish(

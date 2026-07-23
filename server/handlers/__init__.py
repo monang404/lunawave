@@ -16,6 +16,7 @@ Responsibilities:
 
 Depends on:
     - core.ports
+    - core.server_clock
     - core.state
     - engine.playback.controller
     - persistence
@@ -37,9 +38,10 @@ from aiohttp import web
 
 from core.ports import MediaExtractorPort, TrackRepositoryPort
 from core.state import AppState
-from server.app import CONN, MANAGER, PLAYBACK_CONTROLLER, REPOS, STATE, TRACKS, YTDLP
+from server.app import CONN, MANAGER, PLAYBACK_CONTROLLER, REPOS, SERVER_CLOCK, STATE, TRACKS, YTDLP
 
 if TYPE_CHECKING:
+    from core.server_clock import ServerClock
     from engine.playback.controller import PlaybackController
     from persistence import Repositories
     from server.connection_manager import ConnectionManager
@@ -71,3 +73,7 @@ def get_ytdlp(request: web.Request) -> MediaExtractorPort:
 
 def get_playback_controller(request: web.Request) -> "PlaybackController":
     return request.app[PLAYBACK_CONTROLLER]
+
+
+def get_server_clock(request: web.Request) -> "ServerClock":
+    return request.app[SERVER_CLOCK]

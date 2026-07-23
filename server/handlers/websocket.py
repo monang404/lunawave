@@ -38,6 +38,7 @@ import aiohttp
 import structlog
 from aiohttp import web
 
+from core.log_categories import LC_COMMAND, LC_SECURITY, LC_SESSION
 from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
 from server.handlers.setup import handle_setup_admin
@@ -82,7 +83,7 @@ DOWNLOAD_CMDS = {"download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
 
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.handler")
 
 
 def check_ws_origin(request) -> bool:
@@ -113,7 +114,8 @@ async def ws_handler(request):
     # Non-browser clients (no Origin header) are still allowed.
     if not check_ws_origin(request):
         logger.warning(
-            "WS handshake rejected: Origin mismatch",
+            "ws_handshake_rejected_origin_mismatch",
+            category=LC_SECURITY,
             origin=request.headers.get("Origin", ""),
             host=request.host,
         )
@@ -157,7 +159,9 @@ async def ws_handler(request):
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(
+            "ws_connection_error", category=LC_SESSION, error_type=type(e).__name__, error=str(e)
+        )
     finally:
         manager.disconnect(ws)
 
@@ -224,7 +228,14 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
             await handle_cache_command(action, data, ws, repos, manager, state)
     except Exception as e:
-        logger.error(f"Error handling WS command '{action}': {e}", exc_info=True)
+        logger.error(
+            "ws_command_handling_failed",
+            category=LC_COMMAND,
+            command_action=action,
+            error_type=type(e).__name__,
+            error=str(e),
+            exc_info=True,
+        )
         try:
             await ws.send_str(
                 json.dumps(
@@ -236,5 +247,8 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
             )
         except Exception as send_err:
             logger.debug(
-                f"Gagal mengirim balasan error ke client (koneksi mungkin sudah mati): {send_err}"
+                "ws_error_reply_send_failed",
+                category=LC_COMMAND,
+                error_type=type(send_err).__name__,
+                error=str(send_err),
             )

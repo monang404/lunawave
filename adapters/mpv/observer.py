@@ -38,9 +38,10 @@ from core.events import (
     TrackPauseChangedEvent,
     TrackProgressEvent,
 )
+from core.log_categories import LC_EXTERNAL
 from core.task_utils import safe_create_task
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="mpv.observer")
 
 # Jumlah percobaan reconnect sebelum menyerah dan mengumumkan track sebagai
 # error. Backoff dibuat pendek (detik, bukan puluhan detik) karena ini
@@ -130,22 +131,39 @@ class MpvObserver:
         finally:
             self._conn.is_connected = False
             self._ipc.cancel_all_pending()
-            logger.warning("mpv observer loop ended - connection lost.")
+            logger.warning(
+                "mpv_observer_loop_ended",
+                category=LC_EXTERNAL,
+                reason="connection_lost",
+            )
 
     async def _reconnect_with_retries(self) -> bool:
         for attempt in range(1, RECONNECT_MAX_ATTEMPTS + 1):
             logger.warning(
-                f"MPV terputus, mencoba reconnect ({attempt}/{RECONNECT_MAX_ATTEMPTS})..."
+                "mpv_reconnect_attempt_started",
+                category=LC_EXTERNAL,
+                attempt=attempt,
+                max_attempts=RECONNECT_MAX_ATTEMPTS,
             )
             try:
                 if await self._conn.reconnect():
-                    logger.info("MPV berhasil reconnect.")
+                    logger.info(
+                        "mpv_reconnected",
+                        category=LC_EXTERNAL,
+                        attempt=attempt,
+                    )
                     return True
             except Exception as e:
-                logger.error(f"MPV reconnect attempt {attempt} raised: {e}")
+                logger.error(
+                    "mpv_reconnect_attempt_failed",
+                    category=LC_EXTERNAL,
+                    attempt=attempt,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
             if attempt < RECONNECT_MAX_ATTEMPTS:
                 await asyncio.sleep(RECONNECT_BACKOFF_SECONDS[attempt - 1])
-        logger.error("MPV reconnect gagal setelah semua percobaan.")
+        logger.critical("mpv_reconnect_exhausted", category=LC_EXTERNAL)
         return False
 
     async def _handle_event(self, msg: dict):

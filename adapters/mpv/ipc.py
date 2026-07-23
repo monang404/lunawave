@@ -25,7 +25,9 @@ import json
 
 import structlog
 
-logger = structlog.get_logger(__name__)
+from core.log_categories import LC_EXTERNAL
+
+logger = structlog.get_logger(component="mpv.ipc")
 
 
 class MpvIPC:
@@ -48,7 +50,12 @@ class MpvIPC:
                 self._conn.writer.write(payload.encode())
                 await self._conn.writer.drain()
             except OSError as e:
-                logger.warning(f"Failed to send command (OSError): {e}")
+                logger.warning(
+                    "mpv_command_send_failed",
+                    category=LC_EXTERNAL,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         return req_id
 
     async def get_property(self, prop: str):

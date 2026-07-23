@@ -29,7 +29,12 @@ import asyncio
 import json
 import secrets
 
+import structlog
+
+from core.log_categories import LC_AUTH
 from core.security import hash_password, verify_password
+
+logger = structlog.get_logger(component="ws.auth")
 
 # T-B13.1: sumber kredensial sekarang admin_account (SQLite), bukan lagi
 # config.ADMIN_USERNAME/ADMIN_PASSWORD. Saat admin_account belum ada
@@ -78,6 +83,7 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
             if await sessions.verify_session(token):
                 await sessions.extend_session(token, int(now) + 10800)
                 manager.authenticated_connections.add(ws)
+                logger.info("auth_token_verified", category=LC_AUTH, client_ip=client_ip)
                 await ws.send_str(
                     json.dumps({"type": "auth_status", "data": {"success": True, "token": token}})
                 )
@@ -90,6 +96,12 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
         else:
             manager.login_attempts[client_ip] = attempts
         if len(attempts) >= 5:
+            logger.warning(
+                "auth_rate_limited",
+                category=LC_AUTH,
+                client_ip=client_ip,
+                attempt_count=len(attempts),
+            )
             await ws.send_str(
                 json.dumps(
                     {
@@ -124,9 +136,11 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
             new_token = secrets.token_hex(16)
             if sessions:
                 await sessions.create_session(new_token, int(now) + 10800)
+                logger.info("auth_session_created", category=LC_AUTH, client_ip=client_ip)
             manager.authenticated_connections.add(ws)
             if client_ip in manager.login_attempts:
                 del manager.login_attempts[client_ip]
+            logger.info("auth_login_succeeded", category=LC_AUTH, client_ip=client_ip)
             await ws.send_str(
                 json.dumps({"type": "auth_status", "data": {"success": True, "token": new_token}})
             )
@@ -135,6 +149,12 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
             attempts = [t for t in attempts if now - t < 300]
             attempts.append(now)
             manager.login_attempts[client_ip] = attempts
+            logger.info(
+                "auth_login_rejected",
+                category=LC_AUTH,
+                client_ip=client_ip,
+                reason="invalid_credentials",
+            )
             await ws.send_str(
                 json.dumps(
                     {

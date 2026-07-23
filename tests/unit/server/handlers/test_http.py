@@ -30,7 +30,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from aiohttp import web
 
-from server.app import CONN, PLAYBACK_CONTROLLER
+from server.app import CONN, MANAGER, PLAYBACK_CONTROLLER, SERVER_CLOCK
 from server.handlers.http import health_check, serve_index, serve_metrics
 
 
@@ -38,6 +38,12 @@ from server.handlers.http import health_check, serve_index, serve_metrics
 def mock_request():
     req = MagicMock()
     req.app = {}
+    mock_clock = MagicMock()
+    mock_clock.uptime_seconds = 812.4
+    req.app[SERVER_CLOCK] = mock_clock
+    mock_manager = MagicMock()
+    mock_manager.active_connections = []
+    req.app[MANAGER] = mock_manager
     return req
 
 
@@ -64,13 +70,23 @@ async def test_health_check_returns_ok_when_connected(mock_request):
     mock_request.app[CONN] = True
     mock_request.app[PLAYBACK_CONTROLLER] = mock_pc
 
-    with patch("server.handlers.http.web.json_response") as mock_json_resp:
+    with (
+        patch("server.handlers.http.web.json_response") as mock_json_resp,
+        patch("server.handlers.http.get_rss_mb", return_value=181.4),
+    ):
         mock_json_resp.return_value = "response"
 
         resp = await health_check(mock_request)
 
         mock_json_resp.assert_called_once_with(
-            {"status": "ok", "db": "connected", "mpv": "connected"}
+            {
+                "status": "ok",
+                "db": "connected",
+                "mpv": "connected",
+                "uptime_seconds": 812.4,
+                "memory_mb": 181.4,
+                "active_connections": 0,
+            }
         )
         assert resp == "response"
 
@@ -82,11 +98,60 @@ async def test_health_check_returns_degraded_when_db_disconnected(mock_request):
     mock_request.app[CONN] = False
     mock_request.app[PLAYBACK_CONTROLLER] = mock_pc
 
-    with patch("server.handlers.http.web.json_response") as mock_json_resp:
+    with (
+        patch("server.handlers.http.web.json_response") as mock_json_resp,
+        patch("server.handlers.http.get_rss_mb", return_value=None),
+    ):
         await health_check(mock_request)
         mock_json_resp.assert_called_once_with(
-            {"status": "degraded", "db": "disconnected", "mpv": "not_started"}
+            {
+                "status": "degraded",
+                "db": "disconnected",
+                "mpv": "not_started",
+                "uptime_seconds": 812.4,
+                "memory_mb": None,
+                "active_connections": 0,
+            }
         )
+
+
+@pytest.mark.asyncio
+async def test_health_check_reports_active_connections_count(mock_request):
+    """ADR-0010 O4.1: active_connections must reflect ConnectionManager's
+    current active_connections length."""
+    mock_pc = MagicMock()
+    mock_pc.mpv.is_connected = True
+    mock_request.app[CONN] = True
+    mock_request.app[PLAYBACK_CONTROLLER] = mock_pc
+    mock_request.app[MANAGER].active_connections = ["ws1", "ws2", "ws3"]
+
+    with patch("server.handlers.http.get_rss_mb", return_value=100.0):
+        resp = await health_check(mock_request)
+
+    assert resp.status == 200
+    import json
+
+    body = json.loads(resp.body)
+    assert body["active_connections"] == 3
+
+
+@pytest.mark.asyncio
+async def test_health_check_never_crashes_when_server_clock_or_manager_missing(mock_request):
+    """ADR-0010 O4.1: /health must degrade gracefully (fields -> null),
+    never raise, if SERVER_CLOCK or MANAGER is somehow absent from app."""
+    mock_pc = MagicMock()
+    mock_pc.mpv.is_connected = True
+    mock_request.app = {CONN: True, PLAYBACK_CONTROLLER: mock_pc}  # no SERVER_CLOCK/MANAGER
+
+    with patch("server.handlers.http.get_rss_mb", return_value=None):
+        resp = await health_check(mock_request)
+
+    assert resp.status == 200
+    import json
+
+    body = json.loads(resp.body)
+    assert body["uptime_seconds"] is None
+    assert body["active_connections"] is None
 
 
 @pytest.mark.asyncio

@@ -39,11 +39,12 @@ from aiohttp import web
 
 from config import CACHE_DIR, STREAM_PREBUFFER_BYTES, STREAM_URL_TTL_SEC
 from core.exceptions import VideoUnavailableError
+from core.log_categories import LC_PERSISTENCE, LC_RESOLVE, LC_SECURITY
 from server.handlers import get_tracks_repo, get_ytdlp
 
 _STREAM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="server.audio_stream_handler")
 
 
 async def _mark_video_unavailable(db, video_id: str, row, reason: str) -> None:
@@ -58,7 +59,13 @@ async def _mark_video_unavailable(db, video_id: str, row, reason: str) -> None:
     try:
         await db.mark_unavailable(track, reason)
     except Exception as e:
-        logger.error(f"Gagal menandai unavailable untuk {video_id}: {e}")
+        logger.error(
+            "mark_unavailable_failed",
+            category=LC_PERSISTENCE,
+            video_id=video_id,
+            error_type=type(e).__name__,
+            error=str(e),
+        )
 
 
 async def serve_stream(request):
@@ -105,8 +112,13 @@ async def serve_stream(request):
             except VideoUnavailableError as e:
                 await _mark_video_unavailable(db, video_id, row, str(e))
                 return web.HTTPGone(text=f"Video tidak tersedia: {e}")
-            except Exception as e:
-                logger.error(f"Gagal fetch stream URL untuk redirect: {e}")
+            except Exception:
+                # L8.1 (G8): exception ini sudah dicatat sebagai
+                # stream_resolve_failed (ERROR, video_id/error_type/error)
+                # oleh adapters/ytdlp/resolver.py di titik asal (boundary
+                # resolve) -- lapisan ini tidak menambah field baru apa pun
+                # (video_id/error_type/error identik), jadi tidak logging
+                # ulang di sini (§12.5 / L-D4).
                 return web.HTTPServiceUnavailable(text="Stream tidak tersedia saat ini")
         # Validasi domain sebelum redirect (cegah open-redirect / SSRF)
         from urllib.parse import urlparse as _urlparse
@@ -116,7 +128,11 @@ async def serve_stream(request):
         if _p.scheme != "https" or not (
             _domain.endswith(".googlevideo.com") or _domain.endswith(".youtube.com")
         ):
-            logger.error(f"URL stream tidak valid untuk redirect: {stream_url}")
+            logger.error(
+                "stream_redirect_url_invalid",
+                category=LC_SECURITY,
+                stream_url=stream_url,
+            )
             return web.HTTPForbidden(text="URL stream tidak valid")
         return web.HTTPFound(stream_url)
 
@@ -145,7 +161,13 @@ async def serve_stream(request):
             if not (domain.endswith(".googlevideo.com") or domain.endswith(".youtube.com")):
                 raise ValueError(f"Domain tidak sah: {domain}")
         except Exception as e:
-            logger.error(f"SSRF terdeteksi atau URL stream tidak valid: {stream_url} - {e}")
+            logger.error(
+                "ssrf_or_invalid_stream_url_detected",
+                category=LC_SECURITY,
+                stream_url=stream_url,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return web.HTTPForbidden(text="URL stream tidak valid")
 
         try:
@@ -155,7 +177,11 @@ async def serve_stream(request):
 
             async with http_session.get(stream_url, headers=headers) as upstream:
                 if upstream.status in (403, 410) and attempt == 0:
-                    logger.warning(f"YouTube stream URL expired ({upstream.status}), refetching...")
+                    logger.warning(
+                        "stream_url_expired_refetching",
+                        category=LC_RESOLVE,
+                        upstream_status=upstream.status,
+                    )
                     import asyncio
 
                     from core.event_bus import bus
@@ -213,7 +239,13 @@ async def serve_stream(request):
                 return response
 
         except Exception as e:
-            logger.warning(f"Proxy stream error untuk {video_id}: {e}")
+            logger.warning(
+                "proxy_stream_error",
+                category=LC_RESOLVE,
+                video_id=video_id,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             if attempt == 0:
                 stream_url = None
                 continue

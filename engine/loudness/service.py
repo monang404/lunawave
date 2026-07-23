@@ -31,10 +31,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE, LC_SYSTEM
 from core.ports import TrackRepositoryPort
 from engine.loudness.analyzer import LoudnessAnalyzer
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.loudness_service")
 
 
 def _is_charging_or_unknown() -> bool:
@@ -50,9 +51,7 @@ def _is_charging_or_unknown() -> bool:
         return True
 
     try:
-        result = subprocess.run(
-            [binary], capture_output=True, text=True, timeout=5, shell=False
-        )
+        result = subprocess.run([binary], capture_output=True, text=True, timeout=5, shell=False)
         data = json.loads(result.stdout)
         # Output resmi termux-battery-status: field "status" bernilai salah
         # satu dari "CHARGING" / "DISCHARGING" / "NOT_CHARGING" / "FULL".
@@ -61,7 +60,12 @@ def _is_charging_or_unknown() -> bool:
             return True  # field tidak dikenali -- fail-open
         return status == "CHARGING"
     except Exception as e:
-        logger.debug(f"termux-battery-status check gagal, fail-open: {e}")
+        logger.debug(
+            "termux_battery_status_check_failed",
+            category=LC_SYSTEM,
+            error_type=type(e).__name__,
+            error=str(e),
+        )
         return True
 
 
@@ -88,9 +92,7 @@ class LoudnessService:
         # kalau ini dipanggil langsung di sini, seluruh event loop (WS, HTTP,
         # broadcast progress) ikut freeze, bukan cuma task loudness ini.
         # Delegasikan ke executor yang sama seperti measure_sync di bawah.
-        is_charging_or_unknown = await loop.run_in_executor(
-            self._executor, _is_charging_or_unknown
-        )
+        is_charging_or_unknown = await loop.run_in_executor(self._executor, _is_charging_or_unknown)
         if not is_charging_or_unknown:
             return  # Tidak charging -- ditunda, coba lagi di play berikutnya
 
@@ -101,4 +103,10 @@ class LoudnessService:
         try:
             await self.db.set_loudness(video_id, measurement.lufs, measurement.true_peak)
         except Exception as e:
-            logger.warning(f"Gagal simpan loudness untuk {video_id}: {e}")
+            logger.warning(
+                "loudness_save_failed",
+                category=LC_PERSISTENCE,
+                video_id=video_id,
+                error_type=type(e).__name__,
+                error=str(e),
+            )

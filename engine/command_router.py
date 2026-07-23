@@ -48,7 +48,7 @@ from core.command_bus import (
     command_bus,
 )
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="engine.command_router")
 
 
 class CommandRouter:

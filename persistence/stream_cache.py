@@ -36,7 +36,7 @@ from core.observability import RESOLVE_LATENCY
 from core.ports import DatabasePort, MediaExtractorPort
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.stream_cache")
 
 
 class ResolverDbCompat:

@@ -21,12 +21,15 @@ Thread Safety:
     Worker thread.
 """
 
-import logging
+import time
 
+import structlog
+
+from core.log_categories import LC_RADIO
 from core.state import AppState, TrackInfo
 from engine.radio.track_interleaver import normalize_title
 
-_log = logging.getLogger(__name__)
+logger = structlog.get_logger(component="radio.track_filter")
 
 
 class TrackFilter:
@@ -42,6 +45,8 @@ class TrackFilter:
         """
         if not candidates:
             return []
+
+        t0 = time.monotonic()
 
         # Build exclusion set from active queue and history
         exclude_ids = set()
@@ -109,5 +114,14 @@ class TrackFilter:
                 exclude_normalized_titles.add(normalized_title)
             artist_counts[track.artist] = current_count + 1
             filtered.append(track)
+
+        duration_ms = round((time.monotonic() - t0) * 1000)
+        logger.info(
+            "radio_filter_completed",
+            category=LC_RADIO,
+            candidates_in=len(candidates),
+            candidates_out=len(filtered),
+            duration_ms=duration_ms,
+        )
 
         return filtered

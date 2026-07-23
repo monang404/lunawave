@@ -22,9 +22,10 @@ Thread Safety:
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.artist_repo")
 
 
 class ArtistRepository:
@@ -46,7 +47,13 @@ class ArtistRepository:
             )
             await self._conn.commit()
         except Exception as e:
-            logger.error(f"Error incrementing artist click: {e}")
+            logger.error(
+                "artist_click_increment_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def get_all_artists(self, kategori: str | None = None) -> list[str]:
         if kategori:
@@ -99,7 +106,13 @@ class ArtistRepository:
                 a, b = self._reward_cache.get(artist_name, (1.0, 1.0))
                 self._reward_cache[artist_name] = ((a * 0.98) + 1.0, b * 0.98)
         except Exception as e:
-            logger.error(f"Error recording completion: {e}")
+            logger.error(
+                "artist_reward_completion_record_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def record_skip(self, artist_name: str) -> None:
         """Track skip dini — reward negatif untuk bandit."""
@@ -115,7 +128,13 @@ class ArtistRepository:
                 a, b = self._reward_cache.get(artist_name, (1.0, 1.0))
                 self._reward_cache[artist_name] = (a * 0.98, (b * 0.98) + 1.0)
         except Exception as e:
-            logger.error(f"Error recording skip: {e}")
+            logger.error(
+                "artist_reward_skip_record_failed",
+                category=LC_PERSISTENCE,
+                artist_name=artist_name,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def get_reward_stats(self) -> dict[str, tuple[float, float]]:
         """Ambil {nama_artis: (alpha, beta)} untuk semua artis.

@@ -35,8 +35,9 @@ import subprocess
 import structlog
 
 from config import LOUDNESS_ANALYZE_TIMEOUT_SEC
+from core.log_categories import LC_EXTERNAL
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.loudness_analyzer")
 
 _JSON_BLOCK_RE = re.compile(r"\{[^{}]*\"input_i\"[^{}]*\}", re.DOTALL)
 
@@ -90,15 +91,28 @@ class LoudnessAnalyzer:
                 shell=False,
             )
         except subprocess.TimeoutExpired:
-            logger.debug(f"Loudness analysis timeout: {uri}")
+            logger.debug(
+                "loudness_analysis_timeout",
+                category=LC_EXTERNAL,
+                uri=uri,
+            )
             return None
         except OSError as e:
-            logger.error(f"ffmpeg tidak bisa dijalankan: {e}")
+            logger.error(
+                "ffmpeg_spawn_failed",
+                category=LC_EXTERNAL,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return None
 
         match = _JSON_BLOCK_RE.search(result.stderr)
         if not match:
-            logger.debug(f"Loudness analysis: tidak ada output JSON dari ffmpeg untuk {uri}")
+            logger.debug(
+                "loudness_analysis_no_json_output",
+                category=LC_EXTERNAL,
+                uri=uri,
+            )
             return None
 
         try:
@@ -110,5 +124,10 @@ class LoudnessAnalyzer:
             true_peak = float(raw_tp) if raw_tp != "-inf" else -120.0
             return LoudnessMeasurement(lufs=lufs, true_peak=true_peak)
         except (json.JSONDecodeError, KeyError, ValueError) as e:
-            logger.warning(f"Loudness analysis: gagal parse JSON: {e}")
+            logger.warning(
+                "loudness_analysis_json_parse_failed",
+                category=LC_EXTERNAL,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
             return None

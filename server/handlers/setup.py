@@ -39,10 +39,11 @@ import sqlite3
 import structlog
 from aiohttp import web
 
+from core.log_categories import LC_AUTH
 from core.security import hash_password
 from server.handlers import get_repos
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.setup")
 
 MIN_PASSWORD_LENGTH = 8
 RATE_LIMIT_WINDOW_SEC = 300  # 5 menit -- sama dengan window login_attempts di auth.py
@@ -127,7 +128,12 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
             # Fallback kegagalan setup (lihat catatan lengkap di except
             # Exception setelah create_admin_account di bawah): DB tidak
             # bisa dibaca sama sekali -> jangan lanjut ke hashing/insert.
-            logger.error("setup_admin_exists_check_failed", client_ip=client_ip, exc_info=True)
+            logger.error(
+                "setup_admin_exists_check_failed",
+                category=LC_AUTH,
+                client_ip=client_ip,
+                exc_info=True,
+            )
             _record_failure()
             await ws.send_str(
                 json.dumps(
@@ -178,7 +184,7 @@ async def handle_setup_admin(ws, data, manager, client_ip, repos, now):
         )
         return
     except Exception:
-        logger.error("setup_admin_failed", client_ip=client_ip, exc_info=True)
+        logger.error("setup_admin_failed", category=LC_AUTH, client_ip=client_ip, exc_info=True)
         await ws.send_str(
             json.dumps(
                 {
@@ -211,7 +217,7 @@ async def setup_required(request: web.Request) -> web.Response:
         # Fallback kegagalan setup: DB corrupt/disk penuh saat startup
         # tidak boleh menjatuhkan seluruh server -- request ini gagal
         # dengan jelas (503), bukan 500 generik/stack trace bocor.
-        logger.error("setup_required_check_failed", exc_info=True)
+        logger.error("setup_required_check_failed", category=LC_AUTH, exc_info=True)
         return web.json_response(
             {"error": "Gagal memeriksa status setup. Cek log server."}, status=503
         )

@@ -26,10 +26,15 @@ Thread Safety:
 
 import asyncio
 
+import structlog
+
 from core.events import LogMessageEvent, QueueUpdatedEvent
+from core.log_categories import LC_PLAYBACK
 from core.ports import AudioPlayerPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus
 from engine.radio import RadioMode
+
+logger = structlog.get_logger(component="playback.mode_ops")
 
 
 class ModeOps:
@@ -65,6 +70,11 @@ class ModeOps:
                     self.state.status = PlayerStatus.LOADING
                     should_activate_radio = True
 
+                logger.info(
+                    "playback_mode_changed",
+                    category=LC_PLAYBACK,
+                    mode_baru=mode.name,
+                )
                 await self.bus.publish(LogMessageEvent(message=f"Mode diubah ke {mode.name}"))
                 await self.bus.publish(QueueUpdatedEvent())
 
@@ -129,6 +139,11 @@ class ModeOps:
 
     async def toggle_loudness_normalization(self, enabled: bool):
         self.state.loudness_normalization_enabled = enabled
+        logger.info(
+            "loudness_normalization_changed",
+            category=LC_PLAYBACK,
+            enabled=enabled,
+        )
 
         # BUGFIX: sebelumnya toggle ini cuma ganti state, tidak pernah manggil mpv.set_af().
         # Filter gain cuma di-apply ulang di play_track() (saat load lagu baru), jadi UI
@@ -148,6 +163,11 @@ class ModeOps:
     async def set_crossfade(self, data: dict):
         enabled = data.get("enabled", False)
         self.state.crossfade_enabled = enabled
+        logger.info(
+            "crossfade_changed",
+            category=LC_PLAYBACK,
+            enabled=enabled,
+        )
         status_msg = "ON" if enabled else "OFF"
         await self.bus.publish(LogMessageEvent(message=f"Crossfade: {status_msg}"))
         await self.bus.publish(QueueUpdatedEvent())

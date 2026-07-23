@@ -46,7 +46,7 @@ from core.command_bus import (
 from core.state import AudioOutput, PlaybackMode
 from server.serializers import dict_to_track
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.playback")
 
 
 async def handle_playback_command(action: str, data: dict):

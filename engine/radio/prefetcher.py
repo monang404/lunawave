@@ -24,8 +24,9 @@ Thread Safety:
 """
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING
+
+import structlog
 
 from config import (
     PREFETCH_DEFAULT_THRESHOLD_SEC,
@@ -33,6 +34,8 @@ from config import (
     PREFETCH_MIN_THRESHOLD_SEC,
     PREFETCH_SAFETY_FACTOR,
 )
+from core.log_categories import LC_RADIO
+from core.log_context import bind_correlation
 from core.state import AppState
 from engine.radio.radio_config import ARTISTS_PER_BATCH, track_task
 
@@ -40,7 +43,7 @@ if TYPE_CHECKING:
     from engine.playback import PlaybackController
     from engine.radio.artist_selector import ArtistSelector
 
-_log = logging.getLogger(__name__)
+logger = structlog.get_logger(component="radio.prefetcher")
 
 
 class RadioPrefetcher:
@@ -74,16 +77,36 @@ class RadioPrefetcher:
         async with self._standby_lock:
             self._standby = []
 
-    async def ensure_standby(self, controller: "PlaybackController") -> None:
-        """Pastikan standby sedang disiapkan kalau belum ada."""
+    async def ensure_standby(
+        self, controller: "PlaybackController", correlation_id: str | None = None
+    ) -> None:
+        """Pastikan standby sedang disiapkan kalau belum ada.
+
+        L5.3: correlation_id (jika ada) diwariskan dari siklus radio yang
+        memicu pemanggilan ini (engine/radio/engine.py) -- diteruskan
+        eksplisit ke build_standby(), TIDAK di-generate ulang di sini
+        (anti-pattern §12.9)."""
         async with self._standby_lock:
             if self._standby:
                 return
-        track_task(self._bg_tasks, self.build_standby(controller), name="radio_build_standby2")
+        track_task(
+            self._bg_tasks,
+            self.build_standby(controller, correlation_id),
+            name="radio_build_standby2",
+        )
 
-    async def build_standby(self, controller: "PlaybackController") -> None:
+    async def build_standby(
+        self, controller: "PlaybackController", correlation_id: str | None = None
+    ) -> None:
         """Siapkan playlist cadangan 12 lagu di background.
-        Tidak akan jalan kalau standby sudah ada atau sedang dibangun."""
+        Tidak akan jalan kalau standby sudah ada atau sedang dibangun.
+
+        L5.3: bind_correlation(correlation_id) di titik masuk task
+        terpisah ini (dijadwalkan via asyncio.create_task/track_task)
+        supaya log build_standby memakai correlation_id yang identik
+        dengan siklus radio yang memicunya, bukan id baru."""
+        if correlation_id:
+            bind_correlation(correlation_id)
         async with self._standby_lock:
             if self._standby:
                 return  # sudah ada, tidak perlu rebuild
@@ -101,10 +124,21 @@ class RadioPrefetcher:
                     async with self._standby_lock:
                         self._standby = tracks
             except Exception as e:
-                _log.warning(f"Radio build_standby gagal: {e}")
+                logger.warning(
+                    "radio_build_standby_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
 
-    def trigger_build_standby(self, controller: "PlaybackController"):
-        track_task(self._bg_tasks, self.build_standby(controller), name="radio_build_standby")
+    def trigger_build_standby(
+        self, controller: "PlaybackController", correlation_id: str | None = None
+    ):
+        track_task(
+            self._bg_tasks,
+            self.build_standby(controller, correlation_id),
+            name="radio_build_standby",
+        )
 
     def _current_threshold(self, controller: "PlaybackController") -> float:
         window = controller.track_loader.resolver.latency_window
@@ -128,7 +162,12 @@ class RadioPrefetcher:
         try:
             await asyncio.wait_for(self._do_prefetch(controller), timeout=25.0)
         except Exception as e:
-            _log.warning(f"Prefetch next track gagal: {e}")
+            logger.warning(
+                "radio_prefetch_next_failed",
+                category=LC_RADIO,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
     async def _do_prefetch(self, controller: "PlaybackController") -> None:
         if not self.state.radio_queue:
@@ -143,18 +182,34 @@ class RadioPrefetcher:
         async def _resolve_one(track):
             try:
                 await controller.track_loader.resolver.resolve(track)
-                _log.info(f"Berhasil prefetch stream_url untuk: {track.title}")
-            except Exception as e:
-                _log.warning(f"Error saat resolve stream_url prefetch ({track.title}): {e}")
+                logger.info(
+                    "radio_prefetch_resolved",
+                    category=LC_RADIO,
+                    video_id=track.video_id,
+                )
+            except Exception:
+                # L8.1 (G8): exception ini sudah dicatat sebagai
+                # stream_resolve_failed (ERROR, video_id/error_type/error)
+                # oleh adapters/ytdlp/resolver.py di titik asal -- tidak ada
+                # field baru yang ditambahkan di sini (video_id/error_type/
+                # error identik), jadi diamkan (§12.5 / L-D4). Prefetch
+                # bersifat best-effort: kegagalan di sini tidak menghentikan
+                # kandidat lain di asyncio.gather.
+                pass
 
         await asyncio.gather(*[_resolve_one(t) for t in candidates])
 
     # Method proxy agar RadioMode bisa mendelegasikan fetch and lock
     async def fetch_batch_with_lock(
-        self, prioritized_artist: str | None = None, max_artists: int = ARTISTS_PER_BATCH
+        self,
+        prioritized_artist: str | None = None,
+        max_artists: int = ARTISTS_PER_BATCH,
+        correlation_id: str | None = None,
     ):
         if self._fetch_lock.locked():
             return []
+        if correlation_id:
+            bind_correlation(correlation_id)
         async with self._fetch_lock:
             try:
                 return await asyncio.wait_for(
@@ -164,5 +219,10 @@ class RadioPrefetcher:
                     timeout=30.0,
                 )
             except Exception as e:
-                _log.warning(f"Radio fetch batch gagal: {e}")
+                logger.warning(
+                    "radio_fetch_batch_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
                 return []

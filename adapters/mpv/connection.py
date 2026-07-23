@@ -27,8 +27,9 @@ import structlog
 
 from config import MPV_SOCKET
 from core.exceptions import MpvConnectionError
+from core.log_categories import LC_EXTERNAL
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="mpv.connection")
 
 
 async def _open_pipe_connection(pipe_name: str):
@@ -125,7 +126,12 @@ class MpvConnection:
                     except (TimeoutError, ConnectionRefusedError, OSError, FileNotFoundError):
                         continue  # belum siap, tunggu lagi
         except OSError as e:
-            logger.error(f"Failed to spawn mpv process: {e}")
+            logger.error(
+                "mpv_spawn_failed",
+                category=LC_EXTERNAL,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
         for attempt in range(10):
             try:
@@ -148,7 +154,11 @@ class MpvConnection:
                         os.chmod(self.socket_path, stat.S_IRUSR | stat.S_IWUSR)
                     except OSError:
                         pass
-                logger.info(f"Connected to mpv (attempt {attempt + 1})")
+                logger.info(
+                    "mpv_connected",
+                    category=LC_EXTERNAL,
+                    attempt=attempt + 1,
+                )
                 return True
             except MpvConnectionError:
                 raise

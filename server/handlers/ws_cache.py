@@ -34,8 +34,9 @@ import os
 import structlog
 
 from config import DOWNLOAD_DIR
+from core.log_categories import LC_CACHE
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="ws.cache")
 
 
 import asyncio
@@ -78,6 +79,11 @@ async def handle_cache_command(action: str, data: dict, ws, db, manager, state):
                 await db.execute("UPDATE tracks SET local_path = NULL WHERE local_path IS NOT NULL")
                 await db.commit()
             except Exception as e:
-                logger.error(f"Error updating db after cache clear: {e}")
+                logger.error(
+                    "cache_clear_db_update_failed",
+                    category=LC_CACHE,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         await manager.broadcast({"type": "log", "data": "Cache berhasil dibersihkan"})
         await ws.send_str(json.dumps({"type": "cache_cleared", "data": {}}))

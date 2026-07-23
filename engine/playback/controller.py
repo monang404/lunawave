@@ -47,6 +47,7 @@ from core.events import (
     VolumeChangedEvent,
 )
 from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
+from core.log_categories import LC_PLAYBACK
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
@@ -60,7 +61,7 @@ from engine.playback.track_loader import TrackLoader
 from engine.queue_manager import QueueMode
 from engine.radio import RadioMode
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="playback.controller")
 
 
 class PlaybackController:
@@ -201,7 +202,13 @@ class PlaybackController:
 
             await self.bus.publish(LogMessageEvent(message="MPV reconnect: playback dipulihkan."))
         except Exception as e:
-            logger.error(f"Gagal memulihkan playback setelah mpv reconnect: {e}", exc_info=True)
+            logger.error(
+                "playback_restore_after_mpv_reconnect_failed",
+                category=LC_PLAYBACK,
+                error_type=type(e).__name__,
+                error=str(e),
+                exc_info=True,
+            )
             self.state.status = PlayerStatus.ERROR
             self.state.error_msg = f"Gagal memulihkan playback: {e}"
 
@@ -360,7 +367,11 @@ class PlaybackController:
                     or self.state.current_track.video_id != data["video_id"]
                 ):
                     logger.info(
-                        f"Ignoring skip: requested {data['video_id']} != current {getattr(self.state.current_track, 'video_id', None)}"
+                        "skip_ignored_stale",
+                        category=LC_PLAYBACK,
+                        direction="next",
+                        requested_video_id=data["video_id"],
+                        current_video_id=getattr(self.state.current_track, "video_id", None),
                     )
                     return
             await self._advance_to_next()
@@ -376,7 +387,11 @@ class PlaybackController:
                     or self.state.current_track.video_id != data["video_id"]
                 ):
                     logger.info(
-                        f"Ignoring prev: requested from {data['video_id']} != current {getattr(self.state.current_track, 'video_id', None)}"
+                        "skip_ignored_stale",
+                        category=LC_PLAYBACK,
+                        direction="prev",
+                        requested_video_id=data["video_id"],
+                        current_video_id=getattr(self.state.current_track, "video_id", None),
                     )
                     return
             if self.state.history:
@@ -428,7 +443,9 @@ class PlaybackController:
     async def _on_pause_changed(self, event: TrackPauseChangedEvent):
         if self._loading:
             logger.info(
-                f"[PAUSE] Ignoring pause-changed (is_paused={event.is_paused}) during track load"
+                "pause_changed_ignored_during_load",
+                category=LC_PLAYBACK,
+                is_paused=event.is_paused,
             )
             return
         if event.is_paused:

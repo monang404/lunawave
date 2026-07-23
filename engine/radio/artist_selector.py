@@ -23,9 +23,11 @@ Thread Safety:
     Main thread (async event loop).
 """
 
-import logging
 import random
 
+import structlog
+
+from core.log_categories import LC_RADIO
 from core.ports import ArtistRepositoryPort, LibraryRepositoryPort
 from core.state import AppState
 from engine.radio.radio_config import (
@@ -37,7 +39,7 @@ from engine.radio.radio_config import (
 from engine.radio.track_filter import TrackFilter
 from engine.radio.track_interleaver import interleave_by_artist
 
-_log = logging.getLogger(__name__)
+logger = structlog.get_logger(component="radio.artist_selector")
 
 
 class ArtistSelector:
@@ -62,7 +64,12 @@ class ArtistSelector:
             if self.artists and self.artists.conn:
                 self._seed_artists = await self.artists.get_all_artists()
         except Exception as e:
-            _log.warning(f"Gagal load artis dari DB: {e}")
+            logger.warning(
+                "radio_seed_artists_load_failed",
+                category=LC_RADIO,
+                error_type=type(e).__name__,
+                error=str(e),
+            )
 
         if not self._seed_artists:
             # Bug #3 fix: pesan error sebut path DB yang benar
@@ -90,7 +97,12 @@ class ArtistSelector:
             try:
                 stats = await self.artists.get_reward_stats()
             except Exception as e:
-                _log.warning(f"Gagal ambil reward stats: {e}")
+                logger.warning(
+                    "radio_reward_stats_fetch_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         from engine.radio.artist_bandit import ArtistStat, sample_artists
 
         candidates = [
@@ -145,5 +157,10 @@ class ArtistSelector:
                 filtered_tracks = track_filter.filter_tracks(tracks)
                 return interleave_by_artist(filtered_tracks)
             except Exception as e:
-                _log.warning(f"Gagal mengambil lagu acak dari DB: {e}")
+                logger.warning(
+                    "radio_random_tracks_fetch_failed",
+                    category=LC_RADIO,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
         return []

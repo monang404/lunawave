@@ -46,7 +46,9 @@ import shutil
 
 import structlog
 
-logger = structlog.get_logger(__name__)
+from core.log_categories import LC_SYSTEM
+
+logger = structlog.get_logger(component="system.power")
 
 
 async def acquire_wake_lock():
@@ -63,7 +65,7 @@ async def acquire_wake_lock():
 
     binary = shutil.which("termux-wake-lock")
     if not binary:
-        logger.info("termux-wake-lock not found, skipping wake-lock acquire.")
+        logger.info("wake_lock_binary_not_found", category=LC_SYSTEM)
         return
 
     try:
@@ -71,6 +73,11 @@ async def acquire_wake_lock():
             binary, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
         )
         await proc.wait()
-        logger.info("termux-wake-lock acquired.")
+        logger.info("wake_lock_acquired", category=LC_SYSTEM)
     except Exception as e:
-        logger.warning(f"termux-wake-lock acquire failed: {e}")
+        logger.warning(
+            "wake_lock_acquire_failed",
+            category=LC_SYSTEM,
+            error_type=type(e).__name__,
+            error=str(e),
+        )

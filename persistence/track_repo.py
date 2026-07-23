@@ -24,9 +24,10 @@ import time
 
 import structlog
 
+from core.log_categories import LC_PERSISTENCE
 from core.state import TrackInfo
 
-logger = structlog.get_logger(__name__)
+logger = structlog.get_logger(component="persistence.track_repo")
 
 
 class TrackRepository:
@@ -145,7 +146,11 @@ class TrackRepository:
         await self._conn.commit()
         deleted = cursor.rowcount
         if deleted:
-            logger.info(f"Eviction: {deleted} track stale dihapus dari cache DB")
+            logger.info(
+                "cache_eviction_completed",
+                category=LC_PERSISTENCE,
+                deleted_count=deleted,
+            )
         return deleted
 
     async def toggle_favorite(self, video_id: str) -> int:

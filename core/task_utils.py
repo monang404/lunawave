@@ -28,7 +28,9 @@ from typing import Any
 
 import structlog
 
-logger = structlog.get_logger(__name__)
+from core.log_categories import LC_LIFECYCLE
+
+logger = structlog.get_logger(component="core.task_utils")
 
 
 def safe_create_task(
@@ -53,7 +55,14 @@ def safe_create_task(
             # CancelledError adalah exception normal saat task di-cancel
             pass
         except Exception as e:
-            logger.error(f"Error in background task '{name}': {e}", exc_info=True)
+            logger.error(
+                "background_task_failed",
+                category=LC_LIFECYCLE,
+                task_name=name,
+                error_type=type(e).__name__,
+                error=str(e),
+                exc_info=True,
+            )
             if on_error:
                 try:
                     if asyncio.iscoroutinefunction(on_error):
@@ -62,7 +71,12 @@ def safe_create_task(
                         on_error(e)
                 except Exception as inner_e:
                     logger.error(
-                        f"Error in on_error callback for task '{name}': {inner_e}", exc_info=True
+                        "background_task_on_error_callback_failed",
+                        category=LC_LIFECYCLE,
+                        task_name=name,
+                        error_type=type(inner_e).__name__,
+                        error=str(inner_e),
+                        exc_info=True,
                     )
 
     task = asyncio.create_task(_wrap_coro(), name=name)
