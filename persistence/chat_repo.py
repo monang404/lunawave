@@ -11,7 +11,8 @@ Responsibilities:
 Depends on:
     - aiosqlite
 """
-from typing import Any, Dict, List
+
+from typing import Any
 
 import aiosqlite
 import structlog
@@ -24,7 +25,7 @@ class ChatRepository:
         self.conn = conn
 
     async def add_message(
-        self, sender_name: str, message: str, is_admin: bool = False, client_ip: str = None
+        self, sender_name: str, message: str, is_admin: bool = False, client_ip: str | None = None
     ) -> dict[str, Any]:
         """Menambahkan pesan chat baru ke database dan mengembalikan record tersebut."""
         async with self.conn.execute(
@@ -42,7 +43,7 @@ class ChatRepository:
             return dict(row) if row else {}
 
     async def get_recent_messages(
-        self, limit: int = 100, client_ip: str = None
+        self, limit: int = 100, client_ip: str | None = None
     ) -> list[dict[str, Any]]:
         """Mengambil pesan chat terbaru, diurutkan dari yang terlama ke terbaru (untuk di-render)."""
         if client_ip:
@@ -55,4 +56,4 @@ class ChatRepository:
         async with self.conn.execute(query, params) as cursor:
             rows = await cursor.fetchall()
             # Balik urutan agar yang tertua di atas, terbaru di bawah
-            return [dict(row) for row in reversed(rows)]
+            return [dict(row) for row in list(rows)[::-1]]
