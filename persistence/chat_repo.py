@@ -1,4 +1,16 @@
-"""Repository for chat messages interaction."""
+"""
+Module: persistence.chat_repo
+
+Purpose:
+    Repository layer for managing chat messages between Admin and Clients.
+
+Responsibilities:
+    - Insert new chat messages into the database.
+    - Retrieve recent chat messages based on client IP or fetch all for Admins.
+
+Depends on:
+    - aiosqlite
+"""
 from typing import Any, Dict, List
 
 import aiosqlite

@@ -1,4 +1,17 @@
-"""WebSocket handlers for admin-client live chat."""
+"""
+Module: server.handlers.ws_chat
+
+Purpose:
+    Handle WebSocket actions related to the Admin-Client live chat feature.
+
+Responsibilities:
+    - Route 'send_chat' events to the database and broadcast to targeted clients/admins.
+    - Route 'fetch_chat' events to retrieve historical chat messages upon connection.
+
+Depends on:
+    - server.connection_manager
+    - persistence.chat_repo
+"""
 
 import json
 from typing import Any, Dict
