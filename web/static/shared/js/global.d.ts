@@ -33,3 +33,8 @@ interface Window {
     switchTab?: (tab: string) => void;
     ChatModule?: ChatModuleApi;
 }
+
+/** Di-assign lewat `globalThis.setRadioHeroAnimState = ...` di
+ * radio-hero-moon.js:227, dipakai sebagai `typeof setRadioHeroAnimState`
+ * check di playback-sync.js:184 dan radio-tab.js:36. */
+declare var setRadioHeroAnimState: ((isOn: boolean) => void) | undefined;
