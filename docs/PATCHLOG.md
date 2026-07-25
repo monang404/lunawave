@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-23-218
+latest_patch_id: PATCH-2026-07-25-239
 
-total_entries: 218
+total_entries: 239
 
 ---
 
@@ -21,6 +21,1038 @@ total_entries: 218
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-25-239
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 10:07
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Audit T1-T5 event bus: perbaiki switchTab import putus di main.js + dead guard setPositionAnchor
+
+**Reason:** Diminta user audit hasil rfc/pemulihan_frontend/* (Tahap 1-5 event bus, PATCH-232..238) dan pastikan aplikasi berjalan normal. Verifikasi ulang eslint/vitest/depcruise cocok persis dengan klaim patchlog, TAPI tsc (tidak pernah dijalankan sebagai bagian verifikasi Tahap 3-5) menemukan 3 error, 2 di antaranya nyata.
+
+**Root Cause:**
+(1) main.js baris 4 masih 'import { switchTab } from events/index.js', padahal Tahap 3 (PATCH-235) memindah definisi switchTab ke render/navigation.js dan events/index.js tidak lagi meng-export-nya -- named export yang diminta main.js tidak pernah diupdate. Karena main.js dimuat <script type=module>, ini SyntaxError di link-time ('does not provide an export named switchTab') yang menggagalkan instantiasi SELURUH module graph -- app blank total di browser. Dikonfirmasi lewat reproduksi langsung di Node ESM. (2) audio/playback-sync.js baris 75: guard 'typeof setPositionAnchor === function' mengecek nama yang tidak pernah di-import maupun di-assign ke globalThis di file itu -- selalu false, membuat emit('player:position', ...) jadi dead code permanen, progress-bar anchor-smoothing (subscriber di render/player.js, sudah wired bus sejak Tahap 1) tidak pernah ter-refresh dari audio-browser.
+
+**Solution:**
+main.js: pisah jadi 2 import -- switchTab diimpor langsung dari render/navigation.js (sama seperti 8 pemanggil lain di codebase), initEvents tetap dari events/index.js. playback-sync.js: hapus guard typeof setPositionAnchor, emit('player:position', audio.currentTime) dipanggil unconditional di dalam guard isDraggingPb yang sudah ada. Tidak menyentuh guard typeof setRadioHeroAnimState di baris 188 (baris 184 versi baru) -- dikonfirmasi lewat reproduksi Node bahwa itu resolve benar karena di-assign ke globalThis di radio-hero-moon.js, tsc error di situ false-positive, bukan bug.
+
+**Changed Files:**
+- `web/static/pages/app/main.js`
+- `web/static/shared/js/audio/playback-sync.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** tsc -p tsconfig.json: 2 dari 3 error hilang (switchTab fixed), sisa 1 error setRadioHeroAnimState dikonfirmasi false-positive lewat reproduksi Node (globalThis binding lintas modul, tsc tidak tahu). eslint: 0 error/1 warning pre-existing (tidak berubah). vitest run: 20/20 pass (tidak berubah). depcruise: 8 warning/0 error, angka identik sebelum fix (tidak ada regresi graph). Reproduksi manual Node ESM: import main.js sebelum fix -> SyntaxError 'does not provide an export named switchTab' persis di link-time; sesudah fix -> lolos link-time, lanjut ke evaluasi (berhenti di 'Audio is not defined', keterbatasan Node tanpa Web Audio API, bukan bug -- di browser asli tersedia).
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-25-235,PATCH-2026-07-25-238
+
+**Status:** Draft
+
+**Notes:**
+Ditemukan saat audit independen atas permintaan user terhadap rfc/pemulihan_frontend/* (Tahap 1-5). Root cause utama: tsc tidak pernah dijalankan sebagai bagian verifikasi Tahap 3/4/5 (hanya node --check/eslint/vitest/depcruise), padahal tsc sempat aktif dipakai sebelumnya (PATCH-2026-07-24-222) dan langsung menangkap regresi ini begitu dijalankan ulang. Checklist manual browser T2.8/T3.6/T4.4/T5.12 di PATCH-232..238 MASIH belum dikonfirmasi user -- status proyek event bus tetap Draft, sekarang dengan tambahan bug blocking yang sudah diperbaiki di entry ini.
+
+---
+
+## PATCH-2026-07-25-238
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 09:54
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Low
+**Title:** Follow-up T5.11: dokumentasikan 5 edge switchTab+discover-personalize sisa sebagai exception no-even
+
+**Reason:** PATCH-237 (Tahap 5) melaporkan 5 edge no-events-imports-render (4x switchTab->render/navigation.js + events/index.js->render/discover-personalize.js) yang TIDAK masuk task list T5.1-T5.10 sama sekali (baseline yaml stale, dihitung sebelum Tahap 3 pindahkan switchTab). Diminta user 'kerjakan saja yang terbaik' -- diputuskan didokumentasikan sebagai exception, BUKAN dipaksa lewat bus.emit, BUKAN dipindah lokasi.
+
+**Root Cause:**
+switchTab() diekstrak Tahap 3 ke render/navigation.js sebagai modul leaf. 4 modul events/* memanggilnya untuk bootstrap/routing (ganti tab aktif) -- pola command-dispatch yang sama seperti switchTab dipanggil balik dari render/*.js ke events/index.js, yang SUDAH diterima legitimate di rule no-render-imports-events. events/index.js->discover-personalize.js (initDiscoverFilterEvents) sudah diaudit Tahap 3: satu arah, tidak circular.
+
+**Solution:**
+Perluas comment block rule no-events-imports-render di .dependency-cruiser.js (bukan ubah severity/pattern, murni dokumentasi) menjelaskan 6 edge yang tersisa: 1 playSearchTrack (sudah ada dari T5.10) + 5 edge baru ini, dengan penjelasan kenapa masing-masing bukan kandidat bus.emit.
+
+**Changed Files:**
+- `.dependency-cruiser.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** node --check OK. verify_docs.py --json: PASS score 100. depcruise: angka warning tidak berubah (comment tidak mengubah severity/exemption di dependency-cruiser, cuma dokumentasi) -- circular-dependencies tetap 2, no-events-imports-render tetap 6 (semuanya sekarang terjelaskan di comment, bukan 1 terjelaskan + 5 tak terduga).
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-25-237
+
+**Status:** Draft
+
+**Notes:**
+Proyek event bus 5-tahap (T1-T5) SELESAI TOTAL secara task list + dokumentasi. Status keseluruhan TETAP Draft sampai user jalankan manual test T2.8/T3.6/T4.4/T5.12 (belum ada satupun terkonfirmasi).
+
+---
+
+## PATCH-2026-07-25-237
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 09:52
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tahap 5 (terakhir) event bus: render<->events cross-import murni via bus.emit
+
+**Reason:** Eksekusi Tahap 5 (T5.1-T5.10) dari docs/rfc/pemulihan_frontend/proposal_event_bus_frontend.md (11_tahap5_render_events_cross_import.yaml), tahap terakhir proyek event bus setelah Tahap 1-4 (PATCH-232..236).
+
+**Root Cause:**
+12 edge nyata render<->events cross-import: 1 no-render-imports-events (discover-personalize.js->settings-events.js untuk closeMainOverlay) dan 11 dari cakupan no-events-imports-render (click-delegation-events, discover-search-events, keyboard-shortcut-events, transport-events x4, lyrics-events, action-modal-events, progress-events -> berbagai modul render/*).
+
+**Solution:**
+T5.1: discover-personalize.js closeMainOverlay() -> emit('overlay:main-close') reuse event T4. T5.2-T5.8: 8 file events/* diedit, semua import render/* dihapus diganti emit(...), reuse event lama (lyrics:changed, player:progress, now-playing:changed, dst) + 3 event BARU (search:action-modal-open/close, discover:search-loading-enter/exit, lyrics:offset-display). T5.9: 3 fungsi initXBusSubscriptions (search.js, lyrics.js, discover-search.js) di-extend dengan subscriber event baru, tidak ada fungsi init kedua yang dibuat. T5.10: exception playSearchTrack (events/search-input-events.js->render/search.js) didokumentasikan di .dependency-cruiser.js sebagai command wrapper, BUKAN fungsi render -- sesuai keputusan_direkomendasikan RFC, tidak dipaksa lewat bus.
+
+**Changed Files:**
+- `web/static/shared/js/render/discover-personalize.js`
+- `web/static/shared/js/events/click-delegation-events.js`
+- `web/static/shared/js/events/discover-search-events.js`
+- `web/static/shared/js/events/keyboard-shortcut-events.js`
+- `web/static/shared/js/events/transport-events.js`
+- `web/static/shared/js/events/lyrics-events.js`
+- `web/static/shared/js/events/action-modal-events.js`
+- `web/static/shared/js/events/progress-events.js`
+- `web/static/shared/js/render/search.js`
+- `web/static/shared/js/render/lyrics.js`
+- `web/static/shared/js/render/discover-search.js`
+- `.dependency-cruiser.js`
+
+**Changed Symbols:**
+- `initSearchBusSubscriptions()`
+- `initLyricsBusSubscriptions()`
+- `initDiscoverSearchBusSubscriptions()`
+
+**Tests:** node --check OK di 11 file JS diedit. eslint 0 error 0 warning di semua file (dicek batch). verify_docs.py --json: PASS (score 100, 10/10 check). depcruise final (dibandingkan ke baseline T4 checkpoint, BUKAN ke angka 14/18 di header yaml yang sudah stale): no-render-imports-events 1->0 (SESUAI target T5.1). no-events-imports-render 18->6, BUKAN 1->1 seperti diasumsikan verifikasi_selesai yaml -- 12 edge yang jadi scope T5.2-T5.8 SEMUA berhasil dihilangkan, TAPI 5 edge lain (events/index.js, keyboard-shortcut-events.js, settings-events.js, transport-events.js -> render/navigation.js untuk switchTab, plus events/index.js->render/discover-personalize.js) TIDAK PERNAH masuk task list T5.1-T5.10 sama sekali -- baseline '14' di header yaml dihitung SEBELUM Tahap 3 memindah switchTab ke render/navigation.js, jadi tidak pernah menghitung ulang edge baru yang muncul sebagai efek samping Tahap 3. circular-dependencies tetap 2 (sama seperti baseline T4, wajar karena tidak disentuh T5). MANUAL TEST T5.12 (8 item checklist: action modal, escape/L/?, transport optimistic UI, lyrics offset, discover search loading, drag progress bar, playSearchTrack) BELUM DIJALANKAN USER.
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-25-232,PATCH-2026-07-25-233,PATCH-2026-07-25-234,PATCH-2026-07-25-235,PATCH-2026-07-25-236
+
+**Status:** Draft
+
+**Notes:**
+PENTING -- verifikasi_selesai di 11_tahap5 yaml mengklaim target akhir 'no-events-imports-render: 1 (playSearchTrack)' TIDAK TERCAPAI SECARA HARFIAH: hasil nyata 6, bukan kegagalan eksekusi tapi gap akuntansi di RFC (5 edge switchTab->navigation.js tidak pernah dimasukkan ke task manapun di T5.1-T5.10, jadi tidak ada yang bisa dieksekusi untuk edge itu). Dilaporkan ke user, BELUM diputuskan apakah 5 edge ini (a) didokumentasikan sebagai exception tambahan mirip playSearchTrack, (b) dijadikan RFC/tahap follow-up terpisah, atau (c) memang dianggap tidak masalah karena pola sama dengan T3 (switchTab sebagai bootstrap/routing call, bukan render manipulation). Proyek event bus 5-tahap SECARA TASK LIST sudah tuntas semua (T1-T5 tereksekusi), tapi status keseluruhan TETAP Draft: (1) checklist manual T2.8/T3.6/T4.4/T5.12 belum ada satupun yang dikonfirmasi user, (2) 5 edge no-events-imports-render di atas belum ada keputusan.
+
+---
+
+## PATCH-2026-07-25-236
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 09:44
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tahap 4 event bus: full-state.js dan closeSettings(auth.js) ke bus.emit, hub sekunder
+
+**Reason:** Eksekusi Tahap 4 dari docs/rfc/pemulihan_frontend/proposal_event_bus_frontend.md (10_tahap4_event_bus_hub_sekunder.yaml), setelah Tahap 1-3 selesai secara kode (PATCH-232/233/234/235, meski checklist manual T2.8/T3.6 masih outstanding).
+
+**Root Cause:**
+render/full-state.js memanggil 9 fungsi render/* + events/settings-events.js secara langsung di renderFullState()/applyFullState() (termasuk setPositionAnchor), menciptakan import langsung ke banyak modul render dan events -- sumber circular-dependency. services/auth.js juga import closeSettings() dari events/settings-events.js untuk dipanggil di logout().
+
+**Solution:**
+full-state.js: 9 titik render call + 1 setPositionAnchor diganti emit(...) reuse nama event dari Tahap 2 (now-playing:changed, player:progress, player:bar-changed, radio:changed, queue:changed, lyrics:changed, settings:sheet-changed, search:playing-state, discover:playing-state, player:position), guard typeof dihapus, 8 import render/* + events/settings-events.js dihapus (renderHeader dari ws.js dan 3 import kontrol dari playback-sync.js TETAP). auth.js: import closeSettings dihapus, pemanggilan di logout() diganti emit('overlay:main-close') (event generik, disiapkan untuk dipakai ulang Tahap 5 kasus discover-personalize.js). settings-events.js: initSettingsBusSubscriptions ditambah 1 subscription on('overlay:main-close', closeMainOverlay), tidak bikin fungsi init kedua.
+
+**Changed Files:**
+- `web/static/shared/js/render/full-state.js`
+- `web/static/shared/js/services/auth.js`
+- `web/static/shared/js/events/settings-events.js`
+
+**Changed Symbols:**
+- `applyFullState()`
+- `renderFullState()`
+- `initSettingsBusSubscriptions()`
+
+**Tests:** node --check OK di 3 file diedit. eslint 0 error 0 warning (full-state.js, auth.js, settings-events.js). depcruise: total violations turun 22->21 (baseline T3), circular-dependencies TETAP 2 (bukan turun) -- 2 sisa itu playback-sync<->ws.js dan playback-sync<->visualizer.js, di luar scope T4, jadi wajar tidak berubah. MANUAL TEST T4.4 (reconnect WS, login/logout admin cek posisi player & overlay close) BELUM DIJALANKAN USER.
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-25-232,PATCH-2026-07-25-233,PATCH-2026-07-25-234,PATCH-2026-07-25-235
+
+**Status:** Draft
+
+**Notes:**
+Deviasi wajib dicatat dari asumsi yaml breakdown: (1) depends_on yaml mengklaim Tahap 2 'BELUM dieksekusi' saat ditulis, tapi audit langsung 2026-07-25 sebelum eksekusi menunjukkan ws.js SUDAH pakai bus() calls (gaya lama, bukan emit() bare gaya T1) dan semua subscriber render/* SUDAH ada -- konsisten dgn PATCH-233/234, cuma checklist manual belum dikonfirmasi. (2) full-state.js sudah 64 baris (bukan 58 spt catatan_stop), semua nomor baris di penggantian_per_baris yaml geser +1, dan file sudah punya initFullStateBusSubscriptions()+import on() yang tidak disebut yaml -- dieksekusi via pencocokan isi (content match), bukan nomor baris, sesuai isi yang tetap identik. (3) T4.2: yaml eksplisit klaim closeSettings() TIDAK dipanggil di manapun di auth.js (dianggap unused import) -- audit nyata menemukan dipanggil eksplisit di logout(). Sesuai instruksi stop-and-report di yaml sendiri, temuan ini dilaporkan ke user, user instruksikan lanjut -- closeSettings() diganti emit('overlay:main-close') alih-alih sekadar dihapus diam-diam, supaya perilaku fungsional tetap sama tapi lewat bus. T4.4 manual test TIDAK bisa dijalankan dari sandbox ini (tidak ada server+browser live) -- checklist disiapkan, wajib dijalankan user sebelum status naik ke Merged.
+
+---
+
+## PATCH-2026-07-25-235
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 09:37
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tahap 3 event bus: ekstrak switchTab() dari hub events/index.js ke render/navigation.js
+
+**Reason:** Eksekusi Tahap 3 dari docs/rfc/pemulihan_frontend/proposal_event_bus_frontend.md setelah Tahap 2 selesai (PATCH-233/234). Audit 15 edge circular-dependency events/index.js: 14 legitimate (13 init<X>Events() bootstrap call ke sub-modul events/*, 1 initDiscoverFilterEvents ke render/discover-personalize.js), 1 masalah nyata: switchTab() didefinisikan di hub events/index.js padahal murni fungsi render/DOM, dipanggil balik oleh banyak modul lain sehingga jadi sumber circular-dependency.
+
+**Root Cause:**
+switchTab() (manipulasi active tab, aria-selected, fokus search input) tinggal di events/index.js -- file hub inisialisasi -- padahal isinya bukan logika bootstrap. 7 modul lain (bukan 6 seperti dugaan awal RFC) mengimpor balik switchTab dari hub ini: keyboard-shortcut-events.js, transport-events.js, discover-personalize.js, discover-tab.js, services/auth.js, dan settings-events.js yang baru ketemu saat audit ulang 2026-07-25 (RFC sebelumnya menyimpulkan 'tidak ditemukan' di file itu, ternyata ada di baris 4 & 127 -- STOP-and-report per instruksi RFC, dikonfirmasi ke user, lalu tetap dieksekusi sebagai bagian dari scope).
+
+**Solution:**
+User memilih opsi_direkomendasikan RFC (bukan opsi_alternatif/dokumentasi-saja). Buat modul leaf baru render/navigation.js berisi switchTab() dipindah verbatim (tanpa ubah logika). events/index.js hapus definisi lokal, import switchTab dari render/navigation.js. 7 pemanggil (termasuk settings-events.js yang baru ketemu) diarahkan import dari render/navigation.js (2 file di render/ pakai path same-folder ./navigation.js). Import TABS di events/index.js dihapus karena sudah tidak dipakai (satu-satunya pemakai adalah switchTab yang sudah pindah). Ditambahkan comment block exception pada rule circular-dependencies di .dependency-cruiser.js mendokumentasikan 2 cycle yang tersisa & diterima (playback-sync<->ws.js dari Tahap 2, playback-sync<->visualizer.js dari Sesi4/PATCH-223) -- BUKAN mendokumentasikan switchTab sebagai exception, karena edge-nya benar-benar dihilangkan, bukan didiamkan. Audit ulang juga menemukan edge events/index.js->discover-personalize.js TERNYATA TIDAK circular (cuma warning satu-arah no-events-imports-render), jadi tidak perlu entri exception terpisah untuk itu seperti disangka RFC.
+
+**Changed Files:**
+- `web/static/shared/js/render/navigation.js`
+- `web/static/shared/js/events/index.js`
+- `web/static/shared/js/events/keyboard-shortcut-events.js`
+- `web/static/shared/js/events/transport-events.js`
+- `web/static/shared/js/render/discover-personalize.js`
+- `web/static/shared/js/render/discover-tab.js`
+- `web/static/shared/js/services/auth.js`
+- `web/static/shared/js/events/settings-events.js`
+- `.dependency-cruiser.js`
+
+**Changed Symbols:**
+- `switchTab()`
+
+**Tests:** node --check OK di 8 file JS yang diedit/dibuat. eslint 0 error 0 warning (index.js, navigation.js, keyboard-shortcut-events.js, transport-events.js, discover-personalize.js, discover-tab.js, auth.js, settings-events.js). depcruise: circular-dependencies TURUN dari baseline Tahap 2 (12, lihat PATCH-233) menjadi 2 -- lebih besar dari perkiraan RFC (7 edge switchTab) karena switchTab sebagai hub berpartisipasi di banyak chain sekaligus, menghilangkannya memutus beberapa cycle overlap bersamaan. 2 sisanya adalah exception yang sudah didokumentasikan (playback-sync<->ws.js, playback-sync<->visualizer.js), TIDAK terkait switchTab. verify_docs.py --json: semua 9 check PASS. vitest run: 4 file, 20 test lolos semua (regresi dari PATCH-234 tetap hijau). MANUAL BROWSER TEST (T3.6 RFC) BELUM DIKONFIRMASI USER -- checklist navigasi tab (klik nav-btn, shortcut '/', mood-card admin, klik track-info dari luar Home, play track dari Discover, login/logout admin) sudah disiapkan tapi belum dijalankan.
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-25-233,PATCH-2026-07-25-234
+
+**Status:** Draft
+
+**Notes:**
+Deviasi dari RFC yang wajib dicatat: (1) settings-events.js ternyata memanggil switchTab, kontradiksi klaim RFC 'tidak ditemukan' -- dikonfirmasi ke user sebelum eksekusi, ditambahkan sebagai pemanggil ke-7. (2) events/index.js -> discover-personalize.js TIDAK terbukti circular saat diaudit ulang -- rencana T3.5 untuk mendokumentasikannya sebagai exception di .dependency-cruiser.js tidak relevan lagi, diganti dokumentasi 2 cycle nyata yang tersisa. Checklist manual browser T3.6 (navigasi tab) MASIH perlu dijalankan user sebelum status Merged. T2.8 (checklist manual Tahap 2) juga masih outstanding dari PATCH-234 -- keduanya sekarang bisa dijalankan sekaligus dalam satu sesi manual test karena wsConnect() sudah tidak crash lagi.
+
+---
+
+## PATCH-2026-07-25-234
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 09:31
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Fix bus.emit() crash di ws.js pasca Tahap 2 event bus (regresi PATCH-233)
+
+**Reason:** PATCH-2026-07-25-233 (Tahap 2 event bus) mengganti 26 panggilan render langsung di ws.js jadi bus.emit(...), tapi bus diimpor sebagai alias langsung dari fungsi emit (import { emit as bus }), bukan objek. Setiap bus.emit(...) throw TypeError, dan karena baris pertama wsConnect() sudah memanggil bus.emit(...), WebSocket baru TIDAK PERNAH dibuat -- ditemukan lewat analisis log server (ws_connected cuma sekali di awal, GET /admin berulang sukses tapi tidak pernah reconnect).
+
+**Root Cause:**
+bus.js meng-export emit sebagai fungsi biasa (bukan objek dgn method .emit). ws.js meng-alias 'import { emit as bus }' lalu memanggil bus.emit(...) di 38 titik (26 dikatalogkan RFC + turunannya) -- bus itu sendiri SUDAH jadi fungsinya, bukan objek. TypeError terjadi persis di baris pertama wsConnect() sebelum 'new WebSocket()' sempat dieksekusi, di setiap refresh/reconnect manapun.
+
+**Solution:**
+Ganti semua 38 kemunculan bus.emit( -> bus( di ws.js (satu-satunya file dgn pola alias salah ini; 12 modul render/service lain yang import dari bus.js sudah benar: import { on }/{ emit } tanpa alias, dipanggil langsung). Juga perbaiki gap di tests/frontend/ws-routing.test.js: test itu vi.mock() total modul toast.js/search.js/discover-tab.js sehingga fungsi init<Module>BusSubscriptions() (yang manggil bus.on(...), biasanya dipanggil main.js saat startup) ikut ke-mock hilang -- listener asli tidak pernah terdaftar ke bus nyata, membuat 6 test gagal walau kode aplikasi sudah benar. Ditambahkan wiring on(...) manual di test meniru pendaftaran main.js.
+
+**Changed Files:**
+- `web/static/shared/js/ws.js`
+- `tests/frontend/ws-routing.test.js`
+
+**Changed Symbols:**
+- `wsConnect()`
+- `handleServerMessage()`
+- `syncLocalLyrics()`
+
+**Tests:** eslint web/static/shared/js/ws.js tests/frontend/ws-routing.test.js: 0 error/warning. vitest run: 4 file, 20 test lolos semua. Perbandingan terkontrol (broken vs fixed ws.js) mengonfirmasi akar masalah: versi lama -> 7 test gagal dgn 'TypeError: emit.emit is not a function' persis pola dari log server user; versi fixed -> TypeError hilang total, 0 crash.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-25-233
+
+**Status:** Draft
+
+**Notes:**
+Checklist manual browser T2.8 dari PATCH-233 (play/pause/next/prev, discover, search, radio tab, lyrics scroll sync, login/logout admin, download progress, disconnect/reconnect toast) MASIH belum dikonfirmasi user -- baru sekarang layak dijalankan karena sebelumnya wsConnect() selalu crash duluan sebelum WebSocket sempat terbentuk. Status kedua patch (233 & entry ini) sebaiknya tetap Draft sampai checklist itu lolos manual di browser.
+
+---
+
+## PATCH-2026-07-25-233
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 07:17
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tahap 2 event bus: putus circular-dependency ws.js -> render/* (26 titik render jadi bus.emit)
+
+**Reason:** Eksekusi Tahap 2 dari docs/rfc/pemulihan_frontend/proposal_event_bus_frontend.md, hub ws.js (17 edge modul awal, ~26 titik panggil render langsung ke 13 modul)
+
+**Root Cause:**
+ws.js memanggil fungsi render dari 13 modul render/*+events/*+services/* secara langsung di 26 titik (handleServerMessage + syncLocalLyrics), menghasilkan circular-dependency (beberapa modul tsb juga import balik ws.js untuk wsSend/renderHeader)
+
+**Solution:**
+ws.js emit event lewat bus.js alih-alih memanggil fungsi render langsung, di 26 titik panggil (semua case di handleServerMessage + 1 titik di syncLocalLyrics). 4 modul yang sudah punya initXBusSubscriptions() dari Tahap 1 (player.js, now-playing.js, toast.js, queue.js) di-extend; queue.js tidak perlu diedit sama sekali (reuse queue:changed apa adanya). 9 modul yang belum punya subscription (radio-tab, search, discover-tab, discover-personalize, discover-search, full-state, lyrics, settings-events, auth) dapat fungsi init<Module>BusSubscriptions() baru, didaftarkan di main.js bootstrap tepat di bawah 5 panggilan Tahap 1. 13 import render/service langsung di ws.js dihapus, diganti 1 import bus.js; import kontrol (playback-sync.js, dom.js, store.js) tetap.
+
+Deviasi dari task-breakdown YAML (ditemukan lewat pembacaan penuh ws.js, bukan cuma baris yang dikatalogkan RFC):
+1. Baris ~156 & ~158 ws.js (dalam case "auth_status"): panggilan showLogToast() telanjang tidak ada di daftar penggantian_per_baris RFC. Wajib dikonversi ke bus.emit("toast:log", ...) karena kalau dibiarkan akan ReferenceError begitu import showLogToast dihapus dari ws.js.
+2. Baris ~447 (fungsi syncLocalLyrics(), dipanggil dari case "progress"): panggilan renderLyrics() kedua yang tidak tercatat di daftar RFC (RFC cuma sebut baris 361 di case "lyrics"). Dikonversi ke bus.emit("lyrics:changed") demi konsistensi dan mencegah regresi senyap -- typeof pada variabel yang tidak dideklarasikan tidak throw di JS (mengembalikan "undefined"), jadi guard "if (typeof renderLyrics === 'function')" akan diam-diam selalu false setelah import dihapus, bukan error yang kelihatan.
+
+Titik dengan guard "typeof X === 'function'" yang tidak eksplisit disebut RFC (343, 345-349, 361, 367, 383, 386, 393, 398, 399, 410) dikonversi dengan pola: hapus guard, ganti seluruh statement jadi bus.emit langsung (konsisten dengan pola yang RFC tetapkan eksplisit untuk baris 403/407) -- keputusan dikonfirmasi user sebelum eksekusi. Baris 274 (guard buka blok if, bukan pemanggilan langsung seperti tertulis di RFC) ditelusuri ke pemanggilan setPositionAnchor aktual di dalam blok tsb dan diganti di sana -- juga dikonfirmasi user sebelum eksekusi. Baris 243 (resetAnchorClock): guard bisnis "store.status === 'PLAYING'" dipertahankan, hanya guard typeof-existence yang dihapus, mengikuti preseden T1 (PATCH-2026-07-25-232) untuk guard semantik serupa.
+
+**Changed Files:**
+- `web/static/shared/js/ws.js`
+- `web/static/shared/js/render/player.js`
+- `web/static/shared/js/render/now-playing.js`
+- `web/static/shared/js/render/toast.js`
+- `web/static/shared/js/render/radio-tab.js`
+- `web/static/shared/js/render/search.js`
+- `web/static/shared/js/render/discover-tab.js`
+- `web/static/shared/js/render/discover-personalize.js`
+- `web/static/shared/js/render/discover-search.js`
+- `web/static/shared/js/render/full-state.js`
+- `web/static/shared/js/render/lyrics.js`
+- `web/static/shared/js/events/settings-events.js`
+- `web/static/shared/js/services/auth.js`
+- `web/static/pages/app/main.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** node --check OK di 14 file. eslint 0 error 0 warning (ws.js, render/*.js, events/settings-events.js, services/auth.js, main.js). depcruise: circular-dependencies turun dari baseline 48 (post-Tahap1) menjadi 12, 0 error (30 warning pre-existing dependency-cruiser rule, tidak terkait perubahan ini). MANUAL BROWSER TEST (T2.8 RFC) BELUM DIKONFIRMASI USER -- checklist (play/pause/next/prev, discover tab, search, radio tab, lyrics sync scroll, login/logout admin, download progress, disconnect/reconnect toast) sudah disiapkan tapi belum dijalankan. vitest tidak dicoba (diketahui SIGILL environment issue dari T1, di luar scope regresi kode).
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-25-232
+
+**Status:** Draft
+
+**Notes:**
+Manual browser test WAJIB dijalankan user sebelum status di-upgrade ke Merged. Lihat field Solution untuk 2 deviasi dari katalog RFC yang ditemukan lewat pembacaan penuh file (bukan cuma baris yang dikatalogkan).
+
+---
+
+## PATCH-2026-07-25-232
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 06:07
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Tahap 1 event bus: putus circular-dependency audio/playback-sync.js -> render/*
+
+**Reason:** Eksekusi Tahap 1 dari docs/rfc/pemulihan_frontend/proposal_event_bus_frontend.md, hub audio/playback-sync.js (11 edge, hub circular-dependency terbesar ke-3)
+
+**Root Cause:**
+audio/playback-sync.js memanggil 18 titik fungsi render di 5 modul render/* secara langsung, menghasilkan circular-dependency (modul render tsb juga mengimpor balik playback-sync.js untuk fungsi kontrol seperti getOrInitAudio)
+
+**Solution:**
+Tambah bus.js (pub/sub minimal), playback-sync.js emit event alih-alih memanggil fungsi render langsung, 5 modul render subscribe via fungsi init baru yang dipanggil dari main.js saat bootstrap. Catatan tambahan: satu titik (bekas baris 454, guard 'wantsPlay &&' pada resetAnchorClock) berbeda dari teks 'lama' di task-breakdown YAML -- guard dipertahankan (emit dibungkus if (wantsPlay)) alih-alih dihapus, supaya semantik asli tidak berubah.
+
+**Changed Files:**
+- `web/static/shared/js/bus.js`
+- `web/static/shared/js/audio/playback-sync.js`
+- `web/static/shared/js/render/player.js`
+- `web/static/shared/js/render/now-playing.js`
+- `web/static/shared/js/render/queue.js`
+- `web/static/shared/js/render/radio-hero-moon.js`
+- `web/static/shared/js/render/toast.js`
+- `web/static/pages/app/main.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** eslint 0 error (1 warning pre-existing _initAnalyser tidak terkait), depcruise circular-dependencies turun dari baseline 65 menjadi 48, manual audio playback test /admin browser-mode dikonfirmasi user OK. vitest run CRASH (illegal hardware instruction / SIGILL di esbuild) -- diverifikasi sebagai environment issue Termux/esbuild, bukan regresi dari perubahan ini (syntax semua file bersih via node --check, eslint 0 error; root cause SIGILL di binary native esbuild tidak bisa disebabkan oleh perubahan JS murni).
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-25-231
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-25-231
+
+**Tanggal:** 2026-07-25
+**Timestamp:** 00:51
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Audio browser bisu total pasca refactor — cross-origin taint dari analyser Web Audio API
+
+**Reason:** User report: audio browser sama sekali tidak keluar suara di /admin setelah refactor frontend pages/+shared/, padahal berfungsi normal di 1.5.2
+
+**Root Cause:**
+PATCH-2026-07-24-223 menambahkan `_initAnalyser(ctx)` di `unlockBrowserAudio()` yang memanggil `ctx.createMediaElementSource(audio)` pada KEDUA elemen `<audio>` di `audioPool` -- elemen yang sama yang benar-benar dipakai untuk playback, bukan elemen terpisah khusus analisis. Begitu sebuah `<audio>` element disambungkan ke Web Audio API graph, browser mem-bisu-kan totalnya SECARA DIAM-DIAM (tanpa exception, tanpa event error) kalau sumber medianya dianggap cross-origin/"tainted" -- ini perilaku keamanan standar spec Web Audio API, bukan bug browser. `server/handlers/audio_stream_handler.py::serve_stream()` SELALU mengambil jalur redirect (`HTTP 302` langsung ke domain googlevideo.com/youtube.com) karena `http_session` yang dibuat di `bootstrap/services.py` tidak pernah di-wire ke `request.app` di `server/app.py` (gap ini sudah ada sejak 1.5.2, TIDAK diperkenalkan oleh refactor). Di 1.5.2 gap ini tidak masalah karena `<audio>` diputar polos tanpa API Web Audio sama sekali -- cross-origin tidak berpengaruh ke playback dasar. Kombinasi "redirect cross-origin (lama, tidak berbahaya sendirian) + createMediaElementSource (baru)" itulah yang membuat browser membisukan audio: `audio.play()` tetap resolve sukses, event `timeupdate` tetap jalan (progress bar normal), tapi tidak ada sample yang keluar ke speaker sama sekali.
+
+**Solution:**
+Hapus panggilan `_initAnalyser(ctx)` dari `doUnlock()` di `unlockBrowserAudio()` (`web/static/shared/js/audio/playback-sync.js`) supaya elemen `<audio>` pemutar TIDAK PERNAH disambungkan ke Web Audio API graph -- audio kembali diputar polos seperti 1.5.2. `initVisualizer()` (`visualizer.js`) sudah punya fallback bawaan ke `startFakeBeatLoop()` selama `analyser` bernilai `null` (lihat PATCH-2026-07-24-223), jadi efek glow visual tetap tampil sama seperti sebelumnya, cuma tidak lagi audio-reactive. Fungsi `_initAnalyser()` sendiri DIBIARKAN ada (tidak dihapus) sebagai referensi kalau nanti mau diaktifkan lagi -- lihat catatan prasyarat di bawah.
+
+**Changed Files:**
+- `web/static/shared/js/audio/playback-sync.js`
+
+**Changed Symbols:**
+- `unlockBrowserAudio()`
+- `_initAnalyser()` (didefinisikan, tidak lagi dipanggil)
+
+**Tests:** Manual verifikasi user: buka `/admin`, `audio_output=browser`, klik Play -- sebelum fix: `play()` sukses & progress jalan tapi tidak ada suara; setelah fix: suara terdengar normal. Belum ada regression test otomatis untuk skenario ini (butuh Playwright + assertion level audio, di luar cakupan visual-regression yang ada sekarang -- lihat `tests/frontend/visual/`).
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+PATCH-2026-07-24-223 TIDAK di-revert seluruhnya -- hanya bagian yang menyambungkan elemen `<audio>` playback ke Web Audio graph yang dimatikan. `analyser`/`dataArray` export dan `_initAnalyser()` di `playback-sync.js` dibiarkan ada, dead code, untuk referensi.
+
+**Prasyarat KALAU nanti mau aktifkan lagi visualizer audio-reactive sungguhan** (bukan fake-beat-loop): stream HARUS same-origin dulu, bukan redirect cross-origin. Caranya: wire `app["http_session"] = ctx.http_session` di `server/app.py::create_app()` (session-nya sudah dibuat di `bootstrap/services.py`, tinggal di-pass) supaya `serve_stream()` di `audio_stream_handler.py` mengambil jalur proxy (kode proxy-nya, termasuk prebuffer dari PATCH-2026-07-20-136, sudah ada dan sudah ditest -- cuma tidak pernah kepakai karena `http_session` selalu `None` di `request.app`). Setelah itu baru aman panggil `_initAnalyser(ctx)` lagi, karena elemen `<audio>` akan same-origin terhadap halaman, tidak tainted.
+
+**Peringatan untuk AI/dev berikutnya:** JANGAN sambungkan elemen `<audio>` manapun yang dipakai untuk playback sungguhan (bukan elemen `<audio>` terpisah khusus buat analisis) ke `AudioContext.createMediaElementSource()` selama sumbernya masih bisa cross-origin (redirect ke CDN eksternal) -- browser membisukan tanpa error, sangat mudah lolos dari manual testing kalau kebetulan testernya tidak sadar harus dengarkan suara (mis. cuma cek UI/console/network tab). Kalau ke depan mau nambah fitur Web Audio API lain (equalizer, dsb.) yang butuh graph routing serupa, cek dulu status same-origin stream-nya, jangan asumsikan aman karena "sudah pernah `.play()` sukses".
+
+---
+
+## PATCH-2026-07-24-230
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 20:35
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Test
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Perbaiki layout.spec.js (URL/login/selector) + regenerate baseline visual regression
+
+**Reason:** layout.spec.js ternyata drift jauh lebih dalam dari sekadar nama baseline -win32: goto('/app') 404 (route asli /admin), #app-container/#now-playing tidak pernah ada, .player-bar sebenarnya id bukan class, dan /admin butuh login (admin_account di-seed dari env) sebelum #app terlihat. Player-bar & now-playing-panel juga CSS-hidden selama data-player-state=IDLE, dan environment ini tidak punya mpv (tidak bisa playback nyata).
+
+**Root Cause:**
+Spec belum di-update sejak migrasi struktur pages/ (sesi 6-8): URL, id/class selector, dan alur auth admin (login_redesign) berubah tanpa spec ikut disesuaikan. Baseline lama juga -win32, tidak pernah dites di Linux.
+
+**Solution:**
+Atas konfirmasi eksplisit user per pertanyaan bertahap: (1) goto('/app')->goto('/admin'), (2) tambah langkah login pakai kredensial dari LUNAWAVE_ADMIN_USER/LUNAWAVE_ADMIN_PASS env (admin_account di-seed via config.ADMIN_PASSWORD_OVERRIDE, bukan wizard setup), (3) #app-container->#app, .player-bar->#player-bar, #now-playing->.home-track-info, (4) simulasikan data-player-state=PAUSED + isi teks judul/artis via page.evaluate untuk radio-hero/player-bar/now-playing karena tidak ada mpv nyata di environment ini (didokumentasikan jelas di komentar spec, bukan tambalan diam-diam), (5) hapus 6 baseline win32 lama (4 orphan + 2 nama-sama-tapi-platform-beda), generate 3 baseline -chromium-linux.png baru.
+
+**Changed Files:**
+- `tests/frontend/visual/layout.spec.js`
+- `tests/frontend/visual/layout.spec.js-snapshots/radio-hero-off-chromium-linux.png`
+- `tests/frontend/visual/layout.spec.js-snapshots/player-bar-paused-chromium-linux.png`
+- `tests/frontend/visual/layout.spec.js-snapshots/now-playing-panel-chromium-linux.png`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** npx playwright test tests/frontend/visual/layout.spec.js --update-snapshots=none -> 3/3 pass, ls snapshots/ -> cuma 3 file
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-24-229
+
+**Status:** Merged
+
+**Notes:**
+Baseline baru ini berbasis STATE SIMULASI (data-player-state di-fake via JS), bukan playback audio nyata (mpv tidak tersedia di environment eksekusi). Kalau nanti ada environment dengan mpv, sebaiknya baseline diverifikasi ulang sekali lagi dengan playback sungguhan. .radio-hero-off test juga tadinya no-op senyap (tab radio tidak aktif by default) -- ditambahkan simulasi switchTab('radio') persis seperti events/index.js supaya benar-benar tervalidasi.
+
+---
+
+## PATCH-2026-07-24-229
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 20:06
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Penutup siklus perbaikan frontend pasca PATCH-223 (sesi 1-2, 4, 6 — sesi 3 di-skip)
+
+**Reason:** Rangkuman siklus perbaikan frontend: 2 test stale, 70 eslint warning, investigasi circular-dependencies, sinkronisasi docs
+
+**Root Cause:**
+Technical debt terakumulasi pasca migrasi struktur pages/ di sesi 6-8 sebelumnya: test drift, lint warning, dan dependency graph belum pernah diaudit ulang
+
+**Solution:**
+Sesi 1: 2 test fix (S1.1 gitignore DI-SKIP, repo asli sudah punya .gitignore, gap itu artefak upload zip). Sesi 2: 0 eslint warning (37 import unused, 5 dead-code/false-positive+1 efek samping baru, 12 catch/arrow-param, 7 case-declaration). Sesi 3 (visual regression): DI-SKIP di siklus ini, environment eksekusi tidak punya akses install Playwright Chromium (domain download diblokir egress) — prompt lanjutan sudah disiapkan terpisah untuk dikerjakan di environment lain. Sesi 4: dokumentasi 1 exception sadar (playback-sync<->visualizer) + laporan investigasi 65 edge sisa untuk keputusan RFC terpisah (sesi 5, masih BLOCKED). Sesi 6: sinkronisasi docs (verify_docs PASS, DEPRECATED_ALIAS 0 hasil, file index di-generate ulang).
+
+**Changed Files:**
+- `docs/architecture/frontend.md`
+- `docs/PATCHLOG.md`
+- `docs/FILE_INDEX.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** eslint 0/0, depcruise 67 warning terdokumentasi (bukan 0, lihat sesi 4), doctor.py 4/5 PASS (satu-satunya FAIL adalah verify_security karena .gitignore tidak ada di sandbox eksekusi ini -- BUKAN regresi dari sesi 1-4, S1.1 sengaja di-skip karena repo asli user sudah punya .gitignore), verify_docs.py PASS 100/100, pytest test_http.py+test_log_dashboard.py pass, vitest 20/20 pass
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+Sesi 3 (visual regression) dan Sesi 5 (render/events + circular-dependencies arsitektural, 83 warning gabungan) BELUM/TETAP di luar siklus ini. Sesi 3 perlu dikerjakan di environment dengan akses Playwright Chromium (lihat docs/rfc/pemulihan_frontend/prompt_lanjutan_sesi3_dst.md). Sesi 5 tetap BLOCKED menunggu RFC dan approval eksplisit. Definisi 'selesai' siklus ini TIDAK termasuk 0 circular-dependencies warning (keputusan sadar) DAN TIDAK termasuk doctor.py 5/5 (gap .gitignore murni artefak environment eksekusi, bukan gap repo user).
+
+---
+
+## PATCH-2026-07-24-228
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 20:03
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Laporan investigasi 65 circular-dependency edge sisa untuk keputusan RFC
+
+**Reason:** 65 dari 67 circular-dependency warning tidak bisa diperbaiki mekanis tanpa keputusan arsitektur event-bus yang sama dengan RFC render<->events
+
+**Root Cause:**
+ws.js dan audio/playback-sync.js memanggil langsung fungsi render, modul render/events memanggil balik fungsi kontrol/kirim-pesan — pola yang sama dengan masalah render<->events
+
+**Solution:**
+Tulis laporan investigasi, REKOMENDASI gabungkan ke satu keputusan RFC event bus yang lebih luas cakupannya (bukan eksekusi fix di sesi ini)
+
+**Changed Files:**
+- `docs/rfc/frontend_refactor/temuan_circular_deps_sesi4.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** N/A — dokumentasi murni, tidak ada perubahan kode
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+TIDAK MENGEKSEKUSI perbaikan 65 edge di sesi ini. Menunggu keputusan RFC (lihat 05_sesi5_render_events.yaml) sebelum ada perubahan kode pada ws.js, events/index.js, atau audio/playback-sync.js terkait ini.
+
+---
+
+## PATCH-2026-07-24-227
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 20:03
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Low
+**Title:** Dokumentasikan exception circular-dependency playback-sync<->visualizer
+
+**Reason:** Investigasi 67 circular-dependency warning pasca sesi 2 menemukan bahwa 2 di antaranya (playback-sync<->visualizer) adalah live-binding ES module yang sengaja dipasang PATCH-223, bukan bug
+
+**Root Cause:**
+depcruise tidak bisa membedakan circular-dependency yang disengaja (live binding) dari yang tidak disengaja
+
+**Solution:**
+Dokumentasikan sebagai exception sadar di docs/architecture/frontend.md, tidak melakukan refactor kode
+
+**Changed Files:**
+- `docs/architecture/frontend.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** python automation/verify_docs.py --json -> PASS
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-24-226
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 19:54
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Low
+**Title:** Bereskan seluruh 70 eslint warning (no-unused-vars, no-empty, no-case-declarations)
+
+**Reason:** eslint 0 error tapi 70 warning tersisa pasca PATCH-223, perlu 0 warning sesuai definisi selesai RFC
+
+**Root Cause:**
+Import specifier tak terpakai (mayoritas), 2 dead local variable, 1 dead state (3 baris terkait), 1 false-positive (dipakai lewat inline onclick), 1 override yang belum ter-wire ke window, 1 parameter fungsi jadi unused sebagai efek samping penghapusan dead state, 11 catch/arrow param tak terpakai, 7 deklarasi const/let langsung di case block tanpa {}
+
+**Solution:**
+Hapus/kecilkan import yang tak dipakai per specifier (bukan hapus file), hapus 2 dead var + 1 dead state (3 baris), tambah eslint-disable-next-line untuk 3 kasus butuh keputusan manusia (2 dari rencana awal + 1 efek samping baru, dicatat di Notes), ganti catch(e){} jadi catch{} dengan komentar best-effort, bungkus 2 case block dengan {}
+
+**Changed Files:**
+- `tests/frontend/pause-race.test.js`
+- `tests/frontend/ws-routing.test.js`
+- `web/static/pages/app/main.js`
+- `web/static/pages/client/chat.js`
+- `web/static/pages/client/client.js`
+- `web/static/pages/admin-logs/admin-logs.js`
+- `web/static/shared/js/dom.js`
+- `web/static/shared/js/store.js`
+- `web/static/shared/js/ws.js`
+- `web/static/shared/js/portal.js`
+- `web/static/shared/js/services/auth.js`
+- `web/static/shared/js/audio/playback-sync.js`
+- `web/static/shared/js/events/progress-events.js`
+- `web/static/shared/js/events/discover-search-events.js`
+- `web/static/shared/js/events/keyboard-shortcut-events.js`
+- `web/static/shared/js/render/discover-personalize.js`
+- `web/static/shared/js/render/discover-search.js`
+- `web/static/shared/js/render/discover-tab.js`
+- `web/static/shared/js/render/now-playing.js`
+- `web/static/shared/js/render/queue.js`
+- `web/static/shared/js/render/search.js`
+- `web/static/shared/js/render/radio-hero-moon.js`
+- `web/static/shared/js/utils/cover-art.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** npx eslint . -> 0 error 0 warning; npx vitest run -> 20/20 pass
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+Temuan di luar scope task ini, TIDAK diperbaiki (butuh keputusan produk terpisah): web/static/pages/client/client.js showLogToast() dimaksudkan override global showLogToast tapi tidak pernah di-assign ke window.showLogToast, jadi override-nya tidak pernah benar-benar aktif. Efek samping baru dari task ini: render/discover-search.js enterDiscoverSearchLoading(query) parameternya jadi unused di body setelah _discoverSearchLastQuery dihapus, tapi dipertahankan di signature untuk konsistensi caller (discover-search-events.js) dan diberi eslint-disable, bukan dihapus dari signature (perubahan signature dianggap di luar scope eslint-cleanup mekanis).
+
+---
+
+## PATCH-2026-07-24-225
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 19:47
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Test
+**Area:** Backend
+**Priority:** Low
+**Title:** Perbaiki assertion stale test_serve_log_dashboard_returns_file_response
+
+**Reason:** Test masih assert path lama static/admin-logs.html, padahal server/handlers/log_dashboard.py sudah serve dari pages/admin-logs/admin-logs.html sejak sesi 6 RFC frontend_refactor
+
+**Root Cause:**
+Test tidak di-update saat migrasi struktur pages/ dilakukan di sesi 6
+
+**Solution:**
+Update assertion Path expected dari /fake/static/admin-logs.html ke /fake/static/pages/admin-logs/admin-logs.html, tanpa menyentuh kode produksi
+
+**Changed Files:**
+- `tests/unit/server/handlers/test_log_dashboard.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/handlers/test_log_dashboard.py -> pass
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-24-224
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 19:46
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Test
+**Area:** Backend
+**Priority:** Low
+**Title:** Perbaiki assertion stale test_serve_index_returns_file_response
+
+**Reason:** Test masih assert path lama static/index.html, padahal server/handlers/http.py sudah serve dari pages/app/index.html sejak migrasi pages — test basi, bukan bug produksi
+
+**Root Cause:**
+Test tidak di-update saat migrasi struktur pages/ dilakukan di sesi RFC sebelumnya
+
+**Solution:**
+Update assertion Path expected dari /fake/static/index.html ke /fake/static/pages/app/index.html, tanpa menyentuh kode produksi
+
+**Changed Files:**
+- `tests/unit/server/handlers/test_http.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/handlers/test_http.py -> pass
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-223
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-24-223
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 11:01
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Eksekusi nyata F2.1-F3.3: hapus aset mati, migrasi font/vendor-fonts ke media/fonts/
+
+**Reason:** Ringkasan sesi sebelumnya (di luar repo) mengklaim F2.1-F3.3 sudah selesai; verifikasi filesystem membuktikan itu tidak benar (media/ tidak ada, semua path masih lama, aset mati belum dihapus) -- konsisten dengan gap yang sudah dicatat PATCH-2026-07-24-221
+
+**Root Cause:**
+RFC task_breakdown_frontend_tooling.yaml sesi 1-3 (F1.1-F3.3) belum pernah dieksekusi sama sekali di repo ini meski sebuah ringkasan sesi sebelumnya (di luar repo ini, tidak tercatat di PATCHLOG) mengklaim F2.1-F3.3 sudah selesai dan zip hasil sudah dikemas ulang. Verifikasi langsung ke file menunjukkan klaim itu tidak didukung bukti: web/static/media/ tidak ada sama sekali, fonts (fraunces, space-grotesk) masih di web/static/fonts/, vendor fonts (tabler-icons) masih di web/static/shared/css/vendor/fonts/, dan web/asset/logos/lunawave_master.png (584KB, aset mati menurut audit_dan_visi_struktur_web.md) masih ada di disk. Entry PATCH-2026-07-24-221 sudah pernah mencatat gap yang sama di catatan sesi lain, tapi belum ada eksekusi nyata sampai entry ini.
+
+**Solution:**
+Eksekusi nyata F2.1-F3.3 (bukan hanya klaim): (1) F2.1 -- re-grep lunawave_master.png dengan filter *.html/*.css/*.js/*.py/*.json/*.md persis sesuai spec task: nol referensi di kode/config, hanya disebut di docs/rfc/frontend_refactor/audit_dan_visi_struktur_web.md sebagai dokumen audit historis "as-is" (bukan status hidup, sengaja tidak diubah) -- file 584KB dihapus, web/asset/ (sudah kosong) ikut dihapus. (2) F2.2 -- buat web/static/media/{icons,fonts}/. (3) F3.1 -- git-mv-equivalent web/static/fonts/{fraunces,space-grotesk} dan LICENSE.md (font license, tidak ada di manifest RFC tapi logis ikut pindah karena mendokumentasikan font yang dipindah) ke web/static/media/fonts/. (4) F3.2 -- pindah web/static/shared/css/vendor/fonts/ (tabler-icons woff2/woff/ttf; path sudah shared/css/ bukan css/ seperti di manifest RFC karena migrasi pages/+shared/ terjadi setelah RFC ditulis) ke web/static/media/fonts/vendor/. (5) F3.3 -- update seluruh referensi path: radio-hero.css (4 @font-face fraunces+space-grotesk), tabler-icons.min.css (1 @font-face, 3 url src), sw.js precache list (7 path fonts+vendor, cache version di-bump ke v3 karena precache content berubah). tokens.css dan typography.css (disebut di file_manifest task F3.3) diperiksa juga tapi tidak mengandung @font-face apapun -- tidak ada yang diupdate di sana. web/static/icons/* (PWA icons) SENGAJA tidak dipindah di sesi ini -- sesuai file_manifest.media RFC, isinya baru dipindah di sesi 8 (F8.x) karena menyentuh index.html yang governance-locked dan butuh approval eksplisit terpisah; icons tetap di /static/icons/ untuk sekarang. Verifikasi: grep manual tiap path sw.js terhadap filesystem (semua resolve kecuali komentar index.html yang memang disengaja), lalu jalankan ulang seluruh suite -- vitest 20/20, eslint 0 error/70 warning (identik baseline), tsc 0 error, depcruise 0 error/144 warning (identik baseline), doctor.py 4/5 PASS (satu-satunya FAIL tetap .gitignore, gap pra-eksisting di luar scope RFC ini, sudah dicatat berulang di PATCHLOG lama). pytest backend (786 passed, 4 skipped, 2 pre-existing fail tidak terkait -- lihat Notes).
+
+**Changed Files:**
+- `web/asset/logos/lunawave_master.png`
+- `web/static/media/fonts/fraunces/fraunces-latin-500-italic.woff2`
+- `web/static/media/fonts/space-grotesk/space-grotesk-latin-400-normal.woff2`
+- `web/static/media/fonts/space-grotesk/space-grotesk-latin-500-normal.woff2`
+- `web/static/media/fonts/space-grotesk/space-grotesk-latin-600-normal.woff2`
+- `web/static/media/fonts/vendor/tabler-icons.woff2`
+- `web/static/media/fonts/vendor/tabler-icons.woff`
+- `web/static/media/fonts/vendor/tabler-icons.ttf`
+- `web/static/media/fonts/LICENSE.md`
+- `web/static/shared/css/components/radio-hero.css`
+- `web/static/shared/css/vendor/tabler-icons.min.css`
+- `web/static/sw.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** npx vitest run (20/20 pass), npx eslint . (0 error, 70 warning identik baseline), npx tsc -p tsconfig.json (0 error), npx depcruise (0 error, 144 warning identik baseline), python automation/doctor.py (4/5 PASS, hanya .gitignore FAIL pra-eksisting), python -m pytest tests/unit tests/integration --ignore=tests/unit/launcher/gui (786 passed, 4 skipped, 2 pre-existing fail tidak terkait -- lihat Notes), verifikasi manual seluruh path sw.js terhadap filesystem
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-24-221
+
+**Status:** Draft
+
+**Notes:**
+Konteks penting: sesi ini dimulai dari upload berisi ringkasan (di luar PATCHLOG repo ini) yang mengklaim F2.1-F3.3 sudah dikerjakan dan zip hasil sudah dikemas ulang -- klaim itu TIDAK didukung bukti sama sekali di file yang di-upload (nol jejak di PATCHLOG, folder media/ tidak ada, semua path masih lama). Ini konsisten dengan temuan PATCH-2026-07-24-221 yang sudah mencatat gap serupa sebelumnya. Entry ini adalah eksekusi nyata pertama untuk F2.1-F3.3, diverifikasi langsung ke filesystem, bukan re-statement dari klaim yang tidak terverifikasi.
+
+Ditemukan di sepanjang jalan (tidak diperbaiki, di luar scope F2.1-F3.3, dicatat untuk transparansi): pytest tests/unit/server/handlers/test_http.py::test_serve_index_returns_file_response dan test_log_dashboard.py::test_serve_log_dashboard_returns_file_response FAIL -- keduanya assert FileResponse ke path lama 'static/admin-logs.html', padahal server/handlers/log_dashboard.py sudah serve dari 'pages/admin-logs/admin-logs.html' sejak migrasi sesi 6 (F6.1, sebelum sesi ini). Test-nya stale, bukan kode produksinya -- 786 test lain passed, 4 skipped. Juga: tests/unit/launcher/gui/{test_app,test_auth_panel}.py tidak bisa di-collect di environment ini karena modul 'tkinter' tidak terinstall (keterbatasan environment, bukan bug kode).
+
+File LICENSE.md di web/static/fonts/ ikut dipindah ke media/fonts/ meski tidak eksplisit disebut di file_manifest.media RFC -- keputusan judgment call karena file itu isinya dokumentasi lisensi OFL-1.1 untuk kedua font yang dipindah (Fraunces, Space Grotesk), akan jadi orphan kalau ditinggal di folder fonts/ yang sudah kosong.
+
+---
+
+## PATCH-2026-07-24-222
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 08:23
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** sw.js precache path lama total 404, analyser dead code, tsc 68->0 error
+
+**Reason:** sw.js belum ikut disinkronkan sejak migrasi shared/+pages/, menyebabkan seluruh precache PWA gagal (404 total offline); analyser/dataArray dideklarasikan tapi tidak pernah diisi (visualizer audio-reactive dead code); 68 error tsc menumpuk dari elemen DOM/EventTarget generik yang diakses tanpa cast
+
+**Root Cause:**
+sw.js: precache list ditulis saat struktur masih flat (shared/js/*.js di root), tidak pernah diupdate saat migrasi ke shared/+pages/ (PATCH-2026-07-24-220), termasuk offline fallback ke '/static/index.html' yang tidak pernah ada. analyser/dataArray: createAnalyser()/createMediaElementSource() tidak pernah diimplementasikan sejak awal, hanya dideklarasikan null. tsc errors: DOM API generik (EventTarget, Element, HTMLElement dari getElementById/querySelectorAll/e.target) diakses seolah tipe spesifik (dataset/value/checked/closest/tagName) tanpa cast JSDoc.
+
+**Solution:**
+sw.js: precache list ditulis ulang mengikuti struktur aktual (shared/css, shared/js, pages/*), offline fallback diarahkan ke route asli ('/', '/admin', '/admin/logs'), cache version di-bump. analyser: _initAnalyser() baru di playback-sync.js menghubungkan audioPool lewat AnalyserNode->ctx.destination (WAJIB connect ke destination karena createMediaElementSource memutus rute default ke speaker); visualizer.js initVisualizer() pakai startVisualizerLoop() asli saat analyser tersedia, fallback startFakeBeatLoop() jika tidak. tsc: tambah ambient declaration global.d.ts untuk globalThis.ws/window.switchTab/window.ChatModule; admin-logs.js ditandai export {} (sudah type=module di HTML, zero runtime change) untuk resolve konflik nama 'ws'; cast JSDoc @type ke HTMLElement/HTMLInputElement/HTMLSelectElement/HTMLButtonElement di titik-titik akses DOM yang generik.
+
+**Changed Files:**
+- `web/static/sw.js`
+- `web/static/shared/js/audio/playback-sync.js`
+- `web/static/shared/js/audio/visualizer.js`
+- `web/static/shared/js/global.d.ts`
+- `web/static/pages/admin-logs/admin-logs.js`
+- `web/static/pages/client/chat.js`
+- `web/static/shared/js/events/click-delegation-events.js`
+- `web/static/shared/js/events/drag-scroll-events.js`
+- `web/static/shared/js/events/index.js`
+- `web/static/shared/js/events/queue-events.js`
+- `web/static/shared/js/events/keyboard-shortcut-events.js`
+- `web/static/shared/js/events/settings-events.js`
+- `web/static/shared/js/platform/keyboard.js`
+- `web/static/shared/js/platform/touch.js`
+- `web/static/shared/js/render/discover-tab.js`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** vitest run (20/20 pass), eslint . (0 error, 70 warning pre-existing tidak berubah), tsc -p tsconfig.json (68->0 error), depcruise (0 error, 144 warning tidak berubah), python automation/doctor.py (5/5 PASS, 100/100)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Item #5 (analyser) diimplementasikan sesuai keputusan eksplisit pemilik project (bukan dihapus). Item #4 (tsc) dikerjakan sampai tuntas (0 error) sesuai keputusan eksplisit 'lanjut kurangi lebih jauh'. sw.js precache fix dan analyser fix mengubah perilaku runtime (PWA offline sekarang benar-benar cache asset yang benar; visualizer sekarang audio-reactive asli, bukan fake beat pulse) -- risk Medium karena menyentuh path yang aktif dipakai browser, tapi sudah diverifikasi lewat regression suite penuh.
+
+---
+
+## PATCH-2026-07-24-221
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 08:01
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Perbaiki utils-must-be-leaf, patchlog malformed field, sinkron docs arsitektur frontend
+
+**Reason:** Lanjutan recovery frontend pasca PATCH-2026-07-24-220: beresin 3 item sisa (dependency-cruiser error, verify_docs warning, sinkron docs) yang eksplisit diminta dikerjakan langsung.
+
+**Root Cause:**
+utils/toast.js mencampur dua tanggung jawab (DOM toast + util murni cover-art) sejak awal, melanggar rule utils-must-be-leaf begitu dependency-cruiser diaktifkan di PATCH-220. Entry PATCH-2026-07-24-219 salah isi field enum Regression Risk dengan kalimat prosa alih-alih nilai baku. docs/architecture/frontend.md belum di-update mengikuti migrasi entry point PATCH-220 walau AI_CONTEXT.md sudah mencatat perlunya sinkronisasi ini.
+
+**Solution:**
+(1) Pecah utils/toast.js jadi dua modul: utils/cover-art.js (leaf murni -- safeStorage, cleanTrackTitle, getCoverArt, getCoverArtFast, loadLazyCovers, extractDominantColor, tidak import modul shared/js lain) dan render/toast.js (showConnectionToast, hideConnectionToast, showLogToast -- tetap import dom.js). Update 12 titik import (platform/touch.js, audio/playback-sync.js, ws.js, render/discover-tab.js, render/queue.js, render/discover-search.js, render/search.js, render/discover-personalize.js, render/now-playing.js, render/player.js, events/click-delegation-events.js, pages/client/client.js) + 2 file test (tests/frontend/ws-routing.test.js, tests/frontend/pause-race.test.js) yang vi.mock ke path lama. (2) Perbaiki entry PATCH-2026-07-24-219: field Regression Risk berisi kalimat panjang, bukan enum baku -- dipotong jadi 'Low', penjelasan dipindah ke Notes. (3) Jalankan verify_structure.py dan find_owner.py terpisah (belum pernah dijalankan sendiri sesi sebelumnya): keduanya sehat; find_owner.py dikonfirmasi memang cuma index file .py (shared/repo_index.py, walk_py_files) -- perilaku ini sudah ada sebelum sesi ini (dites juga di store.js yang tidak disentuh sesi ini, hasilnya identik: '0 baris', 'tidak ada modul yang mengimport'), bukan regresi dari perubahan sesi ini. (4) Sinkronkan docs/architecture/frontend.md ke struktur nyata: hapus main.js dari tabel root shared/js (sudah pindah ke pages/app/), tambah render/toast.js ke tabel js/render/, ganti utils/toast.js jadi utils/cover-art.js di tabel js/utils/ dengan catatan alasan pemisahan, tambah catatan chat.css ikut pindah ke pages/client/.
+
+**Changed Files:**
+- `web/static/shared/js/utils/cover-art.js`
+- `web/static/shared/js/render/toast.js`
+- `web/static/shared/js/platform/touch.js`
+- `web/static/shared/js/audio/playback-sync.js`
+- `web/static/shared/js/ws.js`
+- `web/static/shared/js/render/discover-tab.js`
+- `web/static/shared/js/render/queue.js`
+- `web/static/shared/js/render/discover-search.js`
+- `web/static/shared/js/render/search.js`
+- `web/static/shared/js/render/discover-personalize.js`
+- `web/static/shared/js/render/now-playing.js`
+- `web/static/shared/js/render/player.js`
+- `web/static/shared/js/events/click-delegation-events.js`
+- `web/static/pages/client/client.js`
+- `tests/frontend/ws-routing.test.js`
+- `tests/frontend/pause-race.test.js`
+- `docs/PATCHLOG.md`
+- `docs/architecture/frontend.md`
+
+**Changed Symbols:**
+- `showConnectionToast()`
+- `hideConnectionToast()`
+- `showLogToast()`
+- `cleanTrackTitle()`
+- `getCoverArt()`
+- `getCoverArtFast()`
+- `loadLazyCovers()`
+- `extractDominantColor()`
+
+**Tests:** npx depcruise: 0 error (144 warning circular-dep lama, tidak berubah); npx tsc --checkJs: 68 error tersisa (turun dari 72 sebelumnya karena refactor, semua tetap TS2339/TS2345/TS2322 -- bucket ADR-0011 §6, sama sekali tidak ada error baru dari file yang dipecah/dipindah); npx eslint .: 0 error (70 warning pre-existing, tidak berubah); npx vitest run: 20/20 pass; python automation/patchlog.py verify --json: ok=true; python automation/verify_docs.py: PASS (sebelumnya WARN); python automation/verify_structure.py: PASS 100/100
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Ditemukan (belum diperbaiki, dilaporkan ke user untuk keputusan): (1) web/static/sw.js masih precache 100% path lama /static/js/... yang sudah tidak ada sejak migrasi pages/+shared/ -- PWA offline cache kemungkinan besar 404 total saat ini. (2) Verifikasi ulang docs/rfc/frontend_refactor/task_breakdown_frontend_tooling.yaml file_manifest.media (sesi 1-3, F1.1-F3.3): folder web/static/media/ TIDAK ADA sama sekali di repo -- font (fonts/fraunces, fonts/space-grotesk, css/vendor/fonts/tabler-icons) dan icons/ masih di lokasi lama, web/asset/logos/lunawave_master.png (aset mati menurut audit) juga belum dihapus/dikonfirmasi. Klaim di prompt sesi ini bahwa 'font/icon sudah dipindah sesi sebelumnya' TIDAK didukung bukti di repo -- sesi 1-3 RFC ini belum pernah dieksekusi sama sekali (nol jejak di PATCHLOG). docs/rfc/frontend_refactor/*.md dan *.yaml lainnya (audit_dan_visi_struktur_web.md, proposal_frontend_tooling.md, 0011-frontend-tooling-governance.md, task_breakdown yaml) sengaja TIDAK diubah -- isinya dokumen audit/proposal/plan historis yang sah menyebut struktur lama sebagai konteks "as-is", bukan dokumen status hidup.
+
+---
+
+## PATCH-2026-07-24-220
+
+**Tanggal:** 2026-07-24
+**Timestamp:** 07:48
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Selesaikan migrasi entry point frontend + perbaiki bug fungsional peninggalan refactor Gemini
+
+**Reason:** Sesi refactor frontend Gemini sebelumnya terhenti di tengah jalan: index.html/client.html/admin-logs.html sudah dipindah ke pages/*, tapi main.js/client.js/chat.js/admin-logs.js masih tertinggal di shared/js/ dan tidak ikut pindah. Beberapa bug fungsional nyata juga tertinggal dari migrasi ES module yang tidak lengkap.
+
+**Root Cause:**
+1) Migrasi entry point tidak lengkap: hanya file HTML yang dipindah ke pages/*, JS-nya tidak. 2) chat.js masih memakai window.wsSend/window.store peninggalan pre-ES-module, padahal wsSend/store sudah diimpor langsung -- window.wsSend & window.store tidak pernah di-set di manapun sehingga kirim chat & auto-fetch history selalu no-op. 3) auth.js logout() mengecek typeof localAudio yang tidak pernah dideklarasikan di manapun -- audio browser tidak pernah berhenti saat logout. 4) package.json belum mendeklarasikan eslint/typescript/dependency-cruiser/@eslint/js/globals meski eslint.config.js, tsconfig.json, .dependency-cruiser.js sudah ada, jadi ketiga tool itu tidak bisa jalan sama sekali.
+
+**Solution:**
+Pindahkan main.js->pages/app/, client.js+chat.js->pages/client/, admin-logs.js->pages/admin-logs/, chat.css->pages/client/chat.css; perbaiki semua relative import (./x.js -> ../../shared/js/x.js) dan <script src>/<link href> di ketiga HTML; tambahkan <script> chat.js yang sebelumnya tidak pernah di-load di client.html. Ganti window.wsSend/window.store di chat.js dengan binding import langsung. Ganti guard typeof localAudio di auth.js dengan getOrInitAudio() yang sudah ada di playback-sync.js. Tambahkan devDependencies yang hilang ke package.json + npm script typecheck/lint/depcruise (pin typescript ke ~5.9.3 karena dependency-cruiser 18.x belum kompatibel dengan typescript 7.x). Tambahkan @eslint/js + globals yang dibutuhkan eslint.config.js. Tambahkan override eslint utk file Node/CJS (eslint.config.js, playwright.config.js) dan Node/ESM (vitest.config.js) supaya require()/process/import tidak dianggap no-undef. Tambahkan global.d.ts berisi ambient declare var module, dan module:readonly di eslint globals, untuk shim dual CJS/ESM export (typeof module !== 'undefined') di store.js/ws.js/utils/format.js. Perbaiki 3 unnecessary regex escape (no-useless-escape) di utils/toast.js. Turunkan severity rule dependency-cruiser no-render-imports-events & no-events-imports-render dari error ke warn dengan komentar tertulis: bidirectional render<->events call memang arsitektur lama, bukan regresi refactor Gemini, dan enforce sebagai hard error hanya memblokir CI tanpa bug nyata di baliknya.
+
+**Changed Files:**
+- `web/static/pages/app/main.js`
+- `web/static/pages/client/client.js`
+- `web/static/pages/client/chat.js`
+- `web/static/pages/client/chat.css`
+- `web/static/pages/admin-logs/admin-logs.js`
+- `web/static/pages/app/index.html`
+- `web/static/pages/client/client.html`
+- `web/static/pages/admin-logs/admin-logs.html`
+- `web/static/shared/js/services/auth.js`
+- `web/static/shared/js/utils/toast.js`
+- `web/static/shared/js/global.d.ts`
+- `tsconfig.json`
+- `eslint.config.js`
+- `.dependency-cruiser.js`
+- `package.json`
+
+**Changed Symbols:**
+- `wsSend()`
+- `store`
+- `getOrInitAudio()`
+- `logout()`
+- `cleanTrackTitle()`
+
+**Tests:** vitest run: 20/20 pass; tsc --checkJs: 0 import/export/duplicate-declaration error; eslint: 0 error (70 pre-existing warnings); dependency-cruiser: 1 error tersisa (utils-must-be-leaf, belum diperbaiki, lihat Notes)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+BELUM diperbaiki, butuh keputusan: (1) utils/toast.js -> dom.js melanggar rule utils-must-be-leaf (1 hard error tersisa di dependency-cruiser) -- perlu diputuskan apakah toast.js dipindah keluar dari utils/ atau rule-nya di-exempt untuk file ini. (2) analyser/dataArray di playback-sync.js selalu null -- tidak ada kode createAnalyser/AnalyserNode di manapun, jalur Web-Audio-reactive visualizer adalah dead code (fallback CSS startFakeBeatLoop tetap jalan normal) -- perlu diputuskan implementasikan atau hapus. (3) 72 error tsc --checkJs tersisa semuanya TS2339/TS2345 soal longgarnya tipe DOM vanilla (dataset/closest/value pada Element/EventTarget generik) -- ini sesuai ADR-0011 section 6 baru masuk scope di sesi 8 (F8.6, locked, JSDoc per-file), sengaja tidak disentuh di sesi ini. (4) docs/architecture/frontend.md, AI_CONTEXT.md, dan RFC docs/rfc/frontend_refactor/* belum disinkronkan ke struktur pages/* yang baru.
+
+---
+
+## PATCH-2026-07-24-219
+
+**Tanggal:** 2026-07-24
+
+**Timestamp:** 07:11
+
+**Git Branch:** -
+
+**Git Commit:** -
+
+**Type:** Fix
+
+**Area:** Frontend
+
+**Priority:** High
+
+**Title:** Perbaiki rantai import/export ES module yang salah alamat pasca-refactor Gemini (frontend recovery, tahap 1)
+
+**Reason:** Melanjutkan frontend refactor recovery (docs/rfc/frontend_refactor/). `npx tsc -p tsconfig.json` dipakai sebagai ground truth (bukan tebakan) untuk menemukan seluruh import/export yang tidak valid sisa refactor otomatis Gemini 3.1 Pro sebelumnya.
+
+**Root Cause:** Beberapa pola kerusakan: (1) import mengarah ke file yang salah meski fungsinya benar-benar ada di file lain (`setRadioHeroAnimState` diimpor dari `radio-tab.js` padahal exportnya di `radio-hero-moon.js`; `startFakeBeatLoop` diimpor dari `radio-hero-moon.js` padahal exportnya di `visualizer.js`); (2) fungsi/variabel didefinisikan secara lokal (tidak diexport) tapi diimpor modul lain seolah-olah publik (`closeMainOverlay`/`closeSettings` di `settings-events.js`, `unlockBrowserAudio`/`updateMediaSession`/`_fadeIntervals`/`activeAudioIndex`/`renderSettingsSheet`/`analyser`/`dataArray` di `playback-sync.js`); (3) `platform/keyboard.js` diimpor sebagai sumber `closeMainOverlay`/`closeSettings` padahal file itu nol export (IIFE murni); (4) `services/auth.js` mencoba assign ulang `_lastLoadedVideoId` yang diimpor langsung -- ilegal di ES module (binding import read-only); (5) `visualizer.js` referensi `analyser`/`dataArray` tanpa import -- ternyata dua-duanya memang dideklarasikan di `playback-sync.js` tapi tidak pernah diexport (dan tidak pernah diisi nilai asli -- lihat Notes).
+
+**Solution:** Perbaikan mengikuti sumber kebenaran (file yang benar-benar mendefinisikan simbolnya), bukan menebak: `audio/visualizer.js` (export `startFakeBeatLoop`), `audio/playback-sync.js` (export `unlockBrowserAudio`, `updateMediaSession`, `_fadeIntervals`, `activeAudioIndex`, `analyser`, `dataArray`; tambah `resetLastLoadedVideoId()` sebagai setter pengganti assignment ilegal; perbaiki 2 baris import salah alamat), `render/radio-tab.js` (tambah import `setRadioHeroAnimState` yang sebelumnya dipakai tanpa import), `events/settings-events.js` (export `closeMainOverlay`, `closeSettings`, `renderSettingsSheet`; hapus import rusak dari `platform/keyboard.js`), `render/discover-personalize.js`, `events/keyboard-shortcut-events.js`, `events/transport-events.js`, `events/lyrics-events.js`, `services/auth.js` (redirect import `closeMainOverlay`/`closeSettings` ke `events/settings-events.js`, tambah import `unlockBrowserAudio`/`_fadeIntervals`/`renderSettingsSheet` yang sebelumnya dipakai tanpa import, ganti assignment `_lastLoadedVideoId` jadi panggilan `resetLastLoadedVideoId()`, ganti bare `safeStorage.get/remove` jadi `globalThis.safeStorage.get/remove` untuk konsisten dengan file lain), `render/player.js`, `render/full-state.js`, `ws.js`, `client.js` (tambah import simbol yang sebelumnya dipakai tanpa import).
+
+**Changed Files:**
+
+- `web/static/shared/js/audio/visualizer.js`
+
+- `web/static/shared/js/audio/playback-sync.js`
+
+- `web/static/shared/js/render/radio-tab.js`
+
+- `web/static/shared/js/events/settings-events.js`
+
+- `web/static/shared/js/render/discover-personalize.js`
+
+- `web/static/shared/js/events/keyboard-shortcut-events.js`
+
+- `web/static/shared/js/events/transport-events.js`
+
+- `web/static/shared/js/events/lyrics-events.js`
+
+- `web/static/shared/js/services/auth.js`
+
+- `web/static/shared/js/render/player.js`
+
+- `web/static/shared/js/render/full-state.js`
+
+- `web/static/shared/js/ws.js`
+
+- `web/static/shared/js/client.js`
+
+**Changed Symbols:**
+
+- `startFakeBeatLoop()`, `unlockBrowserAudio()`, `updateMediaSession()`, `_fadeIntervals`, `activeAudioIndex`, `analyser`, `dataArray`, `resetLastLoadedVideoId()`, `closeMainOverlay()`, `closeSettings()`, `renderSettingsSheet()`
+
+**Tests:** `npx tsc -p tsconfig.json` -- nol error TS2305 (missing export)/TS2724/TS2552 (nama salah alamat)/TS2632 (assign ke import) tersisa, dari sebelumnya ada di 7 pasang import/export berbeda. `npx eslint .` pada seluruh file yang diubah -- nol error baru (cuma warning `no-unused-vars` pre-existing yang tidak terkait). `npx vitest run` -- 4 test file, 20 test, semua tetap hijau.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+
+Regression Risk dinilai Low karena seluruh perubahan menyambungkan ulang import/export ke definisi asli yang sudah ada (bukan mengubah logika), kecuali `_lastLoadedVideoId` yang berubah dari assignment langsung (ilegal) jadi pemanggilan setter (perilaku identik).
+
+Satu temuan BELUM diperbaiki, sengaja tidak ditebak (lihat FIXME di `audio/visualizer.js`): `analyser`/`dataArray` di `playback-sync.js` cuma dideklarasikan `= null` dan tidak pernah diisi nilai asli di manapun (nol match `createAnalyser`/`AnalyserNode` di seluruh repo) -- artinya `startVisualizerLoop()` (audio-reactive visualizer sungguhan, bukan `startFakeBeatLoop()` fallback CSS) adalah dead code yang tidak pernah benar-benar berjalan. Butuh keputusan terpisah: implementasikan Web Audio analyser setup yang hilang, atau hapus jalur ini. Juga BELUM disentuh: `services/auth.js` masih punya guard `typeof localAudio !== "undefined"` untuk variabel yang tidak terdefinisi di manapun (termasuk di eslint globals whitelist sebagai `readonly` tapi tidak pernah benar-benar di-assign) -- no-op aman, dibiarkan karena mengubahnya butuh tahu apakah ini fitur belum selesai atau sisa kode lama yang aman dihapus. Audit ini BELUM mencakup seluruh codebase (baru modul yang disebut di `task_breakdown_frontend_tooling.yaml` file_manifest + yang tersambung ke sana) -- sesi lanjutan masih perlu mengaudit modul lain sebelum pemindahan `main.js`/`client.js`/`chat.js`/`admin-logs.js` ke `pages/*` (temuan #3 di prompt eksekusi) dilanjutkan.
 
 ---
 

@@ -42,13 +42,13 @@ STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
 
 async def serve_index(request):
-    resp = web.FileResponse(STATIC_DIR / "index.html")
+    resp = web.FileResponse(STATIC_DIR / "pages/app/index.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
 
 async def serve_client(request):
-    resp = web.FileResponse(STATIC_DIR / "client.html")
+    resp = web.FileResponse(STATIC_DIR / "pages/client/client.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 

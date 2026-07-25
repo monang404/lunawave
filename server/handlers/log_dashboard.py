@@ -40,7 +40,7 @@ async def serve_log_dashboard(request):
         return web.HTTPForbidden(
             text="Akses ditolak: metrics/logs hanya untuk localhost atau gunakan X-Metrics-Token"
         )
-    resp = web.FileResponse(STATIC_DIR / "admin-logs.html")
+    resp = web.FileResponse(STATIC_DIR / "pages/admin-logs/admin-logs.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 

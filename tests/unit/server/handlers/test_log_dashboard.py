@@ -39,7 +39,7 @@ async def test_serve_log_dashboard_returns_file_response(mock_request):
 
             resp = await serve_log_dashboard(mock_request)
 
-            mock_file_response.assert_called_once_with(Path("/fake/static/admin-logs.html"))
+            mock_file_response.assert_called_once_with(Path("/fake/static/pages/admin-logs/admin-logs.html"))
             assert resp.headers["Cache-Control"] == "no-cache"
 
 

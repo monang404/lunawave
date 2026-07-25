@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-const formatUtils = require("../../../web/static/js/utils/format.js");
+import * as formatUtils from "../../../web/static/shared/js/utils/format.js";
 
 describe("formatTime", () => {
   it("formats seconds to mm:ss", () => {

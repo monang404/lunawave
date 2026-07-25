@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-const storeModule = require("../../web/static/js/store.js");
+import * as storeModule from "../../web/static/shared/js/store.js";
 
 describe("Store", () => {
   let store;
