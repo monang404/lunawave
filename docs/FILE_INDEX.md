@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-24
+last_verified: 2026-07-25
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-24 oleh `automation/generate_file_index.py`  
+> **Auto-generated:** 2026-07-25 oleh `automation/generate_file_index.py`  
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -207,7 +207,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.  
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(StrEnum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`  
 **Function utama:** —  
-**Digunakan oleh:** `adapters/ytdlp/searcher`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`, `core/events`, _32 lainnya_  
+**Digunakan oleh:** `adapters/ytdlp/searcher`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`, `core/events`, _31 lainnya_  
 **Menggunakan:** —
 
 
@@ -1118,19 +1118,6 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 
-## scratch/
-
-**File:** `scratch/check_db.py`  
-**Fungsi:** Auto-generated module docstring.  
-**Class:** —  
-**Function utama:** `main()`  
-**Digunakan oleh:** —  
-**Menggunakan:** `core/state`, `persistence`
-
-
----
-
-
 ## bootstrap/
 
 **File:** `bootstrap/maintenance.py`  
@@ -1176,7 +1163,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**107/107** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**106/106** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi 🎉)_
