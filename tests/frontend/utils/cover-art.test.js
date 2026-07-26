@@ -205,6 +205,15 @@ describe("utils/cover-art.js", () => {
       expect(img.src).toBe("https://i.ytimg.com/vi/nocache1/hqdefault.jpg");
     });
 
+    it("sets a legacy plain-string cached URL immediately (pre-JSON cache format)", () => {
+      const img = document.createElement("img");
+      const track = { video_id: "legacyplain1", title: "T", artist: "A" };
+      localStorage.setItem("cover_legacyplain1", "https://legacy.example/plain.jpg");
+      vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+      getCoverArtFast(img, track);
+      expect(img.src).toBe("https://legacy.example/plain.jpg");
+    });
+
     it("upgrades img.src once the background getCoverArt resolves, if still connected", async () => {
       document.body.innerHTML = "";
       const img = document.createElement("img");
@@ -246,6 +255,76 @@ describe("utils/cover-art.js", () => {
       expect(() => extractDominantColor(img, callback)).not.toThrow();
       expect(callback).toHaveBeenCalledTimes(1);
     });
+
+    function stubCanvasContext(pixelBytes) {
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+        drawImage: vi.fn(),
+        getImageData: vi.fn(() => ({ data: pixelBytes })),
+      });
+    }
+
+    it("picks the most saturated pixel as the dominant color when one stands out", () => {
+      const img = document.createElement("img");
+      Object.defineProperty(img, "complete", { value: true, configurable: true });
+      Object.defineProperty(img, "naturalWidth", { value: 100, configurable: true });
+
+      // 2 sampled pixels (loop steps by 16 bytes/pixel): a dull gray pixel
+      // (low saturation) and a vivid red pixel (high saturation) — the red
+      // one should win regardless of scan order.
+      const data = new Uint8ClampedArray(32);
+      data.set([120, 120, 120, 255], 0); // gray, s≈0
+      data.set([200, 20, 20, 255], 16);  // red, s high
+      stubCanvasContext(data);
+
+      const callback = vi.fn();
+      extractDominantColor(img, callback);
+      expect(callback).toHaveBeenCalledWith({ r: 200, g: 20, b: 20 });
+    });
+
+    it("skips pixels that are too dark or too bright, falling back to an averaged color if none qualify", () => {
+      const img = document.createElement("img");
+      Object.defineProperty(img, "complete", { value: true, configurable: true });
+      Object.defineProperty(img, "naturalWidth", { value: 100, configurable: true });
+
+      // Both sampled pixels are pure white (l=255 > 240) -> skipped by the
+      // brightness guard, so the function falls back to averaging all
+      // sampled pixels instead.
+      const data = new Uint8ClampedArray(32);
+      data.set([255, 255, 255, 255], 0);
+      data.set([255, 255, 255, 255], 16);
+      stubCanvasContext(data);
+
+      const callback = vi.fn();
+      extractDominantColor(img, callback);
+      expect(callback).toHaveBeenCalledWith({ r: 255, g: 255, b: 255 });
+    });
+
+    it("falls back to the CSS variable color when canvas access throws", () => {
+      const img = document.createElement("img");
+      Object.defineProperty(img, "complete", { value: true, configurable: true });
+      Object.defineProperty(img, "naturalWidth", { value: 100, configurable: true });
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
+        throw new Error("canvas unavailable");
+      });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const callback = vi.fn();
+      extractDominantColor(img, callback);
+
+      expect(warnSpy).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledWith("var(--bg-elevated)");
+    });
+
+    it("is safe to call without a callback when extraction fails", () => {
+      const img = document.createElement("img");
+      Object.defineProperty(img, "complete", { value: true, configurable: true });
+      Object.defineProperty(img, "naturalWidth", { value: 100, configurable: true });
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
+        throw new Error("canvas unavailable");
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      expect(() => extractDominantColor(img, undefined)).not.toThrow();
+    });
   });
 
   describe("loadLazyCovers", () => {
@@ -259,10 +338,26 @@ describe("utils/cover-art.js", () => {
     }
     FakeIntersectionObserver.instances = [];
 
-    beforeEach(() => {
+    // cover-art.js memoizes its IntersectionObserver in a module-scoped
+    // `_lazyCoverObserver` variable (created once, reused on every
+    // loadLazyCovers() call). Because loadLazyCovers is statically imported
+    // once at the top of this file, that memoized observer would survive
+    // across tests even though we swap out the FakeIntersectionObserver
+    // global and reset its `.instances` list each time -- so after the
+    // first test, no *new* instance is ever pushed and
+    // FakeIntersectionObserver.instances[0] stays undefined. We use
+    // vi.resetModules() + a fresh dynamic import per test to get a clean
+    // module instance (and therefore a clean `_lazyCoverObserver`) every
+    // time.
+    let freshLoadLazyCovers;
+
+    beforeEach(async () => {
       FakeIntersectionObserver.instances = [];
       vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
       document.body.innerHTML = "";
+      vi.resetModules();
+      const mod = await import("../../../web/static/shared/js/utils/cover-art.js");
+      freshLoadLazyCovers = mod.loadLazyCovers;
     });
 
     it("observes lazy-cover images not yet marked as observed", () => {
@@ -270,7 +365,7 @@ describe("utils/cover-art.js", () => {
       img.className = "lazy-cover";
       document.body.appendChild(img);
 
-      loadLazyCovers();
+      freshLoadLazyCovers();
 
       expect(img.classList.contains("observed")).toBe(true);
       const observer = FakeIntersectionObserver.instances[0];
@@ -282,7 +377,7 @@ describe("utils/cover-art.js", () => {
       img.className = "lazy-cover observed";
       document.body.appendChild(img);
 
-      loadLazyCovers();
+      freshLoadLazyCovers();
 
       const observer = FakeIntersectionObserver.instances[0];
       expect(observer.observe).not.toHaveBeenCalled();
@@ -297,7 +392,7 @@ describe("utils/cover-art.js", () => {
       img.setAttribute("data-thumb", "thumb.jpg");
       document.body.appendChild(img);
 
-      loadLazyCovers();
+      freshLoadLazyCovers();
       const observer = FakeIntersectionObserver.instances[0];
 
       observer.cb([{ isIntersecting: true, target: img }], observer);
@@ -313,7 +408,7 @@ describe("utils/cover-art.js", () => {
       img.className = "lazy-cover";
       document.body.appendChild(img);
 
-      loadLazyCovers();
+      freshLoadLazyCovers();
       const observer = FakeIntersectionObserver.instances[0];
 
       expect(() => observer.cb([{ isIntersecting: true, target: img }], observer)).not.toThrow();

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-25-239
+latest_patch_id: PATCH-2026-07-26-240
 
-total_entries: 239
+total_entries: 240
 
 ---
 
@@ -21,6 +21,75 @@ total_entries: 239
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-26-240
+
+**Tanggal:** 2026-07-26
+**Timestamp:** 14:38
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Test
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Maksimalkan coverage test frontend + perbaiki 4 file test yang gagal
+
+**Reason:** User minta maksimalkan coverage test frontend dan pastikan semua test frontend lolos. Baseline sebelum patch: 17 file test, 182 test case, 4 file gagal (28 test gagal), coverage keseluruhan ~23% statements.
+
+**Root Cause:**
+4 file test gagal murni karena bug di test itu sendiri, bukan di source: (1) platform/keyboard.test.js dan events/keyboard-shortcut-events.test.js -- listener document-level menumpuk permanen antar test tanpa cleanup (modul di bawah test adalah IIFE/fungsi init tanpa teardown hook), dan di kasus keyboard.test.js store.js ikut ter-reset ulang oleh vi.resetModules() sehingga assignment store.userRole di beforeEach mengenai instance modul yang basi. (2) events/settings-events.test.js -- helper classListEl() melakukan Object.assign(el, {dataset:{...}}) yang invalid di jsdom karena dataset/style adalah accessor property getter-only, dan beberapa <select> dibuat tanpa <option> sehingga .value=... diabaikan browser (parseInt('') -> NaN). (3) utils/cover-art.test.js -- observer IntersectionObserver di-memoize di level modul (_lazyCoverObserver) sehingga tidak reset antar test walau stub globalnya diganti.
+
+**Solution:**
+Perbaiki ke-4 file test (root cause di atas) hingga 182/182 lolos, lalu tambahkan 28 file test baru untuk modul frontend yang sebelumnya 0% coverage: hampir seluruh events/*, render/*, audio/playback-sync.js, audio/visualizer.js, ws.js (wsConnect + handleServerMessage + syncLocalLyrics + renderHeader), dan portal.js. Pola isolasi yang dipakai berulang: vi.resetModules() + dynamic import untuk modul dengan state/listener module-scope tanpa teardown hook (IIFE, memoized singleton, permanent document.addEventListener), plus capture-and-remove listener manual di afterEach untuk kasus yang tidak bisa full-reset modulnya. Untuk audio: stub requestAnimationFrame/cancelAnimationFrame manual, real HTMLAudioElement (jsdom play() resolve tapi 'not implemented' console warning, dipakai apa adanya), FakeWebSocket class utk wsConnect (jsdom WebSocket asli mencoba koneksi network sungguhan). Hasil akhir: 41 file test, 679 test case, semua lolos. Coverage shared/js/**+pages/** naik dari ~23% ke 75.79% statements (shared/js inti 96.81%, events 95%, render 97%, platform 98%, services 97%, utils 99%, audio 72.7%; ws.js 45%->96%). pages/* (admin-logs.js 870 baris, main.js, client.js, chat.js) sengaja TIDAK dikerjakan di patch ini -- scope terlalu besar untuk satu sesi, ditinggalkan di 0% coverage untuk sesi lanjutan.
+
+**Changed Files:**
+- `tests/frontend/audio/playback-sync.test.js`
+- `tests/frontend/audio/visualizer.test.js`
+- `tests/frontend/events/action-modal-events.test.js`
+- `tests/frontend/events/click-delegation-events.test.js`
+- `tests/frontend/events/discover-search-events.test.js`
+- `tests/frontend/events/drag-scroll-events.test.js`
+- `tests/frontend/events/index.test.js`
+- `tests/frontend/events/keyboard-shortcut-events.test.js`
+- `tests/frontend/events/lyrics-events.test.js`
+- `tests/frontend/events/search-input-events.test.js`
+- `tests/frontend/events/settings-events.test.js`
+- `tests/frontend/platform/keyboard.test.js`
+- `tests/frontend/portal.test.js`
+- `tests/frontend/render/discover-personalize.test.js`
+- `tests/frontend/render/discover-search.test.js`
+- `tests/frontend/render/discover-tab.test.js`
+- `tests/frontend/render/full-state.test.js`
+- `tests/frontend/render/lyrics.test.js`
+- `tests/frontend/render/navigation.test.js`
+- `tests/frontend/render/now-playing.test.js`
+- `tests/frontend/render/player.test.js`
+- `tests/frontend/render/queue.test.js`
+- `tests/frontend/render/radio-hero-moon.test.js`
+- `tests/frontend/render/radio-tab.test.js`
+- `tests/frontend/render/search.test.js`
+- `tests/frontend/render/toast.test.js`
+- `tests/frontend/utils/cover-art.test.js`
+- `tests/frontend/utils/format.test.js`
+- `tests/frontend/ws-connect.test.js`
+- `tests/frontend/ws-routing.test.js`
+
+**Changed Symbols:**
+- `-`
+
+**Tests:** npx vitest run: 679/679 pass, 41 file. npx vitest run --coverage (web/static/shared/js/**, web/static/pages/**): 75.79% stmts / 63.48% branch / 77.63% funcs / 77.04% lines keseluruhan.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Ditemukan 1 bug nyata di source (BUKAN bug test) selama proses: buildDecadeOptions() di web/static/shared/js/events/discover-search-events.js baris 49-51 mengecek 'globalThis.store' padahal yang pernah di-assign ke globalThis.store TIDAK ADA di manapun di codebase (hanya 'store' hasil import module biasa yang dipakai) -- kondisi ini SELALU falsy di produksi, jadi buildDecadeOptions() selalu jatuh ke fallback 'Semua Era' saja. Efeknya: filter dekade (1980an/1990an/dst) di dropdown Quick Search tab Discover tidak pernah benar-benar terisi opsi tahun walau data discover_for_you/discover_genre_affinity_artists/discover_unheard sudah ada tahun_aktif-nya. Belum diperbaiki di source karena scope task ini murni testing -- didokumentasikan di tests/frontend/events/discover-search-events.test.js dengan komentar 'BUG:' dan test eksplisit yang membuktikan perilaku sekarang, plus satu test lain yang membuktikan fitur ini SEHARUSNYA bekerja kalau globalThis.store diset. Rekomendasi fix di source: ganti kondisi 'globalThis.store &&' jadi cek store (yang sudah di-import) langsung, atau hapus guard itu sepenuhnya. pages/* (admin-logs.js, main.js, client.js, chat.js) masih 0% coverage -- kandidat kuat utk PATCH lanjutan.
 
 ---
 

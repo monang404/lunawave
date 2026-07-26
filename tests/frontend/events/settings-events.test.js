@@ -24,7 +24,28 @@ import { wsSend } from "../../../web/static/shared/js/ws.js";
 
 function classListEl(extra = {}) {
   const el = document.createElement("div");
-  Object.assign(el, extra);
+  // dataset dan style adalah accessor properties (getter tanpa setter) di
+  // jsdom, jadi tidak bisa di-assign langsung lewat Object.assign(el, extra)
+  // -- itu akan throw "Cannot set property ... which has only a getter".
+  // Sub-property-nya perlu di-assign satu-satu ke objek yang sudah ada.
+  const { dataset, style, ...rest } = extra;
+  Object.assign(el, rest);
+  if (dataset) Object.assign(el.dataset, dataset);
+  if (style) Object.assign(el.style, style);
+  return el;
+}
+
+// <select>.value = "x" is a no-op in jsdom (and real browsers) unless a
+// matching <option value="x"> actually exists -- without it the value stays
+// "" and downstream parseInt/parseFloat reads NaN. Build real <option>
+// elements up front so tests can freely set .value to any of them.
+function selectEl(values) {
+  const el = document.createElement("select");
+  for (const v of values) {
+    const opt = document.createElement("option");
+    opt.value = String(v);
+    el.appendChild(opt);
+  }
   return el;
 }
 
@@ -47,9 +68,9 @@ describe("events/settings-events.js", () => {
       ssHistorySub: classListEl({ textContent: "" }),
       ssCacheClearBtn: classListEl(),
       ssCacheSub: classListEl({ textContent: "" }),
-      ssSleepSelect: Object.assign(document.createElement("select"), {}),
+      ssSleepSelect: selectEl([0, 1, 15, 30, 60]),
       ssSleepSub: classListEl({ textContent: "" }),
-      ssSpeedSelect: Object.assign(document.createElement("select"), {}),
+      ssSpeedSelect: selectEl([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]),
       ssSpeedSub: classListEl({ textContent: "" }),
       ssDlRow: classListEl({ style: {} }),
       ssDlPct: classListEl({ textContent: "" }),

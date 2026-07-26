@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { dom } from "../../../web/static/shared/js/dom.js";
 import { store } from "../../../web/static/shared/js/store.js";
 
@@ -26,6 +26,17 @@ function press(key, target) {
   return event;
 }
 
+// initKeyboardShortcutEvents() attaches a permanent `document.addEventListener
+// ('keydown', ...)` with no teardown hook. In production it's only ever
+// called once at app startup, but calling it fresh in every beforeEach here
+// would stack up one extra permanent listener per test -- e.g. by the time
+// a later test presses 'l' (a toggle), it would fire N accumulated
+// listeners for the same keydown, and an even N cancels the toggle back to
+// "closed". So we capture the exact handler each call registers and
+// explicitly remove it afterward, keeping every test isolated to a single
+// active listener.
+let keydownHandler;
+
 describe("events/keyboard-shortcut-events.js", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,7 +57,18 @@ describe("events/keyboard-shortcut-events.js", () => {
       playback_mode: "QUEUE",
     });
 
+    const addSpy = vi.spyOn(document, "addEventListener");
     initKeyboardShortcutEvents();
+    const call = addSpy.mock.calls.find((c) => c[0] === "keydown");
+    keydownHandler = call ? call[1] : undefined;
+    addSpy.mockRestore();
+  });
+
+  afterEach(() => {
+    if (keydownHandler) {
+      document.removeEventListener("keydown", keydownHandler);
+      keydownHandler = undefined;
+    }
   });
 
   it("Space toggles playback for admin and unlocks browser audio when paused", () => {
