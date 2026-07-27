@@ -1,1 +1,1 @@
-from .app import ServerManager
+from .app import ServerManager  # noqa: F401

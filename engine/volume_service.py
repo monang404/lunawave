@@ -30,6 +30,8 @@ from core.events import LogMessageEvent, VolumeChangedEvent
 from core.ports import AudioPlayerPort
 from core.state import AppState, AudioOutput
 
+MAX_VOLUME = 100
+
 
 class VolumeService:
     def __init__(self, bus: EventBus, mpv: AudioPlayerPort, state: AppState):
@@ -39,7 +41,7 @@ class VolumeService:
         self.current_volume = state.volume
 
     async def _on_volume_up(self, _data=None):
-        self.current_volume = min(150, self.current_volume + 5)
+        self.current_volume = min(MAX_VOLUME, self.current_volume + 5)
         await self._apply_volume()
 
     async def _on_volume_down(self, _data=None):
@@ -48,7 +50,7 @@ class VolumeService:
 
     async def _on_volume_set(self, data):
         vol = data.get("volume", 80)
-        self.current_volume = max(0, min(150, int(vol)))
+        self.current_volume = max(0, min(MAX_VOLUME, int(vol)))
         await self._apply_volume()
 
     async def _apply_volume(self):

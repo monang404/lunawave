@@ -1,5 +1,3 @@
-import pytest
-
 from engine.loudness.gain_calculator import build_af_filter, compute_gain_db
 
 

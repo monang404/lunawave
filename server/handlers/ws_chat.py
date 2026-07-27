@@ -63,10 +63,15 @@ async def handle_chat_command(
     # memilih thread client mana yang mau dilihat/dibalas lewat target_uid.
     client_uid = (data.get("client_uid") or "").strip()[:80] or None
     if client_uid:
-        # Daftarkan koneksi ini supaya broadcast bisa menemukan ws yang
-        # tepat untuk balasan admin (manager.client_uids dibersihkan
-        # otomatis di ConnectionManager.disconnect()).
-        manager.client_uids[ws] = client_uid
+        try:
+            manager.bind_client_uid(ws, client_uid)
+        except PermissionError:
+            await ws.send_str(
+                json.dumps(
+                    {"type": "error", "message": "Sesi chat tidak valid."}, ensure_ascii=False
+                )
+            )
+            return
 
     if action == "get_chat_history":
         target_uid: str | None
@@ -74,7 +79,7 @@ async def handle_chat_command(
             raw_target = data.get("target_uid")
             target_uid = str(raw_target) if raw_target else None
         else:
-            target_uid = client_uid
+            target_uid = manager.client_uids.get(ws)
         if not is_admin and not target_uid:
             # Client tanpa client_uid (browser lama/JS gagal load) -- tidak
             # ada thread yang bisa ditentukan dengan aman, jangan tebak
@@ -93,7 +98,7 @@ async def handle_chat_command(
             raw_target = data.get("target_uid")
             target_uid_send = str(raw_target) if raw_target else None
         else:
-            target_uid_send = client_uid
+            target_uid_send = manager.client_uids.get(ws)
 
         if not sender:
             sender = "Anonymous"

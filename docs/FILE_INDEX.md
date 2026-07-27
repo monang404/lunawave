@@ -24,7 +24,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Load and expose all environment-based runtime configuration constants for LunaWave, including paths, ports, and the admin password.
 **Class:** ‚Äî
 **Function utama:** ‚Äî
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _13 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/downloader`, `adapters/ytdlp/resolver`, `bootstrap/startup_tasks`, `core/log_config`, _15 lainnya_
 **Menggunakan:** ‚Äî
 
 
@@ -77,7 +77,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Implement a lightweight async pub/sub EventBus that decouples modules via typed DomainEvents, using weak references for method handlers.
 **Class:** `EventBus`
 **Function utama:** `subscribe()`, `purge_dead_refs()`, `unsubscribe()`
-**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/services`, `engine/download_manager`, `engine/playback/controller`, `engine/volume_service`, _3 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/services`, `engine/playback/controller`, `engine/volume_service`, `plugins/lyrics_fetcher`, _2 lainnya_
 **Menggunakan:** `core/events`, `core/log_categories`, `core/observability`, `core/task_utils`
 
 
@@ -97,7 +97,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Define the custom exception hierarchy for LunaWave error conditions.
 **Class:** `YtPlayerError(Exception)`, `MpvConnectionError(YtPlayerError)`, `TrackResolutionError(YtPlayerError)`, `DownloadError(YtPlayerError)`, `VideoUnavailableError(TrackResolutionError)`, `BotCheckError(TrackResolutionError)`, `RateLimitedError(TrackResolutionError)`
 **Function utama:** ‚Äî
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/resolver`, `engine/playback/controller`, `engine/playback/play_ops`, `persistence/stream_cache`, _2 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/resolver`, `engine/playback/play_ops`, `persistence/stream_cache`, `server/handlers/audio_stream_handler`, _1 lainnya_
 **Menggunakan:** ‚Äî
 
 
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Closed set of `category` constants for structured logging, per the ¬ß4 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows; the audit/implementation-plan docs say "14 kategori standar" but the actual table has 15 -- this module follows the table, the normative spec, not the prose count). Category groups log lines by *domain of the event*, never by the Python module/file that emitted them (see ¬ß4 anti-pattern #7).
 **Class:** ‚Äî
 **Function utama:** ‚Äî
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _40 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _39 lainnya_
 **Menggunakan:** ‚Äî
 
 
@@ -177,7 +177,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.
 **Class:** `AudioPlayerPort(Protocol)`, `MediaExtractorPort(Protocol)`, `StreamResolverPort(Protocol)`, `TrackRepositoryPort(Protocol)`, `SessionRepositoryPort(Protocol)`, `ArtistRepositoryPort(Protocol)`, `LibraryRepositoryPort(Protocol)`, `DiscoverRepositoryPort(Protocol)`, `DatabasePort(TrackRepositoryPort, SessionRepositoryPort, ArtistRepositoryPort, Protocol)`, `LyricsProvider(Protocol)`, `SponsorBlockProvider(Protocol)`
 **Function utama:** `is_connected()`, `cancel_download()`, `db()`, `latency_window()`, `conn()`, `conn()`
-**Digunakan oleh:** `engine/download_manager`, `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, `engine/playback/track_loader`, _9 lainnya_
+**Digunakan oleh:** `engine/loudness/service`, `engine/playback/controller`, `engine/playback/mode_ops`, `engine/playback/track_loader`, `engine/radio/artist_selector`, _8 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -186,8 +186,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **File:** `core/security.py`
 **Fungsi:** Provide PBKDF2-SHA256 password hashing, constant-time verification, and SHA-256 session token hashing.
 **Class:** ‚Äî
-**Function utama:** `hash_password()`, `verify_password()`, `hash_token()`, `verify_token()`
-**Digunakan oleh:** `persistence/session_repo`, `server/handlers/auth`, `server/handlers/setup`
+**Function utama:** `hash_password()`, `verify_password()`, `needs_rehash()`, `hash_token()`
+**Digunakan oleh:** `persistence/session_repo`, `server/handlers/auth`, `server/handlers/setup`, `server/reset_admin_password`
 **Menggunakan:** ‚Äî
 
 
@@ -334,7 +334,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Class:** `DownloadManager`
 **Function utama:** `_update_progress()`
 **Digunakan oleh:** `bootstrap/services`
-**Menggunakan:** `core/command_bus`, `core/event_bus`, `core/events`, `core/log_categories`, `core/log_context`, `core/ports`, _2 lainnya_
+**Menggunakan:** `core/command_bus`, `core/events`, `core/log_categories`, `core/log_context`, `core/state`, `core/task_utils`
 
 
 ---
@@ -384,7 +384,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Class:** `PlaybackController`
 **Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/exceptions`, `core/log_categories`, `core/ports`, `core/state`, _12 lainnya_
+**Menggunakan:** `core/event_bus`, `core/events`, `core/log_categories`, `core/ports`, `core/state`, `core/task_utils`, _11 lainnya_
 
 
 ---
@@ -424,7 +424,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Class:** `PlayOps`
 **Function utama:** ‚Äî
 **Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `core/events`, `core/exceptions`, `core/log_categories`, `core/state`, `core/task_utils`
+**Menggunakan:** `core/events`, `core/exceptions`, `core/state`, `core/task_utils`
 
 
 ---
@@ -596,7 +596,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Manages the single admin_account row: the sole source of truth for login credentials under the Fitur B (login_redesign) design. Populated via the Initial Setup flow (server.handlers.setup), never auto-generated.
 **Class:** `AdminAccountRepository`
 **Function utama:** ‚Äî
-**Digunakan oleh:** `persistence/__init__`
+**Digunakan oleh:** `persistence/__init__`, `server/reset_admin_password`
 **Menggunakan:** ‚Äî
 
 
@@ -676,7 +676,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Fungsi:** Manages authentication session tokens, verifying and cleaning up expired sessions.
 **Class:** `SessionRepository`
 **Function utama:** ‚Äî
-**Digunakan oleh:** `persistence/__init__`
+**Digunakan oleh:** `persistence/__init__`, `server/reset_admin_password`
 **Menggunakan:** `core/security`
 
 
@@ -728,7 +728,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **File:** `server/connection_manager.py`
 **Fungsi:** Manages active WebSocket connections and broadcasts events to connected clients.
 **Class:** `ConnectionManager`
-**Function utama:** `disconnect()`
+**Function utama:** `disconnect()`, `bind_client_uid()`
 **Digunakan oleh:** `server/broadcast_service`
 **Menggunakan:** `core/log_categories`, `core/log_context`, `core/observability`, `server/handlers/ws_log_stream`
 
@@ -810,7 +810,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Class:** ‚Äî
 **Function utama:** `check_ws_origin()`, `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** ‚Äî
-**Menggunakan:** `core/log_categories`, `server/handlers`, `server/handlers/auth`, `server/handlers/context`, `server/handlers/setup`, `server/handlers/ws_cache`, _9 lainnya_
+**Menggunakan:** `config`, `core/log_categories`, `server/handlers`, `server/handlers/auth`, `server/handlers/context`, `server/handlers/setup`, _10 lainnya_
 
 
 ---
@@ -898,7 +898,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **File:** `server/middleware/__init__.py`
 **Fungsi:** Package for server-side middleware: per-IP WS command rate limiting (this file, unchanged) and the aiohttp HTTP traffic middleware added in ADR-0010 (server.middleware.traffic).
 **Class:** ‚Äî
-**Function utama:** `check_rate_limit()`
+**Function utama:** `check_rate_limit()`, `check_chat_rate_limit()`
 **Digunakan oleh:** ‚Äî
 **Menggunakan:** `server/middleware/traffic`
 
@@ -911,6 +911,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 **Function utama:** `traffic_middleware()`
 **Digunakan oleh:** `server/middleware/__init__`
 **Menggunakan:** `core/log_categories`, `core/observability`
+
+
+---
+
+**File:** `server/reset_admin_password.py`
+**Fungsi:** ‚ö†Ô∏è _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Class:** ‚Äî
+**Function utama:** `do_reset()`, `main()`
+**Digunakan oleh:** ‚Äî
+**Menggunakan:** `config`, `core/security`, `persistence/admin_account_repo`, `persistence/session_repo`
 
 
 ---
@@ -1193,9 +1203,9 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py ‚
 
 ## üìã Checklist Dokumentasi Docstring
 
-**110/110** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**110/111** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-_(semua file sudah terdokumentasi üéâ)_
+- [ ] `server/reset_admin_password.py`
 
 <!-- END:GENERATED -->

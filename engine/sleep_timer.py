@@ -40,7 +40,13 @@ class SleepTimer:
         self._command_bus = command_bus
         self._timer_task = None
 
-    async def set_timer(self, minutes: int):
+    async def set_timer(self, minutes):
+        try:
+            minutes = int(minutes)
+        except (TypeError, ValueError):
+            minutes = 0
+        minutes = max(0, min(1440, minutes))
+
         if self._timer_task and not self._timer_task.done():
             self._timer_task.cancel()
             self._timer_task = None

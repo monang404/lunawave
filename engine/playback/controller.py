@@ -43,10 +43,8 @@ from core.events import (
     TrackEndedEvent,
     TrackPauseChangedEvent,
     TrackProgressEvent,
-    TrackStartedEvent,
     VolumeChangedEvent,
 )
-from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
 from core.log_categories import LC_PLAYBACK
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
@@ -58,7 +56,7 @@ from engine.playback.play_ops import PlayOps
 from engine.playback.queue_controller import QueueController
 from engine.playback.queue_ops import QueueOps
 from engine.playback.settings_controller import SettingsController
-from engine.playback.track_ended_ops import TrackEndedOps, poll_duration
+from engine.playback.track_ended_ops import TrackEndedOps
 from engine.playback.track_loader import TrackLoader
 from engine.queue_manager import QueueMode
 from engine.radio import RadioMode

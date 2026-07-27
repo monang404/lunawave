@@ -10,7 +10,6 @@ Responsibilities:
     - Verify a plaintext password against a stored pbkdf2 hash string.
     - Hash a session token (SHA-256, no salt needed — token entropy is already
       128-bit from secrets.token_hex(16)) before storing in the DB.
-    - Verify a raw session token against a stored SHA-256 digest.
 
 Depends on:
     None
@@ -29,11 +28,13 @@ import base64
 import hashlib
 import secrets
 
+PBKDF2_ITERATIONS = 600_000
+
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)
-    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100000)
-    return f"pbkdf2:sha256:100000${base64.b64encode(salt).decode('utf-8')}${base64.b64encode(key).decode('utf-8')}"
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    return f"pbkdf2:sha256:{PBKDF2_ITERATIONS}${base64.b64encode(salt).decode('utf-8')}${base64.b64encode(key).decode('utf-8')}"
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
@@ -54,6 +55,16 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return False
 
 
+def needs_rehash(hashed_password: str) -> bool:
+    if not hashed_password.startswith("pbkdf2:sha256:"):
+        return False
+    try:
+        iterations = hashed_password.split("$")[0].split(":")[2]
+        return int(iterations) < PBKDF2_ITERATIONS
+    except Exception:
+        return False
+
+
 def hash_token(token: str) -> str:
     """Hash a session token with SHA-256 for storage in the DB.
 
@@ -62,8 +73,3 @@ def hash_token(token: str) -> str:
     Returns a 64-character hex digest.
     """
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
-
-def verify_token(token: str, token_hash: str) -> bool:
-    """Constant-time comparison of a raw token against its stored SHA-256 hash."""
-    return secrets.compare_digest(hash_token(token), token_hash)

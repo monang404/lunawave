@@ -62,6 +62,11 @@ class SessionRepository:
         await self._conn.execute("DELETE FROM sessions WHERE token = ?", (hash_token(token),))
         await self._conn.commit()
 
+    async def delete_all_sessions(self):
+        """Menghapus semua sesi tanpa filter user. Aman karena aplikasi menggunakan arsitektur single-admin."""
+        await self._conn.execute("DELETE FROM sessions")
+        await self._conn.commit()
+
     async def cleanup_sessions(self):
         now = int(time.time())
         await self._conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (now,))

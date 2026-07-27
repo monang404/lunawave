@@ -37,7 +37,7 @@ import sys
 
 def main():
     try:
-        import tkinter as tk
+        import tkinter as tk  # noqa: F401
     except ImportError:
         print(
             "Tkinter is not available. Please run `python main.py` directly or use `start.sh` on headless environments like Termux.",

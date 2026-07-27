@@ -35,12 +35,10 @@ import time
 import structlog
 
 from core.command_bus import CMD_CANCEL_DOWNLOAD, CMD_DOWNLOAD
-from core.event_bus import EventBus
 from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.log_categories import LC_DOWNLOAD
 from core.log_context import bind_correlation
-from core.ports import MediaExtractorPort
-from core.state import AppState, TrackInfo
+from core.state import TrackInfo
 from core.task_utils import safe_create_task
 
 logger = structlog.get_logger(component="download.manager")

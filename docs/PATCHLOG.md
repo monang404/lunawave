@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-257
+latest_patch_id: PATCH-2026-07-27-272
 
-total_entries: 257
+total_entries: 272
 
 ---
 
@@ -21,6 +21,633 @@ total_entries: 257
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-272
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:37
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Cleanup
+**Area:** all
+**Priority:** Medium
+**Title:** Sweep unused imports and variables
+
+**Reason:** Membersihkan F401, F403, F841 agar kode lebih rapi dan bebas dari wildcard imports yang berbahaya.
+
+**Root Cause:**
+Sisa-sisa import dari refactoring sebelumnya.
+
+**Solution:**
+Jalankan ruff check --select F401,F403,F841 --fix, lalu tambahkan noqa: F401 untuk re-exports yang disengaja (misal di __main__ dan gui/__init__).
+
+**Changed Files:**
+- `launcher/gui/__init__.py`
+- `launcher/__main__.py`
+- `tests/unit/core/test_commands.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Beberapa test logging pre-existing gagal (test_auth.py), tidak terkait dengan perubahan sweep import ini.
+
+---
+
+## PATCH-2026-07-27-271
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:34
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Fix
+**Area:** engine/playback
+**Priority:** Medium
+**Title:** Crossfade: volume dikembalikan eksplisit saat proses terputus
+
+**Reason:** Crossfade yang terinterupsi meninggalkan volume MPV di nilai ramping parsial, bukan volume yang seharusnya -- pemutaran berikutnya mewarisi volume yang salah.
+
+**Root Cause:**
+Loop ramping volume di apply_crossfade_in/out hanya break saat terinterupsi tanpa langkah eksplisit mengembalikan volume ke nilai target.
+
+**Solution:**
+Flag interrupted dilacak; jika loop terputus, mpv.set_volume(state.volume) dipanggil eksplisit sebagai langkah korektif terakhir.
+
+**Changed Files:**
+- `engine/playback/crossfade.py`
+- `tests/unit/engine/playback/test_crossfade_interrupted.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-270
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:32
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Fix
+**Area:** server/handlers
+**Priority:** Medium
+**Title:** Konfirmasi sebelum overwrite file download yang sudah ada
+
+**Reason:** Download otomatis menimpa file lama tanpa konfirmasi, berisiko kehilangan file yang sudah ada (mis. hasil edit manual pengguna pada file audio) tanpa peringatan.
+
+**Root Cause:**
+handle_download_command() langsung mengeksekusi CMD_DOWNLOAD begitu diminta, tanpa mengecek apakah local_path tujuan sudah terisi.
+
+**Solution:**
+Cek keberadaan file sebelum eksekusi; kalau konflik, kirim event download_conflict dan tunggu action eksplisit download_confirm_overwrite dari client. Backend-only dalam task ini -- dialog konfirmasi di frontend adalah pekerjaan terpisah.
+
+**Changed Files:**
+- `server/handlers/ws_download.py`
+- `server/handlers/websocket.py`
+- `tests/unit/server/handlers/test_ws_download_overwrite.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked (websocket.py hanya tambah 1 string ke set DOWNLOAD_CMDS, bukan logika baru). Frontend dialog BELUM diimplementasikan -- backlog terpisah.
+
+---
+
+## PATCH-2026-07-27-269
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:31
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Fix
+**Area:** engine
+**Priority:** Medium
+**Title:** Batas volume backend diselaraskan dengan UI (100, bukan 150)
+
+**Reason:** UI membatasi slider volume ke 100 persen, tapi backend mengizinkan clamp hingga 150 -- inkonsistensi yang bisa dieksploitasi lewat command WS langsung.
+
+**Root Cause:**
+Dua sumber kebenaran terpisah untuk batas volume yang sama: angka hardcode di HTML dan literal terpisah di volume_service.
+
+**Solution:**
+MAX_VOLUME=100 sebagai konstanta tunggal di volume_service.py. Sinkronisasi ke frontend dilakukan HANYA jika mekanisme config-ke-frontend sudah ada di repo.
+
+**Changed Files:**
+- `engine/volume_service.py`
+- `tests/unit/engine/test_volume_service_max.py`
+- `tests/unit/engine/test_volume_service.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked. Hasil investigasi: tidak ditemukan mekanisme sinkronisasi config ke frontend. Maka HTML max=100 dibiarkan apa adanya sebagai batasan (sesuai arahan P04-T3).
+
+---
+
+## PATCH-2026-07-27-268
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:29
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Cleanup
+**Area:** engine/radio
+**Priority:** Medium
+**Title:** EXPLORE_QUOTA: audit dead import radio
+
+**Reason:** EXPLORE_QUOTA diimpor di artist_selector.py tapi tidak dipakai -- audit awal tidak bisa memastikan apakah ini cleanup murni atau gejala perilaku radio explore/familiar yang tidak sesuai desain.
+
+**Root Cause:**
+HASIL B (dead code murni): Logika di artist_selector memakai needed - bandit_count tanpa memerlukan EXPLORE_QUOTA dari radio_config.
+
+**Solution:**
+Hapus import EXPLORE_QUOTA dan variabel dead explore_count dari artist_selector.py.
+
+**Changed Files:**
+- `engine/radio/artist_selector.py`
+- `tests/unit/engine/radio/test_artist_selector_explore_quota.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked. HASIL B: cleanup import.
+
+---
+
+## PATCH-2026-07-27-267
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:28
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Cleanup
+**Area:** core
+**Priority:** Medium
+**Title:** Hapus verify_token() dead code
+
+**Reason:** verify_token() dibuat (constant-time compare token vs hash) tapi tidak pernah dipanggil -- verifikasi sesi aktual memakai lookup SQL berdasarkan hash di persistence/session_repo.py, bukan fungsi ini.
+
+**Root Cause:**
+Fungsi ditambahkan mengantisipasi pola pemakaian yang tidak pernah terealisasi; tidak ada test atau caller yang menjaga fungsi ini tetap terpakai.
+
+**Solution:**
+Dihapus. test_no_dead_exports.py ditambahkan sebagai pagar otomatis supaya dead code serupa terdeteksi di CI/doctor.py ke depannya.
+
+**Changed Files:**
+- `core/security.py`
+- `tests/unit/core/test_no_dead_exports.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-266
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:25
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Fix
+**Area:** dependencies
+**Priority:** Medium
+**Title:** Pin yt-dlp ke versi eksak
+
+**Reason:** yt-dlp>=X.Y.Z memungkinkan update otomatis saat instalasi baru yang berpotensi merusak aplikasi tanpa peringatan (perubahan internal yt-dlp yang mempengaruhi parsing/resolusi stream).
+
+**Root Cause:**
+Constraint versi dependency memakai >= alih-alih == untuk dependency yang perilakunya kritikal terhadap fungsi inti aplikasi (resolusi URL YouTube).
+
+**Solution:**
+Pin ke versi eksak yang sudah terverifikasi lolos test suite, dengan proses upgrade terjadwal manual sebagai gantinya.
+
+**Changed Files:**
+- `requirements.txt`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pip show yt-dlp, pytest tests/unit/adapters/ytdlp -q
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-265
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:25
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** core, server/handlers
+**Priority:** Medium
+**Title:** PBKDF2 iterasi dinaikkan ke rekomendasi OWASP terkini, rehash transparan
+
+**Reason:** Password admin di-hash dengan PBKDF2-HMAC-SHA256 100.000 iterasi, di bawah rekomendasi OWASP Password Storage Cheat Sheet terkini, membuat brute-force offline (jika hash bocor) lebih murah dari seharusnya.
+
+**Root Cause:**
+Nilai iterasi di-hardcode 100000 di hash_password() sejak awal, tidak pernah direvisi mengikuti rekomendasi industri yang berubah seiring waktu.
+
+**Solution:**
+Konstanta PBKDF2_ITERATIONS dinaikkan; verify_password() TIDAK berubah karena sudah membaca iterasi dari string hash itu sendiri (backward-compatible by design). needs_rehash() + hook di server/handlers/auth.py meng-upgrade hash lama secara transparan satu kali setelah login sukses berikutnya, tanpa memaksa admin reset password manual.
+
+**Changed Files:**
+- `core/security.py`
+- `server/handlers/auth.py`
+- `tests/unit/core/test_security_rehash.py`
+- `tests/unit/core/test_security.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/core/test_security_rehash.py -q, pytest tests/unit/core/test_security.py -q, pytest tests/unit/server/handlers/test_auth.py -q
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh file locked. Menggunakan iterasi OWASP saat ini 600000.
+
+---
+
+## PATCH-2026-07-27-264
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:22
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Fix
+**Area:** engine
+**Priority:** High
+**Title:** Sleep timer: validasi & clamp input di handler, bukan hanya di edge WS
+
+**Reason:** Command CMD_SET_SLEEP_TIMER hanya divalidasi di server/handlers/ws_schemas.py (edge WS) -- pemanggil lain yang memakai command_bus.execute() langsung (mis. automation, plugin, endpoint baru di masa depan) akan memicu TypeError tak tertangani di minutes <= 0 kalau minutes bukan tipe numerik.
+
+**Root Cause:**
+Validasi hidup hanya di parser WS, bukan di titik pemakaian data (SleepTimer.set_timer itu sendiri) -- pola yang sama dengan akar masalah IDOR chat di P02-T2 (mempercayakan kebenaran data ke lapisan yang jauh dari titik pemakaian).
+
+**Solution:**
+set_timer() sekarang memvalidasi & clamp input sendiri (cast int dengan fallback 0, clamp ke rentang yang sama dipakai ws_schemas.py) -- aman dipanggil dari jalur mana pun, ws_schemas.py tetap dipertahankan sebagai validasi cepat-gagal dengan pesan ramah di edge.
+
+**Changed Files:**
+- `engine/sleep_timer.py`
+- `tests/unit/engine/test_sleep_timer_validation.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/engine/test_sleep_timer_validation.py -q, pytest tests/unit/engine/test_sleep_timer.py -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-263
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:21
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** server/middleware, server/connection_manager, server/handlers
+**Priority:** High
+**Title:** Rate limit chat terpisah, dikunci per client_uid
+
+**Reason:** Chat berbagi kuota rate limit dengan semua command WS lain (30 per menit per IP) -- di belakang reverse proxy (direkomendasikan di README), banyak pengguna berbeda terlihat 1 IP sehingga bisa saling menghabiskan kuota chat satu sama lain (self-DoS).
+
+**Root Cause:**
+check_rate_limit() satu-satunya rate limiter WS, dikunci per client_ip dan dipakai rata untuk semua jenis command tanpa membedakan chat dari playback/queue/dll.
+
+**Solution:**
+check_chat_rate_limit() baru, kuota terpisah (10/menit default), dikunci per client_uid (fallback ke client_ip untuk koneksi anonim) -- ditambahkan sebagai lapisan kedua di atas kuota command umum yang sudah ada, bukan pengganti.
+
+**Changed Files:**
+- `server/middleware/__init__.py`
+- `server/connection_manager.py`
+- `server/handlers/websocket.py`
+- `tests/unit/server/test_chat_rate_limit.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/test_chat_rate_limit.py -q, pytest tests/unit/server/test_middleware.py -q, pytest tests/unit/server/handlers -q -k chat
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Menyentuh file locked server/handlers/websocket.py -- otorisasi tercatat di 00_index_and_decisions.yaml. Perubahan murni 1 pengecekan tambahan di blok dispatch chat yang sudah ada.
+
+---
+
+## PATCH-2026-07-27-262
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:20
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** server/handlers, server/connection_manager
+**Priority:** High
+**Title:** IDOR chat: client_uid diikat ke koneksi, tidak lagi dipercaya mentah dari payload
+
+**Reason:** Pengguna yang mengetahui/menebak client_uid milik orang lain bisa membaca atau mengirim pesan pada thread chat pengguna tersebut, karena client_uid dibaca langsung dari payload tanpa verifikasi kepemilikan.
+
+**Root Cause:**
+client_uid berfungsi ganda sebagai identifier DAN credential -- tidak ada langkah yang mengikatnya ke koneksi/sesi tertentu di sisi server, sehingga bisa dipalsukan bebas oleh client mana pun.
+
+**Solution:**
+ConnectionManager.bind_client_uid() mengikat client_uid ke koneksi WS sekali (di pesan pertama), menolak percobaan klaim ulang dengan uid berbeda pada koneksi yang sama. Non-admin di ws_chat.py tidak lagi membaca target_uid dari payload sama sekali -- hanya dari binding yang dikelola server.
+
+**Changed Files:**
+- `server/connection_manager.py`
+- `server/handlers/ws_chat.py`
+- `tests/unit/server/test_connection_manager_bind_uid.py`
+- `tests/unit/server/handlers/test_ws_chat_idor.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/handlers/test_ws_chat_idor.py -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-261
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:14
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** server/handlers, config
+**Priority:** Medium
+**Title:** CORS non-wildcard pada endpoint streaming audio
+
+**Reason:** Access-Control-Allow-Origin: * pada endpoint streaming memungkinkan situs mana pun melakukan hotlink terhadap stream audio LunaWave.
+
+**Root Cause:**
+Header CORS di-hardcode wildcard tanpa mempertimbangkan origin request yang sebenarnya.
+
+**Solution:**
+Header CORS dinamis: ALLOWED_STREAM_ORIGIN dari config (opsional) atau fallback ke origin request itu sendiri, tidak pernah wildcard lagi.
+
+**Changed Files:**
+- `config.py`
+- `server/handlers/audio_stream_handler.py`
+- `tests/unit/server/handlers/test_audio_stream_cors.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-260
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:14
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** server, persistence
+**Priority:** Medium
+**Title:** CLI resmi untuk reset password admin
+
+**Reason:** Tidak ada jalur resmi untuk reset password admin selain manipulasi database langsung -- berisiko human error dan tidak auditable.
+
+**Root Cause:**
+server/handlers/auth.py hanya menangani login, tidak ada endpoint atau tooling reset password sama sekali.
+
+**Solution:**
+CLI operator-only (python -m server.reset_admin_password, interaktif via getpass) yang meng-update admin_account lalu mencabut semua sesi lama lewat delete_all_sessions(). Sengaja BUKAN endpoint HTTP/WS untuk tidak menambah permukaan serangan jaringan.
+
+**Changed Files:**
+- `server/reset_admin_password.py`
+- `persistence/admin_account_repo.py`
+- `tests/unit/server/test_reset_admin_password.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-259
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:14
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** persistence, server/handlers
+**Priority:** Medium
+**Title:** logout_all: cabut semua sesi aktif sekaligus
+
+**Reason:** Tidak ada cara mencabut token yang bocor tanpa akses langsung ke database — sesi lama tetap valid selamanya sampai kedaluwarsa alami meski admin curiga token bocor.
+
+**Root Cause:**
+persistence.session_repo hanya punya delete_session(token) dan cleanup_sessions() -- tidak ada jalur revoke massal.
+
+**Solution:**
+delete_all_sessions() baru di session_repo, action WS logout_all admin-only yang memanggilnya lalu membersihkan authenticated_connections in-memory.
+
+**Changed Files:**
+- `persistence/session_repo.py`
+- `server/handlers/websocket.py`
+- `tests/unit/persistence/test_session_repo_delete_all.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menyentuh file locked server/handlers/websocket.py — otorisasi tercatat di 00_index_and_decisions.yaml. Branch baru mengikuti pola branch `logout` yang sudah ada persis, bukan struktur baru.
+
+---
+
+## PATCH-2026-07-27-258
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 15:14
+**Git Branch:** develop
+**Git Commit:** bcd3e9b
+**Type:** Security
+**Area:** server/handlers
+**Priority:** Medium
+**Title:** Exception generik ke client WS, detail lengkap tetap di log
+
+**Reason:** str(e) dari exception tak tertangani dikirim mentah ke client, berpotensi membocorkan path file, nama tabel SQL, atau detail internal lain.
+
+**Root Cause:**
+except Exception generik di handle_ws_message() memakai str(e) yang sama baik untuk log maupun balasan ke client.
+
+**Solution:**
+Balasan ke client diseragamkan jadi pesan generik statis; log tetap memuat detail penuh. Ditambah flag opsional LUNAWAVE_DEBUG_ERRORS.
+
+**Changed Files:**
+- `server/handlers/websocket.py`
+- `config.py`
+- `tests/unit/server/handlers/test_websocket_error_reply.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menyentuh file locked server/handlers/websocket.py — otorisasi tercatat di 00_index_and_decisions.yaml meta.authorization. Perubahan murni 1 baris nilai string + 1 kondisi debug, bukan pemecahan struktur file.
 
 ---
 

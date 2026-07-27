@@ -21,7 +21,6 @@ Thread Safety:
 """
 
 import core.commands as cmds
-from core.commands import *
 
 
 def test_commands_are_unique_strings():

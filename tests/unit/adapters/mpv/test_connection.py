@@ -150,7 +150,6 @@ async def test_windows_polling_exits_early_when_port_ready(
     conn = MpvConnection()
 
     probe_call_count = 0
-    original_side_effect = mock_open_pipe_connection.side_effect
 
     async def side_effect_probe(pipe_name):
         nonlocal probe_call_count

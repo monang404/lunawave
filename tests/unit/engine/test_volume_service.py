@@ -46,12 +46,13 @@ async def test_volume_up_increases_by_5(service):
     assert service.state.volume == 85
 
 
-async def test_volume_up_caps_at_150(service):
-    service.current_volume = 148
+@pytest.mark.asyncio
+async def test_volume_up_caps_at_100(service):
+    service.current_volume = 98
     await service._on_volume_up()
-    assert service.current_volume == 150
+    assert service.current_volume == 100
     await service._on_volume_up()
-    assert service.current_volume == 150
+    assert service.current_volume == 100
 
 
 async def test_volume_down_decreases_by_5(service):
@@ -72,9 +73,10 @@ async def test_volume_set_applies_exact_value(service):
     assert service.current_volume == 33
 
 
-async def test_volume_set_clamps_above_150(service):
+@pytest.mark.asyncio
+async def test_volume_set_clamps_above_100(service):
     await service._on_volume_set({"volume": 999})
-    assert service.current_volume == 150
+    assert service.current_volume == 100
 
 
 async def test_volume_set_clamps_below_0(service):

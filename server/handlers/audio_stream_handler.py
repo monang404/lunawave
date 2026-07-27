@@ -37,7 +37,7 @@ import time
 import structlog
 from aiohttp import web
 
-from config import CACHE_DIR, STREAM_PREBUFFER_BYTES, STREAM_URL_TTL_SEC
+from config import ALLOWED_STREAM_ORIGIN, CACHE_DIR, STREAM_PREBUFFER_BYTES, STREAM_URL_TTL_SEC
 from core.exceptions import VideoUnavailableError
 from core.log_categories import LC_PERSISTENCE, LC_RESOLVE, LC_SECURITY
 from server.handlers import get_tracks_repo, get_ytdlp
@@ -102,8 +102,10 @@ async def serve_stream(request):
     except Exception:
         return web.HTTPBadRequest(text="Path tidak valid")
 
+    origin = ALLOWED_STREAM_ORIGIN or request.headers.get("Origin", "")
+    cors_headers = {"Access-Control-Allow-Origin": origin} if origin else {}
     if cache_file.exists():
-        return web.FileResponse(cache_file, headers={"Access-Control-Allow-Origin": "*"})
+        return web.FileResponse(cache_file, headers=cors_headers)
 
     db = get_tracks_repo(request)
     ytdlp = get_ytdlp(request)
@@ -222,14 +224,18 @@ async def serve_stream(request):
                     stream_url = None
                     continue
 
+                stream_headers = {
+                    "Content-Type": upstream.headers.get("Content-Type", "audio/mpeg"),
+                    "Accept-Ranges": "bytes",
+                    "Cache-Control": "private, max-age=3600",
+                }
+                req_origin = ALLOWED_STREAM_ORIGIN or request.headers.get("Origin", "")
+                if req_origin:
+                    stream_headers["Access-Control-Allow-Origin"] = req_origin
+
                 response = web.StreamResponse(
                     status=upstream.status,
-                    headers={
-                        "Content-Type": upstream.headers.get("Content-Type", "audio/mpeg"),
-                        "Accept-Ranges": "bytes",
-                        "Access-Control-Allow-Origin": "*",
-                        "Cache-Control": "private, max-age=3600",
-                    },
+                    headers=stream_headers,
                 )
 
                 if "Content-Range" in upstream.headers:

@@ -44,6 +44,12 @@ class AdminAccountRepository:
         )
         await self._conn.commit()
 
+    async def update_password(self, password_hash: str):
+        """Update hash password untuk akun admin yang sudah ada. Caller bertanggung jawab
+        melakukan hashing; layer ini tidak tahu menahu algoritma hashing."""
+        await self._conn.execute("UPDATE admin_account SET password_hash = ?", (password_hash,))
+        await self._conn.commit()
+
     async def get_admin_account(self):
         """Return row admin_account pertama (dan satu-satunya yang
         diharapkan) sebagai dict-like `aiosqlite.Row`, atau None kalau

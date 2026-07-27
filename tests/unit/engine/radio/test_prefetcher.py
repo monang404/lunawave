@@ -21,7 +21,7 @@ Thread Safety:
     Main thread (async event loop).
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

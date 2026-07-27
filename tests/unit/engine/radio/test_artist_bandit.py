@@ -1,5 +1,3 @@
-import pytest
-
 from engine.radio.artist_bandit import ArtistStat, sample_artists
 
 

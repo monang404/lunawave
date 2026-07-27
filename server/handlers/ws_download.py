@@ -24,7 +24,6 @@ Thread Safety:
 import asyncio
 import os
 import re
-from pathlib import Path
 
 import structlog
 
@@ -37,9 +36,31 @@ logger = structlog.get_logger(component="ws.download")
 
 
 async def handle_download_command(
-    action: str, data: dict, tracks, discover, manager, state, command_bus
+    action: str, data: dict, tracks, discover, manager, state, command_bus, ws=None
 ):
     if action == "download":
+        track = dict_to_track(data) if data else None
+        if track and track.video_id and tracks:
+            db_track = await tracks.get_track(track.video_id)
+            if db_track and db_track.local_path and os.path.exists(db_track.local_path):
+                if ws:
+                    import json
+
+                    await ws.send_str(
+                        json.dumps(
+                            {
+                                "type": "download_conflict",
+                                "data": {
+                                    "video_id": track.video_id,
+                                    "local_path": db_track.local_path,
+                                },
+                            }
+                        )
+                    )
+                return
+        await command_bus.execute(CMD_DOWNLOAD, track)
+
+    elif action == "download_confirm_overwrite":
         track = dict_to_track(data) if data else None
         await command_bus.execute(CMD_DOWNLOAD, track)
 

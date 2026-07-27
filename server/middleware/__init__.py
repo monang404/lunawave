@@ -51,3 +51,24 @@ async def check_rate_limit(manager, client_ip: str, now: float) -> bool:
         cmd_history.append(now)
         manager.command_history[client_ip] = cmd_history
         return True
+
+
+async def check_chat_rate_limit(manager, key: str, now: float, limit: int = 10) -> bool:
+    """
+    Kuota terpisah dari kuota command umum dan dikunci per client_uid/client_ip.
+    """
+    async with manager.rl_lock:
+        from collections import deque
+
+        chat_history = manager.chat_history.get(key, deque())
+        while chat_history and now - chat_history[0] >= 60:
+            chat_history.popleft()
+        if not chat_history:
+            manager.chat_history.pop(key, None)
+        else:
+            manager.chat_history[key] = chat_history
+        if len(chat_history) >= limit:
+            return False
+        chat_history.append(now)
+        manager.chat_history[key] = chat_history
+        return True

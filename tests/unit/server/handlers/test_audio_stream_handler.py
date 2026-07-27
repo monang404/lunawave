@@ -107,14 +107,13 @@ async def test_serve_stream_cache_hit(mock_request):
         mock_cache_file.resolve.return_value.is_relative_to.return_value = True
         mock_cache_file.exists.return_value = True
 
+        mock_request.headers = {}
         with patch("server.handlers.audio_stream_handler.web.FileResponse") as mock_file_resp:
             mock_file_resp.return_value = "file_response_mock"
             resp = await serve_stream(mock_request)
 
             assert resp == "file_response_mock"
-            mock_file_resp.assert_called_once_with(
-                mock_cache_file, headers={"Access-Control-Allow-Origin": "*"}
-            )
+            mock_file_resp.assert_called_once_with(mock_cache_file, headers={})
 
 
 @pytest.mark.asyncio

@@ -44,6 +44,7 @@ class ConnectionManager:
         self.session_tokens = {}
         self.login_attempts = {}
         self.command_history = {}
+        self.chat_history: dict = {}
         self.setup_attempts = {}
         self.rl_lock = asyncio.Lock()
         # ADR-0010: connected_at per ws, dipakai untuk durasi sesi aktif.
@@ -147,3 +148,9 @@ class ConnectionManager:
         ]
         for ws in dead:
             self.disconnect(ws)
+
+    def bind_client_uid(self, ws, client_uid: str) -> None:
+        existing_uid = self.client_uids.get(ws)
+        if existing_uid is not None and existing_uid != client_uid:
+            raise PermissionError("client_uid koneksi ini sudah terikat")
+        self.client_uids[ws] = client_uid

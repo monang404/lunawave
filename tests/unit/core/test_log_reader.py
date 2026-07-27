@@ -1,7 +1,5 @@
 import datetime
 
-import pytest
-
 from core.log_reader import parse_line, stats, tail
 
 
