@@ -9,6 +9,12 @@ Responsibilities:
     - Managing track loading and transitions.
     - Applying loudness normalization and routing logic.
     - Setting up the correct initial playback state (paused/seeked).
+
+Subscribes to:
+    None
+
+Publishes:
+    TrackStartedEvent, LogMessageEvent
 """
 
 import asyncio
