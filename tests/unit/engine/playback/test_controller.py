@@ -202,9 +202,11 @@ class TestPlayTrack:
     async def test_mixed_failure_types_share_one_circuit_breaker_counter(
         self, controller, state, extractor, queue_mode
     ):
-        """Membuktikan koreksi atas temuan #5: _retry_count BUKAN penghitung
-        baru yang saya tambahkan -- ia sudah jadi circuit breaker lintas
-        TRACK & lintas JENIS ERROR sejak awal. 3 track BERBEDA yang gagal
+        """Membuktikan koreksi atas temuan #5: breaker (PlaybackCircuitBreaker)
+        BUKAN penghitung baru yang saya tambahkan -- ia sudah jadi circuit
+        breaker lintas TRACK & lintas JENIS ERROR sejak awal (dulu counter
+        implisit di controller, kini eksplisit lewat
+        engine.playback.circuit_breaker). 3 track BERBEDA yang gagal
         berturut-turut dengan 3 JENIS ERROR BERBEDA (unavailable, bot-check,
         generik) harus tetap menghentikan auto-advance di kegagalan ke-3,
         bukan reset count di antaranya."""
@@ -233,11 +235,12 @@ class TestPlayTrack:
         await real_sleep(0.02)
 
         # Setelah 3 kegagalan beruntun (lintas jenis error, lintas track),
-        # _retry_count harus di-reset ke 0. track-a & track-b (kegagalan
-        # ke-1 & ke-2) tetap sempat menjadwalkan advance seperti biasa;
-        # begitu kegagalan ke-3 (track-c) memicu breaker, TIDAK ADA advance
-        # ketiga yang dijadwalkan -- next_calls berhenti di 2, bukan 3.
-        assert controller._retry_count == 0
+        # breaker harus di-reset ke CLOSED (counter ke 0). track-a & track-b
+        # (kegagalan ke-1 & ke-2) tetap sempat menjadwalkan advance seperti
+        # biasa; begitu kegagalan ke-3 (track-c) memicu breaker, TIDAK ADA
+        # advance ketiga yang dijadwalkan -- next_calls berhenti di 2, bukan 3.
+        assert controller._breaker.can_advance()
+        assert controller._breaker._consecutive_failures == 0
         assert len(queue_mode.next_calls) == 2
 
 

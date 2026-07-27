@@ -29,7 +29,6 @@ import asyncio
 
 import pytest
 
-from core.command_bus import command_bus
 from core.commands import CMD_SET_MODE
 from core.event_bus import bus
 from core.events import TrackStartedEvent
@@ -39,6 +38,9 @@ from server.app import REPOS, STATE
 
 @pytest.mark.asyncio
 async def test_radio_flow(integration_app):
+    from server.app import COMMAND_BUS
+
+    command_bus = integration_app[COMMAND_BUS]
     """
     IT-03: Radio Flow
     Skenario: Radio aktif → prefetch → isi queue

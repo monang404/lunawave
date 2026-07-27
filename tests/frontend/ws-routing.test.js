@@ -146,8 +146,8 @@ describe("WebSocket Message Router", () => {
 
   describe("progress", () => {
     beforeEach(() => {
-      globalThis.pendingToggleTarget = null;
-      globalThis.toggleSentAt = null;
+      store._pendingToggleTarget = null;
+      store._toggleSentAt = null;
       playbackSync.getOrInitAudio.mockReset();
     });
 
@@ -161,21 +161,21 @@ describe("WebSocket Message Router", () => {
     });
 
     it("ignores a contradictory status while a pending toggle to a different target is still in flight", () => {
-      globalThis.pendingToggleTarget = "PAUSED";
-      globalThis.toggleSentAt = Date.now();
+      store._pendingToggleTarget = "PAUSED";
+      store._toggleSentAt = Date.now();
       store.status = "PLAYING";
       wsModule.handleServerMessage({ type: "progress", data: { status: "PLAYING", position: 10 } });
       expect(store.status).toBe("PLAYING"); // unchanged: PLAYING contradicts the awaited PAUSED
-      expect(globalThis.pendingToggleTarget).toBe("PAUSED"); // still waiting
+      expect(store._pendingToggleTarget).toBe("PAUSED"); // still waiting
     });
 
     it("clears the pending toggle once the server confirms the awaited target", () => {
-      globalThis.pendingToggleTarget = "PAUSED";
-      globalThis.toggleSentAt = Date.now();
+      store._pendingToggleTarget = "PAUSED";
+      store._toggleSentAt = Date.now();
       store.status = "PLAYING";
       wsModule.handleServerMessage({ type: "progress", data: { status: "PAUSED", position: 10 } });
       expect(store.status).toBe("PAUSED");
-      expect(globalThis.pendingToggleTarget).toBeNull();
+      expect(store._pendingToggleTarget).toBeNull();
     });
 
     it("anchors player:position from the server when output is not 'browser'", () => {
@@ -376,21 +376,21 @@ describe("WebSocket Message Router", () => {
 describe("wsSend", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    globalThis.pendingToggleTarget = "PAUSED";
+    store._pendingToggleTarget = "PAUSED";
   });
 
   afterEach(() => {
-    delete globalThis.pendingToggleTarget;
+    store._pendingToggleTarget = null;
   });
 
   it("clears the pending toggle target for track-changing actions (next/prev/play_track)", () => {
     wsModule.wsSend("next", { video_id: "v1" });
-    expect(globalThis.pendingToggleTarget).toBeNull();
+    expect(store._pendingToggleTarget).toBeNull();
   });
 
   it("does not clear the pending toggle target for unrelated actions", () => {
     wsModule.wsSend("toggle_pause");
-    expect(globalThis.pendingToggleTarget).toBe("PAUSED");
+    expect(store._pendingToggleTarget).toBe("PAUSED");
   });
 
   it("does not throw when there is no open socket", () => {

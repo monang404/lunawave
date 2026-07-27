@@ -61,7 +61,7 @@ def mock_repos():
 
 
 def test_create_app_registers_routes_and_services(mock_playback_controller, mock_ytdlp, mock_repos):
-    app = create_app(mock_playback_controller, mock_ytdlp, mock_repos)
+    app = create_app(mock_playback_controller, mock_ytdlp, mock_repos, AsyncMock())
 
     assert isinstance(app, web.Application)
 

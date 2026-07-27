@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-25
+last_verified: 2026-07-27
 sprint: 3.3
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-25
+> **Tanggal Scan:** 2026-07-27
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,29 +19,29 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-25 oleh `automation/generate_report.py`  
+> **Auto-generated:** 2026-07-27 oleh `automation/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 72 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 123 |
-| Total file `.js` (ekskl. `.min.js`) | 48 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 81 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 126 |
+| Total file `.js` (ekskl. `.min.js`) | 55 |
 | Total file `.css` (ekskl. `.min.css`) | 25 |
-| Total class (Python) | 98 |
-| Total function/method (Python) | 579 |
-| Total baris Python | 14,941 |
-| Total baris JS (web/) | 6,700 |
+| Total class (Python) | 105 |
+| Total function/method (Python) | 587 |
+| Total baris Python | 15,130 |
+| Total baris JS (web/) | 6,725 |
 | Total baris CSS (web/) | 4,506 |
-| Ukuran DB utama (`data/lunawave.db`) | 404 KB |
+| Ukuran DB utama (`data/lunawave.db`) | 952 KB (+ WAL 4027 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 468 |
+| `engine/playback/controller.py` | 464 |
 | `persistence/discover_repo.py` | 446 |
 | `launcher/gui/ui_builder.py` | 353 |
 | `launcher/gui/app.py` | 297 |

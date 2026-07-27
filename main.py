@@ -77,7 +77,7 @@ async def run_server():
         from server.app import create_app
         from server.app import run_server as _web_run_server
 
-        app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos)
+        app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos, ctx.command_bus)
 
         host = WEB_HOST
         port = WEB_PORT

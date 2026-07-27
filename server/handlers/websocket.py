@@ -41,12 +41,16 @@ from aiohttp import web
 from core.log_categories import LC_COMMAND, LC_SECURITY, LC_SESSION
 from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
+from server.handlers.context import get_command_bus
 from server.handlers.setup import handle_setup_admin
+from server.handlers.ws_cache import handle_cache_command
+from server.handlers.ws_chat import handle_chat_command
 from server.handlers.ws_discovery import handle_discovery_command
 from server.handlers.ws_download import handle_download_command
 from server.handlers.ws_log_stream import handle_log_stream_command
 from server.handlers.ws_playback import handle_playback_command
 from server.handlers.ws_queue import handle_queue_command
+from server.handlers.ws_schemas import WsValidationError
 from server.middleware import check_rate_limit
 from server.serializers import state_to_dict
 
@@ -128,6 +132,7 @@ async def ws_handler(request):
     manager = get_manager(request)
     repos = get_repos(request)
     ytdlp = get_ytdlp(request)
+    command_bus = get_command_bus(request)
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -157,7 +162,9 @@ async def ws_handler(request):
                     data = json.loads(msg.data)
                 except json.JSONDecodeError:
                     continue
-                await handle_ws_message(data, ws, request.remote, state, ytdlp, manager, repos)
+                await handle_ws_message(
+                    data, ws, request.remote, state, ytdlp, manager, repos, command_bus
+                )
             elif msg.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
                 break
     except Exception as e:
@@ -170,7 +177,9 @@ async def ws_handler(request):
     return ws
 
 
-async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager, repos):
+async def handle_ws_message(
+    msg: dict, ws, client_ip: str, state, ytdlp, manager, repos, command_bus
+):
     msg_type = msg.get("type")
     action = msg.get("action", "")
     data = msg.get("data", {})
@@ -218,25 +227,38 @@ async def handle_ws_message(msg: dict, ws, client_ip: str, state, ytdlp, manager
 
     try:
         if action in PLAYBACK_CMDS:
-            await handle_playback_command(action, data)
+            await handle_playback_command(action, data, command_bus)
         elif action in QUEUE_CMDS:
-            await handle_queue_command(action, data, repos.artists, repos.genres)
+            await handle_queue_command(action, data, repos.artists, repos.genres, command_bus)
         elif action in DISCOVERY_CMDS:
             await handle_discovery_command(action, data, ytdlp, repos.discover, ws)
         elif action in DOWNLOAD_CMDS:
             await handle_download_command(
-                action, data, repos.tracks, repos.discover, manager, state
+                action, data, repos.tracks, repos.discover, manager, state, command_bus
             )
         elif action in CACHE_CMDS:
-            from server.handlers.ws_cache import handle_cache_command
-
             await handle_cache_command(action, data, ws, repos, manager, state)
         elif action in CHAT_CMDS:
-            from server.handlers.ws_chat import handle_chat_command
-
             await handle_chat_command(action, data, ws, repos, manager, is_admin, client_ip)
         elif action == "log_tail":
             await handle_log_stream_command(data.get("action"), ws)
+    except WsValidationError as e:
+        try:
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": str(e),
+                    }
+                )
+            )
+        except Exception as send_err:
+            logger.debug(
+                "ws_error_reply_send_failed",
+                category=LC_COMMAND,
+                error_type=type(send_err).__name__,
+                error=str(send_err),
+            )
     except Exception as e:
         logger.error(
             "ws_command_handling_failed",

@@ -10,24 +10,25 @@ from engine.sleep_timer import SleepTimer
 @pytest.mark.asyncio
 async def test_set_timer_stops_playback():
     bus = AsyncMock()
-    timer = SleepTimer(bus)
+    command_bus = AsyncMock()
+    timer = SleepTimer(bus, command_bus)
 
-    with patch("core.command_bus.command_bus.execute", new_callable=AsyncMock) as mock_execute:
-        original_sleep = asyncio.sleep
-        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await timer.set_timer(1)
+    original_sleep = asyncio.sleep
+    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        await timer.set_timer(1)
 
-            # Allow the background task to run
-            await original_sleep(0)
+        # Allow the background task to run
+        await original_sleep(0)
 
-            mock_sleep.assert_any_call(60)
-            mock_execute.assert_called_once_with(CMD_STOP)
+        mock_sleep.assert_any_call(60)
+        command_bus.execute.assert_called_once_with(CMD_STOP)
 
 
 @pytest.mark.asyncio
 async def test_set_timer_cancels_previous():
     bus = AsyncMock()
-    timer = SleepTimer(bus)
+    command_bus = AsyncMock()
+    timer = SleepTimer(bus, command_bus)
 
     await timer.set_timer(5)
     first_task = timer._timer_task

@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -20,6 +20,7 @@ async def test_handle_ws_message_auth(mock_handle_auth):
         None,
         mock_manager,
         mock_db,
+        command_bus=AsyncMock(),
     )
 
     mock_handle_auth.assert_called_once()
@@ -49,6 +50,7 @@ async def test_handle_ws_message_setup_admin(mock_handle_setup_admin):
         None,
         mock_manager,
         mock_repos,
+        command_bus=AsyncMock(),
     )
 
     mock_handle_setup_admin.assert_called_once()
@@ -77,6 +79,7 @@ async def test_handle_ws_message_setup_admin_bypasses_require_auth(mock_require_
             None,
             MagicMock(),
             MagicMock(),
+            command_bus=AsyncMock(),
         )
 
     mock_require_auth.assert_not_called()
@@ -87,7 +90,14 @@ async def test_handle_ws_message_setup_admin_bypasses_require_auth(mock_require_
 async def test_handle_ws_message_unauthenticated(mock_require_auth):
     mock_ws = AsyncMock()
     await handle_ws_message(
-        {"type": "cmd", "action": "play_track"}, mock_ws, "127.0.0.1", None, None, None, None
+        {"type": "cmd", "action": "play_track"},
+        mock_ws,
+        "127.0.0.1",
+        None,
+        None,
+        None,
+        None,
+        command_bus=AsyncMock(),
     )
     mock_ws.send_str.assert_called_once()
     assert "Akses ditolak" in mock_ws.send_str.call_args[0][0]
@@ -99,7 +109,14 @@ async def test_handle_ws_message_unauthenticated(mock_require_auth):
 async def test_handle_ws_message_rate_limited(mock_check_rate, mock_require_auth):
     mock_ws = AsyncMock()
     await handle_ws_message(
-        {"type": "cmd", "action": "play_track"}, mock_ws, "127.0.0.1", None, None, None, None
+        {"type": "cmd", "action": "play_track"},
+        mock_ws,
+        "127.0.0.1",
+        None,
+        None,
+        None,
+        None,
+        command_bus=AsyncMock(),
     )
     mock_ws.send_str.assert_called_once()
     assert "Terlalu banyak permintaan" in mock_ws.send_str.call_args[0][0]
@@ -118,8 +135,9 @@ async def test_handle_ws_message_playback_routing(mock_handle_playback, mock_che
         None,
         None,
         None,
+        command_bus=AsyncMock(),
     )
-    mock_handle_playback.assert_called_once_with("play_track", {})
+    mock_handle_playback.assert_called_once_with("play_track", {}, ANY)
 
 
 @pytest.mark.asyncio
@@ -136,8 +154,9 @@ async def test_handle_ws_message_queue_routing(mock_handle_queue, mock_check, mo
         None,
         None,
         mock_db,
+        command_bus=AsyncMock(),
     )
-    mock_handle_queue.assert_called_once_with("queue_add", {}, mock_db.artists, mock_db.genres)
+    mock_handle_queue.assert_called_once_with("queue_add", {}, mock_db.artists, mock_db.genres, ANY)
 
 
 @pytest.mark.asyncio
@@ -159,6 +178,7 @@ async def test_handle_ws_message_disconnect_during_send(
         None,
         None,
         None,
+        command_bus=AsyncMock(),
     )
     mock_ws.send_str.assert_called_once()
 
@@ -179,9 +199,10 @@ async def test_handle_ws_message_malformed_payload(mock_handle_playback, mock_ch
         None,
         None,
         None,
+        command_bus=AsyncMock(),
     )
 
-    mock_handle_playback.assert_called_once_with("play_track", {})
+    mock_handle_playback.assert_called_once_with("play_track", {}, ANY)
 
 
 @pytest.mark.parametrize(
@@ -211,8 +232,9 @@ async def test_new_playback_actions_are_routed(
         None,
         None,
         None,
+        command_bus=AsyncMock(),
     )
-    mock_handle_playback.assert_called_once_with(action, {})
+    mock_handle_playback.assert_called_once_with(action, {}, ANY)
 
 
 @pytest.mark.asyncio
@@ -220,7 +242,7 @@ async def test_new_playback_actions_are_routed(
 @patch("server.handlers.websocket.check_rate_limit", return_value=True)
 async def test_cache_commands_are_routed(mock_check, mock_require):
     """Verifikasi get_cache_size dan clear_cache di-route ke ws_cache handler."""
-    with patch("server.handlers.ws_cache.handle_cache_command") as mock_cache:
+    with patch("server.handlers.websocket.handle_cache_command") as mock_cache:
         mock_ws = AsyncMock()
         await handle_ws_message(
             {"type": "cmd", "action": "get_cache_size", "data": {}},
@@ -230,6 +252,7 @@ async def test_cache_commands_are_routed(mock_check, mock_require):
             None,
             MagicMock(),
             MagicMock(),
+            command_bus=AsyncMock(),
         )
         mock_cache.assert_called_once()
 
@@ -248,6 +271,7 @@ async def test_unknown_action_does_not_crash(mock_check, mock_require):
         None,
         None,
         None,
+        command_bus=AsyncMock(),
     )
     # Tidak boleh crash, tidak boleh kirim error ke client
     mock_ws.send_str.assert_not_called()

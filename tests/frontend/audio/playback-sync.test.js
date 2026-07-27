@@ -27,8 +27,8 @@ async function setupModule() {
 
   vi.stubGlobal("MediaMetadata", function (init) { Object.assign(this, init); });
 
-  globalThis.pendingToggleTarget = null;
-  globalThis.toggleSentAt = null;
+  storeMod.store._pendingToggleTarget = null;
+  storeMod.store._toggleSentAt = null;
   globalThis.isDraggingPb = false;
   globalThis.isDraggingVol = false;
   globalThis.audioBlocked = false;
@@ -59,8 +59,8 @@ describe("audio/playback-sync.js", () => {
     vi.clearAllMocks();
     delete globalThis.AudioContext;
     delete globalThis.webkitAudioContext;
-    delete globalThis.pendingToggleTarget;
-    delete globalThis.toggleSentAt;
+    // store._pendingToggleTarget is reset below anyway or can be omitted if resetModules is sufficient
+    // reset by setupModule
     delete globalThis.isDraggingPb;
     delete globalThis.isDraggingVol;
     delete globalThis.audioBlocked;
@@ -132,7 +132,7 @@ describe("audio/playback-sync.js", () => {
       getOrInitAudio().dispatchEvent(new Event("pause"));
 
       expect(store.status).toBe("PAUSED");
-      expect(globalThis.pendingToggleTarget).toBe("PAUSED");
+      expect(store._pendingToggleTarget).toBe("PAUSED");
       expect(wsSend).toHaveBeenCalledWith("toggle_pause");
       expect(handler).toHaveBeenCalled();
     });
@@ -152,8 +152,8 @@ describe("audio/playback-sync.js", () => {
       const { getOrInitAudio, store, wsSend } = await setupModule();
       store.userRole = "admin";
       store.status = "PLAYING";
-      globalThis.pendingToggleTarget = "PAUSED";
-      globalThis.toggleSentAt = Date.now();
+      store._pendingToggleTarget = "PAUSED";
+      store._toggleSentAt = Date.now();
 
       getOrInitAudio().dispatchEvent(new Event("pause"));
       expect(wsSend).not.toHaveBeenCalled();
@@ -188,7 +188,7 @@ describe("audio/playback-sync.js", () => {
       getOrInitAudio().dispatchEvent(new Event("play"));
 
       expect(store.status).toBe("PLAYING");
-      expect(globalThis.pendingToggleTarget).toBe("PLAYING");
+      expect(store._pendingToggleTarget).toBe("PLAYING");
       expect(wsSend).toHaveBeenCalledWith("toggle_pause");
     });
 

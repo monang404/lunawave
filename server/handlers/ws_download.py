@@ -28,7 +28,7 @@ from pathlib import Path
 
 import structlog
 
-from core.command_bus import CMD_DOWNLOAD, command_bus
+from core.command_bus import CMD_DOWNLOAD
 from core.log_categories import LC_DOWNLOAD
 from server.serializers import dict_to_track, track_to_dict
 from services.discover_service import DiscoverService
@@ -36,7 +36,9 @@ from services.discover_service import DiscoverService
 logger = structlog.get_logger(component="ws.download")
 
 
-async def handle_download_command(action: str, data: dict, tracks, discover, manager, state):
+async def handle_download_command(
+    action: str, data: dict, tracks, discover, manager, state, command_bus
+):
     if action == "download":
         track = dict_to_track(data) if data else None
         await command_bus.execute(CMD_DOWNLOAD, track)

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed — Architecture (Phase 07)
+- `CommandBus` di-refactor dari *global module-level singleton* menjadi *dependency injection*. Instance sekarang dikelola via `aiohttp` Application state (`web.AppKey`) dan di-inject ke constructor berbagai *engine components*, handlers, dan *services* saat fase *bootstrap*. Hal ini menghilangkan *global state* dan membuat *unit/integration test* berjalan lebih terisolasi tanpa risiko *handler collision*.
+
 ### Performance
 - Penambahan in-memory cache untuk memori *reward stats* (parameter $\alpha$ dan $\beta$) pada modul `ArtistRepository`. Mode Radio Bandit (Thompson Sampling) tidak lagi melakukan *full-table scan* ke SQLite di setiap siklus isi ulang (*batch refill*), sehingga menghemat *overhead/round-trip* *database*.
 - Implementasi sistem peluruhan *cache* otomatis (LRU Eviction) untuk file unduhan MP3 dengan ambang batas `MAX_CACHE_SIZE_BYTES` (default 1GB) agar penyimpanan Termux tidak terkuras habis. Operasi *filesystem* sinkron seperti kueri ukuran *cache* dan pembersihan _file_ kini dipindahkan ke *thread pool* (`run_in_executor`) agar tidak lagi memblokir *event loop* utama.

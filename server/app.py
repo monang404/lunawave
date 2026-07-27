@@ -59,10 +59,16 @@ TRACKS: web.AppKey = web.AppKey("tracks")
 MANAGER: web.AppKey = web.AppKey("manager")
 # ADR-0010: uptime server, dipakai /health + task periodik [STATUS] (sesi 4).
 SERVER_CLOCK: web.AppKey[ServerClock] = web.AppKey("server_clock", ServerClock)
+from core.command_bus import CommandBus
+
+COMMAND_BUS: web.AppKey[CommandBus] = web.AppKey("command_bus", CommandBus)
 
 
 def create_app(
-    playback_controller: PlaybackController, ytdlp: MediaExtractorPort, repos: Repositories
+    playback_controller: PlaybackController,
+    ytdlp: MediaExtractorPort,
+    repos: Repositories,
+    command_bus: CommandBus,
 ) -> web.Application:
     from server.connection_manager import ConnectionManager
     from server.handlers.audio_stream_handler import serve_stream
@@ -75,6 +81,7 @@ def create_app(
     app = web.Application(middlewares=[traffic_middleware])
     manager = ConnectionManager()
 
+    app[COMMAND_BUS] = command_bus
     app[PLAYBACK_CONTROLLER] = playback_controller
     app[STATE] = playback_controller.state
     app[YTDLP] = ytdlp

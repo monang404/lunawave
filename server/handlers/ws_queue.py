@@ -30,13 +30,12 @@ from core.command_bus import (
     CMD_QUEUE_REPLACE,
     CMD_QUEUE_SELECT,
     CMD_SET_MODE,
-    command_bus,
 )
 from core.state import PlaybackMode
 from server.serializers import dict_to_track
 
 
-async def handle_queue_command(action: str, data: dict, artists, genres):
+async def handle_queue_command(action: str, data: dict, artists, genres, command_bus):
     if action == "queue_select":
         index = data.get("index", 0)
         await command_bus.execute(CMD_QUEUE_SELECT, int(index))

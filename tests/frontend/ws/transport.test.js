@@ -1,0 +1,1 @@
+import { describe, it, expect } from "vitest"; import { wsConnect, wsSend } from "../../../web/static/shared/js/ws/transport.js"; describe("transport.js", () => { it("exports wsConnect and wsSend", () => { expect(wsConnect).toBeTypeOf("function"); expect(wsSend).toBeTypeOf("function"); }); });

@@ -33,12 +33,12 @@ describe("FIX-PAUSE-RACE-01: pause tidak auto-play lagi walau progress message t
       userRole: "admin",
       current_track: { video_id: "abc" },
     });
-    store.pendingToggleTarget = null;
-    store.toggleSentAt = 0;
+    store._pendingToggleTarget = null;
+    store._toggleSentAt = 0;
 
-    // Some tests mutate window.pendingToggleTarget directly, let's proxy that to store if it was historically on window
-    globalThis.pendingToggleTarget = null;
-    globalThis.toggleSentAt = 0;
+    // Remove legacy properties from globalThis to ensure they are not used
+    delete globalThis.pendingToggleTarget;
+    delete globalThis.toggleSentAt;
     globalThis.audioBlocked = false;
   });
 
@@ -49,6 +49,10 @@ describe("FIX-PAUSE-RACE-01: pause tidak auto-play lagi walau progress message t
 
     store.status = "PAUSED";
     markPendingToggle("PAUSED");
+
+    // Assert globalThis is not polluted
+    expect(globalThis.pendingToggleTarget).toBeUndefined();
+    expect(store._pendingToggleTarget).toBe("PAUSED");
 
     wsModule.handleServerMessage({
       type: "progress",
@@ -85,9 +89,7 @@ describe("FIX-PAUSE-RACE-01: pause tidak auto-play lagi walau progress message t
     store.status = "PAUSED";
     markPendingToggle("PAUSED");
     // override internal time manually
-    Object.assign(store, { toggleSentAt: Date.now() - 9000 });
-    // also fallback for globalThis in case `store.js` relies on `window.toggleSentAt`
-    globalThis.toggleSentAt = Date.now() - 9000;
+    Object.assign(store, { _toggleSentAt: Date.now() - 9000 });
 
     wsModule.handleServerMessage({
       type: "progress",

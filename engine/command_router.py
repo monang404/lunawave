@@ -45,7 +45,6 @@ from core.command_bus import (
     CMD_VOLUME_DOWN,
     CMD_VOLUME_SET,
     CMD_VOLUME_UP,
-    command_bus,
 )
 
 logger = structlog.get_logger(component="engine.command_router")
@@ -56,73 +55,80 @@ class CommandRouter:
     Rutes Global CommandBus requests ke RoomPlaybackController yang sesuai.
     """
 
-    def __init__(self, playback_controller, volume_service, sleep_timer=None):
+    def __init__(self, playback_controller, volume_service, sleep_timer=None, command_bus=None):
         self.playback_controller = playback_controller
         self.volume_service = volume_service
         self.sleep_timer = sleep_timer
+        self._command_bus = command_bus
 
-        command_bus.register(
+        self._command_bus.register(
             CMD_PLAY_TRACK, self._route(lambda c, data: c._on_cmd_play_track(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_TOGGLE_PAUSE, self._route(lambda c, data: c._on_cmd_toggle_pause(data))
         )
-        command_bus.register(CMD_NEXT, self._route(lambda c, data: c._on_next(data)))
-        command_bus.register(CMD_PREV, self._route(lambda c, data: c._on_prev(data)))
-        command_bus.register(CMD_STOP, self._route(lambda c, data: c._on_stop(data)))
-        command_bus.register(CMD_SEEK, self._route(lambda c, data: c._on_seek(data)))
-        command_bus.register(CMD_SET_MODE, self._route(lambda c, data: c._on_set_mode(data)))
-        command_bus.register(
+        self._command_bus.register(CMD_NEXT, self._route(lambda c, data: c._on_next(data)))
+        self._command_bus.register(CMD_PREV, self._route(lambda c, data: c._on_prev(data)))
+        self._command_bus.register(CMD_STOP, self._route(lambda c, data: c._on_stop(data)))
+        self._command_bus.register(CMD_SEEK, self._route(lambda c, data: c._on_seek(data)))
+        self._command_bus.register(CMD_SET_MODE, self._route(lambda c, data: c._on_set_mode(data)))
+        self._command_bus.register(
             CMD_QUEUE_SELECT, self._route(lambda c, data: c._on_queue_select(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_QUEUE_REMOVE, self._route(lambda c, data: c._on_queue_remove(data))
         )
-        command_bus.register(CMD_QUEUE_ADD, self._route(lambda c, data: c._on_queue_add(data)))
-        command_bus.register(
+        self._command_bus.register(
+            CMD_QUEUE_ADD, self._route(lambda c, data: c._on_queue_add(data))
+        )
+        self._command_bus.register(
             CMD_QUEUE_REPLACE, self._route(lambda c, data: c._on_queue_replace(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_QUEUE_REORDER, self._route(lambda c, data: c._on_queue_reorder(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_RADIO_RANDOMIZE, self._route(lambda c, data: c._on_radio_randomize(data))
         )
-        command_bus.register(CMD_SET_OUTPUT, self._route(lambda c, data: c._on_set_output(data)))
-        command_bus.register(
+        self._command_bus.register(
+            CMD_SET_OUTPUT, self._route(lambda c, data: c._on_set_output(data))
+        )
+        self._command_bus.register(
             CMD_SET_SPONSORBLOCK, self._route(lambda c, data: c._on_set_sponsorblock(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_SET_LOUDNESS_NORMALIZATION,
             self._route(lambda c, data: c._on_set_loudness_normalization(data)),
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_LYRICS_OFFSET, self._route(lambda c, data: c._on_lyrics_offset(data))
         )
 
-        command_bus.register(
+        self._command_bus.register(
             CMD_VOLUME_UP, self._route_volume(lambda v, data: v._on_volume_up(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_VOLUME_DOWN, self._route_volume(lambda v, data: v._on_volume_down(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_VOLUME_SET, self._route_volume(lambda v, data: v._on_volume_set(data))
         )
 
         from core.command_bus import CMD_SET_LOOP, CMD_SET_SLEEP_TIMER, CMD_SET_SPEED
         from core.commands import CMD_SET_CROSSFADE
 
-        command_bus.register(
+        self._command_bus.register(
             CMD_SET_CROSSFADE, self._route(lambda c, data: c._mode_ops.set_crossfade(data))
         )
-        command_bus.register(
+        self._command_bus.register(
             CMD_SET_SPEED, self._route(lambda c, data: c._mode_ops.set_speed(data))
         )
-        command_bus.register(CMD_SET_LOOP, self._route(lambda c, data: c._mode_ops.set_loop(data)))
+        self._command_bus.register(
+            CMD_SET_LOOP, self._route(lambda c, data: c._mode_ops.set_loop(data))
+        )
 
         if self.sleep_timer:
-            command_bus.register(
+            self._command_bus.register(
                 CMD_SET_SLEEP_TIMER,
                 self._route_sleep(lambda s, data: s.set_timer(data.get("minutes", 0))),
             )

@@ -1,6 +1,6 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-22
+last_verified: 2026-07-27
 sprint:
 ---
 
@@ -8,6 +8,25 @@ sprint:
 
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
+
+## RFC Perbaikan Arsitektur — Fase 1 (P01): Circuit breaker eksplisit (2026-07-27)
+
+Task file `docs/rfc/perbaikan_arsitektur/01_circuit_breaker_state_machine.yaml`
+(P01-T1 + P01-T2) selesai — PATCH-2026-07-27-241.
+
+| File | Perubahan |
+|---|---|
+| `engine/playback/circuit_breaker.py` (baru) | `BreakerState` enum (CLOSED/OPEN) + `PlaybackCircuitBreaker` (threshold=3 default) — `record_success()`, `record_failure() -> bool`, `can_advance() -> bool` |
+| `engine/playback/controller.py` | `self._retry_count = 0` → `self._breaker = PlaybackCircuitBreaker(threshold=3)`; kedua titik reset (`play_track` sukses, `_on_stop`) pakai `self._breaker.record_success()` |
+| `engine/playback/failure_ops.py` | `advance_after_track_failure` pakai `self.controller._breaker.record_failure()` / return value-nya untuk deteksi "baru saja OPEN"; logging `consecutive_failures` baca dari breaker |
+| `tests/unit/engine/playback/test_circuit_breaker.py` (baru) | 6 unit test murni untuk `PlaybackCircuitBreaker`, tanpa mock mpv/event bus |
+| `tests/unit/engine/playback/test_controller.py` | Assertion `_retry_count == 0` → `controller._breaker.can_advance()` + `_consecutive_failures == 0` |
+
+**Behavior tidak berubah** dari `_retry_count` lama (threshold 3, hardcoded — lihat keputusan `d2` di `00_index_and_decisions.yaml`). Satu penyesuaian teknis dari sketsa proposal §3.D: `record_failure()` hanya mengembalikan `True` pada transisi CLOSED→OPEN (bukan tiap panggilan selama sudah OPEN), sesuai kasus uji wajib task 01 — bukan perubahan keputusan d1-d6, murni penyesuaian mekanis (lihat `deviation_protocol`).
+
+`grep -rn '_retry_count' engine/ tests/` mengembalikan 0 hasil. Seluruh suite pytest existing tetap hijau (100 test di `tests/unit/engine/playback`, 794 passed + 3 skipped di full suite — 2 error collection pre-existing tidak terkait: `tkinter` tidak tersedia di sandbox untuk `tests/unit/launcher/gui/*`, dan `pytest-aiohttp` fixture untuk `tests/integration/test_websocket_flow.py`).
+
+File 02-07 (`docs/rfc/perbaikan_arsitektur/`) **belum dieksekusi** — lanjutkan sesuai `execution_order` di `00_index_and_decisions.yaml`.
 
 ## Observability Baseline: log traceable, traffic/uptime/RAM, /health, [STATUS] periodik (2026-07-22)
 

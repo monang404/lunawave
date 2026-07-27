@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-26-240
+latest_patch_id: PATCH-2026-07-27-245
 
-total_entries: 240
+total_entries: 245
 
 ---
 
@@ -21,6 +21,241 @@ total_entries: 240
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-245
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 09:02
+**Git Branch:** develop
+**Git Commit:** c01cc88
+**Type:** Refactor
+**Area:** web/static/shared/js
+**Priority:** Medium
+**Title:** Split ws.js (451 baris god-module) -> transport/router/message-handlers
+
+**Reason:** ws.js mencampur 4 tanggung jawab berbeda (transport, routing, mutasi state, manipulasi DOM) dalam 1 file -- perubahan kecil di satu aspek berisiko menyentuh kode reconnect yang sudah stabil.
+
+
+**Root Cause:**
+Tidak ada pemisahan lapisan sejak awal; semua logic WS terakumulasi di 1 file seiring bertambahnya message type.
+
+**Solution:**
+ws/transport.js (murni transport), ws/router.js (dispatch table), ws/message-handlers/{auth,playback,discover,chat,system}-messages.js. ws.js jadi thin re-export untuk backward-compat. Semua 16 case message dimigrasi sekaligus dalam 1 sesi (bukan bertahap) karena audit menemukan struktur cukup jelas untuk migrasi penuh langsung; fallback switch-case lama di router.js disertakan sebagai safety net tapi tidak dipakai untuk case manapun.
+
+**Changed Files:**
+- `web/static/shared/js/ws.js`
+- `web/static/shared/js/ws/transport.js`
+- `web/static/shared/js/ws/router.js`
+- `web/static/shared/js/ws/message-handlers/*.js`
+- `tests/frontend/ws/**`
+
+**Changed Symbols:**
+- `ws`
+- `wsConnect`
+- `wsSend`
+- `handleServerMessage`
+- `syncLocalLyrics`
+- `renderHeader`
+
+**Tests:** npx vitest run
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-244
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 08:55
+**Git Branch:** develop
+**Git Commit:** c01cc88
+**Type:** Refactor
+**Area:** web/static/shared/js
+**Priority:** Medium
+**Title:** pendingToggleTarget/toggleSentAt: globalThis -> field store internal
+
+**Reason:** globalThis sebagai kanal koordinasi implisit antar modul membuat state pause/play race-condition sulit ditelusuri -- riwayat FIX-PAUSE-RACE-01 menunjukkan dua modul sempat menyimpan salinan berbeda dari konsep yang sama.
+
+
+**Root Cause:**
+Tidak ada satu sumber kebenaran eksplisit untuk state koordinasi toggle pause/play -- globalThis dipakai sebagai pengganti field store yang seharusnya.
+
+**Solution:**
+_pendingToggleTarget dan _toggleSentAt jadi field store biasa (prefix _ untuk internal coordination state), markPendingToggle/ isPendingToggleActive diubah internal tanpa ubah signature publik. Scope SENGAJA dibatasi hanya 2 field ini -- globalThis lain (audioBlocked, isDraggingVol/Pb/Queue, dll.) dicatat sebagai backlog di 08_backlog_deferred.yaml, TIDAK dimigrasi di fase ini karena tidak ada bukti bug konkret seperti FIX-PAUSE-RACE-01.
+
+**Changed Files:**
+- `web/static/shared/js/store.js`
+- `web/static/shared/js/ws.js`
+- `tests/frontend/pause-race.test.js`
+- `tests/frontend/audio/playback-sync.test.js`
+- `tests/frontend/ws-routing.test.js`
+
+**Changed Symbols:**
+- `createStore`
+- `markPendingToggle`
+- `isPendingToggleActive`
+- `wsSend`
+- `handleServerMessage`
+
+**Tests:** npx vitest run
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+DEVIASI DARI PLAN: ws.js dan beberapa test secara langsung me-refer globalThis.pendingToggleTarget meskipun plan mengasumsikan mereka hanya memakai helper markPendingToggle. Untuk memenuhi AC 'grep 0 hasil', semuanya di-update menggunakan store._pendingToggleTarget.
+
+---
+
+## PATCH-2026-07-27-243
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 08:51
+**Git Branch:** develop
+**Git Commit:** c01cc88
+**Type:** Refactor
+**Area:** web/static/shared/js
+**Priority:** Medium
+**Title:** store.js jadi Proxy-based reactive store (backward-compatible)
+
+**Reason:** FIX-PAUSE-RACE-01 membuktikan bahwa tanpa satu sumber kebenaran reactive, modul konsumen (ws.js, playback-sync.js) terpaksa menyimpan salinan/derivasi state manual dengan nilai berbeda (grace-window 1200ms vs 1500ms) untuk konsep yang sama.
+
+
+**Root Cause:**
+store.js adalah plain mutable object tanpa mekanisme notifikasi perubahan -- konsumen tidak bisa subscribe ke field tertentu, hanya bisa polling atau pakai event bus generik terpisah.
+
+**Solution:**
+Proxy-based reactive layer di atas createStore() yang sudah ada, tanpa mengubah shape data. onStoreChange(key, cb) untuk subscribe granular, onAnyStoreChange(cb) untuk wildcard. Migrasi consumer existing ke API baru ini TIDAK dilakukan di fase ini -- itu scope file 05 (untuk pendingToggleTarget/toggleSentAt) dan pekerjaan lanjutan di luar plan ini untuk consumer lain.
+
+**Changed Files:**
+- `web/static/shared/js/store.js`
+- `tests/frontend/store-reactive.test.js`
+
+**Changed Symbols:**
+- `store`
+- `onStoreChange`
+- `onAnyStoreChange`
+
+**Tests:** npx vitest run tests/frontend/store-reactive.test.js tests/frontend/store.test.js
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-242
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 08:47
+**Git Branch:** develop
+**Git Commit:** c01cc88
+**Type:** Refactor
+**Area:** server/handlers, automation
+**Priority:** Medium
+**Title:** Import audit tool + pemisahan server/handlers/context.py
+
+**Reason:** 75(klaim proposal)/66(hasil audit ulang) deferred import tersebar di 27 file tanpa klasifikasi -- sebagian circular asli, sebagian sisa refactor lama yang sudah aman dipromosikan, tanpa tooling untuk membedakan keduanya secara sistematis.
+
+**Root Cause:**
+server/handlers/__init__.py sebelumnya mencampur accessor dengan posisi yang berpotensi menimbulkan asumsi circular; verifikasi langsung menunjukkan setidaknya 2 dari titik yang disebut proposal TIDAK benar-benar circular. Tidak ada tooling sebelumnya untuk memverifikasi klaim semacam ini secara otomatis dan berulang.
+
+**Solution:**
+automation/import_audit.py baru untuk klasifikasi otomatis (CIRCULAR/SAFE_TO_PROMOTE/PATCHABILITY), server/handlers/context.py baru sebagai leaf accessor module, __init__.py jadi re-export murni, 2 deferred import di websocket.py dipromosikan ke top-level SETELAH dikonfirmasi audit (bukan diasumsikan). Sisa ~60 titik deferred import lain DICATAT sebagai backlog terklasifikasi di 08_backlog_deferred.yaml, TIDAK dieksekusi migrasinya di fase ini.
+
+**Changed Files:**
+- `automation/import_audit.py`
+- `server/handlers/context.py`
+- `server/handlers/__init__.py`
+- `server/handlers/websocket.py`
+- `tests/unit/automation/test_import_audit.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Menyentuh file locked server/handlers/websocket.py (hanya memindah 2 baris import, bukan memecah struktur) -- otorisasi tercatat di 00_index_and_decisions.yaml. Jalankan python automation/import_audit.py --json sebagai lampiran hasil audit lengkap 66 titik untuk arsip PATCHLOG (simpan output ke catatan manual, BUKAN file baru di repo -- tool ini tidak menulis file sesuai konvensi automation/*).
+
+---
+
+## PATCH-2026-07-27-241
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 01:36
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** Engine
+**Priority:** Medium
+**Title:** Circuit breaker eksplisit (PlaybackCircuitBreaker) menggantikan _retry_count implisit
+
+**Reason:** Semantik penting (kapan berhenti total, kapan reset) sebelumnya hanya hidup di komentar controller.py, bukan di kode -- risiko berubah diam-diam kalau failure_ops.py diedit tanpa baca komentar di file lain.
+
+**Root Cause:**
+Circuit breaker lintas-track diimplementasikan sebagai integer counter tanpa state machine eksplisit; invariant tidak ter-enforce oleh tipe/nama, hanya oleh disiplin baca komentar.
+
+**Solution:**
+Tambah engine/playback/circuit_breaker.py (BreakerState enum + PlaybackCircuitBreaker), ganti counter lama di controller.py dan seluruh increment/reset di failure_ops.py. Behavior tidak berubah, threshold tetap 3 (hardcoded, lihat keputusan d2 di 00_index_and_decisions.yaml). Satu penyesuaian teknis dari sketsa proposal: record_failure() hanya return True pada transisi CLOSED->OPEN (bukan tiap panggilan saat sudah OPEN), sesuai kasus uji wajib di task 01.
+
+**Changed Files:**
+- `engine/playback/circuit_breaker.py`
+- `engine/playback/controller.py`
+- `engine/playback/failure_ops.py`
+- `tests/unit/engine/playback/test_circuit_breaker.py`
+- `tests/unit/engine/playback/test_controller.py`
+
+**Changed Symbols:**
+- `PlaybackCircuitBreaker`
+- `BreakerState`
+- `PlaybackCircuitBreaker.record_success()`
+- `PlaybackCircuitBreaker.record_failure()`
+- `PlaybackCircuitBreaker.can_advance()`
+
+**Tests:** pytest tests/unit/engine/playback/test_circuit_breaker.py -q; pytest tests/unit/engine/playback -q; pytest -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Menyentuh file locked engine/playback/controller.py -- otorisasi tercatat di docs/rfc/perbaikan_arsitektur/00_index_and_decisions.yaml meta.authorization dan komentar controller.py (konteks T2.3.1/T2.3.2). Eksekusi dari plan RFC perbaikan_arsitektur, file 01_circuit_breaker_state_machine.yaml (task P01-T1 + P01-T2, digabung 1 entry per governance '1 fase = 1 PATCHLOG entry').
 
 ---
 

@@ -51,6 +51,7 @@ from core.log_categories import LC_PLAYBACK
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
+from engine.playback.circuit_breaker import PlaybackCircuitBreaker
 from engine.playback.failure_ops import FailureOps
 from engine.playback.mode_ops import ModeOps
 from engine.playback.queue_controller import QueueController
@@ -100,13 +101,8 @@ class PlaybackController:
         # eksplisit untuk menyentuh file ❄️ Frozen ini).
         self._queue_controller = QueueController(self)
         self._settings_controller = SettingsController(self)
-        # `_retry_count` TIDAK pernah dipakai untuk retry track yang SAMA --
-        # tiap kegagalan play_track (apapun tracknya) selalu lompat ke
-        # _advance_to_next() dengan backoff naik, dan berhenti total tanpa
-        # advance lagi setelah 3x berturut-turut. Jadi counter ini sudah
-        # berfungsi sebagai circuit breaker LINTAS-TRACK (bukan cuma
-        # per-track) sejak awal -- lihat percabangan except di bawah.
-        self._retry_count = 0
+        # Circuit breaker lintas-track -- lihat docstring PlaybackCircuitBreaker.
+        self._breaker = PlaybackCircuitBreaker(threshold=3)
         self._loading = False
         self._last_position_save = 0.0
         self._last_play_start_ts = 0.0
@@ -274,7 +270,7 @@ class PlaybackController:
                     await self.mpv.seek(start_position)
 
                 self.state.status = PlayerStatus.PAUSED if start_paused else PlayerStatus.PLAYING
-                self._retry_count = 0
+                self._breaker.record_success()
                 self._loading = False  # RC-TERMUX-01
                 await self.bus.publish(TrackStartedEvent(track=track))
 
@@ -402,7 +398,7 @@ class PlaybackController:
                 await self.bus.publish(LogMessageEvent(message="Tidak ada lagu sebelumnya"))
 
     async def _on_stop(self, _data=None):
-        self._retry_count = 0  # TASK-0.2: reset retry state agar tidak bocor ke lagu berikutnya
+        self._breaker.record_success()  # TASK-0.2: reset retry state agar tidak bocor ke lagu berikutnya
         await self.mpv.pause()
         self.state.status = PlayerStatus.IDLE
         self.state.current_track = None
