@@ -37,6 +37,7 @@ from pathlib import Path
 import structlog
 from aiohttp import web
 
+from core.command_bus import CommandBus
 from core.log_categories import LC_LIFECYCLE
 from core.ports import MediaExtractorPort
 from core.server_clock import ServerClock, server_clock
@@ -59,8 +60,6 @@ TRACKS: web.AppKey = web.AppKey("tracks")
 MANAGER: web.AppKey = web.AppKey("manager")
 # ADR-0010: uptime server, dipakai /health + task periodik [STATUS] (sesi 4).
 SERVER_CLOCK: web.AppKey[ServerClock] = web.AppKey("server_clock", ServerClock)
-from core.command_bus import CommandBus
-
 COMMAND_BUS: web.AppKey[CommandBus] = web.AppKey("command_bus", CommandBus)
 
 

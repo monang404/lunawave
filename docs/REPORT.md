@@ -25,16 +25,16 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 81 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 74 |
 | Total file `.py` (source, ekskl. `__pycache__`) | 126 |
 | Total file `.js` (ekskl. `.min.js`) | 55 |
 | Total file `.css` (ekskl. `.min.css`) | 25 |
 | Total class (Python) | 105 |
 | Total function/method (Python) | 587 |
-| Total baris Python | 15,130 |
+| Total baris Python | 15,169 |
 | Total baris JS (web/) | 6,725 |
 | Total baris CSS (web/) | 4,506 |
-| Ukuran DB utama (`data/lunawave.db`) | 952 KB (+ WAL 4027 KB) |
+| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar

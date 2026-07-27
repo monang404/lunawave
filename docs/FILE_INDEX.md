@@ -56,8 +56,8 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **File:** `core/command_bus.py`
 **Fungsi:** Implement a single-writer CommandBus that enforces exactly one handler per command name and records Prometheus metrics for every execution.
 **Class:** `CommandBus`
-**Function utama:** `register()`, `unregister()`, `reset()`
-**Digunakan oleh:** `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, `server/handlers/ws_download`, _2 lainnya_
+**Function utama:** `register()`, `unregister()`
+**Digunakan oleh:** `bootstrap/services`, `engine/command_router`, `engine/download_manager`, `engine/sleep_timer`, `plugins/notifications`, _4 lainnya_
 **Menggunakan:** `core/commands`, `core/log_categories`, `core/log_context`, `core/observability`
 
 
@@ -700,7 +700,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `create_app()`, `run_server()`
 **Digunakan oleh:** `server/handlers/context`
-**Menggunakan:** `core/log_categories`, `core/ports`, `core/server_clock`, `engine/playback/controller`, `persistence`
+**Menggunakan:** `core/command_bus`, `core/log_categories`, `core/ports`, `core/server_clock`, `engine/playback/controller`, `persistence`
 
 
 ---
@@ -749,7 +749,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Shared, typed accessors for values stashed on `request.app[...]` by server.app.create_app(). Handlers should use these instead of raw `request.app[KEY]` lookups so the type of each value is explicit (T3.7 â€” dulu rencana ini ditulis untuk `request.app["db"]`, tapi setelah T2.2 memecah `Database` God Facade, tidak ada lagi key tunggal "db" â€” sudah jadi beberapa key spesifik: "repos", "tracks", "conn", dst. Accessor di bawah menutupi semua key itu).
 **Class:** â€”
 **Function utama:** `get_repos()`, `get_tracks_repo()`, `get_conn()`, `get_state()`, `get_manager()`, `get_ytdlp()`
-**Digunakan oleh:** `server/handlers/__init__`
+**Digunakan oleh:** `server/handlers/__init__`, `server/handlers/websocket`
 **Menggunakan:** `core/ports`, `core/state`, `server/app`
 
 
@@ -800,7 +800,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** â€”
 **Function utama:** `check_ws_origin()`, `ws_handler()`, `handle_ws_message()`
 **Digunakan oleh:** â€”
-**Menggunakan:** `core/log_categories`, `server/handlers`, `server/handlers/auth`, `server/handlers/setup`, `server/handlers/ws_discovery`, `server/handlers/ws_download`, _8 lainnya_
+**Menggunakan:** `core/log_categories`, `server/handlers`, `server/handlers/auth`, `server/handlers/context`, `server/handlers/setup`, `server/handlers/ws_cache`, _9 lainnya_
 
 
 ---
@@ -1165,7 +1165,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `BootstrapContext`
 **Function utama:** `init_core_services()`
 **Digunakan oleh:** `bootstrap/maintenance`, `bootstrap/startup_tasks`, `main`
-**Menggunakan:** `adapters/mpv`, `adapters/ytdlp`, `core/event_bus`, `core/log_categories`, `core/state`, `engine/command_router`, _5 lainnya_
+**Menggunakan:** `adapters/mpv`, `adapters/ytdlp`, `core/command_bus`, `core/event_bus`, `core/log_categories`, `core/state`, _6 lainnya_
 
 
 ---

@@ -159,8 +159,7 @@ def stats(window_seconds: int = 3600) -> dict:
 
             delta = (now - log_time).total_seconds()
             if delta > window_seconds:
-                # Assuming logs are strictly chronological, we can break early
-                break
+                continue
         except ValueError:
             continue
 

@@ -33,7 +33,7 @@ try:
     _root = tk.Tk()
     _root.destroy()
     _HAS_DISPLAY = True
-except tk.TclError:
+except Exception:
     _HAS_DISPLAY = False
 
 pytestmark = pytest.mark.skipif(not _HAS_DISPLAY, reason="requires a usable X display")

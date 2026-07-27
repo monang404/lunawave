@@ -60,14 +60,20 @@ def test_get_rss_mb_dispatches_to_windows_impl_when_win32():
 
 
 def test_get_rss_mb_returns_none_on_unsupported_platform_or_error():
-    with patch("core.mem_stats._get_rss_mb_proc", side_effect=Exception("boom")):
+    # Patch both dispatch targets so that regardless of platform, get_rss_mb()
+    # returns None when both internal helpers raise.
+    with (
+        patch("core.mem_stats._get_rss_mb_proc", side_effect=Exception("boom")),
+        patch("core.mem_stats._get_rss_mb_windows", side_effect=Exception("boom")),
+    ):
         result = get_rss_mb()
     assert result is None
 
 
-def test_get_rss_mb_windows_returns_none_if_ctypes_import_fails():
-    # Simulasikan lingkungan tanpa modul windll (mis. dijalankan di Linux
-    # tapi memaksa jalur windows) — harus fail-safe, bukan crash.
-    with patch.dict(sys.modules, {"ctypes": None}):
+def test_get_rss_mb_windows_returns_none_if_subprocess_fails():
+    # Implementasi _get_rss_mb_windows menggunakan subprocess (wmic),
+    # bukan ctypes. Verifikasi bahwa ia fail-safe ketika subprocess gagal
+    # dengan alasan apa pun.
+    with patch("subprocess.check_output", side_effect=Exception("wmic not found")):
         result = _get_rss_mb_windows()
     assert result is None

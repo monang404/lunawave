@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-245
+latest_patch_id: PATCH-2026-07-27-247
 
-total_entries: 245
+total_entries: 247
 
 ---
 
@@ -21,6 +21,112 @@ total_entries: 245
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-247
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 02:37
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** core, server, engine, plugins
+**Priority:** Medium
+**Title:** CommandBus: module-level singleton -> web.AppKey dependency injection
+
+**Reason:** CommandBus.reset() harus ada semata-mata supaya test bisa jalan berulang tanpa RuntimeError 'already registered' -- tanda test isolation dipaksa lewat method khusus, bukan lewat instansiasi baru per test. Tidak mungkin menjalankan 2 PlaybackController independen dalam 1 proses karena keduanya register command name yang sama ke singleton yang sama.
+
+**Root Cause:**
+command_bus = CommandBus() sebagai module-level singleton, di-import langsung oleh banyak caller, kontras dengan pola DI yang sudah dipakai project untuk AppState/PlaybackController/Repositories via web.AppKey.
+
+**Solution:**
+COMMAND_BUS jadi web.AppKey di server/app.py, get_command_bus() accessor baru di server/handlers/context.py, seluruh caller (websocket.py + ws_playback.py/ws_queue.py/ws_download.py lewat parameter passing; engine/command_router.py, engine/download_manager.py, engine/sleep_timer.py, plugins/notifications.py lewat constructor injection) dimigrasi dari import singleton ke instance yang di-DI. reset() dihapus. Scope file hasil audit ulang lebih luas dari proposal asli -- proposal tidak menyebut command_router.py/download_manager.py/sleep_timer.py/notifications.py padahal keempatnya memanggil command_bus.register()/execute() langsung; sebaliknya proposal menyebut ws_cache.py/ws_chat.py/ws_discovery.py/event_listeners.py yang ternyata TIDAK memanggil command_bus sama sekali. Sesi ini menambahkan test integrasi wajib P07-T6 (tests/integration/test_command_bus_wiring.py) yang belum ada, dan merapikan import CommandBus di server/app.py yang sebelumnya nyempil di tengah blok konstanta AppKey alih-alih di blok import atas.
+
+**Changed Files:**
+- `core/command_bus.py`
+- `server/app.py`
+- `server/handlers/context.py`
+- `server/handlers/websocket.py`
+- `server/handlers/ws_playback.py`
+- `server/handlers/ws_queue.py`
+- `server/handlers/ws_download.py`
+- `engine/command_router.py`
+- `engine/download_manager.py`
+- `engine/sleep_timer.py`
+- `plugins/notifications.py`
+- `main.py`
+- `bootstrap/services.py`
+- `tests/integration/test_command_bus_wiring.py`
+
+**Changed Symbols:**
+- `CommandBus`
+- `COMMAND_BUS`
+- `get_command_bus`
+- `CommandRouter`
+- `DownloadManager`
+- `SleepTimer`
+- `TermuxNowPlaying`
+
+**Tests:** pytest tests/unit/core -q -k command_bus: 9 passed. pytest tests/unit/server -q: pass. pytest tests/unit/engine -q -k 'command_router or download_manager or sleep_timer': 39 passed. pytest tests/unit/plugins -q -k notifications: 1 passed. pytest tests/integration/test_command_bus_wiring.py -q: 2 passed (test baru sesi ini). pytest -q (full suite): 812 passed, 6 skipped. python automation/doctor.py: PASS 100/100.
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-27-242
+
+**Status:** Merged
+
+**Notes:**
+DOKUMENTASI RETROAKTIF + PENYELESAIAN GAP: implementasi utama task ini (file 07_command_bus_dependency_injection.yaml, task P07-T1 s.d. T5) sudah ada di kode saat sesi audit 2026-07-27 dimulai, TIDAK PERNAH punya entry PATCHLOG walau depends_on P03 (PATCH-242) sudah terpenuhi. Diverifikasi ulang satu per satu terhadap kode aktual: tidak ada lagi 'from core.command_bus import command_bus' (singleton import) di luar tests/, tidak ada method reset() tersisa, 4 file constructor-injection (command_router/download_manager/sleep_timer/notifications) semua menerima command_bus=None lalu simpan sebagai self._command_bus, bootstrap/services.py membuat SATU instance CommandBus() dan meneruskannya konsisten ke semua consumer serta ke create_app(). GAP yang ditemukan dan diperbaiki sesi ini: (1) P07-T6 mewajibkan test integrasi identity-check (CommandBus yang di-register CommandRouter harus identik (is, bukan cuma ==) dengan yang dikembalikan get_command_bus(request)) -- test ini belum ada sama sekali, dibuat sekarang di tests/integration/test_command_bus_wiring.py (2 test: identity check + functional execute-through-DI-instance check, keduanya tidak butuh mpv/yt-dlp jadi tidak skip di CI manapun). (2) import CommandBus di server/app.py sebelumnya diletakkan di tengah blok deklarasi AppKey (baris ~64) alih-alih di blok import atas bersama import lain di file yang sama -- dirapikan. Menyentuh file locked server/handlers/websocket.py -- otorisasi tercatat di 00_index_and_decisions.yaml (keputusan d4). Dieksekusi sebagai sesi tersendiri sesuai governance session_isolation di file 07.
+
+---
+
+## PATCH-2026-07-27-246
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 02:36
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Refactor
+**Area:** server/handlers
+**Priority:** Medium
+**Title:** Command schema validation untuk volume_set, set_speed, lyrics_offset, set_sleep_timer
+
+**Reason:** ValueError mentah dari cast Python (int()/float()) bocor ke client sebagai pesan error implementasi, bukan pesan domain yang berarti bagi user.
+
+**Root Cause:**
+WS command dispatch memvalidasi & cast input langsung di body handler tanpa skema terpusat; exception generik menangkap semua ValueError dan meneruskan str(e) mentah ke client.
+
+**Solution:**
+server/handlers/ws_schemas.py baru (WsValidationError + 4 dataclass: VolumeSetPayload, SetSpeedPayload, LyricsOffsetPayload, SetSleepTimerPayload), migrasi 4 command paling rawan di ws_playback.py, except WsValidationError terpisah di websocket.py sebelum except Exception generik. Command lain (19+6 lainnya) sengaja belum dimigrasi -- lihat 08_backlog_deferred.yaml.
+
+**Changed Files:**
+- `server/handlers/ws_schemas.py`
+- `server/handlers/ws_playback.py`
+- `server/handlers/websocket.py`
+- `tests/unit/server/handlers/test_ws_schemas.py`
+
+**Changed Symbols:**
+- `WsValidationError`
+- `VolumeSetPayload`
+- `SetSpeedPayload`
+- `LyricsOffsetPayload`
+- `SetSleepTimerPayload`
+
+**Tests:** pytest tests/unit/server/handlers/test_ws_schemas.py -q: 15 passed. pytest tests/unit/server/handlers -q -k playback: pass. pytest -q (full suite): 812 passed, 6 skipped.
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+DOKUMENTASI RETROAKTIF: implementasi task ini (file 02_ws_command_schema_validation.yaml, task P02-T1/T2/T3) sudah ada di kode saat sesi audit 2026-07-27 dimulai (ws_schemas.py, migrasi ws_playback.py, except clause websocket.py semua sudah terpasang dan lolos test), tapi TIDAK PERNAH punya entry PATCHLOG -- ditemukan lewat audit menyeluruh atas permintaan pemilik project untuk memverifikasi hasil kerja RFC perbaikan_arsitektur sebelum melanjutkan ke fase berikutnya. Diverifikasi ulang acceptance criteria P02-T1/T2/T3 satu per satu terhadap kode aktual (bukan cuma percaya klaim) sebelum entry ini ditulis: ws_schemas.py leaf module (tidak import dari websocket.py/ws_playback.py), semua parse() melempar WsValidationError bukan ValueError/TypeError mentah, 15 command lain di ws_playback.py tidak tersentuh. Menyentuh file locked server/handlers/websocket.py -- otorisasi tercatat di 00_index_and_decisions.yaml meta.authorization.
 
 ---
 
@@ -196,18 +302,20 @@ automation/import_audit.py baru untuk klasifikasi otomatis (CIRCULAR/SAFE_TO_PRO
 **Changed Symbols:**
 - (tidak ada)
 
-**Tests:** -
+**Tests:** pytest tests/unit/automation/test_import_audit.py -q: 1 passed. pytest --collect-only -q: 816 tests collected, 0 ImportError. pytest tests/unit/server -q: pass (bagian dari full suite). python automation/doctor.py: PASS 100/100 di 5 checker (docs/arsitektur/struktur/keamanan/event).
 
-**Breaking Change:** Unclassified
+**Breaking Change:** No
 
-**Regression Risk:** Unclassified
+**Regression Risk:** Low
 
 **Related Patch:** -
 
-**Status:** Draft
+**Status:** Merged
 
 **Notes:**
-Menyentuh file locked server/handlers/websocket.py (hanya memindah 2 baris import, bukan memecah struktur) -- otorisasi tercatat di 00_index_and_decisions.yaml. Jalankan python automation/import_audit.py --json sebagai lampiran hasil audit lengkap 66 titik untuk arsip PATCHLOG (simpan output ke catatan manual, BUKAN file baru di repo -- tool ini tidak menulis file sesuai konvensi automation/*).
+Menyentuh file locked server/handlers/websocket.py (hanya memindah 2 baris import, bukan memecah struktur) -- otorisasi tercatat di 00_index_and_decisions.yaml. Output python automation/import_audit.py --json (58 titik, per audit ulang sesi 2026-07-27) dipakai sebagai lampiran arsip, tidak ditulis sebagai file baru di repo sesuai konvensi automation/*.
+
+**FOLLOW-UP:** entry ini sebelumnya berstatus Draft dengan Tests/Breaking Change/Regression Risk kosong ("Unclassified") walau bukan hasil migrasi v1 -- sesuai konvensi automation/patchlog.py, "Unclassified" seharusnya hanya untuk entry migrasi v1, bukan placeholder untuk entry v2 yang belum diverifikasi. Diaudit ulang independen dalam sesi yang sama yang menghasilkan PATCH-2026-07-27-246 (P02) dan PATCH-2026-07-27-247 (P07): seluruh acceptance criteria P03-T1/T2/T3 terkonfirmasi terpenuhi di kode (bukan cuma diklaim) -- field di atas diisi dengan hasil verifikasi nyata, status di-upgrade ke Merged.
 
 ---
 
