@@ -25,24 +25,24 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 74 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 126 |
-| Total file `.js` (ekskl. `.min.js`) | 55 |
+| Total folder (ekskl. `__pycache__`, `.git`) | 83 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 127 |
+| Total file `.js` (ekskl. `.min.js`) | 61 |
 | Total file `.css` (ekskl. `.min.css`) | 25 |
-| Total class (Python) | 105 |
-| Total function/method (Python) | 587 |
-| Total baris Python | 15,169 |
-| Total baris JS (web/) | 6,725 |
+| Total class (Python) | 106 |
+| Total function/method (Python) | 592 |
+| Total baris Python | 15,236 |
+| Total baris JS (web/) | 6,740 |
 | Total baris CSS (web/) | 4,506 |
-| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
+| Ukuran DB utama (`data/lunawave.db`) | 952 KB (+ WAL 2422 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
 
 | File | Baris |
 |------|-------|
-| `engine/playback/controller.py` | 464 |
-| `persistence/discover_repo.py` | 446 |
+| `persistence/discover_repo.py` | 461 |
+| `engine/playback/controller.py` | 383 |
 | `launcher/gui/ui_builder.py` | 353 |
 | `launcher/gui/app.py` | 297 |
 | `engine/radio/engine.py` | 288 |

@@ -1,133 +1,134 @@
 {
   "_meta": {
-    "generated_at": 1785119869.0293217,
+    "generated_at": 1785125734.2734137,
     "source_mtimes": {
-      "main.py": 1785118909.0,
       "config.py": 1785118909.0,
+      "main.py": 1785118909.0,
       "start.py": 1785118909.0,
-      "server/serializers.py": 1785118909.0,
-      "server/broadcast_service.py": 1785118909.0,
-      "server/__init__.py": 1785118909.0,
-      "server/connection_manager.py": 1785118909.0,
-      "server/app.py": 1785119607.5493762,
-      "server/middleware/traffic.py": 1785118909.0,
-      "server/middleware/__init__.py": 1785118909.0,
-      "server/handlers/audio_stream_handler.py": 1785118909.0,
-      "server/handlers/ws_queue.py": 1785118909.0,
-      "server/handlers/ws_cache.py": 1785118909.0,
-      "server/handlers/auth.py": 1785118909.0,
-      "server/handlers/http.py": 1785118909.0,
-      "server/handlers/__init__.py": 1785118909.0,
-      "server/handlers/event_listeners.py": 1785118909.0,
-      "server/handlers/ws_chat.py": 1785118909.0,
-      "server/handlers/ws_schemas.py": 1785118909.0,
-      "server/handlers/setup.py": 1785118909.0,
-      "server/handlers/ws_playback.py": 1785118909.0,
-      "server/handlers/ws_discovery.py": 1785118909.0,
-      "server/handlers/websocket.py": 1785118909.0,
-      "server/handlers/context.py": 1785118909.0,
-      "server/handlers/ws_log_stream.py": 1785118909.0,
-      "server/handlers/log_dashboard.py": 1785118909.0,
-      "server/handlers/ws_download.py": 1785118909.0,
-      "services/__init__.py": 1785118909.0,
-      "services/stream_prefetch.py": 1785118909.0,
-      "services/discover_ranking.py": 1785118909.0,
-      "services/discover_service.py": 1785118909.0,
+      "adapters/__init__.py": 1785118909.0,
+      "adapters/mpv/connection.py": 1785118909.0,
+      "adapters/mpv/ipc.py": 1785118909.0,
+      "adapters/mpv/observer.py": 1785118909.0,
+      "adapters/mpv/__init__.py": 1785118909.0,
+      "adapters/ytdlp/downloader.py": 1785118909.0,
+      "adapters/ytdlp/resolver.py": 1785118909.0,
+      "adapters/ytdlp/searcher.py": 1785118909.0,
+      "adapters/ytdlp/ydl_options.py": 1785118909.0,
+      "adapters/ytdlp/__init__.py": 1785118909.0,
+      "bootstrap/maintenance.py": 1785118909.0,
+      "bootstrap/power.py": 1785118909.0,
+      "bootstrap/services.py": 1785118909.0,
+      "bootstrap/startup_tasks.py": 1785118909.0,
+      "bootstrap/__init__.py": 1785118909.0,
+      "core/commands.py": 1785118909.0,
+      "core/command_bus.py": 1785118909.0,
+      "core/events.py": 1785118909.0,
+      "core/event_bus.py": 1785118909.0,
+      "core/exceptions.py": 1785118909.0,
+      "core/latency_window.py": 1785118909.0,
+      "core/log_categories.py": 1785118909.0,
+      "core/log_config.py": 1785118909.0,
+      "core/log_context.py": 1785118909.0,
+      "core/log_reader.py": 1785120570.4229836,
+      "core/mem_stats.py": 1785118909.0,
+      "core/observability.py": 1785118909.0,
+      "core/ports.py": 1785118909.0,
+      "core/security.py": 1785118909.0,
+      "core/server_clock.py": 1785118909.0,
+      "core/state.py": 1785118909.0,
+      "core/task_utils.py": 1785118909.0,
+      "core/__init__.py": 1785118909.0,
+      "data/export_to_sqlite.py": 1785118909.0,
+      "data/__init__.py": 1785118909.0,
+      "engine/command_router.py": 1785118909.0,
+      "engine/download_manager.py": 1785118909.0,
+      "engine/queue_manager.py": 1785118909.0,
+      "engine/sleep_timer.py": 1785118909.0,
+      "engine/volume_service.py": 1785118909.0,
+      "engine/__init__.py": 1785118909.0,
+      "engine/loudness/analyzer.py": 1785118909.0,
+      "engine/loudness/gain_calculator.py": 1785118909.0,
+      "engine/loudness/service.py": 1785118909.0,
+      "engine/playback/circuit_breaker.py": 1785118909.0,
+      "engine/playback/controller.py": 1785125441.6248631,
+      "engine/playback/crossfade.py": 1785118909.0,
+      "engine/playback/failure_ops.py": 1785118909.0,
+      "engine/playback/mode_ops.py": 1785118909.0,
+      "engine/playback/play_ops.py": 1785125615.5493484,
+      "engine/playback/queue_controller.py": 1785118909.0,
+      "engine/playback/queue_ops.py": 1785118909.0,
+      "engine/playback/settings_controller.py": 1785118909.0,
+      "engine/playback/track_ended_ops.py": 1785118909.0,
+      "engine/playback/track_loader.py": 1785118909.0,
+      "engine/playback/__init__.py": 1785118909.0,
+      "engine/radio/artist_bandit.py": 1785118909.0,
+      "engine/radio/artist_selector.py": 1785118909.0,
+      "engine/radio/engine.py": 1785118909.0,
+      "engine/radio/prefetcher.py": 1785118909.0,
+      "engine/radio/radio_config.py": 1785118909.0,
+      "engine/radio/track_filter.py": 1785118909.0,
+      "engine/radio/track_interleaver.py": 1785118909.0,
+      "engine/radio/__init__.py": 1785118909.0,
+      "launcher/dep_checker.py": 1785118909.0,
+      "launcher/network.py": 1785118909.0,
+      "launcher/preflight.py": 1785118909.0,
+      "launcher/process.py": 1785118909.0,
+      "launcher/server_lifecycle.py": 1785118909.0,
+      "launcher/updater.py": 1785118909.0,
+      "launcher/__init__.py": 1785118909.0,
+      "launcher/__main__.py": 1785118909.0,
+      "launcher/gui/app.py": 1785118909.0,
+      "launcher/gui/auth_panel.py": 1785118909.0,
+      "launcher/gui/log_view.py": 1785118909.0,
+      "launcher/gui/popups.py": 1785118909.0,
+      "launcher/gui/ui_builder.py": 1785118909.0,
+      "launcher/gui/__init__.py": 1785118909.0,
       "persistence/admin_account_repo.py": 1785118909.0,
-      "persistence/discover_repo.py": 1785118909.0,
-      "persistence/__init__.py": 1785118909.0,
-      "persistence/genre_repo.py": 1785118909.0,
-      "persistence/stream_cache.py": 1785118909.0,
-      "persistence/library_repo.py": 1785118909.0,
-      "persistence/session_repo.py": 1785118909.0,
-      "persistence/track_repo.py": 1785118909.0,
       "persistence/artist_repo.py": 1785118909.0,
       "persistence/chat_repo.py": 1785118909.0,
       "persistence/db.py": 1785118909.0,
       "persistence/discover_enrich.py": 1785118909.0,
-      "engine/download_manager.py": 1785118909.0,
-      "engine/sleep_timer.py": 1785118909.0,
-      "engine/__init__.py": 1785118909.0,
-      "engine/command_router.py": 1785118909.0,
-      "engine/volume_service.py": 1785118909.0,
-      "engine/queue_manager.py": 1785118909.0,
-      "engine/playback/track_loader.py": 1785118909.0,
-      "engine/playback/controller.py": 1785118909.0,
-      "engine/playback/settings_controller.py": 1785118909.0,
-      "engine/playback/__init__.py": 1785118909.0,
-      "engine/playback/circuit_breaker.py": 1785118909.0,
-      "engine/playback/queue_ops.py": 1785118909.0,
-      "engine/playback/mode_ops.py": 1785118909.0,
-      "engine/playback/track_ended_ops.py": 1785118909.0,
-      "engine/playback/failure_ops.py": 1785118909.0,
-      "engine/playback/crossfade.py": 1785118909.0,
-      "engine/playback/queue_controller.py": 1785118909.0,
-      "engine/radio/track_interleaver.py": 1785118909.0,
-      "engine/radio/radio_config.py": 1785118909.0,
-      "engine/radio/artist_bandit.py": 1785118909.0,
-      "engine/radio/__init__.py": 1785118909.0,
-      "engine/radio/artist_selector.py": 1785118909.0,
-      "engine/radio/track_filter.py": 1785118909.0,
-      "engine/radio/engine.py": 1785118909.0,
-      "engine/radio/prefetcher.py": 1785118909.0,
-      "engine/loudness/gain_calculator.py": 1785118909.0,
-      "engine/loudness/service.py": 1785118909.0,
-      "engine/loudness/analyzer.py": 1785118909.0,
-      "launcher/server_lifecycle.py": 1785118909.0,
-      "launcher/__init__.py": 1785118909.0,
-      "launcher/process.py": 1785118909.0,
-      "launcher/dep_checker.py": 1785118909.0,
-      "launcher/updater.py": 1785118909.0,
-      "launcher/preflight.py": 1785118909.0,
-      "launcher/__main__.py": 1785118909.0,
-      "launcher/network.py": 1785118909.0,
-      "launcher/gui/__init__.py": 1785118909.0,
-      "launcher/gui/popups.py": 1785118909.0,
-      "launcher/gui/log_view.py": 1785118909.0,
-      "launcher/gui/ui_builder.py": 1785118909.0,
-      "launcher/gui/app.py": 1785118909.0,
-      "launcher/gui/auth_panel.py": 1785118909.0,
-      "data/__init__.py": 1785118909.0,
-      "data/export_to_sqlite.py": 1785118909.0,
-      "core/latency_window.py": 1785118909.0,
-      "core/log_reader.py": 1785118909.0,
-      "core/mem_stats.py": 1785118909.0,
-      "core/__init__.py": 1785118909.0,
-      "core/commands.py": 1785118909.0,
-      "core/log_categories.py": 1785118909.0,
-      "core/log_context.py": 1785118909.0,
-      "core/state.py": 1785118909.0,
-      "core/ports.py": 1785118909.0,
-      "core/observability.py": 1785118909.0,
-      "core/command_bus.py": 1785118909.0,
-      "core/exceptions.py": 1785118909.0,
-      "core/log_config.py": 1785118909.0,
-      "core/security.py": 1785118909.0,
-      "core/events.py": 1785118909.0,
-      "core/task_utils.py": 1785118909.0,
-      "core/event_bus.py": 1785118909.0,
-      "core/server_clock.py": 1785118909.0,
-      "adapters/__init__.py": 1785118909.0,
-      "adapters/ytdlp/__init__.py": 1785118909.0,
-      "adapters/ytdlp/searcher.py": 1785118909.0,
-      "adapters/ytdlp/ydl_options.py": 1785118909.0,
-      "adapters/ytdlp/resolver.py": 1785118909.0,
-      "adapters/ytdlp/downloader.py": 1785118909.0,
-      "adapters/mpv/observer.py": 1785118909.0,
-      "adapters/mpv/__init__.py": 1785118909.0,
-      "adapters/mpv/connection.py": 1785118909.0,
-      "adapters/mpv/ipc.py": 1785118909.0,
-      "plugins/lyrics_sync.py": 1785118909.0,
-      "plugins/__init__.py": 1785118909.0,
+      "persistence/discover_repo.py": 1785122252.441252,
+      "persistence/genre_repo.py": 1785118909.0,
+      "persistence/library_repo.py": 1785118909.0,
+      "persistence/session_repo.py": 1785118909.0,
+      "persistence/stream_cache.py": 1785118909.0,
+      "persistence/track_repo.py": 1785118909.0,
+      "persistence/__init__.py": 1785118909.0,
       "plugins/lyrics_fetcher.py": 1785118909.0,
-      "plugins/sponsorblock.py": 1785118909.0,
       "plugins/lyrics_parser.py": 1785118909.0,
+      "plugins/lyrics_sync.py": 1785118909.0,
       "plugins/notifications.py": 1785118909.0,
-      "bootstrap/maintenance.py": 1785118909.0,
-      "bootstrap/__init__.py": 1785118909.0,
-      "bootstrap/startup_tasks.py": 1785118909.0,
-      "bootstrap/services.py": 1785118909.0,
-      "bootstrap/power.py": 1785118909.0
+      "plugins/sponsorblock.py": 1785118909.0,
+      "plugins/__init__.py": 1785118909.0,
+      "server/app.py": 1785121572.6150298,
+      "server/broadcast_service.py": 1785118909.0,
+      "server/connection_manager.py": 1785118909.0,
+      "server/serializers.py": 1785118909.0,
+      "server/__init__.py": 1785118909.0,
+      "server/handlers/audio_stream_handler.py": 1785118909.0,
+      "server/handlers/auth.py": 1785118909.0,
+      "server/handlers/context.py": 1785118909.0,
+      "server/handlers/event_listeners.py": 1785118909.0,
+      "server/handlers/http.py": 1785118909.0,
+      "server/handlers/log_dashboard.py": 1785118909.0,
+      "server/handlers/setup.py": 1785118909.0,
+      "server/handlers/websocket.py": 1785118909.0,
+      "server/handlers/ws_cache.py": 1785118909.0,
+      "server/handlers/ws_chat.py": 1785118909.0,
+      "server/handlers/ws_discovery.py": 1785118909.0,
+      "server/handlers/ws_download.py": 1785118909.0,
+      "server/handlers/ws_log_stream.py": 1785118909.0,
+      "server/handlers/ws_playback.py": 1785118909.0,
+      "server/handlers/ws_queue.py": 1785118909.0,
+      "server/handlers/ws_schemas.py": 1785118909.0,
+      "server/handlers/__init__.py": 1785118909.0,
+      "server/middleware/traffic.py": 1785118909.0,
+      "server/middleware/__init__.py": 1785118909.0,
+      "services/discover_ranking.py": 1785118909.0,
+      "services/discover_service.py": 1785118909.0,
+      "services/stream_prefetch.py": 1785118909.0,
+      "services/__init__.py": 1785118909.0
     }
   },
   "files": {
@@ -341,7 +342,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 156,
+      "loc": 158,
       "docstring_purpose": "Create and configure the aiohttp web application with all routes,     services, and EventBus listeners wired together.",
       "reverse_deps": [
         "main.py",
@@ -900,7 +901,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 447,
+      "loc": 462,
       "docstring_purpose": "Repository for Discover-tab personalization queries: bandit-ranked     \"Untuk Kamu\" artists, \"Belum Pernah Kamu Dengar\" (unheard) artists,     genre taste spectrum, genre affinity, and artist detail lookup.",
       "reverse_deps": [
         "persistence/__init__.py"
@@ -1346,6 +1347,7 @@
         "engine.playback.circuit_breaker",
         "engine.playback.failure_ops",
         "engine.playback.mode_ops",
+        "engine.playback.play_ops",
         "engine.playback.queue_controller",
         "engine.playback.queue_ops",
         "engine.playback.settings_controller",
@@ -1356,8 +1358,6 @@
         "engine.loudness.service",
         "time",
         "engine.loudness.gain_calculator",
-        "engine.loudness.gain_calculator",
-        "engine.playback.crossfade",
         "engine.playback.crossfade"
       ],
       "publishes": [
@@ -1366,9 +1366,7 @@
         "QueueUpdatedEvent",
         "LogMessageEvent",
         "TrackPauseChangedEvent",
-        "TrackStartedEvent",
         "QueueUpdatedEvent",
-        "LogMessageEvent",
         "LogMessageEvent"
       ],
       "subscribes": [
@@ -1379,13 +1377,14 @@
         "MpvReconnectedEvent",
         "VolumeChangedEvent"
       ],
-      "loc": 465,
+      "loc": 384,
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "server/app.py",
         "engine/playback/__init__.py",
         "bootstrap/services.py",
-        "server/handlers/context.py"
+        "server/handlers/context.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "engine/playback/__init__.py": {
@@ -1454,7 +1453,8 @@
       "loc": 134,
       "docstring_purpose": "Menangani reaksi terhadap TrackEndedEvent (eof/stop/error) dan polling     durasi track yang belum diketahui. Diekstrak dari controller.py agar     file controller tetap ramping (di bawah LARGE_FILE_THRESHOLD).",
       "reverse_deps": [
-        "engine/playback/controller.py"
+        "engine/playback/controller.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "engine/playback/settings_controller.py": {
@@ -1642,7 +1642,7 @@
       "docstring_purpose": "Crossfade helpers untuk transisi halus antar track via MPV volume ramping.",
       "reverse_deps": [
         "engine/playback/controller.py",
-        "engine/playback/controller.py"
+        "engine/playback/play_ops.py"
       ]
     },
     "engine/radio/track_interleaver.py": {
@@ -1899,9 +1899,9 @@
       "docstring_purpose": "Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya     mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS)     dan true peak (dBTP).",
       "reverse_deps": [
         "engine/playback/controller.py",
-        "engine/playback/controller.py",
         "engine/playback/track_loader.py",
-        "engine/playback/mode_ops.py"
+        "engine/playback/mode_ops.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "engine/loudness/analyzer.py": {
@@ -2295,7 +2295,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 181,
+      "loc": 180,
       "docstring_purpose": "Provide utilities to parse and tail lunawave.log files for dashboard and     observability purposes.",
       "reverse_deps": [
         "server/handlers/ws_log_stream.py",
@@ -2371,7 +2371,8 @@
         "bootstrap/maintenance.py",
         "bootstrap/startup_tasks.py",
         "bootstrap/services.py",
-        "server/handlers/context.py"
+        "server/handlers/context.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "core/mem_stats.py": {
@@ -2594,7 +2595,8 @@
         "bootstrap/maintenance.py",
         "bootstrap/startup_tasks.py",
         "bootstrap/services.py",
-        "bootstrap/power.py"
+        "bootstrap/power.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "core/log_config.py": {
@@ -2653,7 +2655,8 @@
         "persistence/stream_cache.py",
         "engine/playback/controller.py",
         "adapters/ytdlp/resolver.py",
-        "adapters/mpv/connection.py"
+        "adapters/mpv/connection.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "core/observability.py": {
@@ -2729,7 +2732,8 @@
         "plugins/lyrics_sync.py",
         "plugins/lyrics_fetcher.py",
         "plugins/sponsorblock.py",
-        "plugins/notifications.py"
+        "plugins/notifications.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "core/security.py": {
@@ -2830,7 +2834,8 @@
         "core/event_bus.py",
         "adapters/mpv/observer.py",
         "bootstrap/maintenance.py",
-        "bootstrap/startup_tasks.py"
+        "bootstrap/startup_tasks.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "core/event_bus.py": {
@@ -3531,6 +3536,39 @@
       "reverse_deps": [
         "server/handlers/__init__.py",
         "server/handlers/websocket.py"
+      ]
+    },
+    "engine/playback/play_ops.py": {
+      "layer": "engine",
+      "classes": [
+        "PlayOps"
+      ],
+      "functions": [
+        "play_track"
+      ],
+      "imports": [
+        "asyncio",
+        "typing",
+        "structlog",
+        "core.events",
+        "core.exceptions",
+        "core.log_categories",
+        "core.state",
+        "core.task_utils",
+        "engine.playback.controller",
+        "engine.loudness.gain_calculator",
+        "engine.playback.track_ended_ops",
+        "engine.playback.crossfade"
+      ],
+      "publishes": [
+        "TrackStartedEvent",
+        "LogMessageEvent"
+      ],
+      "subscribes": [],
+      "loc": 133,
+      "docstring_purpose": "Operations class handling the core logic for playing a track.     Extracted from PlaybackController to maintain a thin orchestrator.",
+      "reverse_deps": [
+        "engine/playback/controller.py"
       ]
     }
   }

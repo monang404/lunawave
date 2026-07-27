@@ -87,7 +87,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
 **Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `VolumeChangedEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** â€”
-**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _12 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _13 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -97,7 +97,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Define the custom exception hierarchy for LunaWave error conditions.
 **Class:** `YtPlayerError(Exception)`, `MpvConnectionError(YtPlayerError)`, `TrackResolutionError(YtPlayerError)`, `DownloadError(YtPlayerError)`, `VideoUnavailableError(TrackResolutionError)`, `BotCheckError(TrackResolutionError)`, `RateLimitedError(TrackResolutionError)`
 **Function utama:** â€”
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/resolver`, `engine/playback/controller`, `persistence/stream_cache`, `server/handlers/audio_stream_handler`, _1 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/ytdlp/resolver`, `engine/playback/controller`, `engine/playback/play_ops`, `persistence/stream_cache`, _2 lainnya_
 **Menggunakan:** â€”
 
 
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Closed set of `category` constants for structured logging, per the Â§4 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows; the audit/implementation-plan docs say "14 kategori standar" but the actual table has 15 -- this module follows the table, the normative spec, not the prose count). Category groups log lines by *domain of the event*, never by the Python module/file that emitted them (see Â§4 anti-pattern #7).
 **Class:** â€”
 **Function utama:** â€”
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _39 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _40 lainnya_
 **Menggunakan:** â€”
 
 
@@ -207,7 +207,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Define shared application state dataclasses, enums, and the single mutable AppState object for LunaWave.
 **Class:** `PlayerStatus(Enum)`, `AudioOutput(StrEnum)`, `PlaybackMode(Enum)`, `TrackInfo`, `AppState`
 **Function utama:** â€”
-**Digunakan oleh:** `adapters/ytdlp/searcher`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`, `core/events`, _31 lainnya_
+**Digunakan oleh:** `adapters/ytdlp/searcher`, `bootstrap/maintenance`, `bootstrap/services`, `bootstrap/startup_tasks`, `core/events`, _32 lainnya_
 **Menggunakan:** â€”
 
 
@@ -217,7 +217,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Fungsi:** Wrap asyncio.create_task with centralized exception handling to prevent silent background-task crashes.
 **Class:** â€”
 **Function utama:** `safe_create_task()`
-**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/maintenance`, `bootstrap/startup_tasks`, `core/event_bus`, `engine/download_manager`, _8 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `bootstrap/maintenance`, `bootstrap/startup_tasks`, `core/event_bus`, `engine/download_manager`, _9 lainnya_
 **Menggunakan:** `core/log_categories`
 
 
@@ -384,7 +384,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Class:** `PlaybackController`
 **Function utama:** `dispose()`
 **Digunakan oleh:** `engine/playback/__init__`, `server/app`
-**Menggunakan:** `core/event_bus`, `core/events`, `core/exceptions`, `core/log_categories`, `core/ports`, `core/state`, _11 lainnya_
+**Menggunakan:** `core/event_bus`, `core/events`, `core/exceptions`, `core/log_categories`, `core/ports`, `core/state`, _12 lainnya_
 
 
 ---
@@ -415,6 +415,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 **Function utama:** â€”
 **Digunakan oleh:** `engine/playback/controller`
 **Menggunakan:** `core/events`, `core/log_categories`, `core/ports`, `core/state`, `engine/radio`
+
+
+---
+
+**File:** `engine/playback/play_ops.py`
+**Fungsi:** Operations class handling the core logic for playing a track. Extracted from PlaybackController to maintain a thin orchestrator.
+**Class:** `PlayOps`
+**Function utama:** â€”
+**Digunakan oleh:** `engine/playback/controller`
+**Menggunakan:** `core/events`, `core/exceptions`, `core/log_categories`, `core/state`, `core/task_utils`
 
 
 ---
@@ -1183,7 +1193,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py â
 
 ## ðŸ“‹ Checklist Dokumentasi Docstring
 
-**109/109** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**110/110** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
 _(semua file sudah terdokumentasi ðŸŽ‰)_
