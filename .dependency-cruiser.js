@@ -101,8 +101,20 @@ module.exports = {
       // bawah), jadi tidak butuh entri exception di sini.
       name: 'circular-dependencies',
       comment: 'This project is designed to be free of circular dependencies.',
-      severity: 'warn',
-      from: {},
+      severity: 'error',
+      from: {
+        pathNot: [
+          '^web/static/shared/js/audio/playback-sync\\.js',
+          '^web/static/shared/js/ws\\.js',
+          '^web/static/shared/js/audio/visualizer\\.js',
+          '^web/static/shared/js/ws/router\\.js',
+          '^web/static/shared/js/ws/message-handlers/playback-messages\\.js',
+          '^web/static/shared/js/ws/message-handlers/auth-messages\\.js',
+          '^web/static/shared/js/ws/transport\\.js',
+          '^web/static/shared/js/audio/media-session\\.js',
+          '^web/static/shared/js/audio/audio-pool\\.js'
+        ]
+      },
       to: { circular: true }
     }
   ],

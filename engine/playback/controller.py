@@ -54,6 +54,7 @@ from core.task_utils import safe_create_task
 from engine.playback.circuit_breaker import PlaybackCircuitBreaker
 from engine.playback.failure_ops import FailureOps
 from engine.playback.mode_ops import ModeOps
+from engine.playback.play_ops import PlayOps
 from engine.playback.queue_controller import QueueController
 from engine.playback.queue_ops import QueueOps
 from engine.playback.settings_controller import SettingsController
@@ -101,6 +102,7 @@ class PlaybackController:
         # eksplisit untuk menyentuh file ❄️ Frozen ini).
         self._queue_controller = QueueController(self)
         self._settings_controller = SettingsController(self)
+        self._play_ops = PlayOps(self)
         # Circuit breaker lintas-track -- lihat docstring PlaybackCircuitBreaker.
         self._breaker = PlaybackCircuitBreaker(threshold=3)
         self._loading = False
@@ -211,97 +213,7 @@ class PlaybackController:
     async def play_track(
         self, track: TrackInfo, start_position: float = 0.0, start_paused: bool = False
     ):
-        async with self._play_lock:  # A-05: cegah concurrent play_track race
-            if self.state.current_track:
-                self.state.history.append(self.state.current_track)
-            self.state.current_track = track
-            self.state.status = PlayerStatus.LOADING
-            self.state.position = start_position
-            self.state.duration = float(track.duration)
-            self.state.lyrics_lines = []
-            self.state.lyrics_index = 0
-            self._crossfade_out_triggered = False
-            if self._fade_out_task and not self._fade_out_task.done():
-                self._fade_out_task.cancel()
-            try:
-                loaded = await self.track_loader.load_track(track)
-                uri = loaded.uri
-                self._loading = True
-                self._last_play_start_ts = asyncio.get_event_loop().time()
-                await self.mpv.play(uri)
-                await asyncio.sleep(0.15)
-
-                await self._apply_loudness_and_routing(loaded)
-
-                await self._apply_start_playback_state(start_paused, start_position)
-                await self._finalize_play_track_success(track, start_paused)
-            except VideoUnavailableError as e:
-                # PATCH-2026-07-20-136: video dihapus/private/diblokir secara
-                # permanen. Detail penanganan lihat engine/playback/failure_ops.py
-                # (diekstrak dari sini supaya controller.py tetap di bawah
-                # LARGE_FILE_THRESHOLD).
-                await self._failure_ops.handle_video_unavailable(track, e)
-
-            except (BotCheckError, RateLimitedError) as e:
-                # PATCH-2026-07-20-136: bot-check/rate-limit -- lihat
-                # engine/playback/failure_ops.py untuk detail penanganan.
-                await self._failure_ops.handle_bot_check_or_rate_limited(track, e)
-
-            except Exception as e:
-                await self._failure_ops.handle_generic_error(track, e)
-
-    async def _apply_start_playback_state(self, start_paused: bool, start_position: float):
-        if start_paused:
-            await self.mpv.pause()
-        else:
-            await self.mpv.resume()  # RC-TERMUX-02
-
-        if start_position > 0:
-            await self.mpv.seek(start_position)
-
-    async def _finalize_play_track_success(self, track: TrackInfo, start_paused: bool):
-        self.state.status = PlayerStatus.PAUSED if start_paused else PlayerStatus.PLAYING
-        self._breaker.record_success()
-        self._loading = False  # RC-TERMUX-01
-        await self.bus.publish(TrackStartedEvent(track=track))
-
-        # Fetch duration actively if not available
-        if self.state.duration == 0:
-            safe_create_task(self._poll_duration(track), name="poll_duration")
-
-    async def _apply_loudness_and_routing(self, loaded):
-        # Loudness Normalization (Phase 6/7)
-        from engine.loudness.gain_calculator import build_af_filter
-
-        # BUGFIX: simpan gain_db track ini di state supaya toggle_loudness_normalization()
-        self.state.current_track_gain_db = loaded.gain_db
-
-        if getattr(self.state, "loudness_normalization_enabled", False):
-            await self.mpv.set_af(build_af_filter(loaded.gain_db))
-        else:
-            await self.mpv.set_af(build_af_filter(0.0))
-
-        if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
-            # BACKEND-FIX-01: Pastikan mpv silent di browser mode.
-            await self.mpv.set_volume(0)
-            await self.bus.publish(
-                LogMessageEvent(message="Audio output is browser, mpv silent (volume=0).")
-            )
-        else:
-            if getattr(self.state, "crossfade_enabled", False):
-                from engine.playback.crossfade import apply_crossfade_in
-
-                # PATCH-2026-07-16-001
-                if self._fade_task and not self._fade_task.done():
-                    self._fade_task.cancel()
-                self._fade_task = safe_create_task(
-                    apply_crossfade_in(self.mpv, self.state), name="fade_in"
-                )
-            else:
-                await self.mpv.set_volume(self.state.volume)
-
-    async def _poll_duration(self, track: TrackInfo):
-        await poll_duration(self.state, self.mpv, self.resolver, self.bus, track)
+        await self._play_ops.play_track(track, start_position, start_paused)
 
     async def _on_cmd_play_track(self, track: TrackInfo):
         async with self._lock:

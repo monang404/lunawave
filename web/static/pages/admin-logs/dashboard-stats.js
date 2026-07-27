@@ -1,4 +1,3 @@
-import { openChatPanel } from "./admin-chat-panel.js";
 import { fetchTail } from "./admin-ws-transport.js";
 
 const filterCategory = /** @type {HTMLSelectElement} */ (document.getElementById('filterCategory'));
@@ -275,6 +274,10 @@ export function renderActiveUsers(users) {
     // openChatPanel().
     /** @type {NodeListOf<HTMLElement>} */
     (document.querySelectorAll('.chat-btn')).forEach(btn => {
-        btn.addEventListener('click', () => openChatPanel(btn.dataset.uid, btn.dataset.ip));
+        btn.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('chat:open', {
+                detail: { uid: btn.dataset.uid, ip: btn.dataset.ip }
+            }));
+        });
     });
 }

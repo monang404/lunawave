@@ -1,7 +1,7 @@
 import { appendLogBatch, navigateToLiveTail, formatFields } from "./log-tail.js";
-import { fetchStats, renderMatrix } from "./dashboard-stats.js";
+import { fetchStats } from "./dashboard-stats.js";
 import { connectWs, fallbackToPolling, fetchTail, fetchHealth, sendOverWs, disconnectWs, setAppendLogBatch } from "./admin-ws-transport.js";
-import { handleIncomingChat, renderChatHistory } from "./admin-chat-panel.js";
+import { handleIncomingChat, renderChatHistory, openChatPanel } from "./admin-chat-panel.js";
 
 setAppendLogBatch(appendLogBatch);
 
@@ -116,6 +116,11 @@ btnDownload.addEventListener('click', async () => {
 
 window.addEventListener('beforeunload', () => {
     disconnectWs();
+});
+
+// Global Events
+document.addEventListener('chat:open', /** @param {any} e */ (e) => {
+    openChatPanel(e.detail.uid, e.detail.ip);
 });
 
 // Init

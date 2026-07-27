@@ -10,7 +10,6 @@ const filterLevel = /** @type {HTMLSelectElement} */ (document.getElementById('f
 const filterCategory = /** @type {HTMLSelectElement} */ (document.getElementById('filterCategory'));
 const seenLogs = new Set();
 
-// eslint-disable-next-line no-unused-vars -- dipanggil lewat inline onclick di template literal baris ~337, bukan referensi langsung
 export function navigateToLiveTail(cat, level) {
     /** @type {HTMLElement} */
     (document.querySelector('.tab-btn[data-tab="live"]')).click();
