@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-247
+latest_patch_id: PATCH-2026-07-27-254
 
-total_entries: 247
+total_entries: 254
 
 ---
 
@@ -21,6 +21,301 @@ total_entries: 247
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-254
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:42
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Refactor
+**Area:** Backend
+**Priority:** Medium
+**Title:** Extract play_track() jadi orkestrasi tipis + 3 method privat (loudness/routing, start-state, finaliz
+
+**Reason:** play_track() 86 baris dalam orkestrator 468 baris/28 method -- pola delegasi ops-class SUDAH BENAR di tempat lain tapi play_track() sendiri belum ikut pola yang sama (proposal_god_file_splitting.md Temuan L)
+
+**Root Cause:**
+TrackLoader menutup bagian load+resolve, tapi sisa play_track() (mpv.play, loudness, output routing, pause/seek, finalize state+event, trigger poll_duration) belum ikut pola delegasi yang sudah diterapkan di 6 ops-class lain
+
+**Solution:**
+Extract 3 private method BARU di dalam PlaybackController sendiri (BUKAN class/file terpisah, supaya tidak mengubah tanggung jawab TrackLoader) -- play_track() jadi urutan pemanggilan ke load_track + 3 method baru, urutan eksekusi TIDAK berubah
+
+**Changed Files:**
+- `engine/playback/controller.py`
+
+**Changed Symbols:**
+- `_apply_loudness_and_routing()`
+- `_apply_start_playback_state()`
+- `_finalize_play_track_success()`
+
+**Tests:** Characterization test tersedia SEBELUM refactor (tests/unit/engine/playback/test_controller.py::TestPlayTrack, 15 test + cek tambahan branch loudness/crossfade di L.0); diff status PASS/FAIL identik sebelum-sesudah tiap task L.1/L.2; full pytest -q dan npx vitest run PASS setelah L.3
+
+**Breaking Change:** No
+
+**Regression Risk:** High
+
+**Related Patch:** PATCH-2026-07-26-240
+
+**Status:** Merged
+
+**Notes:**
+Otorisasi eksplisit dari pemilik project (User) didapat pada 2026-07-27
+
+---
+
+## PATCH-2026-07-27-253
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:35
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Low
+**Title:** Keputusan Componentize HTML (Temuan M ditutup)
+
+**Reason:** Berdasarkan hasil audit M.1 dan M.2, markup natural mendominasi dan tidak ada blok berulang signifikan. Componentize menggunakan <template> tag tidak diperlukan.
+
+**Root Cause:**
+Proposal §4.M langkah 3-4 mensyaratkan keputusan berdasarkan audit
+
+**Solution:**
+Memutuskan tidak menggunakan <template> dan menutup Temuan M karena ukuran dan repitisi wajar untuk aplikasi SPA.
+
+**Changed Files:**
+- `docs/architecture/audit_html_markup_vs_script.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** Manual review hasil audit
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-27-251
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-252
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:34
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Low
+**Title:** Audit formal rasio markup vs script admin-logs.html (pasca Temuan I)
+
+**Reason:** Temuan M proposal_god_file_splitting.md -- audit ini sengaja menunggu Temuan I (fase 2) selesai supaya hasil pasca-split .js lebih akurat
+
+**Root Cause:**
+Belum pernah ada audit ukuran markup-natural vs blok script untuk admin-logs.html
+
+**Solution:**
+Hitung baris markup vs script setelah fase 2 selesai, dokumentasikan bersama audit M.1
+
+**Changed Files:**
+- `docs/architecture/audit_html_markup_vs_script.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** Manual cross-check total baris via python splitlines()
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-26-240
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-251
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:34
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Docs
+**Area:** Frontend
+**Priority:** Low
+**Title:** Audit formal rasio markup vs script index.html dan client.html
+
+**Reason:** Temuan M (proposal_god_file_splitting.md) meminta audit ukuran markup-natural vs script/template SEBELUM memutuskan componentize atau tidak -- RFC #1 sengaja menunda audit ini
+
+**Root Cause:**
+Belum pernah ada audit ukuran markup-natural vs blok script/template untuk 3 halaman ini
+
+**Solution:**
+Hitung baris markup vs script/template per halaman + daftar class/id berulang >=4x beserta konteksnya, didokumentasikan supaya keputusan componentize bisa dirujuk
+
+**Changed Files:**
+- `docs/architecture/audit_html_markup_vs_script.md`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** Manual cross-check total baris via python splitlines() -> cocok dengan wc -l (898, 290)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-26-240
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-250
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:31
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Split playback-sync.js jadi 3 modul by concern (audio-pool, media-session, sync inti)
+
+**Reason:** playback-sync.js 499 baris mencampur 5 concern audio (pool init, tap-to-play banner, volume fade, unlock browser audio, sync inti, MediaSession API) yang kebetulan semuanya menyentuh elemen <audio> (proposal_god_file_splitting.md Temuan J)
+
+**Root Cause:**
+'Audio playback sync' terasa seperti 1 domain padahal 3 concern berbeda: browser API pool/unlock, sinkronisasi status server-audio, dan MediaSession OS-level yang sepenuhnya independen
+
+**Solution:**
+Split 3 modul + re-export SEMUA 11 nama publik (bukan 4 seperti klaim awal proposal, diverifikasi ulang lewat grep terhadap 17 file caller nyata) dari playback-sync.js supaya 0 caller eksternal perlu diubah pathnya
+
+**Changed Files:**
+- `web/static/shared/js/audio/playback-sync.js`
+- `web/static/shared/js/audio/audio-pool.js`
+- `web/static/shared/js/audio/media-session.js`
+
+**Changed Symbols:**
+- `analyser`
+- `dataArray`
+- `_initAnalyser() -- dipindah ke audio-pool.js (koreksi terhadap desain proposal asli`
+- `lihat 00_INDEX.yaml)`
+
+**Tests:** npx vitest run -> 691/691 pass tetap terjaga (baseline PATCH-2026-07-26-240); npx vitest run tests/frontend/audio/playback-sync.test.js -> pass; depcruise -> cycle audio-pool<->playback-sync teridentifikasi dan dianggap aman (dipakai di dalam function body, bukan top-level module evaluation)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-26-240
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-249
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:24
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Refactor
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Split admin-logs.js jadi 4 modul domain (log-tail, dashboard-stats, ws-transport, chat-panel)
+
+**Reason:** admin-logs.js 878 baris mencampur 4 domain tak-terkait (log tailing, dashboard stats, WS transport, chat admin) -- docstring header sudah basi dibanding isi file (proposal_god_file_splitting.md Temuan I)
+
+**Root Cause:**
+Fitur ditambah berkali-kali (dashboard stats, lalu chat admin) ke file yang sama karena sudah 'ada di situ', tanpa sinyal otomatis yang menandai titik file ini sudah bukan lagi 'log tailing' murni
+
+**Solution:**
+Split by domain jadi 4 modul + 1 thin orchestrator. Koreksi 2 temuan tambahan di luar proposal asli: getCategoryColor/CATEGORY_COLORS pindah ke dashboard-stats.js (bukan log-tail.js), dan dispatch logic WS dipindah ke orchestrator (bukan hardcode di ws-transport) supaya modul domain benar-benar tidak saling import satu sama lain -- lihat koreksi_terhadap_klaim_proposal di 02_fase2_admin_logs_split.yaml
+
+**Changed Files:**
+- `web/static/pages/admin-logs/admin-logs.js`
+- `web/static/pages/admin-logs/log-tail.js`
+- `web/static/pages/admin-logs/dashboard-stats.js`
+- `web/static/pages/admin-logs/admin-ws-transport.js`
+- `web/static/pages/admin-logs/admin-chat-panel.js`
+
+**Changed Symbols:**
+- `connectWs()`
+- `sendOverWs()`
+- `handleWsMessage()`
+
+**Tests:** node --check semua 5 file -> OK; eslint semua 5 file -> 0 error; depcruise web/static/pages/admin-logs -> tidak ada cycle baru antar 4 modul domain; manual smoke test browser (log tail, matrix navigasi, chat panel) -> berfungsi (TIDAK ADA test otomatis existing, 0% coverage sebelum patch ini, dicatat sebagai kandidat PATCH lanjutan sama seperti catatan di PATCH-2026-07-26-240)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** PATCH-2026-07-27-248
+
+**Status:** Merged
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-27-248
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 10:18
+**Git Branch:** develop
+**Git Commit:** ecfb031
+**Type:** Refactor
+**Area:** Backend
+**Priority:** Low
+**Title:** Extract DiscoverRepository.search_tracks() jadi 3 unit lebih kecil
+
+**Reason:** search_tracks() 140 dari 446 baris file berisi 2 nested async function (_fetch_tracks, _fetch_songs) dan 1 nested _sort_key -- pola method-di-dalam-method adalah sinyal method itu sudah pantas jadi unit terpisah (proposal_god_file_splitting.md Temuan K)
+
+**Root Cause:**
+1 method menangani 2 search-path (tracks vs songs) sekaligus sorting gabungannya dalam 1 scope
+
+**Solution:**
+Extract 2 nested function jadi method privat (_search_tracks_only, _search_songs_only) dan 1 nested function jadi staticmethod (_search_sort_key), signature publik search_tracks() tidak berubah
+
+**Changed Files:**
+- `persistence/discover_repo.py`
+
+**Changed Symbols:**
+- `_search_tracks_only()`
+- `_search_songs_only()`
+- `_search_sort_key()`
+
+**Tests:** pytest tests/unit/persistence/test_discover_repo_search.py tests/unit/persistence/test_discover_repo.py -> 31 passed; pytest tests/unit/server/handlers/test_ws_discovery.py -> pass (caller tidak disentuh)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-27-247
+
+**Status:** Merged
+
+**Notes:**
+-
 
 ---
 

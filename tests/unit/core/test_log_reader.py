@@ -61,7 +61,10 @@ def test_tail_filters(monkeypatch):
 
 
 def test_stats(monkeypatch):
-    now = datetime.datetime.now()
+    try:
+        now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    except AttributeError:
+        now = datetime.datetime.utcnow()
     t1 = now - datetime.timedelta(minutes=10)
     t2 = now - datetime.timedelta(minutes=5)
     t3 = now - datetime.timedelta(hours=2)  # Outside 1 hour window

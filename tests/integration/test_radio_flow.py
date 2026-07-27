@@ -79,7 +79,7 @@ async def test_radio_flow(integration_app):
     # Patch YtDlpClient.get_stream_url sehingga semua resolve langsung berhasil
     # tanpa network round-trip -- radio engine tetap menjalankan alur penuh.
     with patch(
-        "adapters.ytdlp.client.YtDlpClient.get_stream_url",
+        "adapters.ytdlp.YtDlpClient.get_stream_url",
         new_callable=AsyncMock,
         return_value=_FAKE_STREAM_URL,
     ):
