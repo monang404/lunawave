@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { store } from "../../../web/static/shared/js/store.js";
 
 vi.mock("../../../web/static/shared/js/audio/playback-sync.js", () => ({
@@ -35,7 +35,9 @@ beforeEach(async () => {
   ({ wsSend } = await import("../../../web/static/shared/js/ws.js"));
 });
 
-await import("../../../web/static/shared/js/platform/touch.js");
+beforeAll(async () => {
+  await import("../../../web/static/shared/js/platform/touch.js");
+});
 
 describe("platform/touch.js", () => {
   it("unlocks browser audio on touchstart", () => {

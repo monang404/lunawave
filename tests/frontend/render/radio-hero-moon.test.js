@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("../../../web/static/shared/js/render/player.js", () => ({
   getInterpolatedPosition: vi.fn(() => 0),
@@ -89,7 +89,6 @@ describe("render/radio-hero-moon.js", () => {
       const { setRadioHeroAnimState, runNextFrame } = await setupModule();
       const litCool = document.getElementById("moonLitCool");
       setRadioHeroAnimState(true);
-      const before = litCool.getAttribute("d");
       runNextFrame(1000);
       const after = litCool.getAttribute("d");
       // A frame ran and re-rendered (path recomputed; may legitimately be

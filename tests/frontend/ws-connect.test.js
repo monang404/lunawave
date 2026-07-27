@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("../../web/static/shared/js/audio/playback-sync.js", () => ({
   _resumeAndPlay: vi.fn(),
@@ -227,7 +227,7 @@ describe("ws.js wsConnect", () => {
 
   describe("onmessage", () => {
     it("parses JSON and routes it through handleServerMessage", async () => {
-      const { wsConnect, store } = await setupModule();
+      const { wsConnect } = await setupModule();
       wsConnect();
       const socket = FakeWebSocket.instances[0];
       socket.onmessage({ data: JSON.stringify({ type: "log", data: "hi" }) });

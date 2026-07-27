@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("../../../web/static/shared/js/bus.js", () => ({ emit: vi.fn() }));
 vi.mock("../../../web/static/shared/js/events/settings-events.js", () => ({

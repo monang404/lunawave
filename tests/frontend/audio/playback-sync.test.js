@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("../../../web/static/shared/js/audio/visualizer.js", () => ({
   initVisualizer: vi.fn(),
@@ -214,7 +214,7 @@ describe("audio/playback-sync.js", () => {
 
   describe("unlockBrowserAudio", () => {
     it("falls back to marking unlocked and syncing when there is no AudioContext available", async () => {
-      const { unlockBrowserAudio, store, wsSend } = await setupModule();
+      const { unlockBrowserAudio, store } = await setupModule();
       delete globalThis.AudioContext;
       delete globalThis.webkitAudioContext;
       store.userRole = "client";

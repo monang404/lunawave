@@ -29,6 +29,7 @@ export let dataArray = null;
 // disambung balik ke ctx.destination, karena createMediaElementSource
 // memutus rute audio->speaker default; tanpa .connect(ctx.destination) audio
 // akan bisu total.
+// eslint-disable-next-line no-unused-vars
 function _initAnalyser(ctx) {
     if (analyser) return; // sudah pernah di-init, jangan connect dua kali
     try {
