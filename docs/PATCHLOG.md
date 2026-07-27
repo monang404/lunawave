@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-255
+latest_patch_id: PATCH-2026-07-27-256
 
-total_entries: 255
+total_entries: 256
 
 ---
 
@@ -21,6 +21,63 @@ total_entries: 255
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-256
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 05:18
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** Fullstack
+**Priority:** Medium
+**Title:** Surface unavailable_reason toast, play_count/loudness, dan cancel_download command
+
+**Reason:** Audit lanjutan menemukan 4 kasus backend sudah menghitung/menyimpan/mengembalikan data tapi tidak pernah sampai ke UI/tidak ada jalur command dari UI, di luar temuan favorite/playlist sebelumnya.
+
+**Root Cause:**
+(1) unavailable_reason: audio_stream_handler.py sudah balikin HTTPGone(reason) tapi jalur browser-audio memuat via <audio src=...> native, yang tidak pernah expose response body ke JS -- audio.onerror cuma dapat MediaError generik, jadi console.warn tidak pernah lihat reason aslinya. (2) play_count/last_played dan loudness_lufs/true_peak_dbtp ada di TrackInfo dan dihitung (track_loader.py increment_play_count, ffprobe EBU R128) tapi track_to_dict() di serializers.py tidak pernah menyertakannya, jadi tidak ada satupun render function yang bisa menampilkannya. (3) ytdlp/downloader.py sudah punya cancel_download() (dipakai cleanup internal) tapi ws_download.py cuma expose action 'download' dan 'delete_download' -- tidak ada CMD_CANCEL_DOWNLOAD maupun jalur UI.
+
+**Solution:**
+(1) Tambah _notify_track_unavailable() di audio_stream_handler.py yang publish LogMessageEvent (reuse pipeline LogMessageEvent->broadcast_log->WS 'log'->toast:log yang sudah dipakai failure_ops.py di jalur mpv), dipanggil dari _mark_video_unavailable() dan dari early-return branch saat video sudah pernah ditandai unavailable sebelumnya. (2) Tambah play_count/last_played/loudness_lufs/true_peak_dbtp ke track_to_dict(), render sebagai satu baris '#np-stats' di now-playing.js (format 'Nx diputar - terakhir X lalu - LUFS'), tambah formatRelativeTime() di format.js. (3) Tambah CMD_CANCEL_DOWNLOAD di core/commands.py, DownloadManager._on_cancel_download() yang panggil ytdlp.cancel_download() (no-op+toast kalau tidak ada download jalan), bedakan pesan 'Download dibatalkan' vs 'Download gagal' di _do_download() except-block berdasar exception DownloadCancelled dari _check_cancel_hook, routing action 'cancel_download' di ws_download.py+websocket.py, tombol Batalkan baru di settings sheet.
+
+**Changed Files:**
+- `server/handlers/audio_stream_handler.py`
+- `server/serializers.py`
+- `server/handlers/ws_download.py`
+- `server/handlers/websocket.py`
+- `core/commands.py`
+- `engine/download_manager.py`
+- `web/static/shared/js/render/now-playing.js`
+- `web/static/shared/js/utils/format.js`
+- `web/static/shared/js/dom.js`
+- `web/static/shared/js/events/settings-events.js`
+- `web/static/pages/app/index.html`
+- `tests/unit/server/handlers/test_audio_stream_handler.py`
+- `tests/unit/server/handlers/test_ws_download.py`
+- `tests/unit/engine/test_download_manager.py`
+
+**Changed Symbols:**
+- `_notify_track_unavailable()`
+- `CMD_CANCEL_DOWNLOAD`
+- `DownloadManager._on_cancel_download()`
+- `formatRelativeTime()`
+- `renderNowPlayingStats()`
+
+**Tests:** pytest tests/unit --ignore=tests/unit/launcher/gui -> 815 passed (naik dari 810, 5 test baru: 2 toast-notification di test_audio_stream_handler.py, 1 routing di test_ws_download.py, 2 cancel-path di test_download_manager.py); npx vitest run -> 691 passed, 49 file (tidak berubah, perubahan render now-playing.js/settings-events.js sudah tercakup test existing)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-27-255
+
+**Status:** Merged
+
+**Notes:**
+Ranking eksekusi: (1) unavailable_reason toast, (2) play_count, (3) loudness badge -- ketiganya digabung 1 titik render karena sama-sama landing di now-playing card, (4) cancel_download. Ditemukan & dieksekusi dalam sesi audit yang sama dengan PATCH-255 (bukan RFC terjadwal), dicatat retroaktif sesuai pola entry Unclassified/audit lain di log ini.
 
 ---
 
