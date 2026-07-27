@@ -229,6 +229,11 @@ class PlaybackController:
     async def _on_track_progress(self, event: TrackProgressEvent):
         self.state.position = event.position
 
+        if self.state.status == PlayerStatus.IDLE and self.state.current_track:
+            if event.position > 0:
+                logger.info("self_healing_idle_to_playing", category=LC_PLAYBACK)
+                self.state.status = PlayerStatus.PLAYING
+
         if (
             getattr(self.state, "crossfade_enabled", False)
             and getattr(self.state, "audio_output", AudioOutput.DEVICE) != AudioOutput.BROWSER

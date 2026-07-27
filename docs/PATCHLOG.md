@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-256
+latest_patch_id: PATCH-2026-07-27-257
 
-total_entries: 256
+total_entries: 257
 
 ---
 
@@ -21,6 +21,48 @@ total_entries: 256
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-257
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 14:43
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend
+**Priority:** High
+**Title:** Fix race condition di track_ended_ops yang menyebabkan playback stuck di IDLE
+
+**Reason:** Pemutaran musik sering berhenti tiba-tiba di perangkat mobile. Event 'stop' lama dari mpv datang terlambat akibat latensi IPC atau network throttling, melampaui grace window 1 detik, menimpa status PLAYING menjadi IDLE.
+
+**Root Cause:**
+Heuristik berbasis waktu (elapsed <= 1.0s) gagal melindungi dari event 'stop' basi jika durasi resolve yt-dlp memakan waktu > 1 detik. Akibatnya status dipaksa IDLE dan UI akan menampilkan berhenti padahal mpv tetap melanjutkan pemutaran, karena tidak ada cabang pemulihan dari IDLE ke PLAYING.
+
+**Solution:**
+(1) Perkecil rentang window rentan dengan mengatur `_loading = True` dan `_last_play_start_ts` di awal `play_track()` sebelum proses `load_track()` yang network-bound. Pastikan `_loading = False` dijalankan pada block except. (2) Tambahkan mekanisme self-healing di `_on_track_progress`: jika status saat ini IDLE tapi posisi bergerak maju (> 0) dan ada track berjalan, pulihkan status ke PLAYING.
+
+**Changed Files:**
+- `engine/playback/play_ops.py`
+- `engine/playback/controller.py`
+
+**Changed Symbols:**
+- `PlayOps.play_track()`
+- `PlaybackController._on_track_progress()`
+
+**Tests:** Manual smoke test
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Ditemukan setelah analisis terhadap log Termux Android yang menunjukkan keterlambatan IPC socket.
 
 ---
 
