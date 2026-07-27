@@ -25,6 +25,7 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+from core.events import QueueUpdatedEvent
 from core.state import PlaybackMode, TrackInfo
 from core.task_utils import safe_create_task
 
@@ -45,6 +46,10 @@ class QueueController:
         c = self.controller
         track = await c._queue_ops.queue_select(index)
         if track:
+            if c.state.playback_mode == PlaybackMode.RADIO:
+                await c.radio_mode.on_deactivated()
+                c.state.playback_mode = PlaybackMode.QUEUE
+                await c.bus.publish(QueueUpdatedEvent())
             await c.play_track(track)
 
     async def on_queue_remove(self, index: int):

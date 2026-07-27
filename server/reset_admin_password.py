@@ -1,6 +1,15 @@
 """
-CLI untuk reset password admin.
-Dijalankan via: python -m server.reset_admin_password
+Module: server.reset_admin_password
+
+Purpose:
+    CLI untuk reset password admin.
+    Dijalankan via: python -m server.reset_admin_password
+
+Subscribes to:
+    None
+
+Publishes:
+    None
 """
 
 import asyncio

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-272
+latest_patch_id: PATCH-2026-07-27-283
 
-total_entries: 272
+total_entries: 283
 
 ---
 
@@ -21,6 +21,459 @@ total_entries: 272
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-283
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:38
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Docs
+**Area:** web/static/shared/js/render
+**Priority:** Low
+**Title:** Perbarui komentar header stale di radio-hero-moon.js
+
+**Reason:** Komentar header menyatakan file 'belum di-load dari index.html manapun sampai sesi 4' -- padahal sudah di-import di web/static/pages/app/main.js, komentar jadi menyesatkan pembaca yang mengira modul ini masih standalone/belum aktif.
+
+**Root Cause:**
+Komentar ditulis di sesi 3 sebagai catatan status sementara, tidak ikut diperbarui saat sesi 4 (yang menyelesaikan gate governance-locked & melakukan import) selesai.
+
+**Solution:**
+Perbarui kalimat header agar mencerminkan status final (sudah di-load via import di main.js), tanpa mengubah komentar lain yang masih akurat.
+
+**Changed Files:**
+- `web/static/shared/js/render/radio-hero-moon.js`
+
+**Changed Symbols:**
+- `-`
+
+**Tests:** npx vitest run tests/frontend/render/radio-hero-moon.test.js
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Perubahan murni komentar. Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-282
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:38
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Docs
+**Area:** server/handlers
+**Priority:** Low
+**Title:** Hapus komentar stale 'unreachable' di ws_discovery.py::get_artist_detail
+
+**Reason:** Komentar menyatakan branch get_artist_detail unreachable sampai ditambahkan ke DISCOVERY_CMDS di websocket.py -- padahal sudah terdaftar di sana, komentar jadi menyesatkan pembaca kode (termasuk AI agent yang membaca konteks sebelum mengerjakan task lain di file ini).
+
+**Root Cause:**
+websocket.py (locked file) diupdate untuk menambahkan get_artist_detail ke DISCOVERY_CMDS di patch lain, tapi komentar di ws_discovery.py yang merujuk ke kondisi 'sebelum' itu tidak ikut dibersihkan.
+
+**Solution:**
+Hapus/perbarui komentar NOTE agar mencerminkan kondisi kode saat ini (branch sudah reachable).
+
+**Changed Files:**
+- `server/handlers/ws_discovery.py`
+
+**Changed Symbols:**
+- `-`
+
+**Tests:** pytest tests/unit/server/handlers/test_ws_discovery.py -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Perubahan murni komentar, tidak ada perubahan logic. Tidak menyentuh websocket.py (locked).
+
+---
+
+## PATCH-2026-07-27-281
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:25
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** web/static/shared/js/render
+**Priority:** Low
+**Title:** shortestDelta(): idiom circular-distance standar, tie-break konsisten
+
+**Reason:** Formula ad-hoc ((d % 1) + 1.5) % 1 - 0.5 salah arah tepat di titik to-from == 0.5 -- dibuktikan lewat test brute-force, selalu resolve ke -0.5 padahal seharusnya bisa konsisten ke arah manapun yang dipilih sebagai konvensi (dampak kosmetik: animasi tween bulan bisa berputar 180 derajat berlawanan arah di edge-case yang sangat jarang terjadi persis).
+
+**Root Cause:**
+Formula custom untuk normalize circular delta tidak mengikuti idiom standar (normalize ke [0,1) lalu ambil arah pendek), menghasilkan tie-break yang tidak disengaja/tidak konsisten di titik 0.5 persis.
+
+**Solution:**
+Ganti dengan idiom standar (modulo normalize + kurangi 1 kalau > 0.5), tie di titik 0.5 sekarang selalu resolve ke +0.5.
+
+**Changed Files:**
+- `web/static/shared/js/render/radio-hero-moon.js`
+- `tests/frontend/render/radio-hero-moon.test.js`
+
+**Changed Symbols:**
+- `shortestDelta()`
+
+**Tests:** npx vitest run tests/frontend/render/radio-hero-moon.test.js
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked. Perubahan kosmetik, dampak visual sangat jarang terjadi.
+
+---
+
+## PATCH-2026-07-27-280
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:23
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** server/handlers
+**Priority:** Low
+**Title:** os.walk() cache: prune symlinked directories dari traversal
+
+**Reason:** _get_cache_size_sync() dan _clear_cache_sync() mendeklarasikan dirs dari os.walk() tapi tidak pernah memakainya untuk pruning -- symlink direktori (kalau pernah masuk ke DOWNLOAD_DIR, sengaja atau tidak) bisa membuat penghitungan ukuran cache ikut menghitung, atau clear_cache ikut menghapus, file di luar DOWNLOAD_DIR yang sebenarnya.
+
+**Root Cause:**
+Signature for root, dirs, files in os.walk(...) menyertakan dirs mengikuti idiom standar Python untuk pruning, tapi langkah pruning-nya sendiri tidak pernah ditulis -- variabel dideklarasikan tanpa efek.
+
+**Solution:**
+Tambah dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))] di awal tiap loop os.walk(), mencegah traversal masuk ke symlinked subdirectory.
+
+**Changed Files:**
+- `server/handlers/ws_cache.py`
+- `tests/unit/server/handlers/test_ws_cache.py`
+
+**Changed Symbols:**
+- `_get_cache_size_sync()`
+- `_clear_cache_sync()`
+
+**Tests:** pytest tests/unit/server/handlers/test_ws_cache.py -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-279
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:14
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** server/handlers, adapters/ytdlp
+**Priority:** Low
+**Title:** raise di dalam except pakai 'from None' eksplisit (5 lokasi)
+
+**Reason:** 4 lokasi di ws_schemas.py dan 1 di resolver.py melempar exception baru di dalam blok except tanpa 'from err'/'from None' -- traceback Python default tetap menampilkan exception asli sebagai 'During handling of the above exception', tapi tanpa penanda eksplisit ini rawan disalahsangka sebagai chain yang hilang saat debugging.
+
+**Root Cause:**
+Pola raise NewException(...) ditulis tanpa mempertimbangkan PEP 409 exception chaining eksplisit -- inkonsisten dengan bagian lain resolver.py yang sudah rapi memakai 'from e'/'from None'.
+
+**Solution:**
+Kelima lokasi ditambah 'from None' (memutus chain dengan sengaja karena exception baru sudah membawa pesan yang lebih jelas dari exception asli TypeError/ValueError/TimeoutError).
+
+**Changed Files:**
+- `server/handlers/ws_schemas.py`
+- `adapters/ytdlp/resolver.py`
+- `tests/unit/server/handlers/test_ws_schemas.py`
+- `tests/unit/adapters/ytdlp/test_resolver.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/handlers/test_ws_schemas.py -q; pytest tests/unit/adapters/ytdlp/test_resolver.py -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Audit menyebut '4 lokasi' tapi verifikasi kode menemukan 5 (lihat decisions.d6_raise_from_scope). Tidak menyentuh file locked.
+
+---
+
+## PATCH-2026-07-27-278
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:11
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Security
+**Area:** server/handlers
+**Priority:** Medium
+**Title:** Audio stream CORS: hapus reflektif Origin saat ALLOWED_STREAM_ORIGIN kosong
+
+**Reason:** Saat ALLOWED_STREAM_ORIGIN tidak dikonfigurasi, header Access-Control-Allow-Origin diisi mentah dari header Origin request apa pun -- efektif mengizinkan origin manapun membaca response audio stream lewat fetch cross-origin.
+
+**Root Cause:**
+Pola ALLOWED_STREAM_ORIGIN or request.headers.get("Origin", "") dimaksudkan sebagai fallback ramah-development, tapi efeknya sama dengan wildcard CORS reflektif yang dikenal rawan untuk endpoint yang menyajikan konten sensitif per-user.
+
+**Solution:**
+Kedua titik CORS di audio_stream_handler.py sekarang HANYA mengisi header kalau ALLOWED_STREAM_ORIGIN dikonfigurasi eksplisit -- tanpa fallback ke Origin request. Tanpa konfigurasi, endpoint tetap bisa diakses same-origin (browser tidak butuh header CORS untuk fetch same-origin).
+
+**Changed Files:**
+- `server/handlers/audio_stream_handler.py`
+- `tests/unit/server/handlers/test_audio_stream_cors.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** pytest tests/unit/server/handlers/test_audio_stream_cors.py -q; pytest tests/unit/server/handlers/test_audio_stream_handler.py -q
+
+**Breaking Change:** Yes
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Breaking change untuk deployment yang mengandalkan perilaku reflektif lama tanpa set LUNAWAVE_ALLOWED_ORIGIN eksplisit -- catat di README/SECURITY.md kalau deployment cross-origin butuh env var itu diisi.
+
+---
+
+## PATCH-2026-07-27-277
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:04
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** engine/radio
+**Priority:** Medium
+**Title:** RADIO_SEARCH_SEM disambungkan di prefetcher untuk membatasi concurrency resolve
+
+**Reason:** Semaphore RADIO_SEARCH_SEM dideklarasikan dengan komentar 'Bug #5 fix: naikkan semaphore dari 2 -> 4 agar search lebih paralel' tapi tidak pernah di-acquire() di manapun -- dead code yang tidak memberi proteksi apa pun terhadap lonjakan proses yt-dlp paralel saat prefetch banyak track sekaligus.
+
+**Root Cause:**
+Kemungkinan titik pemanggilan semaphore terhapus/berpindah saat refactor prefetcher tanpa semaphore-nya ikut disambungkan ulang -- protective mechanism yang diklaim aktif tapi tidak tersambung.
+
+**Solution:**
+_do_prefetch()::_resolve_one() sekarang membungkus pemanggilan resolver.resolve() dengan async with RADIO_SEARCH_SEM, membatasi maksimal 4 resolve paralel sesuai nilai semaphore. Timeout asyncio.wait_for(..., timeout=25.0) di _prefetch_next tidak diubah.
+
+**Changed Files:**
+- `engine/radio/prefetcher.py`
+- `tests/unit/engine/radio/test_prefetcher.py`
+
+**Changed Symbols:**
+- `RadioPrefetcher._do_prefetch()`
+
+**Tests:** pytest tests/unit/engine/radio/test_prefetcher.py -q; pytest tests/unit/engine/radio -q; pytest tests/unit -q --ignore=tests/unit/launcher/gui
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked. Temuan audit-lunawave-temuan.md #4. Konfirmasi: asyncio.gather() di _do_prefetch adalah satu-satunya gather() network-bound di engine/radio/, sesuai decisions.d3_radio_search_sem.
+
+---
+
+## PATCH-2026-07-27-276
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 12:01
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** engine/radio
+**Priority:** Medium
+**Title:** MAX_TRACK_DURATION disambungkan sebagai filter durasi radio
+
+**Reason:** Konstanta MAX_TRACK_DURATION (cap 10 menit untuk track radio) dideklarasikan di radio_config.py tapi tidak pernah dipakai di filter manapun -- track sangat panjang (mis. mix/live set berjam-jam) bisa lolos masuk radio queue tanpa batas.
+
+**Root Cause:**
+Konstanta ditambahkan (kemungkinan bersamaan dengan patch lain terkait radio) tapi langkah menyambungkannya ke TrackFilter tidak pernah dieksekusi -- dead protective code.
+
+**Solution:**
+TrackFilter.filter_tracks() sekarang membuang candidate dengan duration > MAX_TRACK_DURATION (600 detik), kecuali duration belum diketahui (<=0). Ditambahkan sebagai filter 1c, di antara filter 1b (dedup title) dan filter 2 (dedup batch), tanpa renumber filter existing.
+
+**Changed Files:**
+- `engine/radio/track_filter.py`
+- `tests/unit/engine/radio/test_track_filter.py`
+
+**Changed Symbols:**
+- `TrackFilter.filter_tracks()`
+
+**Tests:** pytest tests/unit/engine/radio/test_track_filter.py -q; pytest tests/unit/engine/radio -q
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked. Temuan audit-lunawave-temuan.md #3.
+
+---
+
+## PATCH-2026-07-27-275
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 11:58
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** server
+**Priority:** Low
+**Title:** Lengkapi module docstring standar di server/reset_admin_password.py
+
+**Reason:** verify_docs (automation/doctor.py) melaporkan WARN: 114/115 file punya module docstring standar -- reset_admin_password.py hilang field Purpose/Subscribes to/Publishes.
+
+**Root Cause:**
+Docstring lama hanya prosa bebas (deskripsi + cara jalan), tidak mengikuti format terstruktur Purpose/Subscribes to/Publishes yang dipakai modul lain di project.
+
+**Solution:**
+Ganti docstring modul jadi format standar: Module, Purpose (isi sama seperti sebelumnya), Subscribes to: None, Publishes: None (script CLI standalone, tidak pub/sub event).
+
+**Changed Files:**
+- `server/reset_admin_password.py`
+
+**Changed Symbols:**
+- `(module docstring)`
+
+**Tests:** python automation/verify_docs.py --show-docstring; python automation/doctor.py
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Ditemukan sebagai warning residual saat eksekusi 02_pending_toggle_queue_select.yaml, tidak terkait temuan audit manapun -- housekeeping dokumentasi.
+
+---
+
+## PATCH-2026-07-27-274
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 11:57
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** web/static/shared/js/ws
+**Priority:** Medium
+**Title:** wsSend clear _pendingToggleTarget juga untuk action queue_select
+
+**Reason:** FIX-PAUSE-RACE-01 sudah meng-clear _pendingToggleTarget untuk next/prev/play_track (semua command yang mengganti track sepenuhnya) tapi lupa memasukkan queue_select -- command yang sama-sama mengganti track lewat jalur berbeda (klik track di UI antrean).
+
+**Root Cause:**
+Daftar action di kondisi FIX-PAUSE-RACE-01 ditulis berdasarkan caller yang teridentifikasi saat itu (tombol next/prev, keyboard shortcut, klik track di search/Media Session) -- klik track di panel Queue memanggil action queue_select yang terlewat dari daftar.
+
+**Solution:**
+Tambahkan "queue_select" ke kondisi action yang meng-clear _pendingToggleTarget di wsSend().
+
+**Changed Files:**
+- `web/static/shared/js/ws/transport.js`
+- `tests/frontend/ws/transport.test.js`
+
+**Changed Symbols:**
+- `wsSend()`
+
+**Tests:** npx vitest run tests/frontend/ws/transport.test.js
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Tidak menyentuh file locked. Temuan audit-lunawave-temuan.md #2.
+
+---
+
+## PATCH-2026-07-27-273
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 11:45
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** engine/playback
+**Priority:** High
+**Title:** queue_select menonaktifkan Radio Mode, konsisten dengan _on_cmd_play_track
+
+**Reason:** Memilih track manual dari antrean saat Radio Mode aktif tidak mematikan Radio Mode (berbeda dari perilaku _on_cmd_play_track untuk command CMD_PLAY_TRACK) -- akibatnya antrean manual macet karena radio_mode.next() tetap dipanggil saat track berikutnya selesai, radio nyalip balik walau user sudah pilih lagu lain.
+
+**Root Cause:**
+Saat QueueController diekstrak dari controller.py (roadmap T2.3.1), langkah deactivate-radio-mode yang ada di _on_cmd_play_track tidak ikut disalin ke on_queue_select -- logic drift akibat refactor, bukan desain yang disengaja.
+
+**Solution:**
+on_queue_select() sekarang menjalankan urutan yang sama dengan _on_cmd_play_track: deteksi playback_mode == RADIO, panggil radio_mode.on_deactivated(), set playback_mode = QUEUE, publish QueueUpdatedEvent(), SEBELUM play_track().
+
+**Changed Files:**
+- `engine/playback/queue_controller.py`
+- `tests/unit/engine/playback/test_queue_controller.py`
+- `tests/unit/engine/conftest.py`
+
+**Changed Symbols:**
+- `QueueController.on_queue_select()`
+- `FakeRadioMode.on_deactivated()`
+
+**Tests:** test_select_from_radio_mode_deactivates_radio (baru); test_select_plays_chosen_track_and_pops_preceding, test_select_out_of_range_is_noop (regresi, verifikasi manual via asyncio -- pytest tidak tersedia di sandbox eksekusi, lihat Notes)
+
+**Breaking Change:** No
+
+**Regression Risk:** Medium
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Tidak menyentuh engine/playback/controller.py (locked, sesuai decisions.d8_locked_files di 00_index_and_decisions.yaml). Verifikasi test dijalankan manual via skrip asyncio langsung (bukan pytest) karena environment eksekusi ini tidak punya pytest/structlog/aiohttp/prometheus_client/opentelemetry terpasang dan tidak ada akses jaringan untuk instalasi. Semua 3 skenario (deactivate saat RADIO, regresi saat QUEUE, out-of-range noop) PASS di verifikasi manual. Rekomendasi: jalankan 'pytest tests/unit/engine/playback/test_queue_controller.py tests/unit/engine/playback/test_controller.py -q' di environment dev penuh sebelum merge untuk konfirmasi akhir.
 
 ---
 

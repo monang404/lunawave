@@ -137,13 +137,8 @@ async def handle_discovery_command(action: str, data: dict, ytdlp, discover_repo
         )
 
     elif action == "get_artist_detail":
-        # NOTE (PATCH-2026-07-17-070): this action is implemented and ready,
-        # but it is UNREACHABLE until "get_artist_detail" is added to
-        # DISCOVERY_CMDS in server/handlers/websocket.py — that file is
-        # governance-restricted (AI_CONTEXT.md "tidak boleh disentuh tanpa
-        # izin eksplisit") and was intentionally NOT touched in this patch.
-        # See docs/PATCHLOG.md PATCH-2026-07-17-070 for the one-line change
-        # needed before this branch can ever be dispatched to.
+        # get_artist_detail terdaftar di DISCOVERY_CMDS
+        # (server/handlers/websocket.py) -- branch ini reachable.
         ds = DiscoverService(discover_repo)
         artist = data.get("artist", "").strip()
         detail = await ds.get_artist_detail(artist) if artist else None

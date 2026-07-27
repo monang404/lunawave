@@ -162,6 +162,19 @@ async def test_get_stream_url_botcheck_still_fails_after_fallback_client(mock_ex
 
 
 @pytest.mark.asyncio
+async def test_get_stream_url_timeout_raises_runtimeerror_with_broken_chain(mock_executor):
+    """Timeout di percobaan pertama harus menghasilkan RuntimeError dengan
+    chain yang sengaja diputus ('from None'), konsisten dengan raise
+    TimeoutError lain di file yang sama (mis. retry fallback client)."""
+    resolver = YtDlpResolver(mock_executor)
+    with patch.object(resolver, "_resolve_once", AsyncMock(side_effect=TimeoutError())):
+        with pytest.raises(RuntimeError) as exc_info:
+            await resolver.get_stream_url("timeout123")
+    assert "Timeout" in str(exc_info.value)
+    assert exc_info.value.__cause__ is None
+
+
+@pytest.mark.asyncio
 async def test_get_stream_url_unrecognized_error_still_raises_runtimeerror(mock_executor):
     """Perilaku LAMA untuk error yang tidak dikenali harus tetap sama persis
     (RuntimeError generik) -- klasifikasi baru tidak boleh mengubah ini."""

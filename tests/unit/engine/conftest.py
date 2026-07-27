@@ -58,6 +58,7 @@ class FakeRadioMode:
         self.next_calls = []
         self.activated = False
         self.deactivated = False
+        self.deactivated_calls = 0
         self.fetch_initial_calls: list = []
 
     async def next(self, controller) -> None:
@@ -68,6 +69,7 @@ class FakeRadioMode:
 
     async def on_deactivated(self) -> None:
         self.deactivated = True
+        self.deactivated_calls += 1
 
     def check_prefetch(self, controller, position, duration) -> None:
         pass

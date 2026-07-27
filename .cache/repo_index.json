@@ -1,135 +1,135 @@
 {
   "_meta": {
-    "generated_at": 1785145608.622264,
+    "generated_at": 1785155900.2167757,
     "source_mtimes": {
-      "config.py": 1785142519.4424558,
-      "main.py": 1785128891.0664608,
-      "start.py": 1785128891.074461,
-      "adapters/__init__.py": 1785128891.006461,
-      "adapters/mpv/__init__.py": 1785128891.006461,
-      "adapters/mpv/connection.py": 1785128891.006461,
-      "adapters/mpv/ipc.py": 1785128891.006461,
-      "adapters/mpv/observer.py": 1785128891.006461,
-      "adapters/ytdlp/__init__.py": 1785128891.006461,
-      "adapters/ytdlp/downloader.py": 1785128891.006461,
-      "adapters/ytdlp/resolver.py": 1785128891.006461,
-      "adapters/ytdlp/searcher.py": 1785128891.006461,
-      "adapters/ytdlp/ydl_options.py": 1785128891.006461,
-      "bootstrap/__init__.py": 1785128891.0144608,
-      "bootstrap/maintenance.py": 1785128891.0144608,
-      "bootstrap/power.py": 1785128891.0144608,
-      "bootstrap/services.py": 1785128891.0144608,
-      "bootstrap/startup_tasks.py": 1785128891.0144608,
-      "core/__init__.py": 1785128891.0144608,
-      "core/command_bus.py": 1785128891.0144608,
-      "core/commands.py": 1785129291.7904608,
-      "core/event_bus.py": 1785128891.0144608,
-      "core/events.py": 1785128891.0144608,
-      "core/exceptions.py": 1785128891.0144608,
-      "core/latency_window.py": 1785128891.0144608,
-      "core/log_categories.py": 1785128891.0144608,
-      "core/log_config.py": 1785128891.0144608,
-      "core/log_context.py": 1785128891.0144608,
-      "core/log_reader.py": 1785142519.4424558,
-      "core/mem_stats.py": 1785128891.0144608,
-      "core/observability.py": 1785128891.0144608,
-      "core/ports.py": 1785128891.0144608,
-      "core/security.py": 1785142519.4424558,
-      "core/server_clock.py": 1785128891.0144608,
-      "core/state.py": 1785128891.0144608,
-      "core/task_utils.py": 1785128891.0144608,
-      "data/__init__.py": 1785128891.018461,
-      "data/export_to_sqlite.py": 1785128891.026461,
-      "engine/__init__.py": 1785128891.054461,
-      "engine/command_router.py": 1785128891.054461,
-      "engine/download_manager.py": 1785142519.4544556,
-      "engine/queue_manager.py": 1785128891.058461,
-      "engine/sleep_timer.py": 1785142519.4544556,
-      "engine/volume_service.py": 1785142519.4544556,
-      "engine/loudness/analyzer.py": 1785128891.054461,
-      "engine/loudness/gain_calculator.py": 1785128891.054461,
-      "engine/loudness/service.py": 1785128891.054461,
-      "engine/playback/__init__.py": 1785128891.054461,
-      "engine/playback/circuit_breaker.py": 1785128891.054461,
-      "engine/playback/controller.py": 1785142519.4544556,
-      "engine/playback/crossfade.py": 1785142519.4544556,
-      "engine/playback/failure_ops.py": 1785128891.054461,
-      "engine/playback/mode_ops.py": 1785128891.054461,
-      "engine/playback/play_ops.py": 1785142519.4544556,
-      "engine/playback/queue_controller.py": 1785128891.054461,
-      "engine/playback/queue_ops.py": 1785128891.054461,
-      "engine/playback/settings_controller.py": 1785128891.054461,
-      "engine/playback/track_ended_ops.py": 1785128891.058461,
-      "engine/playback/track_loader.py": 1785128891.058461,
-      "engine/radio/__init__.py": 1785128891.058461,
-      "engine/radio/artist_bandit.py": 1785128891.058461,
-      "engine/radio/artist_selector.py": 1785142519.4544556,
-      "engine/radio/engine.py": 1785128891.058461,
-      "engine/radio/prefetcher.py": 1785128891.058461,
-      "engine/radio/radio_config.py": 1785128891.058461,
-      "engine/radio/track_filter.py": 1785128891.058461,
-      "engine/radio/track_interleaver.py": 1785128891.058461,
-      "launcher/__init__.py": 1785128891.058461,
-      "launcher/__main__.py": 1785142519.4584558,
-      "launcher/dep_checker.py": 1785128891.058461,
-      "launcher/network.py": 1785128891.058461,
-      "launcher/preflight.py": 1785128891.058461,
-      "launcher/process.py": 1785128891.062461,
-      "launcher/server_lifecycle.py": 1785128891.062461,
-      "launcher/updater.py": 1785128891.062461,
-      "launcher/gui/__init__.py": 1785142519.4584558,
-      "launcher/gui/app.py": 1785128891.058461,
-      "launcher/gui/auth_panel.py": 1785128891.058461,
-      "launcher/gui/log_view.py": 1785128891.058461,
-      "launcher/gui/popups.py": 1785128891.058461,
-      "launcher/gui/ui_builder.py": 1785128891.058461,
-      "persistence/__init__.py": 1785128891.0664608,
-      "persistence/admin_account_repo.py": 1785142519.4584558,
-      "persistence/artist_repo.py": 1785128891.0664608,
-      "persistence/chat_repo.py": 1785128891.0664608,
-      "persistence/db.py": 1785128891.0664608,
-      "persistence/discover_enrich.py": 1785128891.0664608,
-      "persistence/discover_repo.py": 1785128891.0664608,
-      "persistence/genre_repo.py": 1785128891.0664608,
-      "persistence/library_repo.py": 1785128891.0664608,
-      "persistence/session_repo.py": 1785142519.4584558,
-      "persistence/stream_cache.py": 1785128891.0664608,
-      "persistence/track_repo.py": 1785128891.0704608,
-      "plugins/__init__.py": 1785128891.0704608,
-      "plugins/lyrics_fetcher.py": 1785128891.0704608,
-      "plugins/lyrics_parser.py": 1785128891.0704608,
-      "plugins/lyrics_sync.py": 1785128891.0704608,
-      "plugins/notifications.py": 1785128891.0704608,
-      "plugins/sponsorblock.py": 1785128891.0704608,
-      "server/__init__.py": 1785128891.0704608,
-      "server/app.py": 1785128891.0704608,
-      "server/broadcast_service.py": 1785128891.0704608,
-      "server/connection_manager.py": 1785142519.4624557,
-      "server/serializers.py": 1785129291.8024607,
-      "server/reset_admin_password.py": 1785142519.4664557,
-      "server/handlers/__init__.py": 1785128891.0704608,
-      "server/handlers/audio_stream_handler.py": 1785142519.4624557,
-      "server/handlers/auth.py": 1785142519.4664557,
-      "server/handlers/context.py": 1785128891.0704608,
-      "server/handlers/event_listeners.py": 1785128891.0704608,
-      "server/handlers/http.py": 1785128891.0704608,
-      "server/handlers/log_dashboard.py": 1785128891.0704608,
-      "server/handlers/setup.py": 1785128891.0704608,
-      "server/handlers/websocket.py": 1785142519.4664557,
-      "server/handlers/ws_cache.py": 1785128891.0704608,
-      "server/handlers/ws_chat.py": 1785142519.4664557,
-      "server/handlers/ws_discovery.py": 1785128891.0704608,
-      "server/handlers/ws_download.py": 1785142519.4664557,
-      "server/handlers/ws_log_stream.py": 1785128891.0704608,
-      "server/handlers/ws_playback.py": 1785128891.0704608,
-      "server/handlers/ws_queue.py": 1785128891.074461,
-      "server/handlers/ws_schemas.py": 1785128891.074461,
-      "server/middleware/__init__.py": 1785142519.4664557,
-      "server/middleware/traffic.py": 1785128891.074461,
-      "services/__init__.py": 1785128891.074461,
-      "services/discover_ranking.py": 1785128891.074461,
-      "services/discover_service.py": 1785128891.074461,
-      "services/stream_prefetch.py": 1785128891.074461
+      "main.py": 1785152108.0,
+      "config.py": 1785152108.0,
+      "start.py": 1785152108.0,
+      "server/serializers.py": 1785152108.0,
+      "server/broadcast_service.py": 1785152108.0,
+      "server/__init__.py": 1785152108.0,
+      "server/reset_admin_password.py": 1785153482.0,
+      "server/connection_manager.py": 1785152108.0,
+      "server/app.py": 1785152108.0,
+      "server/middleware/traffic.py": 1785152108.0,
+      "server/middleware/__init__.py": 1785152108.0,
+      "server/handlers/audio_stream_handler.py": 1785154177.0,
+      "server/handlers/ws_queue.py": 1785152108.0,
+      "server/handlers/ws_cache.py": 1785154920.0,
+      "server/handlers/auth.py": 1785152108.0,
+      "server/handlers/http.py": 1785152108.0,
+      "server/handlers/__init__.py": 1785152108.0,
+      "server/handlers/event_listeners.py": 1785152108.0,
+      "server/handlers/ws_chat.py": 1785152108.0,
+      "server/handlers/ws_schemas.py": 1785154431.0,
+      "server/handlers/setup.py": 1785152108.0,
+      "server/handlers/ws_playback.py": 1785152108.0,
+      "server/handlers/ws_discovery.py": 1785155824.4734366,
+      "server/handlers/websocket.py": 1785152108.0,
+      "server/handlers/context.py": 1785152108.0,
+      "server/handlers/ws_log_stream.py": 1785152108.0,
+      "server/handlers/log_dashboard.py": 1785152108.0,
+      "server/handlers/ws_download.py": 1785152108.0,
+      "services/__init__.py": 1785152108.0,
+      "services/stream_prefetch.py": 1785152108.0,
+      "services/discover_ranking.py": 1785152108.0,
+      "services/discover_service.py": 1785152108.0,
+      "persistence/admin_account_repo.py": 1785152108.0,
+      "persistence/discover_repo.py": 1785152108.0,
+      "persistence/__init__.py": 1785152108.0,
+      "persistence/genre_repo.py": 1785152108.0,
+      "persistence/stream_cache.py": 1785152108.0,
+      "persistence/library_repo.py": 1785152108.0,
+      "persistence/session_repo.py": 1785152108.0,
+      "persistence/track_repo.py": 1785152108.0,
+      "persistence/artist_repo.py": 1785152108.0,
+      "persistence/chat_repo.py": 1785152108.0,
+      "persistence/db.py": 1785152108.0,
+      "persistence/discover_enrich.py": 1785152108.0,
+      "engine/download_manager.py": 1785152108.0,
+      "engine/sleep_timer.py": 1785152108.0,
+      "engine/__init__.py": 1785152108.0,
+      "engine/command_router.py": 1785152108.0,
+      "engine/volume_service.py": 1785152108.0,
+      "engine/queue_manager.py": 1785152108.0,
+      "engine/playback/track_loader.py": 1785152108.0,
+      "engine/playback/controller.py": 1785152108.0,
+      "engine/playback/settings_controller.py": 1785152108.0,
+      "engine/playback/__init__.py": 1785152108.0,
+      "engine/playback/circuit_breaker.py": 1785152108.0,
+      "engine/playback/queue_ops.py": 1785152108.0,
+      "engine/playback/mode_ops.py": 1785152108.0,
+      "engine/playback/track_ended_ops.py": 1785152108.0,
+      "engine/playback/failure_ops.py": 1785152108.0,
+      "engine/playback/play_ops.py": 1785152108.0,
+      "engine/playback/crossfade.py": 1785152108.0,
+      "engine/playback/queue_controller.py": 1785152605.0,
+      "engine/radio/track_interleaver.py": 1785152108.0,
+      "engine/radio/radio_config.py": 1785152108.0,
+      "engine/radio/artist_bandit.py": 1785152108.0,
+      "engine/radio/__init__.py": 1785152108.0,
+      "engine/radio/artist_selector.py": 1785152108.0,
+      "engine/radio/track_filter.py": 1785153582.0,
+      "engine/radio/engine.py": 1785152108.0,
+      "engine/radio/prefetcher.py": 1785153768.0,
+      "engine/loudness/gain_calculator.py": 1785152108.0,
+      "engine/loudness/service.py": 1785152108.0,
+      "engine/loudness/analyzer.py": 1785152108.0,
+      "launcher/server_lifecycle.py": 1785152108.0,
+      "launcher/__init__.py": 1785152108.0,
+      "launcher/process.py": 1785152108.0,
+      "launcher/dep_checker.py": 1785152108.0,
+      "launcher/updater.py": 1785152108.0,
+      "launcher/preflight.py": 1785152108.0,
+      "launcher/__main__.py": 1785152108.0,
+      "launcher/network.py": 1785152108.0,
+      "launcher/gui/__init__.py": 1785152108.0,
+      "launcher/gui/popups.py": 1785152108.0,
+      "launcher/gui/log_view.py": 1785152108.0,
+      "launcher/gui/ui_builder.py": 1785152108.0,
+      "launcher/gui/app.py": 1785152108.0,
+      "launcher/gui/auth_panel.py": 1785152108.0,
+      "data/__init__.py": 1785152108.0,
+      "data/export_to_sqlite.py": 1785152108.0,
+      "core/latency_window.py": 1785152108.0,
+      "core/log_reader.py": 1785152108.0,
+      "core/mem_stats.py": 1785152108.0,
+      "core/__init__.py": 1785152108.0,
+      "core/commands.py": 1785152108.0,
+      "core/log_categories.py": 1785152108.0,
+      "core/log_context.py": 1785152108.0,
+      "core/state.py": 1785152108.0,
+      "core/ports.py": 1785152108.0,
+      "core/observability.py": 1785152108.0,
+      "core/command_bus.py": 1785152108.0,
+      "core/exceptions.py": 1785152108.0,
+      "core/log_config.py": 1785152108.0,
+      "core/security.py": 1785152108.0,
+      "core/events.py": 1785152108.0,
+      "core/task_utils.py": 1785152108.0,
+      "core/event_bus.py": 1785152108.0,
+      "core/server_clock.py": 1785152108.0,
+      "adapters/__init__.py": 1785152108.0,
+      "adapters/ytdlp/__init__.py": 1785152108.0,
+      "adapters/ytdlp/searcher.py": 1785152108.0,
+      "adapters/ytdlp/ydl_options.py": 1785152108.0,
+      "adapters/ytdlp/resolver.py": 1785154443.0,
+      "adapters/ytdlp/downloader.py": 1785152108.0,
+      "adapters/mpv/observer.py": 1785152108.0,
+      "adapters/mpv/__init__.py": 1785152108.0,
+      "adapters/mpv/connection.py": 1785152108.0,
+      "adapters/mpv/ipc.py": 1785152108.0,
+      "plugins/lyrics_sync.py": 1785152108.0,
+      "plugins/__init__.py": 1785152108.0,
+      "plugins/lyrics_fetcher.py": 1785152108.0,
+      "plugins/sponsorblock.py": 1785152108.0,
+      "plugins/lyrics_parser.py": 1785152108.0,
+      "plugins/notifications.py": 1785152108.0,
+      "bootstrap/maintenance.py": 1785152108.0,
+      "bootstrap/__init__.py": 1785152108.0,
+      "bootstrap/startup_tasks.py": 1785152108.0,
+      "bootstrap/services.py": 1785152108.0,
+      "bootstrap/power.py": 1785152108.0
     }
   },
   "files": {
@@ -180,6 +180,7 @@
       "docstring_purpose": "Load and expose all environment-based runtime configuration constants     for LunaWave, including paths, ports, and the admin password.",
       "reverse_deps": [
         "main.py",
+        "server/reset_admin_password.py",
         "server/handlers/audio_stream_handler.py",
         "server/handlers/ws_cache.py",
         "server/handlers/websocket.py",
@@ -201,8 +202,7 @@
         "plugins/sponsorblock.py",
         "plugins/notifications.py",
         "bootstrap/startup_tasks.py",
-        "bootstrap/services.py",
-        "server/reset_admin_password.py"
+        "bootstrap/services.py"
       ]
     },
     "start.py": {
@@ -236,10 +236,10 @@
       "reverse_deps": [
         "server/broadcast_service.py",
         "server/handlers/ws_queue.py",
-        "server/handlers/ws_discovery.py",
-        "server/handlers/ws_playback.py",
-        "server/handlers/websocket.py",
         "server/handlers/event_listeners.py",
+        "server/handlers/ws_playback.py",
+        "server/handlers/ws_discovery.py",
+        "server/handlers/websocket.py",
         "server/handlers/ws_download.py",
         "server/handlers/ws_download.py"
       ]
@@ -280,6 +280,31 @@
       "subscribes": [],
       "loc": 1,
       "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "server/reset_admin_password.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "do_reset",
+        "main"
+      ],
+      "imports": [
+        "asyncio",
+        "getpass",
+        "sqlite3",
+        "sys",
+        "config",
+        "core.security",
+        "persistence.admin_account_repo",
+        "persistence.session_repo",
+        "server.handlers.setup",
+        "aiosqlite"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 75,
+      "docstring_purpose": "CLI untuk reset password admin.     Dijalankan via: python -m server.reset_admin_password",
       "reverse_deps": []
     },
     "server/connection_manager.py": {
@@ -351,27 +376,9 @@
       "reverse_deps": [
         "main.py",
         "main.py",
-        "server/handlers/log_dashboard.py",
-        "server/handlers/context.py"
+        "server/handlers/context.py",
+        "server/handlers/log_dashboard.py"
       ]
-    },
-    "server/middleware/__init__.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "check_rate_limit",
-        "check_chat_rate_limit"
-      ],
-      "imports": [
-        "server.middleware.traffic",
-        "collections",
-        "collections"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 75,
-      "docstring_purpose": "Package for server-side middleware: per-IP WS command rate limiting     (this file, unchanged) and the aiohttp HTTP traffic middleware added     in ADR-0010 (server.middleware.traffic).",
-      "reverse_deps": []
     },
     "server/middleware/traffic.py": {
       "layer": "server",
@@ -396,24 +403,23 @@
         "server/middleware/__init__.py"
       ]
     },
-    "server/handlers/ws_queue.py": {
+    "server/middleware/__init__.py": {
       "layer": "server",
       "classes": [],
       "functions": [
-        "handle_queue_command"
+        "check_rate_limit",
+        "check_chat_rate_limit"
       ],
       "imports": [
-        "core.command_bus",
-        "core.state",
-        "server.serializers"
+        "server.middleware.traffic",
+        "collections",
+        "collections"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 76,
-      "docstring_purpose": "WebSocket handler for manipulating the current playback queue.",
-      "reverse_deps": [
-        "server/handlers/websocket.py"
-      ]
+      "loc": 75,
+      "docstring_purpose": "Package for server-side middleware: per-IP WS command rate limiting     (this file, unchanged) and the aiohttp HTTP traffic middleware added     in ADR-0010 (server.middleware.traffic).",
+      "reverse_deps": []
     },
     "server/handlers/audio_stream_handler.py": {
       "layer": "server",
@@ -445,24 +451,76 @@
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 288,
+      "loc": 290,
       "docstring_purpose": "Proxy cached/streamed MP3 audio for a track, including range-request     support for seeking. Split out of server/handlers/http.py (T3.4) so     the streaming/range-request logic isn't bundled with the SPA/health/     metrics endpoints.",
       "reverse_deps": [
         "server/app.py"
       ]
     },
-    "server/handlers/__init__.py": {
+    "server/handlers/ws_queue.py": {
       "layer": "server",
       "classes": [],
-      "functions": [],
+      "functions": [
+        "handle_queue_command"
+      ],
       "imports": [
-        "server.handlers.context"
+        "core.command_bus",
+        "core.state",
+        "server.serializers"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 10,
-      "docstring_purpose": "Backward-compatibility re-export of accessor functions from context.py.     New accessors should be added to context.py, not here.",
-      "reverse_deps": []
+      "loc": 76,
+      "docstring_purpose": "WebSocket handler for manipulating the current playback queue.",
+      "reverse_deps": [
+        "server/handlers/websocket.py"
+      ]
+    },
+    "server/handlers/ws_cache.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "handle_cache_command"
+      ],
+      "imports": [
+        "json",
+        "os",
+        "structlog",
+        "config",
+        "core.log_categories",
+        "asyncio"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 92,
+      "docstring_purpose": "WebSocket handler for managing the downloaded MP3 file cache     (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.",
+      "reverse_deps": [
+        "server/handlers/websocket.py",
+        "bootstrap/startup_tasks.py"
+      ]
+    },
+    "server/handlers/auth.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "handle_auth",
+        "require_auth"
+      ],
+      "imports": [
+        "asyncio",
+        "json",
+        "secrets",
+        "structlog",
+        "core.log_categories",
+        "core.security"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 178,
+      "docstring_purpose": "Handle WebSocket authentication, session token verification, and     per-IP login rate limiting.",
+      "reverse_deps": [
+        "server/handlers/websocket.py"
+      ]
     },
     "server/handlers/http.py": {
       "layer": "server",
@@ -493,70 +551,125 @@
         "server/handlers/log_dashboard.py"
       ]
     },
-    "server/handlers/ws_cache.py": {
+    "server/handlers/__init__.py": {
       "layer": "server",
       "classes": [],
-      "functions": [
-        "handle_cache_command"
-      ],
+      "functions": [],
       "imports": [
-        "json",
-        "os",
-        "structlog",
-        "config",
-        "core.log_categories",
-        "asyncio"
+        "server.handlers.context"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 90,
-      "docstring_purpose": "WebSocket handler for managing the downloaded MP3 file cache     (`DOWNLOAD_DIR`, a.k.a. `cache/mp3/`): reporting its size and clearing it.",
-      "reverse_deps": [
-        "server/handlers/websocket.py",
-        "bootstrap/startup_tasks.py"
-      ]
+      "loc": 10,
+      "docstring_purpose": "Backward-compatibility re-export of accessor functions from context.py.     New accessors should be added to context.py, not here.",
+      "reverse_deps": []
     },
-    "server/handlers/auth.py": {
+    "server/handlers/event_listeners.py": {
       "layer": "server",
       "classes": [],
       "functions": [
-        "handle_auth",
-        "require_auth"
+        "setup_event_listeners"
       ],
       "imports": [
         "asyncio",
-        "json",
-        "secrets",
         "structlog",
+        "core.events",
         "core.log_categories",
-        "core.security"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 178,
-      "docstring_purpose": "Handle WebSocket authentication, session token verification, and     per-IP login rate limiting.",
-      "reverse_deps": [
-        "server/handlers/websocket.py"
-      ]
-    },
-    "server/handlers/ws_discovery.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "handle_discovery_command"
-      ],
-      "imports": [
-        "asyncio",
-        "json",
-        "typing",
+        "core.task_utils",
+        "server.broadcast_service",
+        "services.stream_prefetch",
         "server.serializers",
         "services.discover_service"
       ],
       "publishes": [],
-      "subscribes": [],
-      "loc": 159,
-      "docstring_purpose": "WebSocket handler for processing discovery and search commands.",
+      "subscribes": [
+        "TrackStartedEvent",
+        "TrackProgressEvent",
+        "QueueUpdatedEvent",
+        "LyricsUpdatedEvent",
+        "DownloadCompleteEvent",
+        "LogMessageEvent",
+        "TrackPauseChangedEvent",
+        "DownloadProgressEvent"
+      ],
+      "loc": 141,
+      "docstring_purpose": "Subscribe to domain events from the EventBus and forward them as     WebSocket broadcasts via BroadcastService.",
       "reverse_deps": [
+        "server/app.py"
+      ]
+    },
+    "server/handlers/ws_chat.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "handle_chat_command"
+      ],
+      "imports": [
+        "json",
+        "typing",
+        "structlog",
+        "persistence"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 126,
+      "docstring_purpose": "Handler perintah WebSocket untuk fitur chat (client <-> admin).",
+      "reverse_deps": [
+        "server/handlers/websocket.py"
+      ]
+    },
+    "server/handlers/ws_schemas.py": {
+      "layer": "server",
+      "classes": [
+        "WsValidationError",
+        "VolumeSetPayload",
+        "SetSpeedPayload",
+        "LyricsOffsetPayload",
+        "SetSleepTimerPayload"
+      ],
+      "functions": [
+        "parse",
+        "parse",
+        "parse",
+        "parse"
+      ],
+      "imports": [
+        "dataclasses",
+        "typing"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 97,
+      "docstring_purpose": "Provide strict validation and schema definitions for WebSocket command payloads.",
+      "reverse_deps": [
+        "server/handlers/ws_playback.py",
+        "server/handlers/websocket.py"
+      ]
+    },
+    "server/handlers/setup.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "handle_setup_admin",
+        "setup_required"
+      ],
+      "imports": [
+        "asyncio",
+        "json",
+        "sqlite3",
+        "structlog",
+        "aiohttp",
+        "core.log_categories",
+        "core.security",
+        "server.handlers"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 226,
+      "docstring_purpose": "Handle Initial Setup: creation of the single admin_account row that     becomes the sole source of login credentials (Fitur B: login_redesign,     lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any     admin account exists, so it lives outside the normal require_auth gate     -- the same way \"auth\" itself is special-cased in websocket.py.",
+      "reverse_deps": [
+        "server/reset_admin_password.py",
+        "server/app.py",
         "server/handlers/websocket.py"
       ]
     },
@@ -584,22 +697,23 @@
         "server/handlers/websocket.py"
       ]
     },
-    "server/handlers/ws_chat.py": {
+    "server/handlers/ws_discovery.py": {
       "layer": "server",
       "classes": [],
       "functions": [
-        "handle_chat_command"
+        "handle_discovery_command"
       ],
       "imports": [
+        "asyncio",
         "json",
         "typing",
-        "structlog",
-        "persistence"
+        "server.serializers",
+        "services.discover_service"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 126,
-      "docstring_purpose": "Handler perintah WebSocket untuk fitur chat (client <-> admin).",
+      "loc": 154,
+      "docstring_purpose": "WebSocket handler for processing discovery and search commands.",
       "reverse_deps": [
         "server/handlers/websocket.py"
       ]
@@ -645,6 +759,41 @@
         "server/app.py"
       ]
     },
+    "server/handlers/context.py": {
+      "layer": "server",
+      "classes": [],
+      "functions": [
+        "get_repos",
+        "get_tracks_repo",
+        "get_conn",
+        "get_state",
+        "get_manager",
+        "get_ytdlp",
+        "get_playback_controller",
+        "get_server_clock",
+        "get_command_bus"
+      ],
+      "imports": [
+        "typing",
+        "aiohttp",
+        "core.ports",
+        "core.state",
+        "server.app",
+        "core.command_bus",
+        "core.server_clock",
+        "engine.playback.controller",
+        "persistence",
+        "server.connection_manager"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 95,
+      "docstring_purpose": "Shared, typed accessors for values stashed on `request.app[...]` by     server.app.create_app(). Handlers should use these instead of raw     `request.app[KEY]` lookups so the type of each value is explicit     (T3.7 \u2014 dulu rencana ini ditulis untuk `request.app[\"db\"]`, tapi     setelah T2.2 memecah `Database` God Facade, tidak ada lagi key     tunggal \"db\" \u2014 sudah jadi beberapa key spesifik: \"repos\", \"tracks\",     \"conn\", dst. Accessor di bawah menutupi semua key itu).",
+      "reverse_deps": [
+        "server/handlers/__init__.py",
+        "server/handlers/websocket.py"
+      ]
+    },
     "server/handlers/ws_log_stream.py": {
       "layer": "server",
       "classes": [],
@@ -666,40 +815,6 @@
       "reverse_deps": [
         "server/connection_manager.py",
         "server/handlers/websocket.py"
-      ]
-    },
-    "server/handlers/event_listeners.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "setup_event_listeners"
-      ],
-      "imports": [
-        "asyncio",
-        "structlog",
-        "core.events",
-        "core.log_categories",
-        "core.task_utils",
-        "server.broadcast_service",
-        "services.stream_prefetch",
-        "server.serializers",
-        "services.discover_service"
-      ],
-      "publishes": [],
-      "subscribes": [
-        "TrackStartedEvent",
-        "TrackProgressEvent",
-        "QueueUpdatedEvent",
-        "LyricsUpdatedEvent",
-        "DownloadCompleteEvent",
-        "LogMessageEvent",
-        "TrackPauseChangedEvent",
-        "DownloadProgressEvent"
-      ],
-      "loc": 141,
-      "docstring_purpose": "Subscribe to domain events from the EventBus and forward them as     WebSocket broadcasts via BroadcastService.",
-      "reverse_deps": [
-        "server/app.py"
       ]
     },
     "server/handlers/log_dashboard.py": {
@@ -756,33 +871,6 @@
         "server/handlers/websocket.py"
       ]
     },
-    "server/handlers/setup.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "handle_setup_admin",
-        "setup_required"
-      ],
-      "imports": [
-        "asyncio",
-        "json",
-        "sqlite3",
-        "structlog",
-        "aiohttp",
-        "core.log_categories",
-        "core.security",
-        "server.handlers"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 226,
-      "docstring_purpose": "Handle Initial Setup: creation of the single admin_account row that     becomes the sole source of login credentials (Fitur B: login_redesign,     lihat decisions K3/K4/K5 di task_breakdown_agent.yaml). Runs before any     admin account exists, so it lives outside the normal require_auth gate     -- the same way \"auth\" itself is special-cased in websocket.py.",
-      "reverse_deps": [
-        "server/app.py",
-        "server/handlers/websocket.py",
-        "server/reset_admin_password.py"
-      ]
-    },
     "services/__init__.py": {
       "layer": "services",
       "classes": [],
@@ -792,20 +880,6 @@
       "subscribes": [],
       "loc": 2,
       "docstring_purpose": "",
-      "reverse_deps": []
-    },
-    "services/discover_ranking.py": {
-      "layer": "services",
-      "classes": [],
-      "functions": [
-        "compute_match_pct",
-        "build_taste_spectrum"
-      ],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 75,
-      "docstring_purpose": "Pure scoring/aggregation functions for Discover-tab personalization,     split out of persistence.discover_repo.py (T3.3) so the ranking math     is unit-testable with plain numbers instead of a real DB, and so it     lives in the services layer rather than persistence (which is not     allowed to depend on services \u2014 see .importlinter).",
       "reverse_deps": []
     },
     "services/stream_prefetch.py": {
@@ -835,6 +909,20 @@
         "server/handlers/event_listeners.py"
       ]
     },
+    "services/discover_ranking.py": {
+      "layer": "services",
+      "classes": [],
+      "functions": [
+        "compute_match_pct",
+        "build_taste_spectrum"
+      ],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 75,
+      "docstring_purpose": "Pure scoring/aggregation functions for Discover-tab personalization,     split out of persistence.discover_repo.py (T3.3) so the ranking math     is unit-testable with plain numbers instead of a real DB, and so it     lives in the services layer rather than persistence (which is not     allowed to depend on services \u2014 see .importlinter).",
+      "reverse_deps": []
+    },
     "services/discover_service.py": {
       "layer": "services",
       "classes": [
@@ -863,8 +951,8 @@
       "loc": 234,
       "docstring_purpose": "Query the SQLite database to provide discover-page data: recently played     tracks, favorites, cached tracks, and featured artists/genres.",
       "reverse_deps": [
-        "server/handlers/ws_discovery.py",
         "server/handlers/event_listeners.py",
+        "server/handlers/ws_discovery.py",
         "server/handlers/ws_download.py"
       ]
     },
@@ -887,8 +975,8 @@
       "loc": 66,
       "docstring_purpose": "Manages the single admin_account row: the sole source of truth for     login credentials under the Fitur B (login_redesign) design. Populated     via the Initial Setup flow (server.handlers.setup), never auto-generated.",
       "reverse_deps": [
-        "persistence/__init__.py",
-        "server/reset_admin_password.py"
+        "server/reset_admin_password.py",
+        "persistence/__init__.py"
       ]
     },
     "persistence/discover_repo.py": {
@@ -953,23 +1041,25 @@
       "docstring_purpose": "Package entry point for the persistence layer: builds one DB connection     and the six domain repositories that use it. Domain logic itself lives     in each `*_repo.py` module (persistence.track_repo, .session_repo,     .artist_repo, .genre_repo, .library_repo, .discover_repo) \u2014 this module     only wires them up.",
       "reverse_deps": []
     },
-    "persistence/library_repo.py": {
+    "persistence/genre_repo.py": {
       "layer": "persistence",
       "classes": [
-        "LibraryRepository"
+        "GenreRepository"
       ],
       "functions": [
-        "conn",
-        "get_random_songs"
+        "increment_genre_click",
+        "get_genre_artists",
+        "get_genre_songs"
       ],
       "imports": [
-        "typing",
+        "structlog",
+        "core.log_categories",
         "core.state"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 93,
-      "docstring_purpose": "Repository for global library operations such as fetching random songs.",
+      "loc": 111,
+      "docstring_purpose": "Repository for fetching genre information and tracking genre popularity.",
       "reverse_deps": [
         "persistence/__init__.py"
       ]
@@ -1012,25 +1102,23 @@
         "bootstrap/services.py"
       ]
     },
-    "persistence/genre_repo.py": {
+    "persistence/library_repo.py": {
       "layer": "persistence",
       "classes": [
-        "GenreRepository"
+        "LibraryRepository"
       ],
       "functions": [
-        "increment_genre_click",
-        "get_genre_artists",
-        "get_genre_songs"
+        "conn",
+        "get_random_songs"
       ],
       "imports": [
-        "structlog",
-        "core.log_categories",
+        "typing",
         "core.state"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 111,
-      "docstring_purpose": "Repository for fetching genre information and tracking genre popularity.",
+      "loc": 93,
+      "docstring_purpose": "Repository for global library operations such as fetching random songs.",
       "reverse_deps": [
         "persistence/__init__.py"
       ]
@@ -1057,8 +1145,8 @@
       "loc": 74,
       "docstring_purpose": "Manages authentication session tokens, verifying and cleaning up expired sessions.",
       "reverse_deps": [
-        "persistence/__init__.py",
-        "server/reset_admin_password.py"
+        "server/reset_admin_password.py",
+        "persistence/__init__.py"
       ]
     },
     "persistence/track_repo.py": {
@@ -1093,21 +1181,53 @@
         "persistence/__init__.py"
       ]
     },
-    "persistence/discover_enrich.py": {
+    "persistence/artist_repo.py": {
       "layer": "persistence",
-      "classes": [],
+      "classes": [
+        "ArtistRepository"
+      ],
       "functions": [
-        "enrich_artists"
+        "conn",
+        "increment_artist_click",
+        "get_all_artists",
+        "get_artist_songs_strict",
+        "record_completion",
+        "record_skip",
+        "get_reward_stats"
       ],
       "imports": [
-        "typing"
+        "structlog",
+        "core.log_categories",
+        "core.state"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 77,
-      "docstring_purpose": "Shared batch-enrichment helper for Discover personalization queries.     Given a list of artist rows, attach a cover thumbnail and genre tag     list to each one using two queries total for the whole batch (never     per-artist), so `discover_repo.py` doesn't run into N+1 query fan-out     when enriching a page of results.",
+      "loc": 154,
+      "docstring_purpose": "Repository for tracking artist statistics and fetching artist-specific tracks.",
       "reverse_deps": [
-        "persistence/discover_repo.py"
+        "persistence/__init__.py"
+      ]
+    },
+    "persistence/chat_repo.py": {
+      "layer": "persistence",
+      "classes": [
+        "ChatRepository"
+      ],
+      "functions": [
+        "add_message",
+        "get_recent_messages"
+      ],
+      "imports": [
+        "typing",
+        "aiosqlite",
+        "structlog"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 97,
+      "docstring_purpose": "Repository untuk fitur chat (client <-> admin). Menyimpan dan mengambil     pesan chat, disegmentasi per `client_uid` -- BUKAN per `client_ip`.",
+      "reverse_deps": [
+        "persistence/__init__.py"
       ]
     },
     "persistence/db.py": {
@@ -1136,91 +1256,22 @@
         "persistence/__init__.py"
       ]
     },
-    "persistence/chat_repo.py": {
+    "persistence/discover_enrich.py": {
       "layer": "persistence",
-      "classes": [
-        "ChatRepository"
-      ],
-      "functions": [
-        "add_message",
-        "get_recent_messages"
-      ],
-      "imports": [
-        "typing",
-        "aiosqlite",
-        "structlog"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 97,
-      "docstring_purpose": "Repository untuk fitur chat (client <-> admin). Menyimpan dan mengambil     pesan chat, disegmentasi per `client_uid` -- BUKAN per `client_ip`.",
-      "reverse_deps": [
-        "persistence/__init__.py"
-      ]
-    },
-    "persistence/artist_repo.py": {
-      "layer": "persistence",
-      "classes": [
-        "ArtistRepository"
-      ],
-      "functions": [
-        "conn",
-        "increment_artist_click",
-        "get_all_artists",
-        "get_artist_songs_strict",
-        "record_completion",
-        "record_skip",
-        "get_reward_stats"
-      ],
-      "imports": [
-        "structlog",
-        "core.log_categories",
-        "core.state"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 154,
-      "docstring_purpose": "Repository for tracking artist statistics and fetching artist-specific tracks.",
-      "reverse_deps": [
-        "persistence/__init__.py"
-      ]
-    },
-    "engine/sleep_timer.py": {
-      "layer": "engine",
-      "classes": [
-        "SleepTimer"
-      ],
-      "functions": [
-        "set_timer"
-      ],
-      "imports": [
-        "asyncio",
-        "structlog",
-        "core.command_bus",
-        "core.events"
-      ],
-      "publishes": [
-        "LogMessageEvent",
-        "LogMessageEvent",
-        "LogMessageEvent"
-      ],
-      "subscribes": [],
-      "loc": 70,
-      "docstring_purpose": "Handles setting, tracking, and executing a sleep timer to stop playback     after a specified duration.",
-      "reverse_deps": [
-        "bootstrap/services.py"
-      ]
-    },
-    "engine/__init__.py": {
-      "layer": "engine",
       "classes": [],
-      "functions": [],
-      "imports": [],
+      "functions": [
+        "enrich_artists"
+      ],
+      "imports": [
+        "typing"
+      ],
       "publishes": [],
       "subscribes": [],
-      "loc": 2,
-      "docstring_purpose": "",
-      "reverse_deps": []
+      "loc": 77,
+      "docstring_purpose": "Shared batch-enrichment helper for Discover personalization queries.     Given a list of artist rows, attach a cover thumbnail and genre tag     list to each one using two queries total for the whole batch (never     per-artist), so `discover_repo.py` doesn't run into N+1 query fan-out     when enriching a page of results.",
+      "reverse_deps": [
+        "persistence/discover_repo.py"
+      ]
     },
     "engine/download_manager.py": {
       "layer": "engine",
@@ -1265,6 +1316,43 @@
       "reverse_deps": [
         "bootstrap/services.py"
       ]
+    },
+    "engine/sleep_timer.py": {
+      "layer": "engine",
+      "classes": [
+        "SleepTimer"
+      ],
+      "functions": [
+        "set_timer"
+      ],
+      "imports": [
+        "asyncio",
+        "structlog",
+        "core.command_bus",
+        "core.events"
+      ],
+      "publishes": [
+        "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent"
+      ],
+      "subscribes": [],
+      "loc": 70,
+      "docstring_purpose": "Handles setting, tracking, and executing a sleep timer to stop playback     after a specified duration.",
+      "reverse_deps": [
+        "bootstrap/services.py"
+      ]
+    },
+    "engine/__init__.py": {
+      "layer": "engine",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 2,
+      "docstring_purpose": "",
+      "reverse_deps": []
     },
     "engine/command_router.py": {
       "layer": "engine",
@@ -1341,6 +1429,34 @@
         "bootstrap/services.py"
       ]
     },
+    "engine/playback/track_loader.py": {
+      "layer": "engine",
+      "classes": [
+        "LoadedTrack",
+        "TrackLoader"
+      ],
+      "functions": [
+        "load_track"
+      ],
+      "imports": [
+        "dataclasses",
+        "typing",
+        "structlog",
+        "core.ports",
+        "core.state",
+        "core.task_utils",
+        "core.state",
+        "engine.loudness.service",
+        "engine.loudness.gain_calculator"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 100,
+      "docstring_purpose": "Resolve a track URI and trigger background side-effects (sponsorblock,     lyrics fetch, play-count increment) before playback begins.",
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ]
+    },
     "engine/playback/controller.py": {
       "layer": "engine",
       "classes": [
@@ -1397,80 +1513,10 @@
       "docstring_purpose": "Orchestrate all playback logic: track loading, queue/radio advancement,     pause/seek, and mode switching via CommandBus commands.",
       "reverse_deps": [
         "server/app.py",
-        "engine/playback/__init__.py",
-        "bootstrap/services.py",
         "server/handlers/context.py",
-        "engine/playback/play_ops.py"
-      ]
-    },
-    "engine/playback/__init__.py": {
-      "layer": "engine",
-      "classes": [],
-      "functions": [],
-      "imports": [
-        "engine.playback.controller"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 27,
-      "docstring_purpose": "Re-export PlaybackController as the public interface of the playback     sub-package.",
-      "reverse_deps": []
-    },
-    "engine/playback/track_loader.py": {
-      "layer": "engine",
-      "classes": [
-        "LoadedTrack",
-        "TrackLoader"
-      ],
-      "functions": [
-        "load_track"
-      ],
-      "imports": [
-        "dataclasses",
-        "typing",
-        "structlog",
-        "core.ports",
-        "core.state",
-        "core.task_utils",
-        "core.state",
-        "engine.loudness.service",
-        "engine.loudness.gain_calculator"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 100,
-      "docstring_purpose": "Resolve a track URI and trigger background side-effects (sponsorblock,     lyrics fetch, play-count increment) before playback begins.",
-      "reverse_deps": [
-        "engine/playback/controller.py"
-      ]
-    },
-    "engine/playback/track_ended_ops.py": {
-      "layer": "engine",
-      "classes": [
-        "TrackEndedOps"
-      ],
-      "functions": [
-        "poll_duration",
-        "on_track_ended"
-      ],
-      "imports": [
-        "asyncio",
-        "structlog",
-        "core.events",
-        "core.log_categories",
-        "core.state",
-        "core.task_utils"
-      ],
-      "publishes": [
-        "LogMessageEvent",
-        "QueueUpdatedEvent"
-      ],
-      "subscribes": [],
-      "loc": 134,
-      "docstring_purpose": "Menangani reaksi terhadap TrackEndedEvent (eof/stop/error) dan polling     durasi track yang belum diketahui. Diekstrak dari controller.py agar     file controller tetap ramping (di bawah LARGE_FILE_THRESHOLD).",
-      "reverse_deps": [
-        "engine/playback/controller.py",
-        "engine/playback/play_ops.py"
+        "engine/playback/__init__.py",
+        "engine/playback/play_ops.py",
+        "bootstrap/services.py"
       ]
     },
     "engine/playback/settings_controller.py": {
@@ -1501,59 +1547,37 @@
         "engine/playback/controller.py"
       ]
     },
-    "engine/playback/failure_ops.py": {
+    "engine/playback/__init__.py": {
       "layer": "engine",
-      "classes": [
-        "FailureOps"
-      ],
-      "functions": [
-        "handle_video_unavailable",
-        "handle_bot_check_or_rate_limited",
-        "handle_generic_error",
-        "advance_after_track_failure"
-      ],
+      "classes": [],
+      "functions": [],
       "imports": [
-        "asyncio",
-        "structlog",
-        "core.events",
-        "core.log_categories",
-        "core.state",
-        "core.task_utils"
-      ],
-      "publishes": [
-        "LogMessageEvent",
-        "LogMessageEvent",
-        "LogMessageEvent",
-        "LogMessageEvent"
-      ],
-      "subscribes": [],
-      "loc": 155,
-      "docstring_purpose": "Menangani semua cabang except dari play_track() saat gagal memutar     sebuah track (video tidak tersedia permanen, bot-check/rate-limit     YouTube, atau error generik lainnya). Diekstrak dari controller.py     (PATCH-2026-07-20-136) agar file controller tetap ramping (di bawah     LARGE_FILE_THRESHOLD 500 LOC), sama seperti track_ended_ops.py.",
-      "reverse_deps": [
-        "engine/playback/controller.py"
-      ]
-    },
-    "engine/playback/queue_controller.py": {
-      "layer": "engine",
-      "classes": [
-        "QueueController"
-      ],
-      "functions": [
-        "on_queue_select",
-        "on_queue_remove",
-        "on_queue_add",
-        "on_queue_replace",
-        "on_queue_reorder",
-        "advance_to_next"
-      ],
-      "imports": [
-        "core.state",
-        "core.task_utils"
+        "engine.playback.controller"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 78,
-      "docstring_purpose": "Menangani command CMD_QUEUE_* (select/remove/add/replace/reorder) dan     advance-to-next (lanjut ke lagu berikutnya, baik mode QUEUE maupun     RADIO). Diekstrak dari PlaybackController (roadmap IMPLEMENTATION_PLAN.md     \u00a72.3, task T2.3.1) agar controller.py tetap ramping.",
+      "loc": 27,
+      "docstring_purpose": "Re-export PlaybackController as the public interface of the playback     sub-package.",
+      "reverse_deps": []
+    },
+    "engine/playback/circuit_breaker.py": {
+      "layer": "engine",
+      "classes": [
+        "BreakerState",
+        "PlaybackCircuitBreaker"
+      ],
+      "functions": [
+        "record_success",
+        "record_failure",
+        "can_advance"
+      ],
+      "imports": [
+        "enum"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 66,
+      "docstring_purpose": "Circuit breaker eksplisit lintas-track untuk PlaybackController --     menggantikan counter integer implisit yang sebelumnya hidup langsung     di controller dengan state machine bernama, tanpa mengubah behavior     lama sedikit pun.",
       "reverse_deps": [
         "engine/playback/controller.py"
       ]
@@ -1641,6 +1665,99 @@
         "engine/playback/controller.py"
       ]
     },
+    "engine/playback/track_ended_ops.py": {
+      "layer": "engine",
+      "classes": [
+        "TrackEndedOps"
+      ],
+      "functions": [
+        "poll_duration",
+        "on_track_ended"
+      ],
+      "imports": [
+        "asyncio",
+        "structlog",
+        "core.events",
+        "core.log_categories",
+        "core.state",
+        "core.task_utils"
+      ],
+      "publishes": [
+        "LogMessageEvent",
+        "QueueUpdatedEvent"
+      ],
+      "subscribes": [],
+      "loc": 134,
+      "docstring_purpose": "Menangani reaksi terhadap TrackEndedEvent (eof/stop/error) dan polling     durasi track yang belum diketahui. Diekstrak dari controller.py agar     file controller tetap ramping (di bawah LARGE_FILE_THRESHOLD).",
+      "reverse_deps": [
+        "engine/playback/controller.py",
+        "engine/playback/play_ops.py"
+      ]
+    },
+    "engine/playback/failure_ops.py": {
+      "layer": "engine",
+      "classes": [
+        "FailureOps"
+      ],
+      "functions": [
+        "handle_video_unavailable",
+        "handle_bot_check_or_rate_limited",
+        "handle_generic_error",
+        "advance_after_track_failure"
+      ],
+      "imports": [
+        "asyncio",
+        "structlog",
+        "core.events",
+        "core.log_categories",
+        "core.state",
+        "core.task_utils"
+      ],
+      "publishes": [
+        "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent"
+      ],
+      "subscribes": [],
+      "loc": 155,
+      "docstring_purpose": "Menangani semua cabang except dari play_track() saat gagal memutar     sebuah track (video tidak tersedia permanen, bot-check/rate-limit     YouTube, atau error generik lainnya). Diekstrak dari controller.py     (PATCH-2026-07-20-136) agar file controller tetap ramping (di bawah     LARGE_FILE_THRESHOLD 500 LOC), sama seperti track_ended_ops.py.",
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ]
+    },
+    "engine/playback/play_ops.py": {
+      "layer": "engine",
+      "classes": [
+        "PlayOps"
+      ],
+      "functions": [
+        "play_track"
+      ],
+      "imports": [
+        "asyncio",
+        "typing",
+        "structlog",
+        "core.events",
+        "core.exceptions",
+        "core.state",
+        "core.task_utils",
+        "engine.playback.controller",
+        "engine.loudness.gain_calculator",
+        "engine.playback.track_ended_ops",
+        "engine.playback.crossfade"
+      ],
+      "publishes": [
+        "TrackStartedEvent",
+        "LogMessageEvent"
+      ],
+      "subscribes": [],
+      "loc": 135,
+      "docstring_purpose": "Operations class handling the core logic for playing a track.     Extracted from PlaybackController to maintain a thin orchestrator.",
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ]
+    },
     "engine/playback/crossfade.py": {
       "layer": "engine",
       "classes": [],
@@ -1661,6 +1778,34 @@
         "engine/playback/play_ops.py"
       ]
     },
+    "engine/playback/queue_controller.py": {
+      "layer": "engine",
+      "classes": [
+        "QueueController"
+      ],
+      "functions": [
+        "on_queue_select",
+        "on_queue_remove",
+        "on_queue_add",
+        "on_queue_replace",
+        "on_queue_reorder",
+        "advance_to_next"
+      ],
+      "imports": [
+        "core.events",
+        "core.state",
+        "core.task_utils"
+      ],
+      "publishes": [
+        "QueueUpdatedEvent"
+      ],
+      "subscribes": [],
+      "loc": 83,
+      "docstring_purpose": "Menangani command CMD_QUEUE_* (select/remove/add/replace/reorder) dan     advance-to-next (lanjut ke lagu berikutnya, baik mode QUEUE maupun     RADIO). Diekstrak dari PlaybackController (roadmap IMPLEMENTATION_PLAN.md     \u00a72.3, task T2.3.1) agar controller.py tetap ramping.",
+      "reverse_deps": [
+        "engine/playback/controller.py"
+      ]
+    },
     "engine/radio/track_interleaver.py": {
       "layer": "engine",
       "classes": [],
@@ -1677,8 +1822,29 @@
       "loc": 108,
       "docstring_purpose": "Interleaves tracks from different artists to create a balanced radio queue.",
       "reverse_deps": [
+        "engine/radio/artist_selector.py",
+        "engine/radio/track_filter.py"
+      ]
+    },
+    "engine/radio/radio_config.py": {
+      "layer": "engine",
+      "classes": [],
+      "functions": [
+        "track_task"
+      ],
+      "imports": [
+        "asyncio",
+        "core.task_utils"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 47,
+      "docstring_purpose": "Common utilities and shared logic for the radio engine components.",
+      "reverse_deps": [
+        "engine/radio/artist_selector.py",
         "engine/radio/track_filter.py",
-        "engine/radio/artist_selector.py"
+        "engine/radio/engine.py",
+        "engine/radio/prefetcher.py"
       ]
     },
     "engine/radio/artist_bandit.py": {
@@ -1701,24 +1867,72 @@
         "engine/radio/artist_selector.py"
       ]
     },
-    "engine/radio/radio_config.py": {
+    "engine/radio/__init__.py": {
       "layer": "engine",
       "classes": [],
-      "functions": [
-        "track_task"
-      ],
+      "functions": [],
       "imports": [
-        "asyncio",
-        "core.task_utils"
+        "engine.radio.engine"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 47,
-      "docstring_purpose": "Common utilities and shared logic for the radio engine components.",
+      "loc": 2,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "engine/radio/artist_selector.py": {
+      "layer": "engine",
+      "classes": [
+        "ArtistSelector"
+      ],
+      "functions": [
+        "ensure_artists_loaded",
+        "reset_rotation",
+        "build_exclusion_set",
+        "gather_batch"
+      ],
+      "imports": [
+        "random",
+        "structlog",
+        "core.log_categories",
+        "core.ports",
+        "core.state",
+        "engine.radio.radio_config",
+        "engine.radio.track_filter",
+        "engine.radio.track_interleaver",
+        "engine.radio.artist_bandit"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 165,
+      "docstring_purpose": "Selects and rotates artists intelligently to maintain variety in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py",
-        "engine/radio/artist_selector.py",
         "engine/radio/prefetcher.py"
+      ]
+    },
+    "engine/radio/track_filter.py": {
+      "layer": "engine",
+      "classes": [
+        "TrackFilter"
+      ],
+      "functions": [
+        "filter_tracks"
+      ],
+      "imports": [
+        "time",
+        "structlog",
+        "core.log_categories",
+        "core.state",
+        "engine.radio.radio_config",
+        "engine.radio.track_interleaver"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 136,
+      "docstring_purpose": "Filter candidate tracks for the radio queue to prevent duplicates,     skip recently played tracks, and limit artist dominance.",
+      "reverse_deps": [
+        "engine/radio/artist_selector.py"
       ]
     },
     "engine/radio/engine.py": {
@@ -1770,73 +1984,6 @@
         "engine/radio/__init__.py"
       ]
     },
-    "engine/radio/__init__.py": {
-      "layer": "engine",
-      "classes": [],
-      "functions": [],
-      "imports": [
-        "engine.radio.engine"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 2,
-      "docstring_purpose": "",
-      "reverse_deps": []
-    },
-    "engine/radio/track_filter.py": {
-      "layer": "engine",
-      "classes": [
-        "TrackFilter"
-      ],
-      "functions": [
-        "filter_tracks"
-      ],
-      "imports": [
-        "time",
-        "structlog",
-        "core.log_categories",
-        "core.state",
-        "engine.radio.track_interleaver"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 128,
-      "docstring_purpose": "Filter candidate tracks for the radio queue to prevent duplicates,     skip recently played tracks, and limit artist dominance.",
-      "reverse_deps": [
-        "engine/radio/artist_selector.py"
-      ]
-    },
-    "engine/radio/artist_selector.py": {
-      "layer": "engine",
-      "classes": [
-        "ArtistSelector"
-      ],
-      "functions": [
-        "ensure_artists_loaded",
-        "reset_rotation",
-        "build_exclusion_set",
-        "gather_batch"
-      ],
-      "imports": [
-        "random",
-        "structlog",
-        "core.log_categories",
-        "core.ports",
-        "core.state",
-        "engine.radio.radio_config",
-        "engine.radio.track_filter",
-        "engine.radio.track_interleaver",
-        "engine.radio.artist_bandit"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 165,
-      "docstring_purpose": "Selects and rotates artists intelligently to maintain variety in radio mode.",
-      "reverse_deps": [
-        "engine/radio/engine.py",
-        "engine/radio/prefetcher.py"
-      ]
-    },
     "engine/radio/prefetcher.py": {
       "layer": "engine",
       "classes": [
@@ -1866,10 +2013,29 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 229,
+      "loc": 230,
       "docstring_purpose": "Pre-fetches tracks asynchronously to ensure seamless transitions in radio mode.",
       "reverse_deps": [
         "engine/radio/engine.py"
+      ]
+    },
+    "engine/loudness/gain_calculator.py": {
+      "layer": "engine",
+      "classes": [],
+      "functions": [
+        "compute_gain_db",
+        "build_af_filter"
+      ],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 76,
+      "docstring_purpose": "Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya     mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS)     dan true peak (dBTP).",
+      "reverse_deps": [
+        "engine/playback/track_loader.py",
+        "engine/playback/controller.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/play_ops.py"
       ]
     },
     "engine/loudness/service.py": {
@@ -1896,28 +2062,9 @@
       "loc": 113,
       "docstring_purpose": "Orkestrasi analisis loudness: cek apakah track sudah pernah diukur,     kalau belum -> ukur via LoudnessAnalyzer lalu simpan ke DB.",
       "reverse_deps": [
-        "engine/playback/controller.py",
         "engine/playback/track_loader.py",
+        "engine/playback/controller.py",
         "bootstrap/services.py"
-      ]
-    },
-    "engine/loudness/gain_calculator.py": {
-      "layer": "engine",
-      "classes": [],
-      "functions": [
-        "compute_gain_db",
-        "build_af_filter"
-      ],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 76,
-      "docstring_purpose": "Hitung gain (dB) yang perlu diterapkan ke sebuah track supaya loudness-nya     mendekati target, berdasarkan hasil pengukuran integrated loudness (LUFS)     dan true peak (dBTP).",
-      "reverse_deps": [
-        "engine/playback/controller.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/play_ops.py"
       ]
     },
     "engine/loudness/analyzer.py": {
@@ -1987,45 +2134,6 @@
       "docstring_purpose": "",
       "reverse_deps": []
     },
-    "launcher/updater.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "check_for_updates",
-        "get_release_info"
-      ],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 37,
-      "docstring_purpose": "Stub module reserved for future OTA update checking and release info     retrieval in the LunaWave launcher.",
-      "reverse_deps": []
-    },
-    "launcher/preflight.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "print_info",
-        "print_ok",
-        "print_warn",
-        "print_err",
-        "log_result",
-        "run"
-      ],
-      "imports": [
-        "argparse",
-        "sys",
-        "structlog",
-        "core.log_categories",
-        "core.log_config",
-        "launcher.dep_checker"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 123,
-      "docstring_purpose": "Unified preflight check for LunaWave to be called by both start.sh and start.bat.",
-      "reverse_deps": []
-    },
     "launcher/process.py": {
       "layer": "launcher",
       "classes": [
@@ -2077,23 +2185,43 @@
         "launcher/preflight.py"
       ]
     },
-    "launcher/network.py": {
+    "launcher/updater.py": {
       "layer": "launcher",
       "classes": [],
       "functions": [
-        "check_port_in_use",
-        "get_pid_occupying_port"
+        "check_for_updates",
+        "get_release_info"
+      ],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 37,
+      "docstring_purpose": "Stub module reserved for future OTA update checking and release info     retrieval in the LunaWave launcher.",
+      "reverse_deps": []
+    },
+    "launcher/preflight.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [
+        "print_info",
+        "print_ok",
+        "print_warn",
+        "print_err",
+        "log_result",
+        "run"
       ],
       "imports": [
-        "socket",
-        "subprocess",
+        "argparse",
         "sys",
-        "re"
+        "structlog",
+        "core.log_categories",
+        "core.log_config",
+        "launcher.dep_checker"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 81,
-      "docstring_purpose": "Provide cross-platform utilities to detect TCP port availability and     identify the PID currently occupying a port.",
+      "loc": 123,
+      "docstring_purpose": "Unified preflight check for LunaWave to be called by both start.sh and start.bat.",
       "reverse_deps": []
     },
     "launcher/__main__.py": {
@@ -2114,6 +2242,25 @@
       "reverse_deps": [
         "start.py"
       ]
+    },
+    "launcher/network.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [
+        "check_port_in_use",
+        "get_pid_occupying_port"
+      ],
+      "imports": [
+        "socket",
+        "subprocess",
+        "sys",
+        "re"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 81,
+      "docstring_purpose": "Provide cross-platform utilities to detect TCP port availability and     identify the PID currently occupying a port.",
+      "reverse_deps": []
     },
     "launcher/gui/__init__.py": {
       "layer": "launcher",
@@ -2198,23 +2345,6 @@
         "launcher/gui/app.py"
       ]
     },
-    "launcher/gui/auth_panel.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "on_reset_password"
-      ],
-      "imports": [
-        "webbrowser"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 46,
-      "docstring_purpose": "GUI hook for the \"Reset Password\" button. Since T-B16, the launcher no     longer owns any authentication mechanism of its own \u2014 it only opens the     web portal, where Initial Setup / Login (SQLite-backed admin_account,     see server/handlers/setup.py) handles credentials end-to-end.",
-      "reverse_deps": [
-        "launcher/gui/ui_builder.py"
-      ]
-    },
     "launcher/gui/app.py": {
       "layer": "launcher",
       "classes": [
@@ -2243,6 +2373,23 @@
       "loc": 298,
       "docstring_purpose": "Provide the Tkinter-based ServerManager GUI for starting, stopping,     and monitoring the LunaWave backend server.",
       "reverse_deps": []
+    },
+    "launcher/gui/auth_panel.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [
+        "on_reset_password"
+      ],
+      "imports": [
+        "webbrowser"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 46,
+      "docstring_purpose": "GUI hook for the \"Reset Password\" button. Since T-B16, the launcher no     longer owns any authentication mechanism of its own \u2014 it only opens the     web portal, where Initial Setup / Login (SQLite-backed admin_account,     see server/handlers/setup.py) handles credentials end-to-end.",
+      "reverse_deps": [
+        "launcher/gui/ui_builder.py"
+      ]
     },
     "data/__init__.py": {
       "layer": "data",
@@ -2317,79 +2464,6 @@
         "server/handlers/log_dashboard.py"
       ]
     },
-    "core/__init__.py": {
-      "layer": "core",
-      "classes": [],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 2,
-      "docstring_purpose": "",
-      "reverse_deps": []
-    },
-    "core/state.py": {
-      "layer": "core",
-      "classes": [
-        "PlayerStatus",
-        "AudioOutput",
-        "PlaybackMode",
-        "TrackInfo",
-        "AppState"
-      ],
-      "functions": [],
-      "imports": [
-        "collections",
-        "dataclasses",
-        "enum"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 107,
-      "docstring_purpose": "Define shared application state dataclasses, enums, and the single     mutable AppState object for LunaWave.",
-      "reverse_deps": [
-        "server/serializers.py",
-        "server/broadcast_service.py",
-        "server/handlers/ws_queue.py",
-        "server/handlers/audio_stream_handler.py",
-        "server/handlers/ws_playback.py",
-        "services/stream_prefetch.py",
-        "services/discover_service.py",
-        "persistence/library_repo.py",
-        "persistence/stream_cache.py",
-        "persistence/genre_repo.py",
-        "persistence/track_repo.py",
-        "persistence/artist_repo.py",
-        "engine/download_manager.py",
-        "engine/volume_service.py",
-        "engine/queue_manager.py",
-        "engine/playback/controller.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/track_loader.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/playback/settings_controller.py",
-        "engine/playback/failure_ops.py",
-        "engine/playback/queue_controller.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/crossfade.py",
-        "engine/radio/engine.py",
-        "engine/radio/track_filter.py",
-        "engine/radio/artist_selector.py",
-        "engine/radio/prefetcher.py",
-        "core/ports.py",
-        "core/events.py",
-        "adapters/ytdlp/searcher.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py",
-        "bootstrap/maintenance.py",
-        "bootstrap/startup_tasks.py",
-        "bootstrap/services.py",
-        "server/handlers/context.py",
-        "engine/playback/play_ops.py"
-      ]
-    },
     "core/mem_stats.py": {
       "layer": "core",
       "classes": [],
@@ -2411,6 +2485,87 @@
         "server/handlers/http.py",
         "server/handlers/log_dashboard.py",
         "bootstrap/maintenance.py"
+      ]
+    },
+    "core/__init__.py": {
+      "layer": "core",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 2,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "core/commands.py": {
+      "layer": "core",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 51,
+      "docstring_purpose": "Defines all command constants used by the CommandBus.     Separated to allow importing without pulling in the entire CommandBus.",
+      "reverse_deps": [
+        "engine/command_router.py",
+        "core/command_bus.py"
+      ]
+    },
+    "core/log_categories.py": {
+      "layer": "core",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 69,
+      "docstring_purpose": "Closed set of `category` constants for structured logging, per the     \u00a74 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows;     the audit/implementation-plan docs say \"14 kategori standar\" but the     actual table has 15 -- this module follows the table, the normative     spec, not the prose count). Category groups log lines by *domain of     the event*, never by the Python module/file that emitted them (see     \u00a74 anti-pattern #7).",
+      "reverse_deps": [
+        "main.py",
+        "server/connection_manager.py",
+        "server/app.py",
+        "server/middleware/traffic.py",
+        "server/handlers/audio_stream_handler.py",
+        "server/handlers/ws_cache.py",
+        "server/handlers/auth.py",
+        "server/handlers/event_listeners.py",
+        "server/handlers/setup.py",
+        "server/handlers/websocket.py",
+        "server/handlers/ws_download.py",
+        "services/stream_prefetch.py",
+        "persistence/discover_repo.py",
+        "persistence/__init__.py",
+        "persistence/genre_repo.py",
+        "persistence/track_repo.py",
+        "persistence/artist_repo.py",
+        "persistence/db.py",
+        "engine/download_manager.py",
+        "engine/playback/controller.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/track_ended_ops.py",
+        "engine/playback/failure_ops.py",
+        "engine/radio/artist_selector.py",
+        "engine/radio/track_filter.py",
+        "engine/radio/engine.py",
+        "engine/radio/prefetcher.py",
+        "engine/loudness/service.py",
+        "engine/loudness/analyzer.py",
+        "launcher/preflight.py",
+        "core/command_bus.py",
+        "core/task_utils.py",
+        "core/event_bus.py",
+        "adapters/ytdlp/resolver.py",
+        "adapters/mpv/observer.py",
+        "adapters/mpv/connection.py",
+        "adapters/mpv/ipc.py",
+        "plugins/lyrics_fetcher.py",
+        "plugins/sponsorblock.py",
+        "plugins/notifications.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/services.py",
+        "bootstrap/power.py"
       ]
     },
     "core/log_context.py": {
@@ -2439,18 +2594,66 @@
         "core/command_bus.py"
       ]
     },
-    "core/commands.py": {
+    "core/state.py": {
       "layer": "core",
-      "classes": [],
+      "classes": [
+        "PlayerStatus",
+        "AudioOutput",
+        "PlaybackMode",
+        "TrackInfo",
+        "AppState"
+      ],
       "functions": [],
-      "imports": [],
+      "imports": [
+        "collections",
+        "dataclasses",
+        "enum"
+      ],
       "publishes": [],
       "subscribes": [],
-      "loc": 51,
-      "docstring_purpose": "Defines all command constants used by the CommandBus.     Separated to allow importing without pulling in the entire CommandBus.",
+      "loc": 107,
+      "docstring_purpose": "Define shared application state dataclasses, enums, and the single     mutable AppState object for LunaWave.",
       "reverse_deps": [
-        "engine/command_router.py",
-        "core/command_bus.py"
+        "server/serializers.py",
+        "server/broadcast_service.py",
+        "server/handlers/audio_stream_handler.py",
+        "server/handlers/ws_queue.py",
+        "server/handlers/ws_playback.py",
+        "server/handlers/context.py",
+        "services/stream_prefetch.py",
+        "services/discover_service.py",
+        "persistence/genre_repo.py",
+        "persistence/stream_cache.py",
+        "persistence/library_repo.py",
+        "persistence/track_repo.py",
+        "persistence/artist_repo.py",
+        "engine/download_manager.py",
+        "engine/volume_service.py",
+        "engine/queue_manager.py",
+        "engine/playback/track_loader.py",
+        "engine/playback/track_loader.py",
+        "engine/playback/controller.py",
+        "engine/playback/settings_controller.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/track_ended_ops.py",
+        "engine/playback/failure_ops.py",
+        "engine/playback/play_ops.py",
+        "engine/playback/crossfade.py",
+        "engine/playback/queue_controller.py",
+        "engine/radio/artist_selector.py",
+        "engine/radio/track_filter.py",
+        "engine/radio/engine.py",
+        "engine/radio/prefetcher.py",
+        "core/ports.py",
+        "core/events.py",
+        "adapters/ytdlp/searcher.py",
+        "plugins/lyrics_fetcher.py",
+        "plugins/sponsorblock.py",
+        "plugins/notifications.py",
+        "bootstrap/maintenance.py",
+        "bootstrap/startup_tasks.py",
+        "bootstrap/services.py"
       ]
     },
     "core/ports.py": {
@@ -2542,133 +2745,18 @@
       "docstring_purpose": "Declare Protocol interfaces (ports) for LunaWave's hexagonal architecture.",
       "reverse_deps": [
         "server/app.py",
+        "server/handlers/context.py",
         "services/stream_prefetch.py",
         "services/discover_service.py",
         "persistence/stream_cache.py",
         "engine/volume_service.py",
-        "engine/playback/controller.py",
         "engine/playback/track_loader.py",
-        "engine/playback/mode_ops.py",
-        "engine/radio/engine.py",
-        "engine/radio/artist_selector.py",
-        "engine/loudness/service.py",
-        "plugins/sponsorblock.py",
-        "server/handlers/context.py"
-      ]
-    },
-    "core/log_categories.py": {
-      "layer": "core",
-      "classes": [],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 69,
-      "docstring_purpose": "Closed set of `category` constants for structured logging, per the     \u00a74 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows;     the audit/implementation-plan docs say \"14 kategori standar\" but the     actual table has 15 -- this module follows the table, the normative     spec, not the prose count). Category groups log lines by *domain of     the event*, never by the Python module/file that emitted them (see     \u00a74 anti-pattern #7).",
-      "reverse_deps": [
-        "main.py",
-        "server/connection_manager.py",
-        "server/app.py",
-        "server/middleware/traffic.py",
-        "server/handlers/audio_stream_handler.py",
-        "server/handlers/ws_cache.py",
-        "server/handlers/auth.py",
-        "server/handlers/websocket.py",
-        "server/handlers/event_listeners.py",
-        "server/handlers/ws_download.py",
-        "server/handlers/setup.py",
-        "services/stream_prefetch.py",
-        "persistence/discover_repo.py",
-        "persistence/__init__.py",
-        "persistence/genre_repo.py",
-        "persistence/track_repo.py",
-        "persistence/db.py",
-        "persistence/artist_repo.py",
-        "engine/download_manager.py",
         "engine/playback/controller.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/playback/failure_ops.py",
         "engine/playback/mode_ops.py",
-        "engine/radio/engine.py",
-        "engine/radio/track_filter.py",
         "engine/radio/artist_selector.py",
-        "engine/radio/prefetcher.py",
+        "engine/radio/engine.py",
         "engine/loudness/service.py",
-        "engine/loudness/analyzer.py",
-        "launcher/preflight.py",
-        "core/command_bus.py",
-        "core/task_utils.py",
-        "core/event_bus.py",
-        "adapters/ytdlp/resolver.py",
-        "adapters/mpv/observer.py",
-        "adapters/mpv/connection.py",
-        "adapters/mpv/ipc.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py",
-        "bootstrap/maintenance.py",
-        "bootstrap/startup_tasks.py",
-        "bootstrap/services.py",
-        "bootstrap/power.py"
-      ]
-    },
-    "core/log_config.py": {
-      "layer": "core",
-      "classes": [
-        "_StructlogQueueHandler"
-      ],
-      "functions": [
-        "file_renderer",
-        "console_renderer",
-        "setup_logging",
-        "log_session_start",
-        "log_session_end",
-        "prepare"
-      ],
-      "imports": [
-        "logging",
-        "os",
-        "sys",
-        "datetime",
-        "logging.handlers",
-        "structlog",
-        "config",
-        "queue",
-        "logging.handlers"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 202,
-      "docstring_purpose": "Configure structlog and stdlib logging with an async queue handler,     rotating file output, and per-handler rendering (plain file, optional     auto-colored console).",
-      "reverse_deps": [
-        "main.py",
-        "launcher/preflight.py"
-      ]
-    },
-    "core/exceptions.py": {
-      "layer": "core",
-      "classes": [
-        "YtPlayerError",
-        "MpvConnectionError",
-        "TrackResolutionError",
-        "DownloadError",
-        "VideoUnavailableError",
-        "BotCheckError",
-        "RateLimitedError"
-      ],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 71,
-      "docstring_purpose": "Define the custom exception hierarchy for LunaWave error conditions.",
-      "reverse_deps": [
-        "server/handlers/audio_stream_handler.py",
-        "services/stream_prefetch.py",
-        "persistence/stream_cache.py",
-        "adapters/ytdlp/resolver.py",
-        "adapters/mpv/connection.py",
-        "engine/playback/play_ops.py"
+        "plugins/sponsorblock.py"
       ]
     },
     "core/observability.py": {
@@ -2695,84 +2783,6 @@
         "core/command_bus.py",
         "core/event_bus.py",
         "bootstrap/maintenance.py"
-      ]
-    },
-    "core/events.py": {
-      "layer": "core",
-      "classes": [
-        "DomainEvent",
-        "TrackStartedEvent",
-        "TrackEndedEvent",
-        "TrackProgressEvent",
-        "TrackDurationEvent",
-        "QueueUpdatedEvent",
-        "LyricsUpdatedEvent",
-        "DownloadCompleteEvent",
-        "DownloadProgressEvent",
-        "LogMessageEvent",
-        "VolumeChangedEvent",
-        "TrackPauseChangedEvent",
-        "MpvReconnectedEvent"
-      ],
-      "functions": [],
-      "imports": [
-        "dataclasses",
-        "core.state"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 100,
-      "docstring_purpose": "Define all typed DomainEvent dataclasses for the LunaWave event bus.",
-      "reverse_deps": [
-        "server/handlers/audio_stream_handler.py",
-        "server/handlers/audio_stream_handler.py",
-        "server/handlers/event_listeners.py",
-        "engine/sleep_timer.py",
-        "engine/download_manager.py",
-        "engine/download_manager.py",
-        "engine/volume_service.py",
-        "engine/queue_manager.py",
-        "engine/playback/controller.py",
-        "engine/playback/track_ended_ops.py",
-        "engine/playback/settings_controller.py",
-        "engine/playback/failure_ops.py",
-        "engine/playback/queue_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/playback/mode_ops.py",
-        "engine/radio/engine.py",
-        "core/event_bus.py",
-        "adapters/mpv/observer.py",
-        "plugins/lyrics_sync.py",
-        "plugins/lyrics_fetcher.py",
-        "plugins/sponsorblock.py",
-        "plugins/notifications.py",
-        "engine/playback/play_ops.py"
-      ]
-    },
-    "core/security.py": {
-      "layer": "core",
-      "classes": [],
-      "functions": [
-        "hash_password",
-        "verify_password",
-        "needs_rehash",
-        "hash_token"
-      ],
-      "imports": [
-        "base64",
-        "hashlib",
-        "secrets"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 76,
-      "docstring_purpose": "Provide PBKDF2-SHA256 password hashing, constant-time verification,     and SHA-256 session token hashing.",
-      "reverse_deps": [
-        "config.py",
-        "server/handlers/auth.py",
-        "server/handlers/setup.py",
-        "persistence/session_repo.py",
-        "server/reset_admin_password.py"
       ]
     },
     "core/command_bus.py": {
@@ -2808,14 +2818,152 @@
         "server/handlers/ws_playback.py",
         "server/handlers/ws_playback.py",
         "server/handlers/ws_playback.py",
+        "server/handlers/context.py",
         "server/handlers/ws_download.py",
-        "engine/sleep_timer.py",
         "engine/download_manager.py",
+        "engine/sleep_timer.py",
         "engine/command_router.py",
         "engine/command_router.py",
         "plugins/notifications.py",
-        "bootstrap/services.py",
-        "server/handlers/context.py"
+        "bootstrap/services.py"
+      ]
+    },
+    "core/exceptions.py": {
+      "layer": "core",
+      "classes": [
+        "YtPlayerError",
+        "MpvConnectionError",
+        "TrackResolutionError",
+        "DownloadError",
+        "VideoUnavailableError",
+        "BotCheckError",
+        "RateLimitedError"
+      ],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 71,
+      "docstring_purpose": "Define the custom exception hierarchy for LunaWave error conditions.",
+      "reverse_deps": [
+        "server/handlers/audio_stream_handler.py",
+        "services/stream_prefetch.py",
+        "persistence/stream_cache.py",
+        "engine/playback/play_ops.py",
+        "adapters/ytdlp/resolver.py",
+        "adapters/mpv/connection.py"
+      ]
+    },
+    "core/log_config.py": {
+      "layer": "core",
+      "classes": [
+        "_StructlogQueueHandler"
+      ],
+      "functions": [
+        "file_renderer",
+        "console_renderer",
+        "setup_logging",
+        "log_session_start",
+        "log_session_end",
+        "prepare"
+      ],
+      "imports": [
+        "logging",
+        "os",
+        "sys",
+        "datetime",
+        "logging.handlers",
+        "structlog",
+        "config",
+        "queue",
+        "logging.handlers"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 202,
+      "docstring_purpose": "Configure structlog and stdlib logging with an async queue handler,     rotating file output, and per-handler rendering (plain file, optional     auto-colored console).",
+      "reverse_deps": [
+        "main.py",
+        "launcher/preflight.py"
+      ]
+    },
+    "core/security.py": {
+      "layer": "core",
+      "classes": [],
+      "functions": [
+        "hash_password",
+        "verify_password",
+        "needs_rehash",
+        "hash_token"
+      ],
+      "imports": [
+        "base64",
+        "hashlib",
+        "secrets"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 76,
+      "docstring_purpose": "Provide PBKDF2-SHA256 password hashing, constant-time verification,     and SHA-256 session token hashing.",
+      "reverse_deps": [
+        "config.py",
+        "server/reset_admin_password.py",
+        "server/handlers/auth.py",
+        "server/handlers/setup.py",
+        "persistence/session_repo.py"
+      ]
+    },
+    "core/events.py": {
+      "layer": "core",
+      "classes": [
+        "DomainEvent",
+        "TrackStartedEvent",
+        "TrackEndedEvent",
+        "TrackProgressEvent",
+        "TrackDurationEvent",
+        "QueueUpdatedEvent",
+        "LyricsUpdatedEvent",
+        "DownloadCompleteEvent",
+        "DownloadProgressEvent",
+        "LogMessageEvent",
+        "VolumeChangedEvent",
+        "TrackPauseChangedEvent",
+        "MpvReconnectedEvent"
+      ],
+      "functions": [],
+      "imports": [
+        "dataclasses",
+        "core.state"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 100,
+      "docstring_purpose": "Define all typed DomainEvent dataclasses for the LunaWave event bus.",
+      "reverse_deps": [
+        "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
+        "server/handlers/event_listeners.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/sleep_timer.py",
+        "engine/volume_service.py",
+        "engine/queue_manager.py",
+        "engine/playback/controller.py",
+        "engine/playback/settings_controller.py",
+        "engine/playback/queue_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/mode_ops.py",
+        "engine/playback/track_ended_ops.py",
+        "engine/playback/failure_ops.py",
+        "engine/playback/play_ops.py",
+        "engine/playback/queue_controller.py",
+        "engine/radio/engine.py",
+        "core/event_bus.py",
+        "adapters/mpv/observer.py",
+        "plugins/lyrics_sync.py",
+        "plugins/lyrics_fetcher.py",
+        "plugins/sponsorblock.py",
+        "plugins/notifications.py"
       ]
     },
     "core/task_utils.py": {
@@ -2838,18 +2986,18 @@
       "reverse_deps": [
         "server/handlers/event_listeners.py",
         "engine/download_manager.py",
-        "engine/playback/controller.py",
         "engine/playback/track_loader.py",
-        "engine/playback/track_ended_ops.py",
+        "engine/playback/controller.py",
         "engine/playback/settings_controller.py",
+        "engine/playback/track_ended_ops.py",
         "engine/playback/failure_ops.py",
+        "engine/playback/play_ops.py",
         "engine/playback/queue_controller.py",
         "engine/radio/radio_config.py",
         "core/event_bus.py",
         "adapters/mpv/observer.py",
         "bootstrap/maintenance.py",
-        "bootstrap/startup_tasks.py",
-        "engine/playback/play_ops.py"
+        "bootstrap/startup_tasks.py"
       ]
     },
     "core/event_bus.py": {
@@ -2915,8 +3063,8 @@
       "reverse_deps": [
         "main.py",
         "server/app.py",
-        "bootstrap/maintenance.py",
-        "server/handlers/context.py"
+        "server/handlers/context.py",
+        "bootstrap/maintenance.py"
       ]
     },
     "adapters/__init__.py": {
@@ -2956,21 +3104,6 @@
       "docstring_purpose": "Unified client for interacting with yt-dlp for search, extraction, and downloading.",
       "reverse_deps": []
     },
-    "adapters/ytdlp/ydl_options.py": {
-      "layer": "adapters",
-      "classes": [],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 43,
-      "docstring_purpose": "Shared utilities and constants for yt-dlp integration.",
-      "reverse_deps": [
-        "adapters/ytdlp/searcher.py",
-        "adapters/ytdlp/resolver.py",
-        "adapters/ytdlp/downloader.py"
-      ]
-    },
     "adapters/ytdlp/searcher.py": {
       "layer": "adapters",
       "classes": [
@@ -2994,6 +3127,21 @@
       "docstring_purpose": "Performs metadata extraction and search operations via yt-dlp.",
       "reverse_deps": [
         "adapters/ytdlp/__init__.py"
+      ]
+    },
+    "adapters/ytdlp/ydl_options.py": {
+      "layer": "adapters",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 43,
+      "docstring_purpose": "Shared utilities and constants for yt-dlp integration.",
+      "reverse_deps": [
+        "adapters/ytdlp/searcher.py",
+        "adapters/ytdlp/resolver.py",
+        "adapters/ytdlp/downloader.py"
       ]
     },
     "adapters/ytdlp/resolver.py": {
@@ -3198,6 +3346,17 @@
         "plugins/lyrics_fetcher.py"
       ]
     },
+    "plugins/__init__.py": {
+      "layer": "plugins",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 2,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
     "plugins/lyrics_fetcher.py": {
       "layer": "plugins",
       "classes": [
@@ -3234,17 +3393,6 @@
       "reverse_deps": [
         "bootstrap/services.py"
       ]
-    },
-    "plugins/__init__.py": {
-      "layer": "plugins",
-      "classes": [],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 2,
-      "docstring_purpose": "",
-      "reverse_deps": []
     },
     "plugins/sponsorblock.py": {
       "layer": "plugins",
@@ -3363,6 +3511,17 @@
         "main.py"
       ]
     },
+    "bootstrap/__init__.py": {
+      "layer": "bootstrap",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 25,
+      "docstring_purpose": "Startup subsystems for main.py, split out of the former God Function     `main()` (T2.4). Each stage lives in its own module and shares state via     the `BootstrapContext` singleton defined in `bootstrap.services`.",
+      "reverse_deps": []
+    },
     "bootstrap/startup_tasks.py": {
       "layer": "bootstrap",
       "classes": [],
@@ -3455,159 +3614,6 @@
       "reverse_deps": [
         "bootstrap/startup_tasks.py"
       ]
-    },
-    "bootstrap/__init__.py": {
-      "layer": "bootstrap",
-      "classes": [],
-      "functions": [],
-      "imports": [],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 25,
-      "docstring_purpose": "Startup subsystems for main.py, split out of the former God Function     `main()` (T2.4). Each stage lives in its own module and shares state via     the `BootstrapContext` singleton defined in `bootstrap.services`.",
-      "reverse_deps": []
-    },
-    "engine/playback/circuit_breaker.py": {
-      "layer": "engine",
-      "classes": [
-        "BreakerState",
-        "PlaybackCircuitBreaker"
-      ],
-      "functions": [
-        "record_success",
-        "record_failure",
-        "can_advance"
-      ],
-      "imports": [
-        "enum"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 66,
-      "docstring_purpose": "Circuit breaker eksplisit lintas-track untuk PlaybackController --     menggantikan counter integer implisit yang sebelumnya hidup langsung     di controller dengan state machine bernama, tanpa mengubah behavior     lama sedikit pun.",
-      "reverse_deps": [
-        "engine/playback/controller.py"
-      ]
-    },
-    "server/handlers/ws_schemas.py": {
-      "layer": "server",
-      "classes": [
-        "WsValidationError",
-        "VolumeSetPayload",
-        "SetSpeedPayload",
-        "LyricsOffsetPayload",
-        "SetSleepTimerPayload"
-      ],
-      "functions": [
-        "parse",
-        "parse",
-        "parse",
-        "parse"
-      ],
-      "imports": [
-        "dataclasses",
-        "typing"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 97,
-      "docstring_purpose": "Provide strict validation and schema definitions for WebSocket command payloads.",
-      "reverse_deps": [
-        "server/handlers/ws_playback.py",
-        "server/handlers/websocket.py"
-      ]
-    },
-    "server/handlers/context.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "get_repos",
-        "get_tracks_repo",
-        "get_conn",
-        "get_state",
-        "get_manager",
-        "get_ytdlp",
-        "get_playback_controller",
-        "get_server_clock",
-        "get_command_bus"
-      ],
-      "imports": [
-        "typing",
-        "aiohttp",
-        "core.ports",
-        "core.state",
-        "server.app",
-        "core.command_bus",
-        "core.server_clock",
-        "engine.playback.controller",
-        "persistence",
-        "server.connection_manager"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 95,
-      "docstring_purpose": "Shared, typed accessors for values stashed on `request.app[...]` by     server.app.create_app(). Handlers should use these instead of raw     `request.app[KEY]` lookups so the type of each value is explicit     (T3.7 \u2014 dulu rencana ini ditulis untuk `request.app[\"db\"]`, tapi     setelah T2.2 memecah `Database` God Facade, tidak ada lagi key     tunggal \"db\" \u2014 sudah jadi beberapa key spesifik: \"repos\", \"tracks\",     \"conn\", dst. Accessor di bawah menutupi semua key itu).",
-      "reverse_deps": [
-        "server/handlers/__init__.py",
-        "server/handlers/websocket.py"
-      ]
-    },
-    "engine/playback/play_ops.py": {
-      "layer": "engine",
-      "classes": [
-        "PlayOps"
-      ],
-      "functions": [
-        "play_track"
-      ],
-      "imports": [
-        "asyncio",
-        "typing",
-        "structlog",
-        "core.events",
-        "core.exceptions",
-        "core.state",
-        "core.task_utils",
-        "engine.playback.controller",
-        "engine.loudness.gain_calculator",
-        "engine.playback.track_ended_ops",
-        "engine.playback.crossfade"
-      ],
-      "publishes": [
-        "TrackStartedEvent",
-        "LogMessageEvent"
-      ],
-      "subscribes": [],
-      "loc": 135,
-      "docstring_purpose": "Operations class handling the core logic for playing a track.     Extracted from PlaybackController to maintain a thin orchestrator.",
-      "reverse_deps": [
-        "engine/playback/controller.py"
-      ]
-    },
-    "server/reset_admin_password.py": {
-      "layer": "server",
-      "classes": [],
-      "functions": [
-        "do_reset",
-        "main"
-      ],
-      "imports": [
-        "asyncio",
-        "getpass",
-        "sqlite3",
-        "sys",
-        "config",
-        "core.security",
-        "persistence.admin_account_repo",
-        "persistence.session_repo",
-        "server.handlers.setup",
-        "aiosqlite"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 66,
-      "docstring_purpose": "",
-      "reverse_deps": []
     }
   }
 }

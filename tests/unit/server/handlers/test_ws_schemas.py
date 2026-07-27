@@ -15,8 +15,9 @@ class TestVolumeSetPayload:
         assert payload.volume == 50
 
     def test_invalid_type(self):
-        with pytest.raises(WsValidationError, match="Nilai volume harus berupa angka."):
+        with pytest.raises(WsValidationError, match="Nilai volume harus berupa angka.") as exc:
             VolumeSetPayload.parse({"volume": "abc"})
+        assert exc.value.__cause__ is None
 
     def test_out_of_range(self):
         with pytest.raises(WsValidationError, match="Volume harus berada di antara 0 dan 100."):
@@ -36,8 +37,9 @@ class TestSetSpeedPayload:
         assert payload.speed == 1.5
 
     def test_invalid_type(self):
-        with pytest.raises(WsValidationError, match="Nilai kecepatan harus berupa angka."):
+        with pytest.raises(WsValidationError, match="Nilai kecepatan harus berupa angka.") as exc:
             SetSpeedPayload.parse({"speed": "abc"})
+        assert exc.value.__cause__ is None
 
     def test_out_of_range(self):
         with pytest.raises(WsValidationError, match="Kecepatan pemutaran tidak valid"):
@@ -57,8 +59,9 @@ class TestLyricsOffsetPayload:
         assert payload.offset == -1.5
 
     def test_invalid_type(self):
-        with pytest.raises(WsValidationError, match="Nilai offset lirik harus berupa angka."):
+        with pytest.raises(WsValidationError, match="Nilai offset lirik harus berupa angka.") as exc:
             LyricsOffsetPayload.parse({"offset": "abc"})
+        assert exc.value.__cause__ is None
 
     def test_missing_key_uses_default(self):
         payload = LyricsOffsetPayload.parse({})
@@ -71,8 +74,11 @@ class TestSetSleepTimerPayload:
         assert payload.minutes == 30
 
     def test_invalid_type(self):
-        with pytest.raises(WsValidationError, match="Nilai waktu timer harus berupa angka bulat."):
+        with pytest.raises(
+            WsValidationError, match="Nilai waktu timer harus berupa angka bulat."
+        ) as exc:
             SetSleepTimerPayload.parse({"minutes": "abc"})
+        assert exc.value.__cause__ is None
 
     def test_out_of_range(self):
         with pytest.raises(WsValidationError, match="Waktu sleep timer tidak valid"):

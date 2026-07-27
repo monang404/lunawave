@@ -40,7 +40,7 @@ class VolumeSetPayload:
         try:
             vol = int(data.get("volume", 80))
         except (TypeError, ValueError):
-            raise WsValidationError("Nilai volume harus berupa angka.")
+            raise WsValidationError("Nilai volume harus berupa angka.") from None
 
         if not (0 <= vol <= 100):
             raise WsValidationError("Volume harus berada di antara 0 dan 100.")
@@ -57,7 +57,7 @@ class SetSpeedPayload:
         try:
             spd = float(data.get("speed", 1.0))
         except (TypeError, ValueError):
-            raise WsValidationError("Nilai kecepatan harus berupa angka.")
+            raise WsValidationError("Nilai kecepatan harus berupa angka.") from None
 
         if not (0.25 <= spd <= 3.0):
             raise WsValidationError("Kecepatan pemutaran tidak valid (batas: 0.25x - 3.0x).")
@@ -74,7 +74,7 @@ class LyricsOffsetPayload:
         try:
             off = float(data.get("offset", 0.0))
         except (TypeError, ValueError):
-            raise WsValidationError("Nilai offset lirik harus berupa angka.")
+            raise WsValidationError("Nilai offset lirik harus berupa angka.") from None
 
         return cls(offset=off)
 
@@ -88,7 +88,7 @@ class SetSleepTimerPayload:
         try:
             mins = int(data.get("minutes", 0))
         except (TypeError, ValueError):
-            raise WsValidationError("Nilai waktu timer harus berupa angka bulat.")
+            raise WsValidationError("Nilai waktu timer harus berupa angka bulat.") from None
 
         if not (0 <= mins <= 1440):
             raise WsValidationError("Waktu sleep timer tidak valid (maksimal 1440 menit).")

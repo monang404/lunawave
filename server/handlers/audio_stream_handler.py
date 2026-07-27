@@ -102,8 +102,11 @@ async def serve_stream(request):
     except Exception:
         return web.HTTPBadRequest(text="Path tidak valid")
 
-    origin = ALLOWED_STREAM_ORIGIN or request.headers.get("Origin", "")
-    cors_headers = {"Access-Control-Allow-Origin": origin} if origin else {}
+    cors_headers = (
+        {"Access-Control-Allow-Origin": ALLOWED_STREAM_ORIGIN}
+        if ALLOWED_STREAM_ORIGIN
+        else {}
+    )
     if cache_file.exists():
         return web.FileResponse(cache_file, headers=cors_headers)
 
@@ -229,9 +232,8 @@ async def serve_stream(request):
                     "Accept-Ranges": "bytes",
                     "Cache-Control": "private, max-age=3600",
                 }
-                req_origin = ALLOWED_STREAM_ORIGIN or request.headers.get("Origin", "")
-                if req_origin:
-                    stream_headers["Access-Control-Allow-Origin"] = req_origin
+                if ALLOWED_STREAM_ORIGIN:
+                    stream_headers["Access-Control-Allow-Origin"] = ALLOWED_STREAM_ORIGIN
 
                 response = web.StreamResponse(
                     status=upstream.status,
