@@ -1,11 +1,11 @@
 {
   "_meta": {
-    "generated_at": "2026-07-27T11:15:32",
+    "generated_at": "2026-07-27T12:13:24",
     "note": "Auto-generated oleh automation/repo_map.py — jangan edit manual. Refresh via `python automation/run_all.py` atau `python automation/repo_map.py`."
   },
   "summary": {
     "total_files": 294,
-    "total_edges": 701,
+    "total_edges": 705,
     "total_events": 12,
     "files_per_layer": {
       "tests": 135,
@@ -827,7 +827,7 @@
       "layer": "core",
       "classes": [],
       "function_count": 0,
-      "loc": 50,
+      "loc": 51,
       "deps": [],
       "reverse_deps": [
         "tests/integration/test_playback_flow.py",
@@ -878,10 +878,12 @@
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
         "tests/unit/engine/test_volume_service.py",
         "bootstrap/services.py",
         "tests/integration/test_download_flow.py",
-        "tests/unit/engine/test_queue_manager.py"
+        "tests/unit/engine/test_queue_manager.py",
+        "tests/unit/server/handlers/test_audio_stream_handler.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -937,6 +939,7 @@
         "engine/volume_service.py",
         "tests/unit/core/test_event_bus.py",
         "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
         "tests/unit/engine/test_volume_service.py",
         "core/event_bus.py",
         "engine/playback/settings_controller.py",
@@ -947,7 +950,8 @@
         "tests/unit/engine/test_queue_manager.py",
         "engine/radio/engine.py",
         "engine/sleep_timer.py",
-        "tests/unit/core/test_events.py"
+        "tests/unit/core/test_events.py",
+        "tests/unit/server/handlers/test_audio_stream_handler.py"
       ],
       "publishes": [],
       "subscribes": [],
@@ -1440,7 +1444,7 @@
         "DownloadManager"
       ],
       "function_count": 1,
-      "loc": 222,
+      "loc": 253,
       "deps": [
         "core/command_bus.py",
         "core/event_bus.py",
@@ -1459,7 +1463,9 @@
         "bootstrap/services.py"
       ],
       "publishes": [
+        "LogMessageEvent",
         "DownloadProgressEvent",
+        "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
@@ -2794,12 +2800,14 @@
       "layer": "server",
       "classes": [],
       "function_count": 1,
-      "loc": 253,
+      "loc": 280,
       "deps": [
         "config.py",
         "core/exceptions.py",
         "core/log_categories.py",
         "server/handlers/__init__.py",
+        "core/event_bus.py",
+        "core/events.py",
         "core/state.py",
         "core/event_bus.py",
         "core/events.py"
@@ -2809,6 +2817,7 @@
         "tests/unit/server/handlers/test_audio_stream_handler.py"
       ],
       "publishes": [
+        "LogMessageEvent",
         "LogMessageEvent"
       ],
       "subscribes": [],
@@ -3057,7 +3066,7 @@
       "layer": "server",
       "classes": [],
       "function_count": 1,
-      "loc": 119,
+      "loc": 122,
       "deps": [
         "core/command_bus.py",
         "core/log_categories.py",
@@ -3192,7 +3201,7 @@
       "layer": "server",
       "classes": [],
       "function_count": 3,
-      "loc": 91,
+      "loc": 95,
       "deps": [
         "core/state.py"
       ],
@@ -4581,10 +4590,11 @@
       "classes": [
         "TestOnDownloadGuards",
         "TestDoDownload",
+        "TestOnCancelDownload",
         "TestUpdateProgress"
       ],
-      "function_count": 26,
-      "loc": 344,
+      "function_count": 31,
+      "loc": 415,
       "deps": [
         "core/command_bus.py",
         "core/event_bus.py",
@@ -4601,6 +4611,9 @@
         "LogMessageEvent",
         "LogMessageEvent",
         "DownloadCompleteEvent",
+        "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
         "DownloadProgressEvent"
@@ -5026,16 +5039,20 @@
     "tests/unit/server/handlers/test_audio_stream_handler.py": {
       "layer": "tests",
       "classes": [],
-      "function_count": 22,
-      "loc": 611,
+      "function_count": 24,
+      "loc": 678,
       "deps": [
+        "core/event_bus.py",
+        "core/events.py",
         "core/exceptions.py",
         "server/app.py",
         "server/handlers/audio_stream_handler.py"
       ],
       "reverse_deps": [],
       "publishes": [],
-      "subscribes": [],
+      "subscribes": [
+        "LogMessageEvent"
+      ],
       "purpose": "Unit tests for server.handlers.audio_stream_handler.serve_stream.     Moved out of tests/unit/server/handlers/test_http.py (T3.4) alongside     the serve_stream extraction into its own handler module."
     },
     "tests/unit/server/handlers/test_auth.py": {
@@ -5196,8 +5213,8 @@
     "tests/unit/server/handlers/test_ws_download.py": {
       "layer": "tests",
       "classes": [],
-      "function_count": 2,
-      "loc": 78,
+      "function_count": 3,
+      "loc": 89,
       "deps": [
         "core/command_bus.py",
         "server/handlers/ws_download.py"
@@ -6632,6 +6649,14 @@
     },
     {
       "from": "server/handlers/audio_stream_handler.py",
+      "to": "core/event_bus.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
+      "to": "core/events.py"
+    },
+    {
+      "from": "server/handlers/audio_stream_handler.py",
       "to": "core/state.py"
     },
     {
@@ -7940,6 +7965,14 @@
     },
     {
       "from": "tests/unit/server/handlers/test_audio_stream_handler.py",
+      "to": "core/event_bus.py"
+    },
+    {
+      "from": "tests/unit/server/handlers/test_audio_stream_handler.py",
+      "to": "core/events.py"
+    },
+    {
+      "from": "tests/unit/server/handlers/test_audio_stream_handler.py",
       "to": "core/exceptions.py"
     },
     {
@@ -8299,6 +8332,8 @@
         "engine/download_manager.py",
         "engine/download_manager.py",
         "engine/download_manager.py",
+        "engine/download_manager.py",
+        "engine/download_manager.py",
         "engine/playback/track_ended_ops.py",
         "engine/volume_service.py",
         "tests/unit/core/test_event_bus.py",
@@ -8306,6 +8341,7 @@
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
+        "server/handlers/audio_stream_handler.py",
         "server/handlers/audio_stream_handler.py",
         "engine/playback/mode_ops.py",
         "engine/playback/mode_ops.py",
@@ -8337,6 +8373,9 @@
         "tests/unit/engine/test_download_manager.py",
         "tests/unit/engine/test_download_manager.py",
         "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
+        "tests/unit/engine/test_download_manager.py",
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
@@ -8347,7 +8386,8 @@
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "tests/unit/engine/test_volume_service.py",
-        "tests/integration/test_download_flow.py"
+        "tests/integration/test_download_flow.py",
+        "tests/unit/server/handlers/test_audio_stream_handler.py"
       ]
     },
     "TrackProgressEvent": {

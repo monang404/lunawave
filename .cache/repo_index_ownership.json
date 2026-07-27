@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1785125732.895165,
+    "generated_at": 1785129204.6628203,
     "source_mtimes": {
       "config.py": 1785118909.0,
       "main.py": 1785118909.0,
@@ -52,7 +52,7 @@
       "bootstrap/services.py": 1785118909.0,
       "bootstrap/startup_tasks.py": 1785118909.0,
       "bootstrap/__init__.py": 1785118909.0,
-      "core/commands.py": 1785118909.0,
+      "core/commands.py": 1785128533.0,
       "core/command_bus.py": 1785118909.0,
       "core/events.py": 1785118909.0,
       "core/event_bus.py": 1785118909.0,
@@ -73,7 +73,7 @@
       "data/export_to_sqlite.py": 1785118909.0,
       "data/__init__.py": 1785118909.0,
       "engine/command_router.py": 1785118909.0,
-      "engine/download_manager.py": 1785118909.0,
+      "engine/download_manager.py": 1785128561.0,
       "engine/queue_manager.py": 1785118909.0,
       "engine/sleep_timer.py": 1785118909.0,
       "engine/volume_service.py": 1785118909.0,
@@ -136,20 +136,20 @@
       "server/app.py": 1785121572.6150298,
       "server/broadcast_service.py": 1785118909.0,
       "server/connection_manager.py": 1785118909.0,
-      "server/serializers.py": 1785118909.0,
+      "server/serializers.py": 1785128315.0,
       "server/__init__.py": 1785118909.0,
-      "server/handlers/audio_stream_handler.py": 1785118909.0,
+      "server/handlers/audio_stream_handler.py": 1785128258.0,
       "server/handlers/auth.py": 1785118909.0,
       "server/handlers/context.py": 1785118909.0,
       "server/handlers/event_listeners.py": 1785118909.0,
       "server/handlers/http.py": 1785118909.0,
       "server/handlers/log_dashboard.py": 1785118909.0,
       "server/handlers/setup.py": 1785118909.0,
-      "server/handlers/websocket.py": 1785118909.0,
+      "server/handlers/websocket.py": 1785128580.0,
       "server/handlers/ws_cache.py": 1785118909.0,
       "server/handlers/ws_chat.py": 1785118909.0,
       "server/handlers/ws_discovery.py": 1785118909.0,
-      "server/handlers/ws_download.py": 1785118909.0,
+      "server/handlers/ws_download.py": 1785128577.0,
       "server/handlers/ws_log_stream.py": 1785118909.0,
       "server/handlers/ws_playback.py": 1785118909.0,
       "server/handlers/ws_queue.py": 1785118909.0,
@@ -220,7 +220,7 @@
       "tests/unit/data/test_export_to_sqlite.py": 1785118909.0,
       "tests/unit/engine/conftest.py": 1785118909.0,
       "tests/unit/engine/test_command_router.py": 1785118909.0,
-      "tests/unit/engine/test_download_manager.py": 1785118909.0,
+      "tests/unit/engine/test_download_manager.py": 1785128775.0,
       "tests/unit/engine/test_queue_manager.py": 1785118909.0,
       "tests/unit/engine/test_sleep_timer.py": 1785118909.0,
       "tests/unit/engine/test_volume_service.py": 1785118909.0,
@@ -276,7 +276,7 @@
       "tests/unit/server/test_connection_manager.py": 1785118909.0,
       "tests/unit/server/test_middleware.py": 1785118909.0,
       "tests/unit/server/test_serializers.py": 1785118909.0,
-      "tests/unit/server/handlers/test_audio_stream_handler.py": 1785118909.0,
+      "tests/unit/server/handlers/test_audio_stream_handler.py": 1785128953.0,
       "tests/unit/server/handlers/test_auth.py": 1785118909.0,
       "tests/unit/server/handlers/test_event_listeners.py": 1785118909.0,
       "tests/unit/server/handlers/test_http.py": 1785118909.0,
@@ -285,7 +285,7 @@
       "tests/unit/server/handlers/test_websocket.py": 1785118909.0,
       "tests/unit/server/handlers/test_ws_cache.py": 1785118909.0,
       "tests/unit/server/handlers/test_ws_discovery.py": 1785118909.0,
-      "tests/unit/server/handlers/test_ws_download.py": 1785118909.0,
+      "tests/unit/server/handlers/test_ws_download.py": 1785128789.0,
       "tests/unit/server/handlers/test_ws_log_stream.py": 1785118909.0,
       "tests/unit/server/handlers/test_ws_playback.py": 1785118909.0,
       "tests/unit/server/handlers/test_ws_queue.py": 1785118909.0,
@@ -904,6 +904,7 @@
       "classes": [],
       "functions": [
         "test_handle_download_command_download",
+        "test_handle_download_command_cancel_download",
         "test_handle_download_command_delete_download"
       ],
       "imports": [
@@ -914,7 +915,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 78,
+      "loc": 89,
       "docstring_purpose": "",
       "reverse_deps": []
     },
@@ -2057,6 +2058,7 @@
         "engine/volume_service.py",
         "tests/unit/core/test_event_bus.py",
         "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
         "tests/unit/engine/test_volume_service.py",
         "core/event_bus.py",
         "engine/playback/settings_controller.py",
@@ -2067,7 +2069,8 @@
         "tests/unit/engine/test_queue_manager.py",
         "engine/radio/engine.py",
         "engine/sleep_timer.py",
-        "tests/unit/core/test_events.py"
+        "tests/unit/core/test_events.py",
+        "tests/unit/server/handlers/test_audio_stream_handler.py"
       ]
     },
     "persistence/stream_cache.py": {
@@ -3750,7 +3753,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 91,
+      "loc": 95,
       "docstring_purpose": "Convert between AppState/TrackInfo domain objects and JSON-serializable     dicts for WebSocket message payloads.",
       "reverse_deps": [
         "tests/unit/server/handlers/test_ws_playback.py",
@@ -4175,7 +4178,7 @@
       "imports": [],
       "publishes": [],
       "subscribes": [],
-      "loc": 50,
+      "loc": 51,
       "docstring_purpose": "Defines all command constants used by the CommandBus.     Separated to allow importing without pulling in the entire CommandBus.",
       "reverse_deps": [
         "tests/integration/test_playback_flow.py",
@@ -4984,7 +4987,9 @@
         "config"
       ],
       "publishes": [
+        "LogMessageEvent",
         "DownloadProgressEvent",
+        "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
@@ -4994,7 +4999,7 @@
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 222,
+      "loc": 253,
       "docstring_purpose": "Handle the CMD_DOWNLOAD command by downloading the current or specified     track via yt-dlp and moving it to the downloads/ folder.",
       "reverse_deps": [
         "tests/integration/conftest.py",
@@ -5667,6 +5672,7 @@
       "classes": [
         "TestOnDownloadGuards",
         "TestDoDownload",
+        "TestOnCancelDownload",
         "TestUpdateProgress"
       ],
       "functions": [
@@ -5686,6 +5692,9 @@
         "test_do_download_clears_progress_on_success",
         "test_do_download_publishes_error_log_on_exception",
         "test_do_download_clears_progress_on_error",
+        "test_do_download_reports_friendly_message_on_cancellation",
+        "test_noop_and_logs_when_nothing_downloading",
+        "test_calls_ytdlp_cancel_when_download_in_progress",
         "test_update_progress_sets_state_download_progress",
         "test_update_progress_fires_download_progress_event",
         "fake_dl",
@@ -5695,7 +5704,9 @@
         "fake_dl",
         "fake_dl",
         "bad_download",
-        "bad_download"
+        "bad_download",
+        "cancelled_download",
+        "never_finishes"
       ],
       "imports": [
         "asyncio",
@@ -5717,9 +5728,12 @@
         "DownloadCompleteEvent",
         "LogMessageEvent",
         "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent",
+        "LogMessageEvent",
         "DownloadProgressEvent"
       ],
-      "loc": 344,
+      "loc": 415,
       "docstring_purpose": "Auto-generated purpose.",
       "reverse_deps": []
     },
@@ -5895,7 +5909,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 119,
+      "loc": 122,
       "docstring_purpose": "WebSocket handler for managing track download requests and status.",
       "reverse_deps": [
         "tests/unit/server/handlers/test_ws_download.py",
@@ -6224,6 +6238,9 @@
         "core.exceptions",
         "core.log_categories",
         "server.handlers",
+        "asyncio",
+        "core.event_bus",
+        "core.events",
         "core.state",
         "urllib.parse",
         "urllib.parse",
@@ -6232,10 +6249,11 @@
         "core.events"
       ],
       "publishes": [
+        "LogMessageEvent",
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 253,
+      "loc": 280,
       "docstring_purpose": "Proxy cached/streamed MP3 audio for a track, including range-request     support for seeking. Split out of server/handlers/http.py (T3.4) so     the streaming/range-request logic isn't bundled with the SPA/health/     metrics endpoints.",
       "reverse_deps": [
         "server/app.py",
@@ -6685,10 +6703,12 @@
         "tests/unit/core/test_event_bus.py",
         "tests/unit/core/test_event_bus.py",
         "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
         "tests/unit/engine/test_volume_service.py",
         "bootstrap/services.py",
         "tests/integration/test_download_flow.py",
-        "tests/unit/engine/test_queue_manager.py"
+        "tests/unit/engine/test_queue_manager.py",
+        "tests/unit/server/handlers/test_audio_stream_handler.py"
       ]
     },
     "engine/playback/settings_controller.py": {
@@ -8198,6 +8218,7 @@
       "layer": "tests",
       "classes": [],
       "functions": [
+        "captured_log_messages",
         "mock_request",
         "test_serve_stream_invalid_video_id",
         "test_serve_stream_path_traversal",
@@ -8211,6 +8232,7 @@
         "test_serve_stream_proxy_range_header",
         "test_serve_stream_proxy_forbidden_retry",
         "test_serve_stream_returns_410_when_marked_unavailable_without_calling_ytdlp",
+        "test_serve_stream_notifies_toast_when_already_marked_unavailable",
         "test_serve_stream_marks_unavailable_on_video_unavailable_error_no_http_session",
         "test_serve_stream_marks_unavailable_on_video_unavailable_error_proxy_path",
         "test_serve_stream_prebuffers_before_writing_to_client",
@@ -8222,18 +8244,23 @@
         "mock_chunked"
       ],
       "imports": [
+        "asyncio",
         "time",
         "pathlib",
         "unittest.mock",
         "pytest",
         "aiohttp",
+        "core.event_bus",
+        "core.events",
         "core.exceptions",
         "server.app",
         "server.handlers.audio_stream_handler"
       ],
       "publishes": [],
-      "subscribes": [],
-      "loc": 611,
+      "subscribes": [
+        "LogMessageEvent"
+      ],
+      "loc": 678,
       "docstring_purpose": "Unit tests for server.handlers.audio_stream_handler.serve_stream.     Moved out of tests/unit/server/handlers/test_http.py (T3.4) alongside     the serve_stream extraction into its own handler module.",
       "reverse_deps": []
     },

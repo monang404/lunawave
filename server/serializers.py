@@ -37,6 +37,10 @@ def track_to_dict(track: TrackInfo | None) -> dict | None:
         "is_cached": bool(track.local_path),
         "view_count": track.view_count,
         "is_favorite": bool(getattr(track, "is_favorite", 0)),
+        "play_count": getattr(track, "play_count", None),
+        "last_played": getattr(track, "last_played", None),
+        "loudness_lufs": getattr(track, "loudness_lufs", None),
+        "true_peak_dbtp": getattr(track, "true_peak_dbtp", None),
     }
 
 

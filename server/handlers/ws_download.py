@@ -28,7 +28,7 @@ from pathlib import Path
 
 import structlog
 
-from core.command_bus import CMD_DOWNLOAD
+from core.command_bus import CMD_CANCEL_DOWNLOAD, CMD_DOWNLOAD
 from core.log_categories import LC_DOWNLOAD
 from server.serializers import dict_to_track, track_to_dict
 from services.discover_service import DiscoverService
@@ -42,6 +42,9 @@ async def handle_download_command(
     if action == "download":
         track = dict_to_track(data) if data else None
         await command_bus.execute(CMD_DOWNLOAD, track)
+
+    elif action == "cancel_download":
+        await command_bus.execute(CMD_CANCEL_DOWNLOAD)
 
     elif action == "delete_download":
         track = dict_to_track(data) if data else None

@@ -311,6 +311,77 @@ class TestDoDownload:
 
         assert state.download_progress is None
 
+    async def test_do_download_reports_friendly_message_on_cancellation(self):
+        """PATCH-2026-07-27: exception yang dilempar oleh _check_cancel_hook
+        (via ytdlp.cancel_download()) harus dibedakan dari kegagalan generik --
+        pesan ke user harus bilang 'dibatalkan', bukan 'gagal'."""
+        track = make_track()
+        bus, state, ytdlp = make_env(current_track=track)
+        isolated = CommandBus()
+        mgr = make_manager(bus, state, ytdlp, isolated)
+
+        async def cancelled_download(*_a, **_kw):
+            raise Exception("DownloadCancelled")
+
+        ytdlp.download_audio = cancelled_download
+
+        received = []
+        bus.subscribe(LogMessageEvent, received.append)
+
+        with patch("pathlib.Path.mkdir"):
+            await mgr._do_download(track)
+
+        assert any("dibatalkan" in m.message.lower() for m in received)
+        assert not any("gagal" in m.message.lower() for m in received)
+        assert state.download_progress is None
+
+
+# ---------------------------------------------------------------------------
+# _on_cancel_download (CMD_CANCEL_DOWNLOAD)
+# ---------------------------------------------------------------------------
+
+
+class TestOnCancelDownload:
+    async def test_noop_and_logs_when_nothing_downloading(self):
+        bus, state, ytdlp = make_env()
+        isolated = CommandBus()
+        mgr = make_manager(bus, state, ytdlp, isolated)
+
+        received = []
+        bus.subscribe(LogMessageEvent, received.append)
+
+        await mgr._on_cancel_download()
+
+        assert ytdlp.cancelled is False
+        assert len(received) == 1
+        assert "tidak ada" in received[0].message.lower()
+
+    async def test_calls_ytdlp_cancel_when_download_in_progress(self):
+        track = make_track()
+        bus, state, ytdlp = make_env(current_track=track)
+        isolated = CommandBus()
+        mgr = make_manager(bus, state, ytdlp, isolated)
+
+        async def never_finishes(*_a, **_kw):
+            await asyncio.sleep(10)
+
+        ytdlp.download_audio = never_finishes
+
+        download_task = asyncio.create_task(mgr._do_download(track))
+        await asyncio.sleep(0)  # let _do_download acquire the lock
+
+        received = []
+        bus.subscribe(LogMessageEvent, received.append)
+
+        await mgr._on_cancel_download()
+
+        assert ytdlp.cancelled is True
+        assert any("membatalkan" in m.message.lower() for m in received)
+
+        download_task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await download_task
+
 
 # ---------------------------------------------------------------------------
 # _update_progress

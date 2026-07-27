@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-254
+latest_patch_id: PATCH-2026-07-27-255
 
-total_entries: 254
+total_entries: 255
 
 ---
 
@@ -21,6 +21,48 @@ total_entries: 254
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-27-255
+
+**Tanggal:** 2026-07-27
+**Timestamp:** 04:24
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** Frontend
+**Priority:** Low
+**Title:** Bereskan dead import + coupling antar-domain sisa split admin-logs.js
+
+**Reason:** Audit verifikasi hasil RFC split_god_files fase 2 (Temuan I) menemukan 2 lint warning (dead import, stale eslint-disable) dan 1 kesenjangan antara narasi PATCH-249 dengan kode aktual: dashboard-stats.js masih import openChatPanel langsung dari admin-chat-panel.js, padahal PATCH-249 mengklaim modul domain sudah tidak saling import.
+
+**Root Cause:**
+Sisa proses split admin-logs.js jadi 4 modul domain: import renderMatrix di orkestrator tidak pernah dibuang walau renderMatrix sudah dipanggil sendiri di dalam dashboard-stats.js; komentar eslint-disable di log-tail.js jadi basi begitu navigateToLiveTail diekspor dan dipakai orkestrator; dan tombol chat di renderMatrix() tetap manggil openChatPanel() langsung karena belum ada mekanisme lain untuk lintas-domain selain import.
+
+**Solution:**
+(1) Buang import renderMatrix yang tidak terpakai di admin-logs.js. (2) Buang eslint-disable-next-line yang basi di log-tail.js. (3) dashboard-stats.js: ganti pemanggilan langsung openChatPanel() di klik tombol chat jadi document.dispatchEvent(new CustomEvent('chat:open', {detail:{uid, ip}})); admin-logs.js (orkestrator) pasang listener chat:open yang memanggil openChatPanel() -- konsisten dengan pola dispatch-di-orkestrator yang sudah dipakai untuk WS message routing.
+
+**Changed Files:**
+- `web/static/pages/admin-logs/admin-logs.js`
+- `web/static/pages/admin-logs/log-tail.js`
+- `web/static/pages/admin-logs/dashboard-stats.js`
+
+**Changed Symbols:**
+- `chat:open (CustomEvent baru)`
+
+**Tests:** eslint web/static/pages/admin-logs/ web/static/shared/js/audio/ -> 0 warning (sebelumnya 2); npx vitest run -> 693/693 pass, 50 file (naik dari 691/49, ada test baru untuk wiring chat:open); npx tsc -> 0 error; depcruise web/static/pages/admin-logs -> 0 pelanggaran, dependency turun dari 8 ke 7 (konfirmasi coupling dashboard-stats->admin-chat-panel hilang); pytest -q --ignore=tests/unit/launcher/gui -> 812 passed, 4 skipped (tidak berubah, fix ini frontend-only); python automation/doctor.py -> 100/100 di semua 5 kategori
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-27-249
+
+**Status:** Merged
+
+**Notes:**
+Ditemukan lewat audit independen (bukan bagian dari eksekusi RFC asli), dicatat retroaktif sesuai pola PATCH-247. related_patch mengarah ke PATCH-249 karena entry itu yang membuat klaim 'modul domain tidak saling import' yang baru sekarang benar-benar tercapai 100%.
 
 ---
 

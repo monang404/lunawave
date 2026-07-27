@@ -26,6 +26,21 @@ export function formatDurationLong(secs) {
     return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
 }
 
+export function formatRelativeTime(unixSeconds) {
+    if (!unixSeconds) return "";
+    const diffSec = Math.floor(Date.now() / 1000) - unixSeconds;
+    if (diffSec < 60) return "baru saja";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return diffMin + " menit lalu";
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return diffHour + " jam lalu";
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 30) return diffDay + " hari lalu";
+    const diffMonth = Math.floor(diffDay / 30);
+    if (diffMonth < 12) return diffMonth + " bulan lalu";
+    return Math.floor(diffMonth / 12) + " tahun lalu";
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { formatTime, escapeHtml, formatDurationLong };
+    module.exports = { formatTime, escapeHtml, formatDurationLong, formatRelativeTime };
 }
