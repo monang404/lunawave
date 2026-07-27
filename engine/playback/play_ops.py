@@ -1,3 +1,16 @@
+"""
+Module: engine.playback.play_ops
+
+Purpose:
+    Operations class handling the core logic for playing a track.
+    Extracted from PlaybackController to maintain a thin orchestrator.
+
+Responsibilities:
+    - Managing track loading and transitions.
+    - Applying loudness normalization and routing logic.
+    - Setting up the correct initial playback state (paused/seeked).
+"""
+
 import asyncio
 from typing import TYPE_CHECKING
 
