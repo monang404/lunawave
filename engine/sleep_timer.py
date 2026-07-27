@@ -28,15 +28,16 @@ import asyncio
 
 import structlog
 
-from core.command_bus import CMD_STOP, command_bus
+from core.command_bus import CMD_STOP
 from core.events import LogMessageEvent
 
 logger = structlog.get_logger(component="playback.sleep_timer")
 
 
 class SleepTimer:
-    def __init__(self, bus):
+    def __init__(self, bus, command_bus=None):
         self.bus = bus
+        self._command_bus = command_bus
         self._timer_task = None
 
     async def set_timer(self, minutes: int):
@@ -57,6 +58,6 @@ class SleepTimer:
             await self.bus.publish(
                 LogMessageEvent(message="Sleep timer habis. Menghentikan pemutaran.")
             )
-            await command_bus.execute(CMD_STOP)
+            await self._command_bus.execute(CMD_STOP)
         except asyncio.CancelledError:
             pass

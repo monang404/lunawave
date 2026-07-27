@@ -19,14 +19,14 @@ Arsitektur: Hexagonal (Ports & Adapters). Frontend: Vanilla JS, no framework.
 ## File yang TIDAK BOLEH disentuh tanpa izin eksplisit
 - `engine/playback/controller.py` — risiko tinggi, closure kompleks
 - `server/handlers/websocket.py` — jangan pecah dulu tanpa persetujuan eksplisit atau sprint plan yang jelas
-- `web/static/index.html` — tidak dipecah, ini keputusan final
+- ~~`web/static/index.html` — tidak dipecah, ini keputusan final~~ **SUDAH TIDAK BERLAKU** (PATCH-2026-07-24-220): sesuai RFC `docs/rfc/frontend_refactor/task_breakdown_frontend_tooling.yaml` (gate F8.1/F8.2), `index.html` + `main.js` sudah dipindah ke `web/static/pages/app/` dengan persetujuan eksplisit pemilik project. `client.html`/`client.js`/`chat.js` -> `web/static/pages/client/`, `admin-logs.html`/`admin-logs.js` -> `web/static/pages/admin-logs/`. Lihat `docs/architecture/frontend.md` untuk struktur lengkap.
 
 ## Batasan teknis yang tidak boleh dilanggar
 - Tidak boleh ganti aiohttp ke framework lain
 - Tidak boleh tambah JS framework (React, Vue, dll)
 - Tidak boleh ganti SQLite ke DB lain
 - Tidak boleh refactor 2 tahap sekaligus dalam 1 commit
-- Setiap file yang dipindah WAJIB ada backward-compat alias
+- Setiap file yang dipindah WAJIB ada backward-compat alias, KECUALI migrasi yang menyelesaikan seluruh caller dalam satu pass yang sama (semua pemanggil terverifikasi ikut diupdate sebelum commit) — lihat PATCH-2026-07-24-220 untuk migrasi entry point frontend yang sengaja tanpa alias atas instruksi eksplisit pemilik project.
 - **Gunakan `web.AppKey` untuk semua app state baru** — jangan pakai `app["string"]` (deprecated, NotAppKeyWarning). Lihat konstanta di `server/app.py` (PLAYBACK_CONTROLLER, STATE, YTDLP, dll.)
 - **Session token selalu di-hash SHA-256 sebelum masuk DB** — gunakan `core.security.hash_token()`, jangan simpan raw token. `persistence.session_repo` sudah handle ini transparan.
 - **Waspada Zombie Threads**: `ThreadPoolExecutor` (seperti saat membungkus `yt-dlp` atau `ffprobe`) yang hang dapat menyebabkan *non-daemon thread* tersangkut, membuat Python gagal *exit* (membuat CI/CD *hang* meski *test coverage* lulus). Eksekusi `os._exit()` pada `pytest_unconfigure` di `tests/conftest.py` menangani isu ini, jadi jangan dihapus.

@@ -41,15 +41,20 @@ from core.command_bus import (
     CMD_VOLUME_DOWN,
     CMD_VOLUME_SET,
     CMD_VOLUME_UP,
-    command_bus,
 )
 from core.state import AudioOutput, PlaybackMode
+from server.handlers.ws_schemas import (
+    LyricsOffsetPayload,
+    SetSleepTimerPayload,
+    SetSpeedPayload,
+    VolumeSetPayload,
+)
 from server.serializers import dict_to_track
 
 logger = structlog.get_logger(component="ws.playback")
 
 
-async def handle_playback_command(action: str, data: dict):
+async def handle_playback_command(action: str, data: dict, command_bus):
     if action == "play_track":
         track = dict_to_track(data)
         if track:
@@ -78,8 +83,8 @@ async def handle_playback_command(action: str, data: dict):
         await command_bus.execute(CMD_VOLUME_DOWN)
 
     elif action == "volume_set":
-        vol = data.get("volume", 80)
-        await command_bus.execute(CMD_VOLUME_SET, {"volume": int(vol)})
+        payload = VolumeSetPayload.parse(data)
+        await command_bus.execute(CMD_VOLUME_SET, {"volume": payload.volume})
 
     elif action == "set_mode":
         mode_str = data.get("mode", "queue").upper()
@@ -100,8 +105,8 @@ async def handle_playback_command(action: str, data: dict):
         await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
 
     elif action == "lyrics_offset":
-        offset = data.get("offset", 0.0)
-        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": float(offset)})
+        payload = LyricsOffsetPayload.parse(data)
+        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": payload.offset})
 
     elif action == "set_crossfade":
         enabled = data.get("enabled", False)
@@ -110,14 +115,14 @@ async def handle_playback_command(action: str, data: dict):
     elif action == "set_sleep_timer":
         from core.command_bus import CMD_SET_SLEEP_TIMER
 
-        minutes = data.get("minutes", 0)
-        await command_bus.execute(CMD_SET_SLEEP_TIMER, {"minutes": int(minutes)})
+        payload = SetSleepTimerPayload.parse(data)
+        await command_bus.execute(CMD_SET_SLEEP_TIMER, {"minutes": payload.minutes})
 
     elif action == "set_speed":
         from core.command_bus import CMD_SET_SPEED
 
-        speed = data.get("speed", 1.0)
-        await command_bus.execute(CMD_SET_SPEED, {"speed": float(speed)})
+        payload = SetSpeedPayload.parse(data)
+        await command_bus.execute(CMD_SET_SPEED, {"speed": payload.speed})
 
     elif action == "set_loop":
         from core.command_bus import CMD_SET_LOOP

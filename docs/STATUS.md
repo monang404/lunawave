@@ -1,6 +1,6 @@
 ---
 title : LunaWave Project Status
-last_verified: 2026-07-22
+last_verified: 2026-07-27
 sprint:
 ---
 
@@ -8,6 +8,40 @@ sprint:
 
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
+
+## RFC Perbaikan Arsitektur — Fase 1-7 (P01-P07): SELESAI, Fase 8 (P08) deferred (2026-07-27)
+
+Task file `docs/rfc/perbaikan_arsitektur/01_circuit_breaker_state_machine.yaml`
+(P01-T1 + P01-T2) selesai — PATCH-2026-07-27-241.
+
+| File | Perubahan |
+|---|---|
+| `engine/playback/circuit_breaker.py` (baru) | `BreakerState` enum (CLOSED/OPEN) + `PlaybackCircuitBreaker` (threshold=3 default) — `record_success()`, `record_failure() -> bool`, `can_advance() -> bool` |
+| `engine/playback/controller.py` | `self._retry_count = 0` → `self._breaker = PlaybackCircuitBreaker(threshold=3)`; kedua titik reset (`play_track` sukses, `_on_stop`) pakai `self._breaker.record_success()` |
+| `engine/playback/failure_ops.py` | `advance_after_track_failure` pakai `self.controller._breaker.record_failure()` / return value-nya untuk deteksi "baru saja OPEN"; logging `consecutive_failures` baca dari breaker |
+| `tests/unit/engine/playback/test_circuit_breaker.py` (baru) | 6 unit test murni untuk `PlaybackCircuitBreaker`, tanpa mock mpv/event bus |
+| `tests/unit/engine/playback/test_controller.py` | Assertion `_retry_count == 0` → `controller._breaker.can_advance()` + `_consecutive_failures == 0` |
+
+**Behavior tidak berubah** dari `_retry_count` lama (threshold 3, hardcoded — lihat keputusan `d2` di `00_index_and_decisions.yaml`). Satu penyesuaian teknis dari sketsa proposal §3.D: `record_failure()` hanya mengembalikan `True` pada transisi CLOSED→OPEN (bukan tiap panggilan selama sudah OPEN), sesuai kasus uji wajib task 01 — bukan perubahan keputusan d1-d6, murni penyesuaian mekanis (lihat `deviation_protocol`).
+
+`grep -rn '_retry_count' engine/ tests/` mengembalikan 0 hasil.
+
+**Update audit 2026-07-27 (sesi lanjutan):** Fase 2-7 ternyata SUDAH SELESAI di kode (dikerjakan sesi sebelumnya) tapi P02 dan P07 belum punya entry PATCHLOG sama sekali, dan entry P03 (PATCH-242) tertinggal di status Draft dengan field Tests/Breaking Change/Regression Risk kosong. Diaudit ulang acceptance criteria tiap fase satu per satu terhadap kode aktual (bukan asumsi dari nama file), gap ditutup, PATCHLOG dirapikan:
+
+| Fase | Task file | PATCHLOG | Status |
+|---|---|---|---|
+| P01 | `01_circuit_breaker_state_machine.yaml` | PATCH-241 | Merged |
+| P02 | `02_ws_command_schema_validation.yaml` | PATCH-246 (ditulis retroaktif sesi ini) | Merged |
+| P03 | `03_handlers_context_import_cleanup.yaml` | PATCH-242 (diperbaiki sesi ini: Draft→Merged, Tests diisi) | Merged |
+| P04 | `04_frontend_reactive_store.yaml` | PATCH-243 | Merged |
+| P05 | `05_frontend_globalthis_migration.yaml` | PATCH-244 | Merged |
+| P06 | `06_ws_module_split.yaml` | PATCH-245 | Merged |
+| P07 | `07_command_bus_dependency_injection.yaml` | PATCH-247 (ditulis retroaktif sesi ini; +test integrasi P07-T6 yang sebelumnya belum ada + rapikan import `server/app.py`) | Merged |
+| P08 | `08_backlog_deferred.yaml` | — | Deferred by design (keputusan `d5`, butuh RFC terpisah untuk `index.html`/`admin-logs.*`) |
+
+Gap konkret yang ditemukan & ditutup sesi ini: `tests/integration/test_command_bus_wiring.py` (identity check CommandBus tunggal, wajib per P07-T6) belum ada — dibuat sekarang, 2 test, tidak butuh mpv/yt-dlp jadi tidak skip. Full suite backend: **812 passed, 6 skipped**. Full suite frontend (`npx vitest run`): **691 passed**. `python automation/doctor.py`: PASS 100/100 di semua 5 checker.
+
+Seluruh rencana RFC `perbaikan_arsitektur` (kecuali P08 yang memang sengaja ditunda) kini selesai dan terdokumentasi.
 
 ## Observability Baseline: log traceable, traffic/uptime/RAM, /health, [STATUS] periodik (2026-07-22)
 

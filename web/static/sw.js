@@ -1,98 +1,128 @@
 // ── Service Worker — LunaWave ──
 // Strategy: Cache-first untuk static assets, network-first untuk API/WS
 
-const CACHE_VERSION = 'lunawave-20260715-offline-v1';
+// PATCH-2026-07-24-222: precache list ditulis ulang total mengikuti struktur
+// shared/ + pages/ (root shared/js/*.js lama sudah dipindah sesi-sesi
+// sebelumnya, sw.js belum pernah ikut disinkronkan -- lihat PATCHLOG).
+const CACHE_VERSION = 'lunawave-20260724-offline-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Assets yang di-cache saat install
 const PRECACHE_ASSETS = [
+    // ── App shell routes (server-rendered, bukan file statis) ──
     '/',
+    '/admin',
+    '/admin/logs',
+
     '/static/manifest.json',
 
     // ── Icons ──
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
 
+    // ── Fonts (self-hosted, dipakai radio-hero.css) ──
+    '/static/media/fonts/fraunces/fraunces-latin-500-italic.woff2',
+    '/static/media/fonts/space-grotesk/space-grotesk-latin-400-normal.woff2',
+    '/static/media/fonts/space-grotesk/space-grotesk-latin-500-normal.woff2',
+    '/static/media/fonts/space-grotesk/space-grotesk-latin-600-normal.woff2',
+
     // ── Vendor (self-hosted, offline-safe) ──
-    '/static/css/vendor/tabler-icons.min.css',
-    '/static/css/vendor/fonts/tabler-icons.woff2',
-    '/static/css/vendor/fonts/tabler-icons.woff',
-    '/static/css/vendor/fonts/tabler-icons.ttf',
+    '/static/shared/css/vendor/tabler-icons.min.css',
+    '/static/media/fonts/vendor/tabler-icons.woff2',
+    '/static/media/fonts/vendor/tabler-icons.woff',
+    '/static/media/fonts/vendor/tabler-icons.ttf',
 
     // ── CSS: Base ──
-    '/static/css/tokens.css',
-    '/static/css/portal.css',
-    '/static/css/base/reset.css',
-    '/static/css/base/typography.css',
-    '/static/css/base/animations.css',
+    '/static/shared/css/tokens.css',
+    '/static/shared/css/portal.css',
+    '/static/shared/css/base/reset.css',
+    '/static/shared/css/base/typography.css',
+    '/static/shared/css/base/animations.css',
 
     // ── CSS: Layout ──
-    '/static/css/layout/app-shell.css',
-    '/static/css/layout/nav.css',
-    '/static/css/layout/grid.css',
+    '/static/shared/css/layout/app-shell.css',
+    '/static/shared/css/layout/nav.css',
+    '/static/shared/css/layout/grid.css',
 
     // ── CSS: Components ──
-    '/static/css/components/player-bar.css',
-    '/static/css/components/player-controls.css',
-    '/static/css/components/cards.css',
-    '/static/css/components/lyrics.css',
-    '/static/css/components/queue.css',
-    '/static/css/components/search.css',
-    '/static/css/components/settings-sheet.css',
-    '/static/css/components/toasts.css',
+    '/static/shared/css/components/player-bar.css',
+    '/static/shared/css/components/player-controls.css',
+    '/static/shared/css/components/cards.css',
+    '/static/shared/css/components/lyrics.css',
+    '/static/shared/css/components/queue.css',
+    '/static/shared/css/components/search.css',
+    '/static/shared/css/components/settings-sheet.css',
+    '/static/shared/css/components/toasts.css',
+    '/static/shared/css/components/radio-hero.css',
+    '/static/shared/css/components/discover-cards.css',
+    '/static/shared/css/components/discover-search.css',
 
     // ── CSS: Platform ──
-    '/static/css/platform/mobile.css',
-    '/static/css/platform/desktop.css',
-    '/static/css/platform/tablet.css',
-    '/static/css/platform/landscape.css',
-    '/static/css/platform/safe-area.css',
+    '/static/shared/css/platform/mobile.css',
+    '/static/shared/css/platform/desktop.css',
+    '/static/shared/css/platform/tablet.css',
+    '/static/shared/css/platform/landscape.css',
+    '/static/shared/css/platform/safe-area.css',
+
+    // ── CSS: Page-specific ──
+    '/static/pages/client/chat.css',
 
     // ── JS: Core ──
-    '/static/js/main.js',
-    '/static/js/store.js',
-    '/static/js/dom.js',
-    '/static/js/ws.js',
-    '/static/js/portal.js',
-    '/static/js/config.js',
+    '/static/shared/js/store.js',
+    '/static/shared/js/dom.js',
+    '/static/shared/js/ws.js',
+    '/static/shared/js/portal.js',
+    '/static/shared/js/config.js',
 
     // ── JS: Utils ──
-    '/static/js/utils/format.js',
-    '/static/js/utils/toast.js',
+    '/static/shared/js/utils/format.js',
+    '/static/shared/js/utils/cover-art.js',
 
     // ── JS: Events ──
-    '/static/js/events/index.js',
-    '/static/js/events/action-modal-events.js',
-    '/static/js/events/click-delegation-events.js',
-    '/static/js/events/keyboard-shortcut-events.js',
-    '/static/js/events/lyrics-events.js',
-    '/static/js/events/progress-events.js',
-    '/static/js/events/queue-events.js',
-    '/static/js/events/search-input-events.js',
-    '/static/js/events/settings-events.js',
-    '/static/js/events/transport-events.js',
+    '/static/shared/js/events/index.js',
+    '/static/shared/js/events/action-modal-events.js',
+    '/static/shared/js/events/click-delegation-events.js',
+    '/static/shared/js/events/discover-search-events.js',
+    '/static/shared/js/events/drag-scroll-events.js',
+    '/static/shared/js/events/keyboard-shortcut-events.js',
+    '/static/shared/js/events/lyrics-events.js',
+    '/static/shared/js/events/progress-events.js',
+    '/static/shared/js/events/queue-events.js',
+    '/static/shared/js/events/search-input-events.js',
+    '/static/shared/js/events/settings-events.js',
+    '/static/shared/js/events/transport-events.js',
 
     // ── JS: Render ──
-    '/static/js/render/player.js',
-    '/static/js/render/search.js',
-    '/static/js/render/lyrics.js',
-    '/static/js/render/queue.js',
-    '/static/js/render/now-playing.js',
-    '/static/js/render/discover-tab.js',
-    '/static/js/render/radio-tab.js',
-    '/static/js/render/full-state.js',
+    '/static/shared/js/render/player.js',
+    '/static/shared/js/render/search.js',
+    '/static/shared/js/render/lyrics.js',
+    '/static/shared/js/render/queue.js',
+    '/static/shared/js/render/now-playing.js',
+    '/static/shared/js/render/discover-tab.js',
+    '/static/shared/js/render/discover-search.js',
+    '/static/shared/js/render/discover-personalize.js',
+    '/static/shared/js/render/radio-tab.js',
+    '/static/shared/js/render/radio-hero-moon.js',
+    '/static/shared/js/render/full-state.js',
+    '/static/shared/js/render/toast.js',
 
     // ── JS: Services ──
-    '/static/js/services/auth.js',
+    '/static/shared/js/services/auth.js',
 
     // ── JS: Platform ──
-    '/static/js/platform/keyboard.js',
-    '/static/js/platform/touch.js',
-    '/static/js/platform/viewport.js',
+    '/static/shared/js/platform/keyboard.js',
+    '/static/shared/js/platform/touch.js',
+    '/static/shared/js/platform/viewport.js',
 
     // ── JS: Audio ──
-    '/static/js/audio/playback-sync.js',
-    '/static/js/audio/visualizer.js',
+    '/static/shared/js/audio/playback-sync.js',
+    '/static/shared/js/audio/visualizer.js',
+
+    // ── JS: Page entry points ──
+    '/static/pages/app/main.js',
+    '/static/pages/client/client.js',
+    '/static/pages/client/chat.js',
+    '/static/pages/admin-logs/admin-logs.js',
 ];
 
 // Install: pre-cache static assets
@@ -146,8 +176,18 @@ self.addEventListener('fetch', (event) => {
                 });
             }).catch(() => {
                 // Offline fallback
-                if (event.request.headers.get('accept').includes('text/html')) {
-                    return caches.match('/static/index.html');
+                // Catatan (PATCH-2026-07-24-222): '/static/index.html' tidak pernah
+                // ada -- yang di-serve server adalah route '/', '/admin', dan
+                // '/admin/logs' (lihat server/app.py), bukan file statis. Fallback
+                // diarahkan ke shell route yang sesuai, semuanya sudah di-precache.
+                if ((event.request.headers.get('accept') || '').includes('text/html')) {
+                    if (url.pathname.startsWith('/admin/logs')) {
+                        return caches.match('/admin/logs');
+                    }
+                    if (url.pathname.startsWith('/admin')) {
+                        return caches.match('/admin');
+                    }
+                    return caches.match('/');
                 }
             })
         );

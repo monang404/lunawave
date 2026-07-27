@@ -134,3 +134,19 @@ END;
 CREATE TRIGGER IF NOT EXISTS artists_fts_au AFTER UPDATE OF nama ON artists BEGIN
     UPDATE songs_fts SET artist = new.nama WHERE rowid IN (SELECT id FROM songs WHERE artist_id = new.id);
 END;
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_admin INTEGER DEFAULT 0,
+    client_uid TEXT,
+    client_ip TEXT,
+    created_at INTEGER DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+-- idx_chat_messages_client_uid SENGAJA TIDAK di sini: pada DB lama (pre-client_uid),
+-- kolom client_uid belum ada saat CREATE TABLE IF NOT EXISTS di atas di-skip (tabel
+-- sudah ada), sehingga CREATE INDEX pada kolom yang belum ada bikin executescript()
+-- crash SEBELUM migrasi ALTER TABLE ADD COLUMN client_uid (persistence/__init__.py)
+-- sempat jalan. Index ini dipindah ke loop migrasi, dijalankan SETELAH ALTER TABLE-nya.

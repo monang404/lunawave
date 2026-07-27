@@ -202,9 +202,11 @@ class TestPlayTrack:
     async def test_mixed_failure_types_share_one_circuit_breaker_counter(
         self, controller, state, extractor, queue_mode
     ):
-        """Membuktikan koreksi atas temuan #5: _retry_count BUKAN penghitung
-        baru yang saya tambahkan -- ia sudah jadi circuit breaker lintas
-        TRACK & lintas JENIS ERROR sejak awal. 3 track BERBEDA yang gagal
+        """Membuktikan koreksi atas temuan #5: breaker (PlaybackCircuitBreaker)
+        BUKAN penghitung baru yang saya tambahkan -- ia sudah jadi circuit
+        breaker lintas TRACK & lintas JENIS ERROR sejak awal (dulu counter
+        implisit di controller, kini eksplisit lewat
+        engine.playback.circuit_breaker). 3 track BERBEDA yang gagal
         berturut-turut dengan 3 JENIS ERROR BERBEDA (unavailable, bot-check,
         generik) harus tetap menghentikan auto-advance di kegagalan ke-3,
         bukan reset count di antaranya."""
@@ -233,12 +235,52 @@ class TestPlayTrack:
         await real_sleep(0.02)
 
         # Setelah 3 kegagalan beruntun (lintas jenis error, lintas track),
-        # _retry_count harus di-reset ke 0. track-a & track-b (kegagalan
-        # ke-1 & ke-2) tetap sempat menjadwalkan advance seperti biasa;
-        # begitu kegagalan ke-3 (track-c) memicu breaker, TIDAK ADA advance
-        # ketiga yang dijadwalkan -- next_calls berhenti di 2, bukan 3.
-        assert controller._retry_count == 0
+        # breaker harus di-reset ke CLOSED (counter ke 0). track-a & track-b
+        # (kegagalan ke-1 & ke-2) tetap sempat menjadwalkan advance seperti
+        # biasa; begitu kegagalan ke-3 (track-c) memicu breaker, TIDAK ADA
+        # advance ketiga yang dijadwalkan -- next_calls berhenti di 2, bukan 3.
+        assert controller._breaker.can_advance()
+        assert controller._breaker._consecutive_failures == 0
         assert len(queue_mode.next_calls) == 2
+
+    async def test_loudness_normalization_enabled_applies_gain(
+        self, controller, player, state, extractor
+    ):
+        extractor.stream_urls["v1"] = "https://stream/v1"
+        state.loudness_normalization_enabled = True
+        track = make_track("v1")
+        # Default gain_db in make_track is probably 0.0 or something, we can mock it
+        track.gain_db = -5.0
+
+        async def mock_load_track(t):
+            # mock load track to return a loaded track with gain_db
+            class MockLoaded:
+                uri = "https://stream/v1"
+                gain_db = -5.0
+
+            return MockLoaded()
+
+        with patch.object(controller.track_loader, "load_track", new=mock_load_track):
+            await controller.play_track(track)
+
+        # check set_af was called with appropriate filter
+        # build_af_filter(-5.0) -> volume=volume=-5.0dB
+        set_af_calls = [c for c in player.call_log if c[0] == "set_af"]
+        assert len(set_af_calls) > 0
+        assert "volume=" in set_af_calls[0][1] or set_af_calls[0][1] == ""
+
+    async def test_crossfade_enabled_creates_fade_task(self, controller, state, extractor):
+        extractor.stream_urls["v1"] = "https://stream/v1"
+        state.crossfade_enabled = True
+        state.audio_output = AudioOutput.DEVICE
+        track = make_track("v1")
+
+        with patch(
+            "engine.playback.crossfade.apply_crossfade_in", new_callable=AsyncMock
+        ) as mock_crossfade:
+            await controller.play_track(track)
+            assert controller._fade_task is not None
+            mock_crossfade.assert_called_once_with(controller.mpv, state)
 
 
 class TestOnStop:

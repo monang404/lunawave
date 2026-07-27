@@ -18,15 +18,19 @@ Responsibilities:
     - Exception generik lain: log + backoff naik sebelum lanjut ke track
       berikutnya, seperti perilaku asli sebelum patch ini.
     - `advance_after_track_failure`: titik tunggal setelah play_track
-      menyerah pada satu track. `controller._retry_count` di sini BUKAN
-      retry pada track yang sama (play_track tidak pernah dipanggil ulang
-      untuk track yang sama dari sini) -- ia melacak berapa kali
-      BERTURUT-TURUT play_track gagal untuk track MANAPUN, dan berfungsi
-      sebagai circuit breaker lintas-track: begitu mencapai 3x beruntun,
-      auto-advance dihentikan sama sekali supaya kegagalan sistemik
-      (internet mati, YouTube rate-limit global) tidak diam-diam
-      menghabiskan seluruh queue dalam hitungan detik. Direset ke 0 begitu
-      ada satu track yang berhasil play, atau saat _on_stop.
+      menyerah pada satu track. `controller._breaker` (PlaybackCircuitBreaker,
+      lihat engine.playback.circuit_breaker) di sini BUKAN retry pada track
+      yang sama (play_track tidak pernah dipanggil ulang untuk track yang
+      sama dari sini) -- ia melacak berapa kali BERTURUT-TURUT play_track
+      gagal untuk track MANAPUN, dan berfungsi sebagai circuit breaker
+      lintas-track: begitu mencapai 3x beruntun, auto-advance dihentikan
+      sama sekali supaya kegagalan sistemik (internet mati, YouTube
+      rate-limit global) tidak diam-diam menghabiskan seluruh queue dalam
+      hitungan detik. Direset ke CLOSED begitu ada satu track yang berhasil
+      play, atau saat _on_stop -- termasuk segera setelah breaker baru saja
+      OPEN (lihat advance_after_track_failure), supaya round kegagalan
+      berikutnya mulai dari hitungan 0 lagi, identik dengan perilaku
+      counter lama yang digantikannya.
 
 Depends on:
     - core.events, core.state, core.task_utils
@@ -95,7 +99,7 @@ class FailureOps:
             video_id=track.video_id,
             error_type=type(e).__name__,
             error=str(e),
-            consecutive_failures=c._retry_count + 1,
+            consecutive_failures=c._breaker._consecutive_failures + 1,
         )
         c.state.status = PlayerStatus.ERROR
         c.state.error_msg = str(e)
@@ -114,7 +118,7 @@ class FailureOps:
             error_type=type(e).__name__,
             error=str(e),
             exc_info=True,
-            consecutive_failures=c._retry_count + 1,
+            consecutive_failures=c._breaker._consecutive_failures + 1,
         )
         c.state.status = PlayerStatus.ERROR
         c.state.error_msg = f"Error: {e}"
@@ -127,9 +131,12 @@ class FailureOps:
 
     async def advance_after_track_failure(self, track: TrackInfo, backoff: bool) -> None:
         c = self.c
-        c._retry_count += 1
-        if c._retry_count >= 3:
-            c._retry_count = 0
+        just_tripped = c._breaker.record_failure()
+        if just_tripped:
+            # Reset segera (bukan biarkan OPEN permanen) -- identik dengan
+            # perilaku lama (reset counter ke 0) setelah menyentuh threshold:
+            # round kegagalan berikutnya mulai dari hitungan 0 lagi.
+            c._breaker.record_success()
             await c.bus.publish(
                 LogMessageEvent(
                     message="Beberapa lagu berbeda berturut-turut gagal diputar. "
@@ -140,7 +147,7 @@ class FailureOps:
             return
 
         if backoff:
-            await asyncio.sleep(2**c._retry_count)
+            await asyncio.sleep(2**c._breaker._consecutive_failures)
 
         # Ensure we don't call _on_next if we are no longer trying to play this track
         if c.state.current_track == track:

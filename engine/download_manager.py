@@ -34,7 +34,7 @@ import time
 
 import structlog
 
-from core.command_bus import CMD_DOWNLOAD, command_bus
+from core.command_bus import CMD_DOWNLOAD
 from core.event_bus import EventBus
 from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.log_categories import LC_DOWNLOAD
@@ -47,10 +47,11 @@ logger = structlog.get_logger(component="download.manager")
 
 
 class DownloadManager:
-    def __init__(self, bus: EventBus, state: AppState, ytdlp: MediaExtractorPort):
-        self.bus = bus
+    def __init__(self, event_bus, state, ytdlp, command_bus=None):
+        self.bus = event_bus
         self.state = state
         self.ytdlp = ytdlp
+        self._command_bus = command_bus
         self._download_lock = asyncio.Lock()
         # RACE-FIX: `_download_lock.locked()` saja tidak cukup untuk menolak
         # trigger download kedua, karena lock itu baru benar-benar ter-acquire
@@ -66,7 +67,7 @@ class DownloadManager:
         # pertama belum sempat jalan sama sekali.
         self._download_scheduled = False
 
-        command_bus.register(CMD_DOWNLOAD, self._on_download)
+        self._command_bus.register(CMD_DOWNLOAD, self._on_download)
 
     async def _on_download(self, track: TrackInfo | None = None):
         target = track or self.state.current_track

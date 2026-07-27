@@ -77,7 +77,7 @@ async def run_server():
         from server.app import create_app
         from server.app import run_server as _web_run_server
 
-        app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos)
+        app = create_app(ctx.playback_controller, ctx.ytdlp, ctx.repos, ctx.command_bus)
 
         host = WEB_HOST
         port = WEB_PORT
@@ -94,17 +94,17 @@ async def run_server():
 
         url_client = f"http://{display_host}:{port}"
         url_admin = f"http://{display_host}:{port}/admin"
-        print("=====================================================")
-        print("|   LunaWave Web Server                             |")
-        print(f"|   Client : {url_client:<37} |")
-        print(f"|   Admin  : {url_admin:<37} |")
 
-        # T-B14.1: config.IS_PASSWORD_AUTO_GENERATED sudah dihapus -- tidak
-        # ada lagi password auto-generated untuk ditampilkan di sini.
-        # admin_account (SQLite) sekarang satu-satunya source of truth;
-        # instalasi baru tanpa admin_account diarahkan ke Initial Setup
-        # oleh frontend/server itu sendiri, bukan lewat banner ini.
-        print("=====================================================")
+        logger.info(
+            "startup_summary",
+            category=LC_LIFECYCLE,
+            pid=pid,
+            host=display_host,
+            port=port,
+            client_url=url_client,
+            admin_url=url_admin,
+            dashboard_url=f"http://{display_host}:{port}/admin/logs",
+        )
 
         # ADR-0010: baris pemisah sesi di lunawave.log (dan console), sesuai
         # contoh output RFC observability_logging.md. Best-effort/fail-safe
@@ -118,10 +118,12 @@ async def run_server():
     finally:
         import traceback
 
+        total_errors = 0
         for t in ctx.tasks:
             if t.done() and not t.cancelled():
                 exc = t.exception()
                 if exc:
+                    total_errors += 1
                     logger.error(
                         "background_task_crashed",
                         category=LC_LIFECYCLE,
@@ -155,6 +157,29 @@ async def run_server():
         await ctx.repos.close()
 
         logger.info("shutdown_completed", category=LC_LIFECYCLE)
+
+        try:
+            from core.observability import HTTP_REQUESTS_TOTAL, get_counter_value
+            from core.server_clock import get_uptime_seconds
+
+            uptime = get_uptime_seconds()
+            total_reqs = get_counter_value(HTTP_REQUESTS_TOTAL)
+
+            logger.info(
+                "session_summary",
+                category=LC_LIFECYCLE,
+                duration_seconds=uptime,
+                total_requests=total_reqs,
+                total_errors=total_errors,
+            )
+        except Exception:
+            logger.info(
+                "session_summary",
+                category=LC_LIFECYCLE,
+                duration_seconds=None,
+                total_requests=None,
+                total_errors=total_errors,
+            )
 
         # ADR-0010: penutup pasangan log_session_start() di atas -- ditulis
         # paling akhir supaya menandai proses shutdown benar-benar selesai.

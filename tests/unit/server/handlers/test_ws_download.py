@@ -7,16 +7,19 @@ from server.handlers.ws_download import handle_download_command
 
 
 @pytest.mark.asyncio
-@patch("server.handlers.ws_download.command_bus.execute", new_callable=AsyncMock)
 @patch("server.handlers.ws_download.dict_to_track")
-async def test_handle_download_command_download(mock_dict_to_track, mock_execute):
+async def test_handle_download_command_download(mock_dict_to_track):
     mock_track = MagicMock()
     mock_dict_to_track.return_value = mock_track
 
-    await handle_download_command("download", {"title": "Test Track"}, None, None, None, None)
+    command_bus = AsyncMock()
+
+    await handle_download_command(
+        "download", {"title": "Test Track"}, None, None, None, None, command_bus
+    )
 
     mock_dict_to_track.assert_called_once_with({"title": "Test Track"})
-    mock_execute.assert_called_once_with(CMD_DOWNLOAD, mock_track)
+    command_bus.execute.assert_called_once_with(CMD_DOWNLOAD, mock_track)
 
 
 @pytest.mark.asyncio
@@ -48,6 +51,8 @@ async def test_handle_download_command_delete_download(
     mock_state = MagicMock()
 
     with patch("server.handlers.ws_download.dict_to_track", return_value=mock_track):
+        command_bus = AsyncMock()
+
         await handle_download_command(
             "delete_download",
             {"video_id": "test_vid"},
@@ -55,6 +60,7 @@ async def test_handle_download_command_delete_download(
             mock_discover,
             mock_manager,
             mock_state,
+            command_bus,
         )
 
     mock_tracks.get_track.assert_called_once_with("test_vid")

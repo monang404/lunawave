@@ -45,31 +45,10 @@ echo ""
 
 echo -e "${CYAN}[*]${RESET} Initializing Environment Variables..."
 
-echo -e "${CYAN}[*]${RESET} Checking Python Dependencies..."
-MISSING_DEPS=0
-if ! python -c "import sys, importlib.util; missing = [m for m in ['aiohttp', 'aiosqlite', 'yt_dlp', 'syncedlyrics', 'structlog', 'prometheus_client', 'opentelemetry'] if importlib.util.find_spec(m) is None]; sys.exit(1 if missing else 0)" &> /dev/null; then
-    echo -e "    ${RED}[-]${RESET} Ada modul yang belum terinstall."
-    echo -e "        Jalankan: ${BOLD}pip install -r requirements.txt${RESET}"
-    MISSING_DEPS=1
-fi
-if [ $MISSING_DEPS -eq 0 ]; then
-    echo -e "    ${GREEN}[+]${RESET} All Python dependencies are satisfied."
-else
-    echo -e "\n${YELLOW}[!] WARNING: Some dependencies are missing.${RESET}"
-    echo -e "    Please run: ${BOLD}pip install -r requirements.txt${RESET}\n"
-    sleep 2
-fi
-
-echo -e "${CYAN}[*]${RESET} Verifying MPV Installation..."
-if command -v mpv &> /dev/null; then
-    MPV_VER=$(mpv --version 2>/dev/null | head -1 | awk '{print $2}')
-    echo -e "    ${GREEN}[+]${RESET} MPV detected (v${MPV_VER:-?})."
-else
-    echo -e "    ${RED}[-]${RESET} MPV not found in system PATH!"
-    echo -e "        Termux : ${BOLD}pkg install mpv${RESET}"
-    echo -e "        Debian : ${BOLD}sudo apt install mpv${RESET}"
-    echo -e "        Arch   : ${BOLD}sudo pacman -S mpv${RESET}"
-    sleep 2
+python -m launcher.preflight --host "$LUNAWAVE_HOST" --port "$LUNAWAVE_PORT"
+if [ $? -ne 0 ]; then
+    echo -e "\n${RED}[X] Preflight check failed. Server will not start.${RESET}"
+    exit 1
 fi
 
 echo -e "${CYAN}[*]${RESET} Cleaning Up Previous Sessions..."
@@ -86,18 +65,6 @@ fi
 SOCKET_DIR="${YT_PLAYER_BASE:-$(dirname "$0")}/cache/sockets"
 if [ -d "$SOCKET_DIR" ]; then
     rm -f "$SOCKET_DIR"/*.sock 2>/dev/null
-fi
-
-if command -v fuser &> /dev/null; then
-    fuser -k ${LUNAWAVE_PORT}/tcp > /dev/null 2>&1
-elif command -v lsof &> /dev/null; then
-    lsof -ti tcp:${LUNAWAVE_PORT} | xargs kill -9 > /dev/null 2>&1
-else
-    if command -v ss &> /dev/null; then
-        ss -lptn "sport = :${LUNAWAVE_PORT}" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | xargs -r kill -9 > /dev/null 2>&1
-    elif command -v netstat &> /dev/null; then
-        netstat -nlp 2>/dev/null | grep ":${LUNAWAVE_PORT} " | awk '{print $7}' | cut -d'/' -f1 | xargs -r kill -9 > /dev/null 2>&1
-    fi
 fi
 
 # ----------------------------------------------------------

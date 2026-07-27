@@ -53,3 +53,35 @@ def test_get_metrics_content_returns_bytes_and_content_type():
     assert isinstance(payload, bytes)
     assert content_type == CONTENT_TYPE_LATEST
     assert b"ytplayer_commands_total" in payload
+
+
+def test_get_counter_value():
+    from prometheus_client import Counter, Histogram
+
+    from core.observability import get_counter_value
+
+    # Test counter
+    test_counter = Counter("test_counter", "desc", ["lbl"])
+    test_counter.labels(lbl="A").inc(5)
+    test_counter.labels(lbl="B").inc(10)
+
+    assert get_counter_value(test_counter, lbl="A") == 5.0
+    assert get_counter_value(test_counter, lbl="B") == 10.0
+    # Assuming the previous metrics in prometheus registry doesn't conflict, wait, we are using new metric names.
+    # Without labels it sums all (5+10=15)
+    assert get_counter_value(test_counter) == 15.0
+
+    # Test histogram
+    test_hist = Histogram("test_hist", "desc", ["lbl"])
+    test_hist.labels(lbl="X").observe(2.5)
+    test_hist.labels(lbl="X").observe(3.5)
+    test_hist.labels(lbl="Y").observe(10.0)
+
+    # Histograms sum the values in _sum
+    assert get_counter_value(test_hist, lbl="X") == 6.0
+    assert get_counter_value(test_hist, lbl="Y") == 10.0
+    assert get_counter_value(test_hist) == 16.0
+
+    # Empty metric
+    empty_counter = Counter("empty_counter", "desc")
+    assert get_counter_value(empty_counter) == 0.0

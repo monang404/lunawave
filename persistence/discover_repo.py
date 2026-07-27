@@ -319,15 +319,10 @@ class DiscoverRepository:
         try:
             import asyncio
 
-            async def _fetch_tracks():
-                async with self._conn.execute(sql_tracks, track_params_full) as cursor:
-                    return [dict(r) for r in await cursor.fetchall()]
-
-            async def _fetch_songs():
-                async with self._conn.execute(sql_songs, song_params_full) as cursor:
-                    return [dict(r) for r in await cursor.fetchall()]
-
-            track_rows, song_rows = await asyncio.gather(_fetch_tracks(), _fetch_songs())
+            track_rows, song_rows = await asyncio.gather(
+                self._search_tracks_only(sql_tracks, track_params_full),
+                self._search_songs_only(sql_songs, song_params_full),
+            )
         except Exception as e:
             logger.error(
                 "search_tracks_query_failed",
@@ -369,19 +364,39 @@ class DiscoverRepository:
         # --- Ranking: frasa utuh > token-only, lalu bm25 rank ---
         full_phrase = q.lower()
 
-        def _sort_key(row: dict):
-            title_l = (row["title"] or "").lower()
-            artist_l = (row["artist"] or "").lower()
-            is_phrase_match = full_phrase in title_l or full_phrase in artist_l
-            return (0 if is_phrase_match else 1, row["rank"])
-
-        rows = sorted(merged.values(), key=_sort_key)
+        rows = sorted(merged.values(), key=lambda row: self._search_sort_key(row, full_phrase))
 
         # Bersihkan field rank internal
         for r in rows:
             r.pop("rank", None)
 
         return rows[:limit]
+
+    async def _search_tracks_only(self, sql_tracks: str, params: list) -> list[dict]:
+        """Isi lama nested function `_fetch_tracks()` di
+        `search_tracks()` -- diekstrak jadi method privat biasa
+        (Temuan K, proposal_god_file_splitting.md §4.K) supaya
+        bisa di-unit-test terpisah dari `_search_songs_only`.
+        """
+        async with self._conn.execute(sql_tracks, params) as cursor:
+            return [dict(r) for r in await cursor.fetchall()]
+
+    async def _search_songs_only(self, sql_songs: str, params: list) -> list[dict]:
+        """Isi lama nested function `_fetch_songs()` -- lihat
+        `_search_tracks_only` untuk rationale yang sama."""
+        async with self._conn.execute(sql_songs, params) as cursor:
+            return [dict(r) for r in await cursor.fetchall()]
+
+    @staticmethod
+    def _search_sort_key(row: dict, full_phrase: str):
+        """Isi lama nested function `_sort_key()` di dalam
+        `search_tracks()` -- diekstrak jadi staticmethod (Temuan K).
+        `full_phrase` dulu diambil dari closure, sekarang parameter
+        eksplisit."""
+        title_l = (row["title"] or "").lower()
+        artist_l = (row["artist"] or "").lower()
+        is_phrase_match = full_phrase in title_l or full_phrase in artist_l
+        return (0 if is_phrase_match else 1, row["rank"])
 
     async def get_artist_detail(self, nama: str) -> dict | None:
         """Info lengkap satu artis untuk detail sheet: data dasar + cover +

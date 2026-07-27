@@ -1,6 +1,7 @@
 export default {
   test: {
-    environment: "node",
+    environment: "jsdom",
+    setupFiles: ["tests/frontend/setup.js"],
     include: ["tests/frontend/**/*.test.js"],
   },
 };

@@ -93,3 +93,39 @@ ACTIVE_USER_SESSION_SECONDS = Histogram(
 def get_metrics_content():
     """Returns the Prometheus metrics in text format."""
     return generate_latest(), CONTENT_TYPE_LATEST
+
+
+def get_counter_value(metric, **label_kwargs) -> float:
+    """
+    Reads the cumulative value of a Counter or Histogram (sum) matching the given labels.
+    If no labels are provided, it sums across all series for that metric.
+    Fail-safe: returns 0.0 if there are no samples or on error.
+    """
+    try:
+        metrics = list(metric.collect())
+        if not metrics:
+            return 0.0
+
+        total = 0.0
+        for m in metrics:
+            for sample in m.samples:
+                # Target the cumulative value samples
+                if not (
+                    sample.name.endswith("_total")
+                    or sample.name.endswith("_sum")
+                    or sample.name == m.name
+                ):
+                    continue
+
+                # Match labels
+                match = True
+                for k, v in label_kwargs.items():
+                    if sample.labels.get(k) != str(v):
+                        match = False
+                        break
+
+                if match:
+                    total += sample.value
+        return total
+    except Exception:
+        return 0.0

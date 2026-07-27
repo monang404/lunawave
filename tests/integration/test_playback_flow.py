@@ -30,7 +30,6 @@ import asyncio
 
 import pytest
 
-from core.command_bus import command_bus
 from core.commands import CMD_PLAY_TRACK, CMD_TOGGLE_PAUSE
 from core.event_bus import bus
 from core.events import TrackPauseChangedEvent, TrackStartedEvent
@@ -43,6 +42,10 @@ async def test_playback_flow(integration_app):
     IT-02: Playback Flow
     Skenario: Play → pause → next via CommandBus asli
     """
+    from server.app import COMMAND_BUS
+
+    command_bus = integration_app[COMMAND_BUS]
+
     events = []
 
     async def track_event(evt):

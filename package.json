@@ -8,7 +8,10 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "depcruise": "depcruise --config .dependency-cruiser.js web/static/shared/js web/static/pages"
   },
   "repository": {
     "type": "git",
@@ -23,6 +26,13 @@
   },
   "homepage": "https://github.com/monang404/lunawave#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "dependency-cruiser": "^18.1.0",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "typescript": "~5.9.3",
     "vitest": "^4.1.10"
   }
 }

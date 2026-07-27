@@ -23,7 +23,26 @@ Thread Safety:
     Thread-safe (read-only, tidak ada shared state).
 """
 
+import subprocess
 import sys
+
+
+def get_cpu_percent() -> float | None:
+    """
+    Mengembalikan penggunaan CPU secara cross-platform.
+    Untuk Windows menggunakan wmic, untuk Linux akan None.
+    """
+    if sys.platform == "win32":
+        try:
+            out = subprocess.check_output(
+                ["wmic", "cpu", "get", "loadpercentage"], shell=False, text=True
+            )
+            lines = out.strip().split("\n")
+            if len(lines) > 1:
+                return float(lines[-1].strip())
+        except Exception:
+            pass
+    return None
 
 
 def get_rss_mb() -> float | None:
@@ -58,35 +77,27 @@ def _get_rss_mb_proc() -> float | None:
 
 
 def _get_rss_mb_windows() -> float | None:
-    """Baca RSS via ctypes + psapi.GetProcessMemoryInfo (Windows, no install)."""
+    """Baca RSS via wmic process get WorkingSetSize (Windows, no install)."""
     try:
-        import ctypes
-        from ctypes import wintypes
+        import os
+        import subprocess
 
-        class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
-            _fields_ = [
-                ("cb", wintypes.DWORD),
-                ("PageFaultCount", wintypes.DWORD),
-                ("PeakWorkingSetSize", ctypes.c_size_t),
-                ("WorkingSetSize", ctypes.c_size_t),
-                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                ("PagefileUsage", ctypes.c_size_t),
-                ("PeakPagefileUsage", ctypes.c_size_t),
-            ]
-
-        psapi = ctypes.WinDLL("psapi.dll")
-        kernel32 = ctypes.WinDLL("kernel32.dll")
-
-        counters = PROCESS_MEMORY_COUNTERS()
-        counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS)
-        handle = kernel32.GetCurrentProcess()
-
-        ok = psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb)
-        if not ok:
-            return None
-        return round(counters.WorkingSetSize / (1024 * 1024), 2)
+        out = subprocess.check_output(
+            [
+                "wmic",
+                "process",
+                "where",
+                f"processid={os.getpid()}",
+                "get",
+                "WorkingSetSize",
+            ],
+            shell=False,
+            text=True,
+        )
+        lines = out.strip().split("\n")
+        if len(lines) > 1:
+            bytes_val = float(lines[-1].strip())
+            return round(bytes_val / (1024 * 1024), 2)
     except Exception:
-        return None
+        pass
+    return None

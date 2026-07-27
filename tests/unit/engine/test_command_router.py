@@ -18,7 +18,6 @@ Publishes:
 
 import pytest
 
-import engine.command_router as command_router_module
 from core.command_bus import (
     CMD_LYRICS_OFFSET,
     CMD_NEXT,
@@ -117,13 +116,9 @@ class FakeVolumeService:
 
 
 @pytest.fixture
-def isolated_bus(monkeypatch):
-    """Swap the module-level `command_bus` singleton for a throwaway
-    instance so tests don't collide with each other (or with any other
-    module that registers onto the real singleton)."""
-    fresh_bus = CommandBus()
-    monkeypatch.setattr(command_router_module, "command_bus", fresh_bus)
-    return fresh_bus
+def isolated_bus():
+    """Create a fresh CommandBus instance per test."""
+    return CommandBus()
 
 
 @pytest.fixture
@@ -138,7 +133,9 @@ def volume_service():
 
 @pytest.fixture
 def router(isolated_bus, controller, volume_service):
-    return CommandRouter(playback_controller=controller, volume_service=volume_service)
+    return CommandRouter(
+        playback_controller=controller, volume_service=volume_service, command_bus=isolated_bus
+    )
 
 
 PLAYBACK_COMMANDS = [
@@ -213,4 +210,6 @@ def test_registering_a_second_router_on_the_same_bus_raises_duplicate_error(
     router, isolated_bus, controller, volume_service
 ):
     with pytest.raises(RuntimeError):
-        CommandRouter(playback_controller=controller, volume_service=volume_service)
+        CommandRouter(
+            playback_controller=controller, volume_service=volume_service, command_bus=isolated_bus
+        )

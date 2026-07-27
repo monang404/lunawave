@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-const formatUtils = require("../../../web/static/js/utils/format.js");
+import * as formatUtils from "../../../web/static/shared/js/utils/format.js";
 
 describe("formatTime", () => {
   it("formats seconds to mm:ss", () => {
@@ -26,5 +26,23 @@ describe("escapeHtml", () => {
 
   it("handles empty string", () => {
     expect(formatUtils.escapeHtml("")).toBe("");
+  });
+});
+
+describe("formatDurationLong", () => {
+  it("formats sub-hour durations as mm:ss", () => {
+    expect(formatUtils.formatDurationLong(90)).toBe("01:30");
+  });
+
+  it("formats durations over an hour as hh:mm:ss", () => {
+    expect(formatUtils.formatDurationLong(3661)).toBe("01:01:01");
+  });
+
+  it("handles zero", () => {
+    expect(formatUtils.formatDurationLong(0)).toBe("00:00:00");
+  });
+
+  it("handles negative values", () => {
+    expect(formatUtils.formatDurationLong(-5)).toBe("00:00:00");
   });
 });

@@ -66,6 +66,7 @@ import structlog
 
 from adapters.mpv import MpvController
 from adapters.ytdlp import YtDlpClient
+from core.command_bus import CommandBus
 from core.event_bus import bus
 from core.log_categories import LC_AUTH, LC_EXTERNAL
 from core.state import AppState, PlayerStatus
@@ -101,6 +102,7 @@ class BootstrapContext:
         self.playback_controller = None
         self.sleep_timer = None
         self.download_manager = None
+        self.command_bus = None
         self.command_router = None
         self.nowplaying = None
         self.tasks: list[asyncio.Task] = []
@@ -233,6 +235,8 @@ async def init_core_services() -> BootstrapContext:
     from engine.volume_service import VolumeService
     from persistence.stream_cache import CacheResolver, ResolverDbCompat
 
+    ctx.command_bus = CommandBus()
+
     ctx.resolver = CacheResolver(
         ResolverDbCompat(ctx.repos.tracks, ctx.repos.artists, ctx.repos.discover), ctx.ytdlp
     )
@@ -261,13 +265,15 @@ async def init_core_services() -> BootstrapContext:
         ctx.loudness_service,
     )
 
-    ctx.sleep_timer = SleepTimer(bus)
+    ctx.sleep_timer = SleepTimer(bus, ctx.command_bus)
 
-    ctx.download_manager = DownloadManager(bus, ctx.state, ctx.ytdlp)
-    ctx.command_router = CommandRouter(ctx.playback_controller, ctx.volume_service, ctx.sleep_timer)
+    ctx.download_manager = DownloadManager(bus, ctx.state, ctx.ytdlp, ctx.command_bus)
+    ctx.command_router = CommandRouter(
+        ctx.playback_controller, ctx.volume_service, ctx.sleep_timer, ctx.command_bus
+    )
 
     # Termux now-playing notification (no-op outside Termux)
-    ctx.nowplaying = TermuxNowPlaying(bus, ctx.state)
+    ctx.nowplaying = TermuxNowPlaying(bus, ctx.state, ctx.command_bus)
     await ctx.nowplaying.start()
 
     return ctx

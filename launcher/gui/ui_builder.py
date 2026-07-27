@@ -144,7 +144,7 @@ class UIBuilder:
         # ── Buttons ──
         btn_frame = tk.Frame(app, bg=self.BG, pady=10)
         btn_frame.pack(fill="x", padx=16)
-        btn_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        btn_frame.columnconfigure((0, 1, 2, 3, 4), weight=1)
 
         app._btn_start = self._make_btn(
             btn_frame, "▶  Start", self.ACCENT, "#2A1F06", app._on_start, col=0
@@ -157,6 +157,9 @@ class UIBuilder:
         )
         app._btn_open = self._make_btn(
             btn_frame, "⬡  Open Portal", self.TEXT_2, self.BG_CARD, app._on_open, col=3
+        )
+        app._btn_dashboard = self._make_btn(
+            btn_frame, "📋  Logs", self.TEXT_2, self.BG_CARD, app._on_open_dashboard, col=4
         )
 
         # ── Admin Credentials Frame ──

@@ -7,6 +7,15 @@
 # tanpa pernah menjalankan hook secara lokal, drift arsitektur/dokumentasi
 # lolos ke main tanpa gate otomatis apapun. Workflow ini menutup celah itu
 # dengan menjalankan checker yang sama sebagai gate wajib di CI.
+#
+# PATCH-2026-07-25-XXX: frontend-tests sebelumnya cuma jalankan `npm test`
+# (vitest). ESLint dan tsc --typecheck sudah dikonfigurasi di package.json
+# (`npm run lint`, `npm run typecheck`) tapi tidak pernah dipanggil di CI,
+# sehingga pelanggaran lint/type bisa lolos ke main asal test-nya tetap
+# hijau. Sama halnya dengan depcruise (batas dependency antar layer di sisi
+# JS, analog import-linter di sisi Python) yang juga belum di-gate. Ditambah
+# di sini supaya semua alat yang sudah disiapkan benar-benar dipakai sebagai
+# gate, bukan sekadar terpasang di package.json.
 name: CI
 
 on:
@@ -78,18 +87,27 @@ jobs:
         run: pytest -q
 
   frontend-tests:
-    name: Frontend Tests (vitest)
+    name: Frontend Tests (vitest, eslint, tsc, depcruise)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run vitest
+      - name: eslint — lint
+        run: npm run lint
+
+      - name: tsc — typecheck (JSDoc-based types)
+        run: npm run typecheck
+
+      - name: depcruise — batas dependency antar layer (sisi JS)
+        run: npm run depcruise
+
+      - name: vitest — unit tests
         run: npm test

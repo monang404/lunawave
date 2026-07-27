@@ -51,8 +51,10 @@ from core.log_categories import LC_PLAYBACK
 from core.ports import AudioPlayerPort, LyricsProvider, SponsorBlockProvider, StreamResolverPort
 from core.state import AppState, AudioOutput, PlaybackMode, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
+from engine.playback.circuit_breaker import PlaybackCircuitBreaker
 from engine.playback.failure_ops import FailureOps
 from engine.playback.mode_ops import ModeOps
+from engine.playback.play_ops import PlayOps
 from engine.playback.queue_controller import QueueController
 from engine.playback.queue_ops import QueueOps
 from engine.playback.settings_controller import SettingsController
@@ -100,13 +102,9 @@ class PlaybackController:
         # eksplisit untuk menyentuh file ❄️ Frozen ini).
         self._queue_controller = QueueController(self)
         self._settings_controller = SettingsController(self)
-        # `_retry_count` TIDAK pernah dipakai untuk retry track yang SAMA --
-        # tiap kegagalan play_track (apapun tracknya) selalu lompat ke
-        # _advance_to_next() dengan backoff naik, dan berhenti total tanpa
-        # advance lagi setelah 3x berturut-turut. Jadi counter ini sudah
-        # berfungsi sebagai circuit breaker LINTAS-TRACK (bukan cuma
-        # per-track) sejak awal -- lihat percabangan except di bawah.
-        self._retry_count = 0
+        self._play_ops = PlayOps(self)
+        # Circuit breaker lintas-track -- lihat docstring PlaybackCircuitBreaker.
+        self._breaker = PlaybackCircuitBreaker(threshold=3)
         self._loading = False
         self._last_position_save = 0.0
         self._last_play_start_ts = 0.0
@@ -215,90 +213,7 @@ class PlaybackController:
     async def play_track(
         self, track: TrackInfo, start_position: float = 0.0, start_paused: bool = False
     ):
-        async with self._play_lock:  # A-05: cegah concurrent play_track race
-            if self.state.current_track:
-                self.state.history.append(self.state.current_track)
-            self.state.current_track = track
-            self.state.status = PlayerStatus.LOADING
-            self.state.position = start_position
-            self.state.duration = float(track.duration)
-            self.state.lyrics_lines = []
-            self.state.lyrics_index = 0
-            self._crossfade_out_triggered = False
-            if self._fade_out_task and not self._fade_out_task.done():
-                self._fade_out_task.cancel()
-            try:
-                loaded = await self.track_loader.load_track(track)
-                uri = loaded.uri
-                self._loading = True
-                self._last_play_start_ts = asyncio.get_event_loop().time()
-                await self.mpv.play(uri)
-                await asyncio.sleep(0.15)
-
-                # Loudness Normalization (Phase 6/7)
-                from engine.loudness.gain_calculator import build_af_filter
-
-                # BUGFIX: simpan gain_db track ini di state supaya toggle_loudness_normalization()
-                self.state.current_track_gain_db = loaded.gain_db
-
-                if getattr(self.state, "loudness_normalization_enabled", False):
-                    await self.mpv.set_af(build_af_filter(loaded.gain_db))
-                else:
-                    await self.mpv.set_af(build_af_filter(0.0))
-
-                if getattr(self.state, "audio_output", AudioOutput.DEVICE) == AudioOutput.BROWSER:
-                    # BACKEND-FIX-01: Pastikan mpv silent di browser mode.
-                    await self.mpv.set_volume(0)
-                    await self.bus.publish(
-                        LogMessageEvent(message="Audio output is browser, mpv silent (volume=0).")
-                    )
-                else:
-                    if getattr(self.state, "crossfade_enabled", False):
-                        from engine.playback.crossfade import apply_crossfade_in
-
-                        # PATCH-2026-07-16-001
-                        if self._fade_task and not self._fade_task.done():
-                            self._fade_task.cancel()
-                        self._fade_task = safe_create_task(
-                            apply_crossfade_in(self.mpv, self.state), name="fade_in"
-                        )
-                    else:
-                        await self.mpv.set_volume(self.state.volume)
-
-                if start_paused:
-                    await self.mpv.pause()
-                else:
-                    await self.mpv.resume()  # RC-TERMUX-02
-
-                if start_position > 0:
-                    await self.mpv.seek(start_position)
-
-                self.state.status = PlayerStatus.PAUSED if start_paused else PlayerStatus.PLAYING
-                self._retry_count = 0
-                self._loading = False  # RC-TERMUX-01
-                await self.bus.publish(TrackStartedEvent(track=track))
-
-                # Fetch duration actively if not available
-                if self.state.duration == 0:
-                    safe_create_task(self._poll_duration(track), name="poll_duration")
-
-            except VideoUnavailableError as e:
-                # PATCH-2026-07-20-136: video dihapus/private/diblokir secara
-                # permanen. Detail penanganan lihat engine/playback/failure_ops.py
-                # (diekstrak dari sini supaya controller.py tetap di bawah
-                # LARGE_FILE_THRESHOLD).
-                await self._failure_ops.handle_video_unavailable(track, e)
-
-            except (BotCheckError, RateLimitedError) as e:
-                # PATCH-2026-07-20-136: bot-check/rate-limit -- lihat
-                # engine/playback/failure_ops.py untuk detail penanganan.
-                await self._failure_ops.handle_bot_check_or_rate_limited(track, e)
-
-            except Exception as e:
-                await self._failure_ops.handle_generic_error(track, e)
-
-    async def _poll_duration(self, track: TrackInfo):
-        await poll_duration(self.state, self.mpv, self.resolver, self.bus, track)
+        await self._play_ops.play_track(track, start_position, start_paused)
 
     async def _on_cmd_play_track(self, track: TrackInfo):
         async with self._lock:
@@ -402,7 +317,7 @@ class PlaybackController:
                 await self.bus.publish(LogMessageEvent(message="Tidak ada lagu sebelumnya"))
 
     async def _on_stop(self, _data=None):
-        self._retry_count = 0  # TASK-0.2: reset retry state agar tidak bocor ke lagu berikutnya
+        self._breaker.record_success()  # TASK-0.2: reset retry state agar tidak bocor ke lagu berikutnya
         await self.mpv.pause()
         self.state.status = PlayerStatus.IDLE
         self.state.current_track = None

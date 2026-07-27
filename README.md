@@ -83,12 +83,15 @@ bash start.sh
 start.bat
 ```
 
+> **Info Konfigurasi:** Host dan port default adalah `0.0.0.0` dan `8765`. Anda dapat mengubahnya menggunakan environment variable `LUNAWAVE_HOST` dan `LUNAWAVE_PORT`. Pengecekan preflight juga dapat dijalankan manual via CLI: `python -m launcher.preflight --host 127.0.0.1 --port 8765`.
+
 > **Catatan Windows:** Di Windows, aplikasi akan otomatis membuka koneksi TCP internal ke MPV (via fallback) karena fitur Unix Socket tidak tersedia. Pastikan port lokal tidak terblokir firewall.
 
 ### 🌐 Mengakses Antarmuka Web (LunaWave)
 Saat Anda menjalankan aplikasi, server web otomatis aktif di latar belakang pada port `8765`.
 1. Buka browser di Laptop/PC atau HP lain yang satu jaringan WiFi dengan HP Termux Anda.
 2. Untuk mengontrol musik, akses rute `/admin` (Contoh: `http://192.168.1.5:8765/admin`). Mengakses `/` langsung akan membuka tampilan "Dengar Saja" untuk klien.
+   - **Dashboard Observabilitas**: Anda dapat memantau kesehatan server dan log secara real-time di `/admin/logs`, sejajar dengan ketersediaan `/health` dan `/metrics`.
 3. **Pertama kali dijalankan**, Anda akan diarahkan ke halaman **Initial Setup** untuk membuat akun admin sendiri (username + password minimal 8 karakter). Tidak ada password yang di-generate otomatis lagi — Anda yang menentukannya sendiri, sekali, saat setup.
 4. Setelah setup selesai, gunakan kredensial itu untuk login. Untuk provisioning non-interaktif (CI, automated deploy) yang tidak bisa lewat wizard browser, kredensial awal juga bisa di-set via Environment Variable `LUNAWAVE_ADMIN_USER` dan `LUNAWAVE_ADMIN_PASS` — jalur ini hanya aktif kalau akun admin belum pernah dibuat.
 5. Klik tombol **`🚪 Keluar`** di pojok kanan atas UI Web untuk logout.

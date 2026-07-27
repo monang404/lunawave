@@ -1,39 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// FIX-PAUSE-RACE-01 regression test.
-//
-// Skenario nyata yang diperbaiki: user klik pause di jaringan jelek -> audio
-// browser sudah benar-benar paused -> tapi progress broadcast dari server yang
-// tiba TELAT (RTT > grace-window lama) masih bawa status PLAYING lama -> client
-// menimpa balik store.status jadi PLAYING -> cabang FIX-RADIO-08 di ws.js
-// melihat "status PLAYING tapi audio.paused" -> auto-play tanpa user gesture.
-//
-// Test ini menjalankan MODUL ASLI (store.js utk markPendingToggle/
-// isPendingToggleActive, ws.js utk handleServerMessage) -- bukan re-implementasi
-// logikanya di sini -- supaya benar-benar menguji kode produksi.
+import { store, markPendingToggle, isPendingToggleActive } from "../../web/static/shared/js/store.js";
 
-const storeModule = require("../../web/static/js/store.js");
+// Mock out audio and render components
+vi.mock("../../web/static/shared/js/render/toast.js", () => ({ showLogToast: vi.fn(), showPersistentToast: vi.fn(), hidePersistentToast: vi.fn() }));
+vi.mock("../../web/static/shared/js/audio/playback-sync.js", () => ({ getOrInitAudio: vi.fn(), syncBrowserAudio: vi.fn(), _resumeAndPlay: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/player.js", () => ({ renderProgress: vi.fn(), renderPlayBtn: vi.fn(), setPositionAnchor: vi.fn(), resetAnchorClock: vi.fn(), renderPlayerBar: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/now-playing.js", () => ({ renderNowPlaying: vi.fn(), syncPlayerStateAttr: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/queue.js", () => ({ renderQueue: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/radio-tab.js", () => ({ renderRadioTab: vi.fn(), renderRadio: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/discover-tab.js", () => ({ renderDiscoverTab: vi.fn(), updateDiscoverPlayingState: vi.fn(), renderRecentRow: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/search.js", () => ({ updateSearchPlayingState: vi.fn() }));
+vi.mock("../../web/static/shared/js/render/lyrics.js", () => ({ renderLyrics: vi.fn(), syncLocalLyrics: vi.fn() }));
 
-global.dom = {};
-global.store = storeModule.store;
-global.window = {};
-global.markPendingToggle = storeModule.markPendingToggle;
-global.isPendingToggleActive = storeModule.isPendingToggleActive;
-global.getOrInitAudio = vi.fn();
-global.syncBrowserAudio = vi.fn();
-global.renderProgress = vi.fn();
-global.renderPlayBtn = vi.fn();
-global.renderNowPlaying = vi.fn();
-global.renderQueue = vi.fn();
-global.renderRadio = vi.fn();
-global.syncPlayerStateAttr = vi.fn();
-global.setPositionAnchor = vi.fn();
-global.resetAnchorClock = vi.fn();
-global._resumeAndPlay = vi.fn((audio) => {
-  audio.paused = false; // simulasikan audio benar-benar play lagi
-});
+import * as playbackSync from "../../web/static/shared/js/audio/playback-sync.js";
 
-const wsModule = require("../../web/static/js/ws.js");
+globalThis.safeStorage = { set: vi.fn(), remove: vi.fn(), get: vi.fn() };
+globalThis.window = globalThis; // Provide basic window mock if needed
+
+import * as wsModule from "../../web/static/shared/js/ws.js";
 
 function makeFakeAudio() {
   return { paused: true, src: "https://example.com/stream.mp3", readyState: 4, currentTime: 0 };
@@ -42,97 +27,93 @@ function makeFakeAudio() {
 describe("FIX-PAUSE-RACE-01: pause tidak auto-play lagi walau progress message telat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(global.store, {
+    Object.assign(store, {
       status: "PAUSED",
       audio_output: "browser",
       userRole: "admin",
       current_track: { video_id: "abc" },
     });
-    global.window.pendingToggleTarget = null;
-    global.window.toggleSentAt = 0;
-    global.window.audioBlocked = false;
+    store._pendingToggleTarget = null;
+    store._toggleSentAt = 0;
+
+    // Remove legacy properties from globalThis to ensure they are not used
+    delete globalThis.pendingToggleTarget;
+    delete globalThis.toggleSentAt;
+    globalThis.audioBlocked = false;
   });
 
   it("menolak progress PLAYING basi selama masih menunggu konfirmasi PAUSED (RTT lama)", () => {
     const audio = makeFakeAudio();
-    audio.paused = true; // user sudah klik pause, audio benar-benar berhenti
-    global.getOrInitAudio.mockReturnValue(audio);
+    audio.paused = true;
+    playbackSync.getOrInitAudio.mockReturnValue(audio);
 
-    // User klik pause -> optimistic update + tandai target yang ditunggu.
-    global.store.status = "PAUSED";
-    global.markPendingToggle("PAUSED");
+    store.status = "PAUSED";
+    markPendingToggle("PAUSED");
 
-    // Progress message BASI tiba 2 detik kemudian (RTT lambat), masih bawa
-    // status lama "PLAYING" dari sebelum server sempat memproses toggle kita.
+    // Assert globalThis is not polluted
+    expect(globalThis.pendingToggleTarget).toBeUndefined();
+    expect(store._pendingToggleTarget).toBe("PAUSED");
+
     wsModule.handleServerMessage({
       type: "progress",
       data: { status: "PLAYING", position: 10, server_ts: 1 },
     });
 
-    // Sebelumnya (bug): store.status ketimpa balik ke PLAYING dan audio
-    // di-auto-resume lewat _resumeAndPlay(). Sekarang: message basi ditolak
-    // karena kontradiktif dengan pendingToggleTarget yang masih aktif.
-    expect(global.store.status).toBe("PAUSED");
-    expect(global._resumeAndPlay).not.toHaveBeenCalled();
+    expect(store.status).toBe("PAUSED");
+    expect(playbackSync._resumeAndPlay).not.toHaveBeenCalled();
     expect(audio.paused).toBe(true);
   });
 
   it("menerima progress PAUSED begitu server benar-benar mengonfirmasi target", () => {
     const audio = makeFakeAudio();
     audio.paused = true;
-    global.getOrInitAudio.mockReturnValue(audio);
+    playbackSync.getOrInitAudio.mockReturnValue(audio);
 
-    global.store.status = "PAUSED";
-    global.markPendingToggle("PAUSED");
+    store.status = "PAUSED";
+    markPendingToggle("PAUSED");
 
-    // Server akhirnya memproses toggle kita dan broadcast status yang benar.
     wsModule.handleServerMessage({
       type: "progress",
       data: { status: "PAUSED", position: 10, server_ts: 2 },
     });
 
-    expect(global.store.status).toBe("PAUSED");
-    expect(global.window.pendingToggleTarget).toBeNull(); // sudah dikonfirmasi, berhenti menunggu
+    expect(store.status).toBe("PAUSED");
+    expect(isPendingToggleActive()).toBe(false);
   });
 
   it("safety-valve: berhenti menolak update setelah 8 detik kalau command kita sendiri hilang", () => {
     const audio = makeFakeAudio();
     audio.paused = true;
-    global.getOrInitAudio.mockReturnValue(audio);
+    playbackSync.getOrInitAudio.mockReturnValue(audio);
 
-    global.store.status = "PAUSED";
-    global.markPendingToggle("PAUSED");
-    // Simulasikan sudah 9 detik berlalu sejak toggle dikirim (command hilang di jalan).
-    global.window.toggleSentAt = Date.now() - 9000;
+    store.status = "PAUSED";
+    markPendingToggle("PAUSED");
+    // override internal time manually
+    Object.assign(store, { _toggleSentAt: Date.now() - 9000 });
 
     wsModule.handleServerMessage({
       type: "progress",
       data: { status: "PLAYING", position: 10, server_ts: 3 },
     });
 
-    // Safety-valve sudah habis -> update dari server diterima apa adanya,
-    // supaya client tidak macet permanen menolak semua update.
-    expect(global.store.status).toBe("PLAYING");
-    expect(global.window.pendingToggleTarget).toBeNull();
+    expect(store.status).toBe("PLAYING");
+    expect(isPendingToggleActive()).toBe(false);
   });
 
   it("status tidak macet kalau user next/prev sebelum toggle pause sempat dikonfirmasi server (edge case)", () => {
-    global.store.status = "PAUSED";
-    global.markPendingToggle("PAUSED"); // user pause, belum dikonfirmasi server
+    store.status = "PAUSED";
+    markPendingToggle("PAUSED");
 
-    global.store.status = "LOADING"; // user langsung klik next sebelum konfirmasi datang
+    store.status = "LOADING";
     wsModule.wsSend("next", { video_id: "xyz" });
 
-    expect(global.window.pendingToggleTarget).toBeNull(); // target basi harus di-clear
+    expect(isPendingToggleActive()).toBe(false);
 
-    // Progress utk track baru datang -- dulu ini akan ditolak krn dianggap
-    // kontradiktif dgn pendingToggleTarget="PAUSED" yang basi, bikin status
-    // macet di LOADING sampai safety-valve 8 detik habis.
     wsModule.handleServerMessage({
       type: "progress",
       data: { status: "PLAYING", position: 0, server_ts: 4 },
     });
 
-    expect(global.store.status).toBe("PLAYING");
+    expect(store.status).toBe("PLAYING");
   });
 });

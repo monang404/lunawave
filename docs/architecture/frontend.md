@@ -19,16 +19,42 @@ Ringkasannya:
 
 ## Peta Modul JavaScript
 
-### Root
+> **Update 2026-07-24 (PATCH-2026-07-24-220):** Entry point per-halaman sudah
+> dipindah keluar dari `web/static/shared/js/` ke folder halamannya masing-masing.
+> Modul di bawah `web/static/shared/js/` (termasuk `store.js`, `dom.js`, `ws.js`,
+> `audio/`, `render/`, `events/`, `services/`, `utils/`, `platform/`) tetap
+> shared dan tidak pindah -- hanya 4 file entry point berikut yang pindah:
+
+| Entry point | Lokasi baru | Dipakai oleh |
+|---|---|---|
+| `main.js` | `web/static/pages/app/main.js` | `pages/app/index.html` |
+| `client.js` | `web/static/pages/client/client.js` | `pages/client/client.html` |
+| `chat.js` | `web/static/pages/client/chat.js` | `pages/client/client.html` |
+| `admin-logs.js` | `web/static/pages/admin-logs/admin-logs.js` | `pages/admin-logs/admin-logs.html` |
+
+Semua import relatif di keempat file itu mengarah balik ke shared module lewat
+`../../shared/js/...js`. Tidak ada backward-compat alias di lokasi lama --
+seluruh caller (HTML, `server/handlers/http.py`, `server/handlers/log_dashboard.py`)
+sudah diverifikasi ikut update di patch yang sama.
+
+`chat.css` (dipakai khusus `client.html`, tidak shared) pindah bersamaan ke
+`web/static/pages/client/chat.css` -- bukan cuma JS, satu-satunya CSS yang
+entry-only mengikuti pola yang sama.
+
+### Root (`web/static/shared/js/`)
 
 | File | Tanggung Jawab | Baris (saat ini) |
 |---|---|---|
 | `config.js` | Konstanta URL, timeout, feature flags | ~30 |
 | `store.js` | State global client-side | ~90 |
 | `dom.js` | Selector cache, DOM helpers | ~80 |
-| `main.js` | Init: mount listeners, connect WS, check auth | ~120 |
 | `portal.js` | Login portal logic | ~60 |
 | `ws.js` | WebSocket lifecycle + routing pesan masuk | ~190 (slim) |
+
+> `main.js` (init: mount listeners, connect WS, check auth) bukan lagi di sini
+> sejak PATCH-2026-07-24-220 — pindah ke `pages/app/main.js` (lihat tabel
+> Entry Point di atas), karena isinya entry-only untuk `pages/app/index.html`,
+> bukan modul shared.
 
 ### `js/audio/`
 
@@ -38,6 +64,16 @@ Ringkasannya:
 | `visualizer.js` 🆕 | Canvas visualizer (opsional, bisa disabled) |
 
 > Dipecah dari `audio.js` yang sebelumnya merangkap terlalu banyak.
+
+**Exception circular-dependency terdokumentasi:** `audio/playback-sync.js`
+dan `audio/visualizer.js` saling impor (live binding `analyser`/`dataArray`)
+secara sengaja sejak PATCH-2026-07-24-223, supaya visualizer selalu
+melihat nilai `analyser` terkini tanpa re-passing manual. Ini
+terdeteksi sebagai circular-dependency warning oleh depcruise, dan
+SENGAJA DIBIARKAN (bukan lupa diperbaiki) karena refactor ke
+parameter-passing berisiko meregresi behavior real-time audio untuk
+manfaat yang kecil. Lihat investigasi lengkap di
+docs/rfc/frontend_refactor/ sesi 4.
 
 ### `js/events/`
 
@@ -68,16 +104,26 @@ Ringkasannya:
 | `discover-tab.js` 🆕 | Render discover tab (mix, trending) |
 | `radio-tab.js` 🆕 | Render radio mode UI |
 | `full-state.js` 🆕 | Render ulang full state setelah WS reconnect |
+| `toast.js` 🆕 | Tampilkan toast notification (connection toast, log toast) |
 
 > `discover-tab.js` dan `radio-tab.js` dipecah dari `discover.js` yang sebelumnya merangkap dua tab.
 > `full-state.js` dipindah dari `ws.js` untuk memisahkan routing dari rendering.
+> `toast.js` pindah dari `utils/toast.js` (lihat catatan di `js/utils/` di bawah) —
+> bukan pemecahan, dipindah utuh, karena isinya import `dom.js` sehingga tidak
+> sah tinggal di `utils/` (rule dependency-cruiser `utils-must-be-leaf`).
 
 ### `js/utils/`
 
 | File | Tanggung Jawab |
 |---|---|
 | `format.js` 🆕 | Format durasi, tanggal, nama artis |
-| `toast.js` 🆕 | Tampilkan toast notification |
+| `cover-art.js` 🆕 | Cover art fetch/cache (iTunes + fallback YT thumbnail), lazy-load observer, `cleanTrackTitle`, `safeStorage` |
+
+> **Update PATCH-2026-07-24 (recovery frontend, lanjutan):** `toast.js` semula
+> di sini campur dua tanggung jawab (toast UI berbasis `dom.js` + util murni
+> cover art). Dipecah: bagian toast pindah ke `render/toast.js` (lihat di
+> atas), bagian util murni jadi `cover-art.js` di sini — supaya `utils/`
+> tetap leaf sesuai rule dependency-cruiser `utils-must-be-leaf`.
 
 ### `js/services/`
 

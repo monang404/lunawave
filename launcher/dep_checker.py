@@ -22,6 +22,8 @@ Thread Safety:
 
 import importlib.util
 import shutil
+import socket
+import subprocess
 
 
 class DependencyChecker:
@@ -46,3 +48,28 @@ class DependencyChecker:
 
         mpv_ok = shutil.which("mpv") is not None
         return missing, mpv_ok
+
+    def check_port(self, host: str, port: int) -> bool:
+        """
+        Returns True if the port is currently IN USE (occupied), False otherwise.
+        """
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                return s.connect_ex((host, int(port))) == 0
+        except Exception:
+            return False
+
+    def mpv_version(self) -> str | None:
+        """
+        Returns the first line of mpv --version output, or None if fail/not found.
+        """
+        try:
+            if shutil.which("mpv") is None:
+                return None
+            res = subprocess.run(["mpv", "--version"], capture_output=True, text=True, timeout=2.0)
+            if res.returncode == 0 and res.stdout:
+                return res.stdout.splitlines()[0].strip()
+        except Exception:
+            pass
+        return None

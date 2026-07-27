@@ -37,6 +37,7 @@ from pathlib import Path
 import structlog
 from aiohttp import web
 
+from core.command_bus import CommandBus
 from core.log_categories import LC_LIFECYCLE
 from core.ports import MediaExtractorPort
 from core.server_clock import ServerClock, server_clock
@@ -59,14 +60,19 @@ TRACKS: web.AppKey = web.AppKey("tracks")
 MANAGER: web.AppKey = web.AppKey("manager")
 # ADR-0010: uptime server, dipakai /health + task periodik [STATUS] (sesi 4).
 SERVER_CLOCK: web.AppKey[ServerClock] = web.AppKey("server_clock", ServerClock)
+COMMAND_BUS: web.AppKey[CommandBus] = web.AppKey("command_bus", CommandBus)
 
 
 def create_app(
-    playback_controller: PlaybackController, ytdlp: MediaExtractorPort, repos: Repositories
+    playback_controller: PlaybackController,
+    ytdlp: MediaExtractorPort,
+    repos: Repositories,
+    command_bus: CommandBus,
 ) -> web.Application:
     from server.connection_manager import ConnectionManager
     from server.handlers.audio_stream_handler import serve_stream
     from server.handlers.http import health_check, serve_client, serve_index, serve_metrics
+    from server.handlers.log_dashboard import get_logs_stats, get_logs_tail, serve_log_dashboard
     from server.handlers.setup import setup_required
     from server.handlers.websocket import ws_handler
     from server.middleware.traffic import traffic_middleware
@@ -74,6 +80,7 @@ def create_app(
     app = web.Application(middlewares=[traffic_middleware])
     manager = ConnectionManager()
 
+    app[COMMAND_BUS] = command_bus
     app[PLAYBACK_CONTROLLER] = playback_controller
     app[STATE] = playback_controller.state
     app[YTDLP] = ytdlp
@@ -97,13 +104,22 @@ def create_app(
     broadcast_service = BroadcastService(manager)
     setup_event_listeners(playback_controller, prefetch_service, broadcast_service)
 
+    async def serve_favicon(request):
+        return web.FileResponse(STATIC_DIR / "icons" / "icon-192.png")
+
     app.router.add_get("/", serve_client)
+    app.router.add_get("/favicon.ico", serve_favicon)
     app.router.add_get("/admin", serve_index)
+    app.router.add_get("/admin/", serve_index)
     app.router.add_get("/ws", ws_handler)
     app.router.add_get("/api/stream/{video_id}", serve_stream)
     app.router.add_get("/api/setup-required", setup_required)
     app.router.add_get("/health", health_check)
     app.router.add_get("/metrics", serve_metrics)
+    app.router.add_get("/admin/logs", serve_log_dashboard)
+    app.router.add_get("/admin/logs/", serve_log_dashboard)
+    app.router.add_get("/api/logs/tail", get_logs_tail)
+    app.router.add_get("/api/logs/stats", get_logs_stats)
     app.router.add_static("/static", STATIC_DIR, name="static")
 
     return app

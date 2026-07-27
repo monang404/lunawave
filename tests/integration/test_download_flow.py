@@ -31,7 +31,6 @@ from pathlib import Path
 
 import pytest
 
-from core.command_bus import command_bus
 from core.commands import CMD_DOWNLOAD
 from core.event_bus import bus
 from core.events import DownloadCompleteEvent, LogMessageEvent
@@ -40,6 +39,9 @@ from core.state import TrackInfo
 
 @pytest.mark.asyncio
 async def test_download_flow(integration_app):
+    from server.app import COMMAND_BUS
+
+    command_bus = integration_app[COMMAND_BUS]
     """
     IT-04: Download Flow
     Skenario: Download → yt-dlp → selesai

@@ -58,7 +58,7 @@ async def test_serve_index_returns_file_response(mock_request):
 
             resp = await serve_index(mock_request)
 
-            mock_file_response.assert_called_once_with(Path("/fake/static/index.html"))
+            mock_file_response.assert_called_once_with(Path("/fake/static/pages/app/index.html"))
             assert resp.headers["Cache-Control"] == "no-cache"
 
 

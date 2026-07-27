@@ -37,7 +37,7 @@ import time
 import structlog
 
 from config import BASE_DIR
-from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE, command_bus
+from core.command_bus import CMD_NEXT, CMD_PREV, CMD_TOGGLE_PAUSE
 from core.event_bus import EventBus
 from core.events import TrackPauseChangedEvent, TrackStartedEvent
 from core.log_categories import LC_SYSTEM
@@ -57,9 +57,10 @@ _TOKEN_TO_EVENT = {
 
 
 class TermuxNowPlaying:
-    def __init__(self, bus: EventBus, state):
+    def __init__(self, bus: EventBus, state, command_bus=None):
         self.bus = bus
         self.state = state
+        self._command_bus = command_bus
         self._track: TrackInfo | None = None
         self._paused = False
         self._available = False
@@ -131,7 +132,7 @@ class TermuxNowPlaying:
     async def _handle_token(self, token: str):
         event = _TOKEN_TO_EVENT.get(token)
         if event:
-            await command_bus.execute(event)
+            await self._command_bus.execute(event)
 
     async def _on_track_started(self, event: TrackStartedEvent):
         self._track = event.track

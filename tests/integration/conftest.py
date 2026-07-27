@@ -80,9 +80,9 @@ async def integration_app(tmp_path, monkeypatch):
     # We must reset EventBus state if we want to run multiple tests cleanly,
     # but EventBus is a singleton. For integration tests, we can just clear listeners.
     bus._subscribers.clear()
-    from core.command_bus import command_bus
+    from core.command_bus import CommandBus
 
-    command_bus.reset()
+    command_bus = CommandBus()
 
     state = AppState()
 
@@ -130,10 +130,10 @@ async def integration_app(tmp_path, monkeypatch):
         bus, state, mpv, resolver, sponsorblock, lyrics_fetcher, queue_mode, radio_mode
     )
 
-    DownloadManager(bus, state, ytdlp)
-    CommandRouter(playback_controller, volume_service)
+    DownloadManager(bus, state, ytdlp, command_bus)
+    CommandRouter(playback_controller, volume_service, command_bus=command_bus)
 
-    app = create_app(playback_controller, ytdlp, db)
+    app = create_app(playback_controller, ytdlp, db, command_bus)
 
     yield app
 

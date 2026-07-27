@@ -76,8 +76,7 @@ def make_manager(bus, state, ytdlp, isolated_bus):
     """Instantiate DownloadManager with an isolated command bus."""
     from engine.download_manager import DownloadManager
 
-    with patch("engine.download_manager.command_bus", isolated_bus):
-        mgr = DownloadManager(bus=bus, state=state, ytdlp=ytdlp)
+    mgr = DownloadManager(event_bus=bus, state=state, ytdlp=ytdlp, command_bus=isolated_bus)
     return mgr
 
 

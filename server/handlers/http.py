@@ -42,13 +42,13 @@ STATIC_DIR = Path(__file__).parent.parent.parent / "web" / "static"
 
 
 async def serve_index(request):
-    resp = web.FileResponse(STATIC_DIR / "index.html")
+    resp = web.FileResponse(STATIC_DIR / "pages/app/index.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
 
 async def serve_client(request):
-    resp = web.FileResponse(STATIC_DIR / "client.html")
+    resp = web.FileResponse(STATIC_DIR / "pages/client/client.html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
@@ -89,7 +89,7 @@ async def health_check(request):
     )
 
 
-async def serve_metrics(request):
+def require_local_or_token(request) -> bool:
     import os as _os
     import secrets as _secrets
 
@@ -104,7 +104,11 @@ async def serve_metrics(request):
     # membandingkan token, mencegah timing attack yang bisa membocorkan
     # token metrics byte demi byte.
     has_valid_token = bool(metrics_token) and _secrets.compare_digest(request_token, metrics_token)
-    if not is_local and not has_valid_token:
+    return is_local or has_valid_token
+
+
+async def serve_metrics(request):
+    if not require_local_or_token(request):
         return web.HTTPForbidden(
             text="Akses ditolak: metrics hanya untuk localhost atau gunakan X-Metrics-Token"
         )

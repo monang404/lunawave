@@ -42,3 +42,50 @@ def test_check_dependencies(monkeypatch):
     missing, mpv_ok = checker.check_dependencies()
     assert "missing_pkg" in missing
     assert mpv_ok is True
+
+
+def test_check_port(monkeypatch):
+    checker = DependencyChecker()
+
+    # Mock socket connect_ex
+    class MockSocket:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def settimeout(self, t):
+            pass
+
+        def connect_ex(self, address):
+            # Port 80 is "in use", others are "free"
+            if address[1] == 80:
+                return 0
+            return 1
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+    monkeypatch.setattr("socket.socket", MockSocket)
+
+    assert checker.check_port("127.0.0.1", 80) is True
+    assert checker.check_port("127.0.0.1", 8080) is False
+
+
+def test_mpv_version(monkeypatch):
+    checker = DependencyChecker()
+
+    # Test mpv found
+    monkeypatch.setattr("shutil.which", lambda x: "/usr/bin/mpv")
+
+    class MockResult:
+        returncode = 0
+        stdout = "mpv 0.34.0 Copyright © 2000-2021 mpv/MPlayer/mplayer2 projects\nbuilt on UNKNOWN"
+
+    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: MockResult())
+    assert checker.mpv_version() == "mpv 0.34.0 Copyright © 2000-2021 mpv/MPlayer/mplayer2 projects"
+
+    # Test mpv not found
+    monkeypatch.setattr("shutil.which", lambda x: None)
+    assert checker.mpv_version() is None
