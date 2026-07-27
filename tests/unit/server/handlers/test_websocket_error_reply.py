@@ -7,8 +7,9 @@ from server.handlers.websocket import handle_ws_message
 
 
 @pytest.mark.asyncio
+@patch("server.handlers.websocket.logger")
 @patch("server.handlers.websocket.check_rate_limit", return_value=True)
-async def test_websocket_error_reply_generic(mock_check_rate_limit, capsys):
+async def test_websocket_error_reply_generic(mock_check_rate_limit, mock_logger):
     mock_ws = AsyncMock()
     mock_manager = MagicMock()
     mock_repos = MagicMock()
@@ -36,8 +37,14 @@ async def test_websocket_error_reply_generic(mock_check_rate_limit, capsys):
     assert sent_data["data"] == "Terjadi kesalahan saat memproses permintaan."
     assert "Secret Error" not in sent_data["data"]
 
-    captured = capsys.readouterr()
-    assert "Secret Error" in captured.out or "Secret Error" in captured.err
+    mock_logger.error.assert_called_with(
+        "ws_command_handling_failed",
+        category="command",
+        command_action="play_track",
+        error="Secret Error",
+        error_type="ValueError",
+        exc_info=True,
+    )
 
 
 @pytest.mark.asyncio

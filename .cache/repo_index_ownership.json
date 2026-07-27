@@ -1,13 +1,34 @@
 {
   "_meta": {
-    "generated_at": 1785141392.0784738,
+    "generated_at": 1785142319.7719247,
     "source_mtimes": {
-      "core/bus.py": 1785141392.0625224,
-      "engine/player.py": 1785141392.0636134,
-      "server/handler.py": 1785141392.0641706
+      "core/bus.py": 1785142319.6883872,
+      "engine/player.py": 1785142319.7151737,
+      "server/handler.py": 1785142319.7548716
     }
   },
   "files": {
+    "server/handler.py": {
+      "layer": "server",
+      "classes": [
+        "Handler"
+      ],
+      "functions": [
+        "setup",
+        "on_done"
+      ],
+      "imports": [
+        "core.bus",
+        "engine.player"
+      ],
+      "publishes": [],
+      "subscribes": [
+        "DownloadCompleteEvent"
+      ],
+      "loc": 9,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
     "engine/player.py": {
       "layer": "engine",
       "classes": [
@@ -45,30 +66,9 @@
       "loc": 6,
       "docstring_purpose": "",
       "reverse_deps": [
-        "engine/player.py",
-        "server/handler.py"
+        "server/handler.py",
+        "engine/player.py"
       ]
-    },
-    "server/handler.py": {
-      "layer": "server",
-      "classes": [
-        "Handler"
-      ],
-      "functions": [
-        "setup",
-        "on_done"
-      ],
-      "imports": [
-        "core.bus",
-        "engine.player"
-      ],
-      "publishes": [],
-      "subscribes": [
-        "DownloadCompleteEvent"
-      ],
-      "loc": 9,
-      "docstring_purpose": "",
-      "reverse_deps": []
     }
   }
 }

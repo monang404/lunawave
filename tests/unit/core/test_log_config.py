@@ -201,6 +201,8 @@ def test_log_session_end_writes_banner_with_pid():
 def clean_logging_state():
     """setup_logging() mutates the global logging module — snapshot and
     restore root handlers so this test doesn't leak into others."""
+    import structlog
+
     root = logging.getLogger()
     original_handlers = list(root.handlers)
     original_level = root.level
@@ -212,6 +214,7 @@ def clean_logging_state():
     yield
     root.handlers = original_handlers
     root.setLevel(original_level)
+    structlog.reset_defaults()
 
 
 def test_setup_logging_smoke_creates_log_file(tmp_path, monkeypatch, clean_logging_state):

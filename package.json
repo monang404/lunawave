@@ -1,6 +1,6 @@
 {
   "name": "lunawave",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "description": "LunaWave — personal music player berbasis yt-dlp, MPV, dan aiohttp, dioptimalkan untuk Termux dan desktop.",
   "main": "index.js",
   "directories": {
