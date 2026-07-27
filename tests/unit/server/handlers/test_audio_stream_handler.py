@@ -25,6 +25,7 @@ Thread Safety:
     Main thread (async event loop).
 """
 
+import asyncio
 import time
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -32,9 +33,39 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 
+from core.event_bus import bus
+from core.events import LogMessageEvent
 from core.exceptions import VideoUnavailableError
 from server.app import TRACKS, YTDLP
 from server.handlers.audio_stream_handler import serve_stream
+
+
+async def _drain_background_tasks():
+    """_notify_track_unavailable() does `asyncio.create_task(bus.publish(...))`,
+    and bus.publish() itself schedules a child task per async handler before
+    awaiting it via gather -- so the notification needs the event loop to
+    turn over more than once before it's actually delivered. A single
+    `await asyncio.sleep(0)` only yields once (enough to start the outer
+    task, not enough for the inner one to finish), so loop a few times."""
+    for _ in range(5):
+        await asyncio.sleep(0)
+
+
+@pytest.fixture
+def captured_log_messages():
+    """Subscribe to the global event bus for LogMessageEvent and yield the
+    list it's appended to. _notify_track_unavailable() fires its publish as
+    a background asyncio task (so it never delays the HTTPGone response),
+    so tests using this fixture must `await _drain_background_tasks()` after
+    calling serve_stream() to let that task actually run before asserting."""
+    received = []
+
+    async def _capture(event):
+        received.append(event)
+
+    bus.subscribe(LogMessageEvent, _capture)
+    yield received
+    bus.unsubscribe(LogMessageEvent, _capture)
 
 
 @pytest.fixture
@@ -430,8 +461,39 @@ async def test_serve_stream_returns_410_when_marked_unavailable_without_calling_
 
 
 @pytest.mark.asyncio
+async def test_serve_stream_notifies_toast_when_already_marked_unavailable(
+    mock_request, captured_log_messages
+):
+    """PATCH-2026-07-27: sebelumnya reason ini cuma jadi body HTTPGone yang
+    tidak pernah dibaca browser (native <audio> tidak expose response body).
+    Sekarang harus keluar juga lewat LogMessageEvent supaya sampai ke toast
+    di client (lihat _notify_track_unavailable)."""
+    mock_request.match_info = {"video_id": "abc123DEF-4"}
+
+    mock_db = AsyncMock()
+    mock_db.get_unavailable_reason.return_value = "Private video"
+    mock_ytdlp = AsyncMock()
+
+    mock_request.app[TRACKS] = mock_db
+    mock_request.app[YTDLP] = mock_ytdlp
+
+    with patch("server.handlers.audio_stream_handler.CACHE_DIR") as mock_cache_dir:
+        mock_cache_dir.__truediv__.return_value.resolve.return_value.is_relative_to.return_value = (
+            True
+        )
+        mock_cache_dir.__truediv__.return_value.exists.return_value = False
+
+        await serve_stream(mock_request)
+        await _drain_background_tasks()  # let the background publish task run
+
+        assert len(captured_log_messages) == 1
+        assert "Private video" in captured_log_messages[0].message
+        assert "abc123DEF-4" in captured_log_messages[0].message
+
+
+@pytest.mark.asyncio
 async def test_serve_stream_marks_unavailable_on_video_unavailable_error_no_http_session(
-    mock_request,
+    mock_request, captured_log_messages
 ):
     mock_request.match_info = {"video_id": "abc123DEF-4"}
 
@@ -453,11 +515,16 @@ async def test_serve_stream_marks_unavailable_on_video_unavailable_error_no_http
         mock_cache_dir.__truediv__.return_value.exists.return_value = False
 
         resp = await serve_stream(mock_request)
+        await _drain_background_tasks()  # let the background publish task run
 
         assert isinstance(resp, web.HTTPGone)
         mock_db.mark_unavailable.assert_called_once()
         # tidak boleh retry attempt kedua untuk error permanen
         assert mock_ytdlp.get_stream_url.call_count == 1
+        # PATCH-2026-07-27: toast juga harus terkirim untuk kasus baru
+        # ditemukan (bukan cuma kasus sudah pernah ditandai sebelumnya)
+        assert len(captured_log_messages) == 1
+        assert "abc123DEF-4" in captured_log_messages[0].message
 
 
 @pytest.mark.asyncio

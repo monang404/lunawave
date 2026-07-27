@@ -31,6 +31,7 @@ CMD_VOLUME_UP = "cmd.volume.up"
 CMD_VOLUME_DOWN = "cmd.volume.down"
 CMD_VOLUME_SET = "cmd.volume.set"  # data: dict with 'volume'
 CMD_DOWNLOAD = "cmd.download"  # data: TrackInfo | None
+CMD_CANCEL_DOWNLOAD = "cmd.cancel_download"
 CMD_SET_MODE = "cmd.set.mode"  # data: PlaybackMode
 CMD_SET_OUTPUT = "cmd.set.output"  # data: AudioOutput
 CMD_SET_SPONSORBLOCK = "cmd.set.sponsorblock"  # data: bool

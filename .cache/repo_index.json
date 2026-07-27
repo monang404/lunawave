@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1785125734.2734137,
+    "generated_at": 1785129206.152277,
     "source_mtimes": {
       "config.py": 1785118909.0,
       "main.py": 1785118909.0,
@@ -20,7 +20,7 @@
       "bootstrap/services.py": 1785118909.0,
       "bootstrap/startup_tasks.py": 1785118909.0,
       "bootstrap/__init__.py": 1785118909.0,
-      "core/commands.py": 1785118909.0,
+      "core/commands.py": 1785128533.0,
       "core/command_bus.py": 1785118909.0,
       "core/events.py": 1785118909.0,
       "core/event_bus.py": 1785118909.0,
@@ -41,7 +41,7 @@
       "data/export_to_sqlite.py": 1785118909.0,
       "data/__init__.py": 1785118909.0,
       "engine/command_router.py": 1785118909.0,
-      "engine/download_manager.py": 1785118909.0,
+      "engine/download_manager.py": 1785128561.0,
       "engine/queue_manager.py": 1785118909.0,
       "engine/sleep_timer.py": 1785118909.0,
       "engine/volume_service.py": 1785118909.0,
@@ -104,20 +104,20 @@
       "server/app.py": 1785121572.6150298,
       "server/broadcast_service.py": 1785118909.0,
       "server/connection_manager.py": 1785118909.0,
-      "server/serializers.py": 1785118909.0,
+      "server/serializers.py": 1785128315.0,
       "server/__init__.py": 1785118909.0,
-      "server/handlers/audio_stream_handler.py": 1785118909.0,
+      "server/handlers/audio_stream_handler.py": 1785128258.0,
       "server/handlers/auth.py": 1785118909.0,
       "server/handlers/context.py": 1785118909.0,
       "server/handlers/event_listeners.py": 1785118909.0,
       "server/handlers/http.py": 1785118909.0,
       "server/handlers/log_dashboard.py": 1785118909.0,
       "server/handlers/setup.py": 1785118909.0,
-      "server/handlers/websocket.py": 1785118909.0,
+      "server/handlers/websocket.py": 1785128580.0,
       "server/handlers/ws_cache.py": 1785118909.0,
       "server/handlers/ws_chat.py": 1785118909.0,
       "server/handlers/ws_discovery.py": 1785118909.0,
-      "server/handlers/ws_download.py": 1785118909.0,
+      "server/handlers/ws_download.py": 1785128577.0,
       "server/handlers/ws_log_stream.py": 1785118909.0,
       "server/handlers/ws_playback.py": 1785118909.0,
       "server/handlers/ws_queue.py": 1785118909.0,
@@ -228,7 +228,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 91,
+      "loc": 95,
       "docstring_purpose": "Convert between AppState/TrackInfo domain objects and JSON-serializable     dicts for WebSocket message payloads.",
       "reverse_deps": [
         "server/broadcast_service.py",
@@ -424,6 +424,9 @@
         "core.exceptions",
         "core.log_categories",
         "server.handlers",
+        "asyncio",
+        "core.event_bus",
+        "core.events",
         "core.state",
         "urllib.parse",
         "urllib.parse",
@@ -432,10 +435,11 @@
         "core.events"
       ],
       "publishes": [
+        "LogMessageEvent",
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 253,
+      "loc": 280,
       "docstring_purpose": "Proxy cached/streamed MP3 audio for a track, including range-request     support for seeking. Split out of server/handlers/http.py (T3.4) so     the streaming/range-request logic isn't bundled with the SPA/health/     metrics endpoints.",
       "reverse_deps": [
         "server/app.py"
@@ -738,7 +742,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 119,
+      "loc": 122,
       "docstring_purpose": "WebSocket handler for managing track download requests and status.",
       "reverse_deps": [
         "server/handlers/websocket.py"
@@ -1233,7 +1237,9 @@
         "config"
       ],
       "publishes": [
+        "LogMessageEvent",
         "DownloadProgressEvent",
+        "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
         "LogMessageEvent",
@@ -1243,7 +1249,7 @@
         "LogMessageEvent"
       ],
       "subscribes": [],
-      "loc": 222,
+      "loc": 253,
       "docstring_purpose": "Handle the CMD_DOWNLOAD command by downloading the current or specified     track via yt-dlp and moving it to the downloads/ folder.",
       "reverse_deps": [
         "bootstrap/services.py"
@@ -2431,7 +2437,7 @@
       "imports": [],
       "publishes": [],
       "subscribes": [],
-      "loc": 50,
+      "loc": 51,
       "docstring_purpose": "Defines all command constants used by the CommandBus.     Separated to allow importing without pulling in the entire CommandBus.",
       "reverse_deps": [
         "engine/command_router.py",
@@ -2713,6 +2719,7 @@
       "docstring_purpose": "Define all typed DomainEvent dataclasses for the LunaWave event bus.",
       "reverse_deps": [
         "server/handlers/audio_stream_handler.py",
+        "server/handlers/audio_stream_handler.py",
         "server/handlers/event_listeners.py",
         "engine/sleep_timer.py",
         "engine/download_manager.py",
@@ -2867,6 +2874,7 @@
       "loc": 160,
       "docstring_purpose": "Implement a lightweight async pub/sub EventBus that decouples modules     via typed DomainEvents, using weak references for method handlers.",
       "reverse_deps": [
+        "server/handlers/audio_stream_handler.py",
         "server/handlers/audio_stream_handler.py",
         "engine/download_manager.py",
         "engine/volume_service.py",

@@ -1,7 +1,7 @@
 import { on } from "../bus.js";
 import { dom } from "../dom.js";
 import { store } from "../store.js";
-import { formatTime } from "../utils/format.js";
+import { formatTime, formatRelativeTime } from "../utils/format.js";
 import { cleanTrackTitle } from "../utils/cover-art.js";
 
 export function renderNowPlaying() {
@@ -87,6 +87,40 @@ export function renderNowPlaying() {
         dom.npDurMeta.textContent = formatTime(t.duration);
     } else if (dom.npDurMeta) {
         dom.npDurMeta.textContent = '';
+    }
+
+    renderNowPlayingStats(t);
+}
+
+// PATCH-2026-07-27: play_count/last_played (dihitung tiap track_loader.py
+// memulai lagu) dan loudness_lufs/true_peak_dbtp (dianalisis via ffprobe,
+// fitur EBU R128) sudah dikirim server lewat track_to_dict() tapi
+// sebelumnya tidak pernah dirender di mana pun -- data cuma dipakai
+// internal (scoring Discover bandit). Ini murni menampilkan apa yang
+// sudah ada di objek track, tidak menambah request baru.
+function renderNowPlayingStats(t) {
+    if (!dom.npStats) return;
+    if (!t || !t.video_id) {
+        dom.npStats.style.display = "none";
+        dom.npStats.textContent = "";
+        return;
+    }
+
+    const parts = [];
+    if (t.play_count) {
+        const playedText = t.play_count === 1 ? "1x diputar" : `${t.play_count}x diputar`;
+        parts.push(t.last_played ? `${playedText} · terakhir ${formatRelativeTime(t.last_played)}` : playedText);
+    }
+    if (typeof t.loudness_lufs === "number") {
+        parts.push(`🔊 ${t.loudness_lufs.toFixed(1)} LUFS`);
+    }
+
+    if (parts.length === 0) {
+        dom.npStats.style.display = "none";
+        dom.npStats.textContent = "";
+    } else {
+        dom.npStats.style.display = "block";
+        dom.npStats.textContent = parts.join(" · ");
     }
 }
 

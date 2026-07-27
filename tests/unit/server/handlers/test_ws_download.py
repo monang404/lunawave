@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from core.command_bus import CMD_DOWNLOAD
+from core.command_bus import CMD_CANCEL_DOWNLOAD, CMD_DOWNLOAD
 from server.handlers.ws_download import handle_download_command
 
 
@@ -20,6 +20,17 @@ async def test_handle_download_command_download(mock_dict_to_track):
 
     mock_dict_to_track.assert_called_once_with({"title": "Test Track"})
     command_bus.execute.assert_called_once_with(CMD_DOWNLOAD, mock_track)
+
+
+@pytest.mark.asyncio
+async def test_handle_download_command_cancel_download():
+    """PATCH-2026-07-27: action baru 'cancel_download' harus meneruskan
+    CMD_CANCEL_DOWNLOAD ke command_bus tanpa perlu payload track."""
+    command_bus = AsyncMock()
+
+    await handle_download_command("cancel_download", {}, None, None, None, None, command_bus)
+
+    command_bus.execute.assert_called_once_with(CMD_CANCEL_DOWNLOAD)
 
 
 @pytest.mark.asyncio

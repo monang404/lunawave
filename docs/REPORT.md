@@ -30,11 +30,11 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 | Total file `.js` (ekskl. `.min.js`) | 61 |
 | Total file `.css` (ekskl. `.min.css`) | 25 |
 | Total class (Python) | 106 |
-| Total function/method (Python) | 592 |
-| Total baris Python | 15,236 |
-| Total baris JS (web/) | 6,740 |
+| Total function/method (Python) | 594 |
+| Total baris Python | 15,302 |
+| Total baris JS (web/) | 6,798 |
 | Total baris CSS (web/) | 4,506 |
-| Ukuran DB utama (`data/lunawave.db`) | 952 KB (+ WAL 2422 KB) |
+| Ukuran DB utama (`data/lunawave.db`) | 960 KB (+ WAL 4036 KB) |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar

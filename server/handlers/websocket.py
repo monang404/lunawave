@@ -84,7 +84,7 @@ QUEUE_CMDS = {
     "enqueue_genre_songs",
 }
 DISCOVERY_CMDS = {"search", "discover", "get_artist_detail", "discover_search"}
-DOWNLOAD_CMDS = {"download", "delete_download"}
+DOWNLOAD_CMDS = {"download", "cancel_download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
 CHAT_CMDS = {"send_chat", "get_chat_history"}
 

@@ -34,7 +34,7 @@ import time
 
 import structlog
 
-from core.command_bus import CMD_DOWNLOAD
+from core.command_bus import CMD_CANCEL_DOWNLOAD, CMD_DOWNLOAD
 from core.event_bus import EventBus
 from core.events import DownloadCompleteEvent, LogMessageEvent
 from core.log_categories import LC_DOWNLOAD
@@ -68,6 +68,7 @@ class DownloadManager:
         self._download_scheduled = False
 
         self._command_bus.register(CMD_DOWNLOAD, self._on_download)
+        self._command_bus.register(CMD_CANCEL_DOWNLOAD, self._on_cancel_download)
 
     async def _on_download(self, track: TrackInfo | None = None):
         target = track or self.state.current_track
@@ -98,6 +99,25 @@ class DownloadManager:
         correlation_id = secrets.token_hex(4)
         bind_correlation(correlation_id)
         safe_create_task(self._do_download(target), name=f"download_{target.video_id}")
+
+    async def _on_cancel_download(self, _data=None):
+        """PATCH-2026-07-27: `ytdlp.cancel_download()` sudah ada di adapter
+        (dipakai untuk cleanup internal), tapi sebelum ini tidak ada jalur
+        command dari UI untuk memicunya -- ws_download.py cuma expose
+        "download" dan "delete_download". Ini menyambungkan yang sudah ada,
+        bukan menambah mekanisme cancel baru: set `is_cancelled = True` di
+        adapter, dicek oleh `_check_cancel_hook` pada progress-hook
+        berikutnya (dipanggil yt-dlp dari thread executor), yang raise
+        Exception("DownloadCancelled") -- balik ke _do_download() lewat
+        `except Exception` di bawah, di mana kita bedakan pesannya dari
+        error generik."""
+        if not self._download_lock.locked():
+            await self.bus.publish(
+                LogMessageEvent(message="Tidak ada download yang sedang berjalan untuk dibatalkan")
+            )
+            return
+        self.ytdlp.cancel_download()
+        await self.bus.publish(LogMessageEvent(message="Membatalkan download..."))
 
     async def _do_download(self, track: TrackInfo):
         # L5.4: baca correlation_id yang sudah diwariskan via context dari
@@ -194,7 +214,12 @@ class DownloadManager:
 
             except Exception as e:
                 self.state.download_progress = None
-                logger.error(
+                is_cancelled = str(e) == "DownloadCancelled"
+                logger.info(
+                    "download_cancelled",
+                    category=LC_DOWNLOAD,
+                    video_id=track.video_id,
+                ) if is_cancelled else logger.error(
                     "download_failed",
                     category=LC_DOWNLOAD,
                     video_id=track.video_id,
@@ -202,7 +227,13 @@ class DownloadManager:
                     error=str(e),
                     exc_info=True,
                 )
-                await self.bus.publish(LogMessageEvent(message=f"Download gagal: {str(e)}"))
+                await self.bus.publish(
+                    LogMessageEvent(
+                        message=f"Download dibatalkan: {track.title}"
+                        if is_cancelled
+                        else f"Download gagal: {str(e)}"
+                    )
+                )
             finally:
                 self._download_scheduled = False
 

@@ -121,6 +121,13 @@ export function initSettingsEvents() {
         });
     }
 
+    if (dom.ssDlCancelBtn) {
+        dom.ssDlCancelBtn.addEventListener("click", () => {
+            if (store.userRole !== "admin") return;
+            wsSend("cancel_download");
+        });
+    }
+
     if (dom.ssHistoryBtn) {
         dom.ssHistoryBtn.addEventListener('click', () => {
             closeSettings();

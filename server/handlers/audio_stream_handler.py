@@ -47,6 +47,27 @@ _STREAM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 logger = structlog.get_logger(component="server.audio_stream_handler")
 
 
+def _notify_track_unavailable(message: str) -> None:
+    """PATCH-2026-07-27: surface `unavailable_reason` ke UI. Sebelumnya
+    reason ini cuma dikembalikan sebagai body HTTPGone dari endpoint
+    /api/stream/{video_id} -- tapi jalur browser-audio memuatnya lewat
+    elemen <audio src=...> native, yang TIDAK PERNAH mengekspos response
+    body ke JS (audio.onerror cuma dapat MediaError generik). Jalur yang
+    sudah terbukti sampai ke client adalah LogMessageEvent -> broadcast_log
+    -> WS type "log" -> toast:log (lihat event_listeners.py, sudah dipakai
+    persis untuk kasus serupa oleh engine/playback/failure_ops.py di jalur
+    mpv). Reuse jalur yang sama di sini alih-alih menambah mekanisme baru.
+    Dijalankan sebagai background task (bukan awaited) supaya tidak
+    menunda response HTTPGone ke pemanggil, sama seperti pola
+    stream_url_expired_refetching di bawah."""
+    import asyncio
+
+    from core.event_bus import bus
+    from core.events import LogMessageEvent
+
+    asyncio.create_task(bus.publish(LogMessageEvent(message=message)))
+
+
 async def _mark_video_unavailable(db, video_id: str, row, reason: str) -> None:
     """PATCH-2026-07-20-136: handler ini cuma punya video_id, belum tentu
     ada TrackInfo lengkap (row) di DB. Pakai row yang sudah ada kalau ada,
@@ -66,6 +87,7 @@ async def _mark_video_unavailable(db, video_id: str, row, reason: str) -> None:
             error_type=type(e).__name__,
             error=str(e),
         )
+    _notify_track_unavailable(f"Lagu tidak tersedia (dihapus/private): {track.title} — dilewati")
 
 
 async def serve_stream(request):
@@ -94,6 +116,13 @@ async def serve_stream(request):
     # ulang tanpa henti lewat jalur browser-audio ini.
     unavailable_reason = await db.get_unavailable_reason(video_id)
     if unavailable_reason:
+        # Row belum di-fetch di titik ini (lihat get_track di bawah) dan
+        # sengaja tidak di-fetch di sini juga -- lihat komentar Rule 0 di
+        # bawah soal kenapa ini early-return murni tanpa I/O tambahan.
+        # Makanya pesan toast pakai video_id, bukan judul lagu.
+        _notify_track_unavailable(
+            f"Lagu tidak tersedia ({unavailable_reason}): {video_id} — dilewati"
+        )
         return web.HTTPGone(text=f"Video tidak tersedia: {unavailable_reason}")
 
     row = await db.get_track(video_id)

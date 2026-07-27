@@ -54,10 +54,10 @@ class PlayOps:
             if self.controller._fade_out_task and not self.controller._fade_out_task.done():
                 self.controller._fade_out_task.cancel()
             try:
-                loaded = await self.controller.track_loader.load_track(track)
-                uri = loaded.uri
                 self.controller._loading = True
                 self.controller._last_play_start_ts = asyncio.get_event_loop().time()
+                loaded = await self.controller.track_loader.load_track(track)
+                uri = loaded.uri
                 await self.controller.mpv.play(uri)
                 await asyncio.sleep(0.15)
 
@@ -66,10 +66,13 @@ class PlayOps:
                 await self._apply_start_playback_state(start_paused, start_position)
                 await self._finalize_play_track_success(track, start_paused)
             except VideoUnavailableError as e:
+                self.controller._loading = False
                 await self.controller._failure_ops.handle_video_unavailable(track, e)
             except (BotCheckError, RateLimitedError) as e:
+                self.controller._loading = False
                 await self.controller._failure_ops.handle_bot_check_or_rate_limited(track, e)
             except Exception as e:
+                self.controller._loading = False
                 await self.controller._failure_ops.handle_generic_error(track, e)
 
     async def _apply_start_playback_state(self, start_paused: bool, start_position: float):
