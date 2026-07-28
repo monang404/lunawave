@@ -7,12 +7,11 @@ Purpose:
 
 import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from server.handlers.ws_log_stream import (
-    _cleanup_task,
     _log_tail_tasks,
     cleanup_log_viewer,
     handle_log_stream_command,

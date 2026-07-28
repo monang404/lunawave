@@ -64,10 +64,26 @@ export function syncBrowserAudio(forcePlay) {
         if (store.crossfade_enabled && !prevAudio.paused && prevAudio.src && !prevAudio.src.startsWith("data:")) {
             console.log("[audio] crossfade out previous track");
             _fadeVolume(prevAudio, 0, CROSSFADE_DURATION, () => {
+                // Cegah OS Android/Chrome mem-pause Media Session secara native
+                globalThis._mediaSessionHandling = true;
                 prevAudio.pause();
+                prevAudio.removeAttribute("src");
+                prevAudio.load();
+
+                // Workaround: Jika Chrome Android secara agresif mem-pause activeAudio
+                setTimeout(() => {
+                    const activeAudio = audioPool[activeAudioIndex];
+                    if (store.status === "PLAYING" && activeAudio.paused) {
+                        console.log("[audio] Workaround: Resuming active audio paused by OS during crossfade");
+                        activeAudio.play().catch(()=>{});
+                    }
+                    globalThis._mediaSessionHandling = false;
+                }, 300);
             });
         } else {
             prevAudio.pause();
+            prevAudio.removeAttribute("src");
+            prevAudio.load();
         }
 
         audio.src = expectedSrc;

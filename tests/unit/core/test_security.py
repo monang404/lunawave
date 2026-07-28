@@ -9,14 +9,14 @@ Publishes:
     None
 """
 
-from core.security import hash_password, verify_password
+from core.security import PBKDF2_ITERATIONS, hash_password, verify_password
 
 
 def test_hash_password_produces_pbkdf2_sha256_format():
     hashed = hash_password("hunter2")
     parts = hashed.split("$")
     assert len(parts) == 3
-    assert parts[0] == "pbkdf2:sha256:100000"
+    assert parts[0] == f"pbkdf2:sha256:{PBKDF2_ITERATIONS}"
 
 
 def test_hash_password_is_salted_and_nondeterministic():

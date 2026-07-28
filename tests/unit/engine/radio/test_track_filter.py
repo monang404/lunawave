@@ -144,3 +144,21 @@ def test_filter_does_not_cross_exclude_empty_normalized_titles():
 
     filtered = tf.filter_tracks(candidates)
     assert [t.video_id for t in filtered] == ["v_new"]
+
+
+def test_filter_max_track_duration():
+    """Bug #3 fix: track dengan duration > MAX_TRACK_DURATION (600 detik)
+    dibuang dari radio queue. Batas 600 inklusif (tetap lolos). Duration
+    belum diketahui (0) TIDAK dianggap terlalu panjang, tetap lolos."""
+    state = AppState()
+    tf = TrackFilter(state)
+
+    candidates = [
+        TrackInfo(video_id="short", title="Short Song", artist="A", duration=599),
+        TrackInfo(video_id="exact", title="Exact Cap Song", artist="B", duration=600),
+        TrackInfo(video_id="long", title="Hour Long Mix", artist="C", duration=3600),
+        TrackInfo(video_id="unknown", title="Unknown Duration Song", artist="D", duration=0),
+    ]
+
+    filtered = tf.filter_tracks(candidates)
+    assert [t.video_id for t in filtered] == ["short", "exact", "unknown"]

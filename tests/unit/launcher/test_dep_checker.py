@@ -89,3 +89,26 @@ def test_mpv_version(monkeypatch):
     # Test mpv not found
     monkeypatch.setattr("shutil.which", lambda x: None)
     assert checker.mpv_version() is None
+
+
+def test_mpv_version_exception_is_fail_safe_and_logged(monkeypatch):
+    """P4-T1c (temuan #9): mpv_version()'s except/pass was reclassified as
+    best-effort cleanup with debug-level logging. subprocess.run raising
+    (e.g. binary corrupt, unexpected OSError) must not propagate, and the
+    new logger.debug(...) call must fire exactly once."""
+    import launcher.dep_checker as dep_checker_module
+
+    debug_calls = []
+    monkeypatch.setattr(
+        dep_checker_module.logger, "debug", lambda event, **kw: debug_calls.append((event, kw))
+    )
+    monkeypatch.setattr("shutil.which", lambda x: "/usr/bin/mpv")
+
+    def _boom(*args, **kwargs):
+        raise OSError("mpv binary is corrupt")
+
+    monkeypatch.setattr("subprocess.run", _boom)
+
+    checker = DependencyChecker()
+    assert checker.mpv_version() is None  # must not raise
+    assert [event for event, _ in debug_calls] == ["mpv_version_check_failed"]

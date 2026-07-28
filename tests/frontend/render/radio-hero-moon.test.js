@@ -154,4 +154,29 @@ describe("render/radio-hero-moon.js", () => {
     emit("radio-hero:anim", { on: true });
     expect(helpers.getPendingFrames()).toBe(1);
   });
+
+  describe("shortestDelta", () => {
+    it("never returns a magnitude greater than 0.5 for 1000+ random pairs", async () => {
+      const { shortestDeltaTestOnly: shortestDelta } = await setupModule();
+      for (let i = 0; i < 1000; i++) {
+        const from = Math.random();
+        const to = Math.random();
+        const d = shortestDelta(from, to);
+        expect(Math.abs(d)).toBeLessThanOrEqual(0.5);
+      }
+    });
+
+    it("resolves the exact tie at to-from === 0.5 (mod 1) consistently to +0.5", async () => {
+      const { shortestDeltaTestOnly: shortestDelta } = await setupModule();
+      expect(shortestDelta(0, 0.5)).toBeCloseTo(0.5, 10);
+      expect(shortestDelta(0.25, 0.75)).toBeCloseTo(0.5, 10);
+      expect(shortestDelta(0.9, 0.4)).toBeCloseTo(0.5, 10);
+    });
+
+    it("matches previously-verified non-edge cases (regression)", async () => {
+      const { shortestDeltaTestOnly: shortestDelta } = await setupModule();
+      expect(shortestDelta(0, 0.3)).toBeCloseTo(0.3, 10);
+      expect(shortestDelta(0, 0.7)).toBeCloseTo(-0.3, 10);
+    });
+  });
 });

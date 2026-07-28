@@ -152,3 +152,6 @@ if _raw_env_pass is not None:
         ADMIN_PASSWORD_OVERRIDE = hash_password(_raw_env_pass)
 else:
     ADMIN_PASSWORD_OVERRIDE = None
+
+DEBUG_EXPOSE_ERRORS = os.environ.get("LUNAWAVE_DEBUG_ERRORS", "0") == "1"
+ALLOWED_STREAM_ORIGIN = os.environ.get("LUNAWAVE_ALLOWED_ORIGIN", "")

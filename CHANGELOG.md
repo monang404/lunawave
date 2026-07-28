@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+- Iterasi PBKDF2: Menaikkan jumlah iterasi PBKDF2-HMAC-SHA256 menjadi 600.000 sesuai rekomendasi terkini OWASP. Mengimplementasikan mekanisme rehash transparan saat admin login dengan hash lama, sehingga password hash lama otomatis di-upgrade ke format baru di database tanpa memaksa admin untuk melakukan reset manual.
+- IDOR chat: Identitas `client_uid` pada fitur chat diikat secara aman ke sesi WebSocket, mencegah eksploitasi pembacaan dan pengiriman pesan silang antar pengguna anonim.
+- Rate limit chat: Menambahkan kuota terpisah khusus chat yang dikunci per `client_uid` untuk mencegah terkurasnya kuota command global oleh satu client di belakang reverse proxy (self-DoS).
+
 ### Changed — Architecture (Phase 07)
 - `CommandBus` di-refactor dari *global module-level singleton* menjadi *dependency injection*. Instance sekarang dikelola via `aiohttp` Application state (`web.AppKey`) dan di-inject ke constructor berbagai *engine components*, handlers, dan *services* saat fase *bootstrap*. Hal ini menghilangkan *global state* dan membuat *unit/integration test* berjalan lebih terisolasi tanpa risiko *handler collision*.
 

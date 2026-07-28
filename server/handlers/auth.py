@@ -32,7 +32,7 @@ import secrets
 import structlog
 
 from core.log_categories import LC_AUTH
-from core.security import hash_password, verify_password
+from core.security import hash_password, needs_rehash, verify_password
 
 logger = structlog.get_logger(component="ws.auth")
 
@@ -133,6 +133,14 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
     # Ambil ulang lock untuk update state
     async with manager.rl_lock:
         if password_ok:
+            if account and needs_rehash(stored_hash):
+                try:
+                    new_hash = await loop.run_in_executor(None, hash_password, password)
+                    await repos.admin_account.update_password(new_hash)
+                    logger.info("auth_password_rehashed", category=LC_AUTH, client_ip=client_ip)
+                except Exception as e:
+                    logger.warning("auth_password_rehash_failed", category=LC_AUTH, error=str(e))
+
             new_token = secrets.token_hex(16)
             if sessions:
                 await sessions.create_session(new_token, int(now) + 10800)

@@ -37,18 +37,39 @@ import sys
 
 def main():
     try:
-        import tkinter as tk
+        from pathlib import Path
+
+        import PySide6  # noqa: F401
+        from PySide6.QtGui import QIcon
+        from PySide6.QtWidgets import QApplication
+
+        from launcher.gui_qt.main_window import ServerManagerQt
+
+        # Windows taskbar icon fix
+        if sys.platform == "win32":
+            import ctypes
+
+            myappid = "lunawave.server.manager.1"
+            try:
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            except Exception:
+                pass
+
+        app = QApplication(sys.argv)
+
+        icon_path = Path(__file__).parent / "gui_qt" / "icons" / "app_icon.png"
+        if icon_path.exists():
+            app.setWindowIcon(QIcon(str(icon_path)))
+
+        manager = ServerManagerQt()
+        manager.show()
+        sys.exit(app.exec())
     except ImportError:
         print(
-            "Tkinter is not available. Please run `python main.py` directly or use `start.sh` on headless environments like Termux.",
+            "GUI not available (no PySide6). Please run `python main.py` directly or use `start.sh` on headless environments like Termux.",
             file=sys.stderr,
         )
         sys.exit(1)
-
-    from .gui import ServerManager
-
-    app = ServerManager()
-    app.mainloop()
 
 
 if __name__ == "__main__":

@@ -90,11 +90,9 @@ async def test_radio_flow(integration_app):
         # Check that RadioEngine resolves at least one track and starts it.
         # MPV akan gagal memutar fake URL -- yang penting radio_queue terisi
         # oleh prefetcher (tidak perlu TrackStartedEvent sungguhan).
-        started = False
         for _ in range(300):
             await asyncio.sleep(0.1)
             if any(isinstance(e, TrackStartedEvent) for e in events):
-                started = True
                 break
 
         # Tidak wajib started karena MPV tidak bisa play fake URL;

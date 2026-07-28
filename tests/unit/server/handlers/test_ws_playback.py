@@ -21,7 +21,6 @@ from core.command_bus import (
 )
 from core.state import AudioOutput, PlaybackMode
 from server.handlers.ws_playback import handle_playback_command
-from server.serializers import dict_to_track
 
 
 @pytest.mark.asyncio

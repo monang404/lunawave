@@ -1,6 +1,4 @@
-import tempfile
 import textwrap
-from pathlib import Path
 
 from automation.import_audit import run_audit
 

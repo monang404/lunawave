@@ -38,6 +38,7 @@ import aiohttp
 import structlog
 from aiohttp import web
 
+import config
 from core.log_categories import LC_COMMAND, LC_SECURITY, LC_SESSION
 from server.handlers import get_manager, get_playback_controller, get_repos, get_state, get_ytdlp
 from server.handlers.auth import handle_auth, require_auth
@@ -84,7 +85,7 @@ QUEUE_CMDS = {
     "enqueue_genre_songs",
 }
 DISCOVERY_CMDS = {"search", "discover", "get_artist_detail", "discover_search"}
-DOWNLOAD_CMDS = {"download", "cancel_download", "delete_download"}
+DOWNLOAD_CMDS = {"download", "download_confirm_overwrite", "cancel_download", "delete_download"}
 CACHE_CMDS = {"get_cache_size", "clear_cache"}
 CHAT_CMDS = {"send_chat", "get_chat_history"}
 
@@ -199,6 +200,23 @@ async def handle_ws_message(
         manager.authenticated_connections.discard(ws)
         return
 
+    elif action == "logout_all":
+        is_admin = require_auth(manager, ws)
+        if not is_admin:
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": "Akses ditolak. Silakan login sebagai Admin.",
+                    }
+                )
+            )
+            return
+        if repos and repos.sessions:
+            await repos.sessions.delete_all_sessions()
+        manager.authenticated_connections.clear()
+        return
+
     if action == "setup_admin":
         # Sama seperti "auth": harus reachable SEBELUM require_auth, karena
         # saat Initial Setup belum ada admin_account sama sekali -- tidak
@@ -234,11 +252,25 @@ async def handle_ws_message(
             await handle_discovery_command(action, data, ytdlp, repos.discover, ws)
         elif action in DOWNLOAD_CMDS:
             await handle_download_command(
-                action, data, repos.tracks, repos.discover, manager, state, command_bus
+                action, data, repos.tracks, repos.discover, manager, state, command_bus, ws
             )
         elif action in CACHE_CMDS:
             await handle_cache_command(action, data, ws, repos, manager, state)
         elif action in CHAT_CMDS:
+            if action == "send_chat":
+                chat_key = manager.client_uids.get(ws) or client_ip
+                from server.middleware import check_chat_rate_limit
+
+                if not await check_chat_rate_limit(manager, chat_key, now):
+                    await ws.send_str(
+                        json.dumps(
+                            {
+                                "type": "error",
+                                "data": "Terlalu banyak pesan chat. Mohon tunggu sesaat.",
+                            }
+                        )
+                    )
+                    return
             await handle_chat_command(action, data, ws, repos, manager, is_admin, client_ip)
         elif action == "log_tail":
             await handle_log_stream_command(data.get("action"), ws)
@@ -273,7 +305,9 @@ async def handle_ws_message(
                 json.dumps(
                     {
                         "type": "error",
-                        "data": str(e),
+                        "data": str(e)
+                        if config.DEBUG_EXPOSE_ERRORS
+                        else "Terjadi kesalahan saat memproses permintaan.",
                     }
                 )
             )

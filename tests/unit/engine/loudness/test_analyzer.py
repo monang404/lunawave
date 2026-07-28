@@ -1,8 +1,5 @@
-import json
 import subprocess
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from engine.loudness.analyzer import LoudnessAnalyzer, LoudnessMeasurement
 

@@ -3,6 +3,7 @@ import { getInterpolatedPosition } from "./player.js";
 import { store } from "../store.js";
 
 export let setRadioHeroAnimState;
+export let shortestDeltaTestOnly;
 
 /* ═══════════════════════════════════════════
    radio-hero-moon.js — "Night Dial" moon-phase animation module
@@ -12,8 +13,8 @@ export let setRadioHeroAnimState;
    document.getElementById, TIDAK menambah entry baru ke dom.js (RFC §5.3 —
    hindari 2 sumber kebenaran untuk elemen yang sama).
 
-   Dibangun bertahap sesi 3 (R3.1..R3.4). File ini belum di-load dari
-   index.html manapun sampai sesi 4 (R4.1, gate governance-locked).
+   Dibangun bertahap sesi 3-4 (R3.1..R4.1). Sudah di-load lewat
+   import initRadioHeroBusSubscriptions di web/static/pages/app/main.js.
 
    UPDATE (progress-driven): mode "cycling" tidak lagi loop buta 42 detik.
    Fase bulan sekarang mengikuti progress lagu yang sedang diputar
@@ -96,10 +97,12 @@ export let setRadioHeroAnimState;
   }
 
   function shortestDelta(from, to) {
-    let d = to - from;
-    d = ((d % 1) + 1.5) % 1 - 0.5;
+    let d = (to - from) % 1;
+    if (d < 0) d += 1;   // normalize ke [0, 1)
+    if (d > 0.5) d -= 1; // ambil arah terpendek; tie (d === 0.5) tetap +0.5
     return d;
   }
+  shortestDeltaTestOnly = shortestDelta;
 
   // ── R3.2b (progress-driven): map fase bulan ke progress lagu yang sedang
   // diputar, bukan ke jam buatan. CATATAN: secara empiris moonPathD(0) itu

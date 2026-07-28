@@ -9,8 +9,8 @@ describe('Admin Logs Orchestrator', () => {
             <select id="filterLevel"></select>
             <select id="filterCategory"></select>
             <input id="filterSearch" type="text" />
-            <button class="tab-btn" data-tab="live"></button>
-            <div id="tab-live" class="tab-content"></div>
+            <button class="tab-btn" data-tab="log"></button>
+            <div id="tab-log" class="tab-content"></div>
         `;
 
         vi.mock('../../../web/static/pages/admin-logs/log-tail.js', () => ({
@@ -63,5 +63,58 @@ describe('Admin Logs Orchestrator', () => {
         }));
 
         expect(adminChat.openChatPanel).toHaveBeenCalledWith('user-123', '127.0.0.1');
+    });
+});
+
+describe('Dashboard Stats - Taxonomy Bug Fix', () => {
+    let originalFetch;
+
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <select id="filterCategory">
+                <option value="">Semua Kategori</option>
+            </select>
+            <div id="globalStatsGrid"></div>
+            <ul id="levelStatsList"></ul>
+            <ul id="catStatsList"></ul>
+            <div id="matrixContainer"></div>
+        `;
+        originalFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        document.body.innerHTML = '';
+        vi.resetModules();
+    });
+
+    it('populates filterCategory dynamically from available_categories (prevents stale taxonomy bug)', async () => {
+        // MENGAPA TEST INI ADA:
+        // Regression test untuk mencegah "bug taksonomi basi" (opsi dropdown kategori
+        // tidak sinkron dengan backend).
+        // Rujukan: docs/rfc/admin_logs/RENCANA_REDESIGN_ADMIN_LOGS.md bagian 1.1.
+
+        const fakeResponse = {
+            available_categories: ["auth", "system", "event"]
+        };
+
+        globalThis.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => fakeResponse
+        });
+
+        vi.doUnmock('../../../web/static/pages/admin-logs/dashboard-stats.js');
+        const dashboardStats = await import('../../../web/static/pages/admin-logs/dashboard-stats.js');
+
+        await dashboardStats.fetchStats();
+
+        const filterSelect = document.getElementById('filterCategory');
+        // 1 (Semua Kategori) + 3 (fake categories) = 4
+        expect(filterSelect.options.length).toBe(4);
+        expect(filterSelect.options[1].value).toBe('auth');
+        expect(filterSelect.options[1].text).toBe('Auth');
+        expect(filterSelect.options[2].value).toBe('system');
+        expect(filterSelect.options[3].value).toBe('event');
     });
 });

@@ -6,22 +6,26 @@ import { handleIncomingChat, renderChatHistory, openChatPanel } from "./admin-ch
 setAppendLogBatch(appendLogBatch);
 
 const btnFilter = document.getElementById('btnFilter');
+const btnClearFilter = document.getElementById('btnClearFilter');
 const btnDownload = /** @type {HTMLButtonElement} */ (document.getElementById('btnDownload'));
 const filterLevel = /** @type {HTMLSelectElement} */ (document.getElementById('filterLevel'));
 const filterCategory = /** @type {HTMLSelectElement} */ (document.getElementById('filterCategory'));
 const filterSearch = /** @type {HTMLInputElement} */ (document.getElementById('filterSearch'));
-/** @type {NodeListOf<HTMLElement>} */
-const tabBtns = (document.querySelectorAll('.tab-btn'));
-const tabContents = document.querySelectorAll('.tab-content');
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
+export function switchTab(name, pushHash = true) {
+    document.querySelectorAll('.tab-btn, .bottom-tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === name));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+    if (pushHash) history.replaceState(null, '', '#' + name);
+}
 
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    });
+document.querySelectorAll('.tab-btn, .bottom-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
 });
+
+// Deep link initialization
+const initial = (location.hash || '#ringkasan').slice(1);
+if (document.getElementById('tab-' + initial)) {
+    switchTab(initial, false);
+}
 // Add keyframes for the pulse animation if not exists
 if (!document.getElementById('pulse-anim')) {
     const style = document.createElement('style');
@@ -72,6 +76,15 @@ function handleWsMessage(data) {
 btnFilter.addEventListener('click', () => {
     fetchTail(true);
 });
+
+if (btnClearFilter) {
+    btnClearFilter.addEventListener('click', () => {
+        filterLevel.value = '';
+        filterCategory.value = '';
+        filterSearch.value = '';
+        fetchTail(true);
+    });
+}
 
 btnDownload.addEventListener('click', async () => {
     btnDownload.disabled = true;

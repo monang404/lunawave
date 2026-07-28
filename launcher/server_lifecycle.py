@@ -43,13 +43,16 @@ from launcher import network, process
 
 
 class ServerLifecycle:
-    def __init__(self, base_dir, on_log=None, on_ready=None, on_deps_checked=None):
+    def __init__(
+        self, base_dir, on_log=None, on_ready=None, on_deps_checked=None, on_starting=None
+    ):
         self.base_dir = base_dir
         self.server_process: process.ServerProcess | None = None
 
         self.on_log = on_log or (lambda msg, tag="", is_end=False: None)
         self.on_ready = on_ready or (lambda port: None)
         self.on_deps_checked = on_deps_checked or (lambda missing, mpv_ok: None)
+        self.on_starting = on_starting or (lambda: None)
 
     # ── Status ────────────────────────────────────────────
     def is_running(self) -> bool:
@@ -86,6 +89,7 @@ class ServerLifecycle:
                 self.on_log(f"Cannot start: Port {port} is still in use after kill attempt.", "err")
                 return
 
+        self.on_starting()
         self.on_log(f"Starting server on port {port}...", "accent")
 
         self.server_process = process.ServerProcess(str(self.base_dir), port, on_log=self.on_log)

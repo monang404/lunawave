@@ -5,18 +5,29 @@
 import { fetchTail } from "./admin-ws-transport.js";
 
 const logContainer = document.getElementById('logContainer');
-const autoScrollCheckbox = /** @type {HTMLInputElement} */ (document.getElementById('autoScroll'));
+const autoScrollCheckbox = /** @type {HTMLInputElement} */ (document.getElementById('autoScrollCheckbox'));
+const grpToggle = /** @type {HTMLInputElement} */ (document.getElementById('grpToggle'));
 const filterLevel = /** @type {HTMLSelectElement} */ (document.getElementById('filterLevel'));
 const filterCategory = /** @type {HTMLSelectElement} */ (document.getElementById('filterCategory'));
-const seenLogs = new Set();
+
+let currentLogs = [];
+let isGrouped = grpToggle ? grpToggle.checked : true;
+
+if (grpToggle) {
+    grpToggle.addEventListener('change', () => {
+        isGrouped = grpToggle.checked;
+        renderLogs();
+    });
+}
 
 export function navigateToLiveTail(cat, level) {
     /** @type {HTMLElement} */
-    (document.querySelector('.tab-btn[data-tab="live"]')).click();
+    (document.querySelector('.tab-btn[data-tab="log"]')).click();
     filterCategory.value = cat;
     filterLevel.value = level;
     fetchTail(true);
 }
+
 export function escapeHtml(unsafe) {
     if (!unsafe) return "";
     return unsafe
@@ -26,6 +37,7 @@ export function escapeHtml(unsafe) {
          .replace(/"/g, "&quot;")
          .replace(/'/g, "&#039;");
 }
+
 export function formatFields(fields) {
     if (!fields || Object.keys(fields).length === 0) return "";
     const parts = [];
@@ -37,147 +49,167 @@ export function formatFields(fields) {
     if (parts.length === 0) return "";
     return `(${escapeHtml(parts.join(", "))})`;
 }
-export function getLevelIcon(level) {
-    switch (level) {
-        case 'INFO': return '<i class="ti ti-info-circle"></i>';
-        case 'WARNING': return '<i class="ti ti-alert-triangle"></i>';
-        case 'ERROR':
-        case 'CRITICAL': return '<i class="ti ti-circle-x"></i>';
-        case 'DEBUG': return '<i class="ti ti-bug"></i>';
-        default: return '<i class="ti ti-point-filled"></i>';
-    }
-}
-export function createLogLineElement(log) {
-    const div = document.createElement('div');
-    div.className = 'log-line';
 
-    const catShort = log.fields && log.fields.category
-        ? log.fields.category.replace('LC_', '').toLowerCase()
-        : 'unknown';
+function metaHtml(l) {
+    const parts = [];
+    if (l.status !== undefined) parts.push(`<span class="${l.status < 400 ? 'ok' : 'err'}">${l.status}</span>`);
+    if (l.dur !== undefined) parts.push(`${l.dur}`);
+    if (l.req) parts.push(`req=${l.req}`);
+    if (l.video_id) parts.push(`video=${l.video_id}`);
+    if (l.uid) parts.push(`uid=${l.uid}`);
+    if (l.ip) parts.push(`ip=${l.ip}`);
 
-    let fieldsHtml = '';
-    let compHtml = '';
-    let eventText = log.event || '';
-
-    let extraChips = [];
-
-    // Parse status and dur from eventText if it's a traffic log
-    const statusMatch = eventText.match(/status=(\d+)/);
-    if (statusMatch) {
-        let code = parseInt(statusMatch[1]);
-        let statusClass = "val-num";
-        let iconHtml = "";
-        if (code >= 400) {
-            statusClass = "val-err";
-            iconHtml = '<i class="ti ti-x" style="margin-right:2px"></i>';
-        } else if (code >= 200 && code < 300) {
-            statusClass = "val-ok";
-            iconHtml = '<i class="ti ti-check" style="margin-right:2px"></i>';
-        }
-        extraChips.push(`<span class="log-chip"><span class="chip-key">status</span><span class="chip-val ${statusClass}">${iconHtml}${code}</span></span>`);
-        eventText = eventText.replace(statusMatch[0], '').trim();
-    }
-
-    const durMatch = eventText.match(/dur=(\d+(?:\.\d+)?ms)/);
-    if (durMatch) {
-        extraChips.push(`<span class="log-chip"><span class="chip-key">dur</span><span class="chip-val val-num"><i class="ti ti-clock" style="margin-right:2px"></i>${durMatch[1]}</span></span>`);
-        eventText = eventText.replace(durMatch[0], '').trim();
-    }
-
-    if (log.fields) {
-        const fields = {...log.fields};
-        delete fields.category; // Already shown
-
-        let component = fields.component || '';
-        delete fields.component;
-
-        if (component) {
-            compHtml = `<span class="log-comp">${component}</span><span style="color:var(--border-3); margin:0 6px;">›</span>`;
-        }
-
-        const fieldKeys = Object.keys(fields);
-        for (const key of fieldKeys) {
-            let valClass = "chip-val";
-            if (key === 'error_type' || key === 'error') valClass += " val-err";
-            if (key.includes('duration') || key.includes('bytes') || typeof fields[key] === 'number') valClass += " val-num";
-
-            extraChips.push(`<span class="log-chip"><span class="chip-key">${key}</span><span class="${valClass}">${fields[key]}</span></span>`);
-        }
-    }
-
-    if (extraChips.length > 0) {
-        fieldsHtml = `<div class="log-chips">${extraChips.join('')}</div>`;
-    }
-
-    div.innerHTML = `
-        <div class="log-icon lvl-${log.level}">${getLevelIcon(log.level)}</div>
-        <div class="log-time">${log.time || '--:--:--'}</div>
-        <div class="log-cat">${catShort}</div>
-        <div class="log-message">
-            ${compHtml}<span class="log-event">${eventText}</span>
-        </div>
-        ${fieldsHtml}
-    `;
-
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'log-copy-btn';
-    copyBtn.title = 'Copy log text';
-    copyBtn.innerHTML = '<i class="ti ti-copy"></i>';
-    copyBtn.onclick = () => {
-        const rawFields = log.fields || {};
-        const fieldStrs = [];
-        for (const [k, v] of Object.entries(rawFields)) {
-            if (k !== 'category' && k !== 'component') {
-                fieldStrs.push(`${k}=${v}`);
+    // Fallback to remaining fields
+    if (l.fields) {
+        for (const [k, v] of Object.entries(l.fields)) {
+            if (!['category', 'component', 'status', 'duration', 'req_id', 'video_id', 'uid', 'ip'].includes(k)) {
+                parts.push(`${k}=${v}`);
             }
         }
-        const fieldStr = fieldStrs.length > 0 ? ` (${fieldStrs.join(', ')})` : '';
-        const compStr = rawFields.component ? `${rawFields.component}: ` : '';
-        const textToCopy = `[${log.time || '--:--:--'}] ${log.level} [${catShort.toUpperCase()}] ${compStr}${log.event || ''}${fieldStr}`;
-
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            copyBtn.innerHTML = '<i class="ti ti-check" style="color:var(--green)"></i>';
-            setTimeout(() => {
-                copyBtn.innerHTML = '<i class="ti ti-copy"></i>';
-            }, 2000);
-        });
-    };
-    div.appendChild(copyBtn);
-
-    return div;
+    }
+    return parts.join('  ·  ');
 }
+
+function processLogFields(log) {
+    const l = { ...log, cat: 'unknown', comp: '', evt: log.event || '', fields: log.fields || {} };
+    if (log.fields) {
+        if (log.fields.category) {
+            l.cat = log.fields.category.replace('LC_', '').toLowerCase();
+        }
+        if (log.fields.component) {
+            l.comp = log.fields.component;
+        }
+    }
+
+    // Parse status and dur from event if it's a traffic log
+    const statusMatch = l.evt.match(/status=(\d+)/);
+    if (statusMatch) {
+        l.status = parseInt(statusMatch[1]);
+        l.evt = l.evt.replace(statusMatch[0], '').trim();
+    }
+    const durMatch = l.evt.match(/dur=(\d+(?:\.\d+)?ms)/);
+    if (durMatch) {
+        l.dur = durMatch[1];
+        l.evt = l.evt.replace(durMatch[0], '').trim();
+    }
+    const reqMatch = l.evt.match(/req_id=([\w-]+)/);
+    if (reqMatch) {
+        l.req = reqMatch[1];
+        l.evt = l.evt.replace(reqMatch[0], '').trim();
+    }
+    const videoMatch = l.evt.match(/video_id=([\w-]+)/);
+    if (videoMatch) {
+        l.video_id = videoMatch[1];
+        l.evt = l.evt.replace(videoMatch[0], '').trim();
+    }
+
+    // Time to local
+    l.displayTime = log.time || '--:--:--';
+    if (log.time && /^\d{2}:\d{2}:\d{2}$/.test(log.time)) {
+        const [h, m, s] = log.time.split(':');
+        const d = new Date();
+        d.setUTCHours(parseInt(h, 10), parseInt(m, 10), parseInt(s, 10));
+        l.displayTime = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    return l;
+}
+
+function rowHtml(l) {
+    return `<div class="row lvl-${l.level}">
+        <div class="catbar c-${l.cat}"></div>
+        <div class="time" title="UTC: ${l.time}">${l.displayTime}</div>
+        <div class="badges"><span class="lvl-pill">${l.level}</span><span class="cat-pill">${l.cat}</span></div>
+        <div class="msg">${l.comp ? `<span class="comp">${l.comp}</span>` : ''}<span class="evt">${l.evt}</span></div>
+        <div class="meta">${metaHtml(l)}</div>
+        <button class="copy" title="Salin" onclick="navigator.clipboard.writeText('[${l.time}] ${l.level} [${l.cat.toUpperCase()}] ${l.comp?l.comp+': ':''}${l.evt}')">
+            <i class="ti ti-copy"></i>
+        </button>
+    </div>`;
+}
+
+function groupHtml(sig, items) {
+    const first = items[0], last = items[items.length-1];
+    const statuses = [...new Set(items.map(i => i.status).filter(x => x !== undefined))];
+    const anyErr = statuses.some(s => s >= 400);
+    const meta = [
+        statuses.length ? `<span class="${anyErr ? 'err' : 'ok'}">${statuses.join('/')}</span>` : ''
+    ].filter(Boolean).join('  ·  ');
+
+    const children = items.map(i => `<div class="row lvl-${i.level}" style="border-bottom:1px solid var(--border-1);">
+        <div class="catbar c-${i.cat}"></div><div class="time" title="UTC: ${i.time}">${i.displayTime}</div>
+        <div class="badges"><span class="lvl-pill">${i.level}</span><span class="cat-pill">${i.cat}</span></div>
+        <div class="msg">${i.comp ? `<span class="comp">${i.comp}</span>` : ''}<span class="evt">${i.evt}</span></div>
+        <div class="meta">${metaHtml(i)}</div>
+    </div>`).join('');
+
+    return `<div class="grp lvl-${first.level}" data-open="0">
+        <div class="catbar c-${first.cat}"></div>
+        <div class="time">${first.displayTime}–${last.displayTime}</div>
+        <div class="badges"><span class="lvl-pill">${first.level}</span><span class="cat-pill">${first.cat}</span></div>
+        <div class="msg">${first.comp ? `<span class="comp">${first.comp}</span>` : ''}<span class="evt">${first.evt}</span><span class="count-badge">×${items.length}</span></div>
+        <div class="meta">${meta}</div>
+        <i class="ti ti-chevron-right chev"></i>
+    </div><div class="grp-children">${children}</div>`;
+}
+
+function renderEmptyState() {
+    logContainer.innerHTML = `
+        <div class="empty-state" id="emptyLogState" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-3); text-align:center; min-height:200px;">
+            <i class="ti ti-filter-off" style="font-size:32px; margin-bottom:12px; opacity:0.5;"></i>
+            <h4 style="color:var(--text-2); margin-bottom:4px;">Tidak ada log yang cocok</h4>
+            <span style="font-size:12px; max-width:250px;">Coba longgarkan kategori atau hapus kata kunci pencarian.</span>
+        </div>
+    `;
+}
+
+function renderLogs() {
+    if (currentLogs.length === 0) {
+        renderEmptyState();
+        return;
+    }
+
+    if (!isGrouped) {
+        logContainer.innerHTML = currentLogs.map(l => rowHtml(l)).join('');
+        return;
+    }
+
+    const groups = [];
+    for (const l of currentLogs) {
+        const sig = l.level + '|' + l.cat + '|' + l.comp + '|' + l.evt;
+        const lastGrp = groups[groups.length - 1];
+        if (lastGrp && lastGrp.sig === sig) {
+            lastGrp.items.push(l);
+        } else {
+            groups.push({ sig, items: [l] });
+        }
+    }
+
+    logContainer.innerHTML = groups.map(g => g.items.length > 1 ? groupHtml(g.sig, g.items) : rowHtml(g.items[0])).join('');
+
+    logContainer.querySelectorAll('.grp').forEach(g => {
+        g.addEventListener('click', () => g.classList.toggle('open'));
+    });
+}
+
 export function appendLogBatch(logs, clearFirst = false) {
     if (clearFirst) {
-        logContainer.innerHTML = '';
-        seenLogs.clear();
+        currentLogs = [];
     }
 
-    const fragment = document.createDocumentFragment();
-    for (const log of logs) {
-        const hash = log.time + log.level + log.event + JSON.stringify(log.fields || {});
-        if (!seenLogs.has(hash)) {
-            seenLogs.add(hash);
-            fragment.appendChild(createLogLineElement(log));
-        }
+    // Deduplicate incoming batch against themselves and currentLogs using a simple hash logic
+    // But since logs are ordered, we just append them. We can use a Map to keep it unique if needed.
+    // In our case, we will just add them.
+    for (const rawLog of logs) {
+        currentLogs.push(processLogFields(rawLog));
     }
 
-    if (fragment.childNodes.length > 0) {
-        logContainer.appendChild(fragment);
+    if (currentLogs.length > 5000) {
+        currentLogs = currentLogs.slice(-5000);
+    }
 
-        // Cleanup old lines if too many
-        while (logContainer.children.length > 5000) {
-            logContainer.removeChild(logContainer.firstChild);
-        }
+    renderLogs();
 
-        // Trim seenLogs set to prevent memory leak
-        if (seenLogs.size > 10000) {
-            const arr = Array.from(seenLogs).slice(-5000);
-            seenLogs.clear();
-            arr.forEach(h => seenLogs.add(h));
-        }
-
-        if (autoScrollCheckbox.checked) {
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
+    if (autoScrollCheckbox && autoScrollCheckbox.checked) {
+        logContainer.scrollTop = logContainer.scrollHeight;
     }
 }

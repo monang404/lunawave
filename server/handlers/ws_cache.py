@@ -46,6 +46,7 @@ def _get_cache_size_sync() -> int:
     size = 0
     if DOWNLOAD_DIR.exists():
         for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
+            dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
             for f in files:
                 fp = os.path.join(root, f)
                 try:
@@ -58,6 +59,7 @@ def _get_cache_size_sync() -> int:
 def _clear_cache_sync() -> None:
     if DOWNLOAD_DIR.exists():
         for root, dirs, files in os.walk(str(DOWNLOAD_DIR)):
+            dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
             for f in files:
                 fp = os.path.join(root, f)
                 try:

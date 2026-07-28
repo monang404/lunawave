@@ -81,7 +81,7 @@ class YtDlpResolver:
             )
             raise RuntimeError(
                 f"Timeout ({YTDLP_RESOLVE_TIMEOUT_SEC}s) saat mengambil stream URL untuk {video_id}"
-            )
+            ) from None
         except RuntimeError:
             raise
         except Exception as e:

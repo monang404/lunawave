@@ -44,6 +44,17 @@ class TestQueueSelect:
         await controller._on_queue_select(5)
         assert state.current_track is None
 
+    async def test_select_from_radio_mode_deactivates_radio(
+        self, controller, state, extractor, radio_mode
+    ):
+        extractor.stream_urls["v2"] = "https://stream/v2"
+        state.playback_mode = PlaybackMode.RADIO
+        state.queue = deque([make_track("v1"), make_track("v2"), make_track("v3")])
+        await controller._on_queue_select(1)
+        assert state.playback_mode == PlaybackMode.QUEUE
+        assert radio_mode.deactivated_calls == 1
+        assert state.current_track.video_id == "v2"
+
 
 class TestQueueMutations:
     async def test_add_appends_track(self, controller, state):

@@ -28,6 +28,7 @@ from pathlib import Path
 
 from aiohttp import web
 
+from core.log_categories import ALL_CATEGORIES
 from core.log_reader import stats, tail
 from core.observability import COMMAND_COUNT, HTTP_REQUESTS_TOTAL, get_counter_value
 from server.handlers.http import require_local_or_token
@@ -150,5 +151,6 @@ async def get_logs_stats(request):
         "system_stats": system_stats,
         "active_users": active_users,
         "metrics": {"http_requests_total": total_reqs, "command_count": total_cmds},
+        "available_categories": list(ALL_CATEGORIES),
     }
     return web.json_response(response_data)

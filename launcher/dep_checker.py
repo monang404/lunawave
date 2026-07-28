@@ -25,6 +25,15 @@ import shutil
 import socket
 import subprocess
 
+import structlog
+
+# PATCH-2026-07-28 (temuan #9, P4-T1c): launcher/ adalah entry-point, bukan
+# infrastruktur logging itu sendiri (beda dengan core/log_context.py) --
+# tidak ada risiko circular-import menambah logger structlog di sini.
+# Konvensi mengikuti launcher/preflight.py (satu-satunya file launcher/
+# yang sudah pakai logging sebelum perubahan ini).
+logger = structlog.get_logger(component="launcher.dep_checker")
+
 
 class DependencyChecker:
     def check_dependencies(self) -> tuple[list[str], bool]:
@@ -64,12 +73,16 @@ class DependencyChecker:
         """
         Returns the first line of mpv --version output, or None if fail/not found.
         """
+        # Klasifikasi: best-effort cleanup. Deteksi versi mpv gagal (mis.
+        # timeout, biner rusak) tidak boleh menggagalkan preflight check --
+        # hanya berarti versi tidak ditampilkan. Debug-level untuk membantu
+        # diagnosis kalau ada laporan "MPV terdeteksi tapi versi kosong".
         try:
             if shutil.which("mpv") is None:
                 return None
             res = subprocess.run(["mpv", "--version"], capture_output=True, text=True, timeout=2.0)
             if res.returncode == 0 and res.stdout:
                 return res.stdout.splitlines()[0].strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("mpv_version_check_failed", error=str(e))
         return None

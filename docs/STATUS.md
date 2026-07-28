@@ -9,6 +9,23 @@ sprint:
 > Tabel ini adalah satu-satunya source of truth untuk "sudah sampai mana?"
 > Update setiap sprint selesai.
 
+## Security & Bug Fixes — Fase 4 Cleanup & Konsistensi (2026-07-27)
+
+Task file `docs/rfc/bug_fix/04_fase4_cleanup_dan_konsistensi.yaml` selesai dieksekusi.
+
+| File | Perubahan |
+|---|---|
+| `core/security.py` | Hapus dead code `verify_token()`. (P04-T1) |
+| `tests/unit/core/test_no_dead_exports.py` (baru) | Pagar otomatis untuk fungsi public di `core/security.py`. |
+| `engine/radio/artist_selector.py` | Hapus import `EXPLORE_QUOTA` dan variabel unused `explore_count`. (P04-T2) |
+| `engine/volume_service.py` | Selaraskan batas volume backend ke `MAX_VOLUME=100`. (P04-T3) |
+| `tests/unit/engine/test_volume_service_max.py` (baru) | Unit test untuk batas volume backend. |
+| `server/handlers/ws_download.py` & `websocket.py` | Konfirmasi sebelum menimpa file lokal, cegah overwrite tanpa notifikasi. (P04-T4) |
+| `tests/unit/server/handlers/test_ws_download_overwrite.py` (baru) | Unit test konflik download dan konfirmasi overwrite. |
+| `engine/playback/crossfade.py` | Restore volume MPV eksplisit ke state.volume saat crossfade diinterupsi. (P04-T5) |
+| `tests/unit/engine/playback/test_crossfade_interrupted.py` (baru) | Unit test crossfade interupsi. |
+| `*` | Sapuan `ruff` untuk unused variables/imports (`F401, F403, F841`) di seluruh codebase (terutama tes). (P04-T6) |
+
 ## RFC Perbaikan Arsitektur — Fase 1-7 (P01-P07): SELESAI, Fase 8 (P08) deferred (2026-07-27)
 
 Task file `docs/rfc/perbaikan_arsitektur/01_circuit_breaker_state_machine.yaml`

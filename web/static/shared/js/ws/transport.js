@@ -114,7 +114,9 @@ export function wsSend(action, data) {
     // track sepenuhnya, jadi toggle play/pause yang lama sudah tidak relevan --
     // clear di sini (satu titik, berlaku utk semua caller: tombol next/prev,
     // keyboard shortcut, klik track di search/queue, Media Session action).
-    if (action === "next" || action === "prev" || action === "play_track") {
+    // queue_select (klik track di panel Queue) juga termasuk karena sama-sama
+    // mengganti track sepenuhnya, sama seperti next/prev/play_track.
+    if (action === "next" || action === "prev" || action === "play_track" || action === "queue_select") {
         store._pendingToggleTarget = null;
     }
     if (ws && ws.readyState === WebSocket.OPEN) {

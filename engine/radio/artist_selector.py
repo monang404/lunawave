@@ -33,7 +33,6 @@ from core.state import AppState
 from engine.radio.radio_config import (
     ARTISTS_PER_BATCH,
     BANDIT_QUOTA,
-    EXPLORE_QUOTA,
     TRACKS_PER_ARTIST_TARGET,
 )
 from engine.radio.track_filter import TrackFilter
@@ -128,7 +127,6 @@ class ArtistSelector:
         needed = max_artists - len(seed_artists)
         if needed > 0 and self._seed_artists:
             bandit_count = min(needed, BANDIT_QUOTA)
-            explore_count = needed - bandit_count
 
             if bandit_count > 0:
                 sampled = await self._sampled_seed_artists(k=bandit_count)

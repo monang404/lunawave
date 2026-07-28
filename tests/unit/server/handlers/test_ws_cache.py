@@ -1,11 +1,15 @@
 import json
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from config import DOWNLOAD_DIR
-from server.handlers.ws_cache import handle_cache_command
+from server.handlers.ws_cache import (
+    _clear_cache_sync,
+    _get_cache_size_sync,
+    handle_cache_command,
+)
 
 
 @pytest.mark.asyncio
@@ -51,3 +55,94 @@ async def test_clear_cache():
     assert mock_remove.call_count == 2
     ws.send_str.assert_called_once()
     manager.broadcast.assert_called_once()
+
+
+import tempfile
+
+
+def _can_symlink():
+    with tempfile.TemporaryDirectory() as d:
+        try:
+            os.symlink(d, os.path.join(d, "link"), target_is_directory=True)
+            return True
+        except OSError:
+            return False
+
+
+requires_symlink = pytest.mark.skipif(not _can_symlink(), reason="Requires symlink privileges")
+
+
+def _make_symlinked_tree(tmp_path):
+    """Build: <tmp_path>/download_dir/real_sub/inside.mp3 (real file)
+    and <tmp_path>/download_dir/linked_sub -> <tmp_path>/outside (symlink),
+    with <tmp_path>/outside/outside.mp3 sitting outside download_dir.
+    Returns (download_dir, outside_dir).
+    """
+    download_dir = tmp_path / "download_dir"
+    real_sub = download_dir / "real_sub"
+    real_sub.mkdir(parents=True)
+    (real_sub / "inside.mp3").write_bytes(b"x" * 111)
+
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    (outside_dir / "outside.mp3").write_bytes(b"y" * 222)
+
+    linked_sub = download_dir / "linked_sub"
+    os.symlink(outside_dir, linked_sub, target_is_directory=True)
+
+    return download_dir, outside_dir
+
+
+@requires_symlink
+def test_get_cache_size_prunes_symlinked_dirs(tmp_path):
+    download_dir, outside_dir = _make_symlinked_tree(tmp_path)
+
+    with patch("server.handlers.ws_cache.DOWNLOAD_DIR", download_dir):
+        size = _get_cache_size_sync()
+
+    # Only the file in the real subdirectory should be counted.
+    assert size == 111
+    # Sanity check the file outside DOWNLOAD_DIR still exists untouched.
+    assert (outside_dir / "outside.mp3").exists()
+
+
+@requires_symlink
+def test_clear_cache_does_not_delete_through_symlink(tmp_path):
+    download_dir, outside_dir = _make_symlinked_tree(tmp_path)
+
+    with patch("server.handlers.ws_cache.DOWNLOAD_DIR", download_dir):
+        _clear_cache_sync()
+
+    # File inside the real subdirectory was removed.
+    assert not (download_dir / "real_sub" / "inside.mp3").exists()
+    # File reached only via the symlinked subdirectory was NOT removed.
+    assert (outside_dir / "outside.mp3").exists()
+
+
+def test_get_cache_size_no_symlink_regression(tmp_path):
+    # No symlinks at all: behavior for the existing normal case is unchanged.
+    download_dir = tmp_path / "download_dir"
+    sub = download_dir / "sub"
+    sub.mkdir(parents=True)
+    (sub / "a.mp3").write_bytes(b"a" * 10)
+    (sub / "b.mp3").write_bytes(b"b" * 20)
+
+    with patch("server.handlers.ws_cache.DOWNLOAD_DIR", download_dir):
+        size = _get_cache_size_sync()
+
+    assert size == 30
+
+
+def test_clear_cache_no_symlink_regression(tmp_path):
+    # No symlinks at all: all files still get deleted as before.
+    download_dir = tmp_path / "download_dir"
+    sub = download_dir / "sub"
+    sub.mkdir(parents=True)
+    (sub / "a.mp3").write_bytes(b"a" * 10)
+    (sub / "b.mp3").write_bytes(b"b" * 20)
+
+    with patch("server.handlers.ws_cache.DOWNLOAD_DIR", download_dir):
+        _clear_cache_sync()
+
+    assert not (sub / "a.mp3").exists()
+    assert not (sub / "b.mp3").exists()

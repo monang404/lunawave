@@ -69,7 +69,7 @@ async def test_apply_crossfade_in_stops_early_when_status_changes():
         await apply_crossfade_in(mpv, state)
 
     calls = [c.args[0] for c in mpv.set_volume.call_args_list]
-    assert 100 not in calls
+    assert calls[-1] == 100  # Now explicit restore to full volume is expected
     assert len(calls) < 11
 
 

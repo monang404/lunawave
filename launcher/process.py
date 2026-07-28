@@ -27,48 +27,61 @@ import subprocess
 import sys
 import threading
 
+import structlog
+
+# PATCH-2026-07-28 (temuan #9, P4-T1c): launcher/ adalah entry-point, tidak
+# ada risiko circular-import. Konvensi mengikuti launcher/preflight.py.
+logger = structlog.get_logger(component="launcher.process")
+
 
 def kill_process_tree(pid: int):
     if sys.platform == "win32":
+        # Klasifikasi: best-effort cleanup. taskkill gagal (mis. proses
+        # sudah exit duluan) tidak boleh menggagalkan shutdown launcher.
         try:
             subprocess.run(
                 ["taskkill", "/F", "/T", "/PID", str(pid)],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("kill_process_tree_failed", platform="win32", pid=pid, error=str(e))
     else:
         try:
             import signal
 
             os.killpg(os.getpgid(pid), signal.SIGKILL)
         except Exception:
+            # Klasifikasi: best-effort cleanup. Fallback dari killpg (mis.
+            # proses bukan group leader) ke kill langsung -- kalau
+            # keduanya gagal, proses kemungkinan sudah mati duluan.
             try:
                 import signal
 
                 os.kill(pid, signal.SIGKILL)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("kill_process_tree_failed", platform="unix", pid=pid, error=str(e))
 
 
 def kill_mpv():
     if sys.platform == "win32":
+        # Klasifikasi: best-effort cleanup. Taskkill mpv.exe gagal (mis.
+        # tidak ada instance mpv jalan) tidak boleh menggagalkan shutdown.
         try:
             subprocess.run(
                 ["taskkill", "/F", "/IM", "mpv.exe"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("kill_mpv_failed", platform="win32", error=str(e))
     else:
         try:
             subprocess.run(
                 ["pkill", "-f", "mpv"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("kill_mpv_failed", platform="unix", error=str(e))
 
 
 class ServerProcess:
@@ -114,6 +127,10 @@ class ServerProcess:
         return self.process  # type: ignore
 
     def _pipe_stdout(self):
+        # Klasifikasi: best-effort cleanup. Pipe stdout putus adalah kejadian
+        # normal saat proses server di-kill (mis. dari stop()) -- tidak
+        # boleh melempar di thread daemon ini. Debug-level juga membantu
+        # kalau penyebabnya bug di callback on_log, bukan cuma pipe closed.
         try:
             for line in self.process.stdout:
                 line = line.rstrip()
@@ -121,8 +138,8 @@ class ServerProcess:
                     continue
                 if self.on_log:
                     self.on_log(line)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("pipe_stdout_failed", error=str(e))
         if self.on_log:
             self.on_log("── process ended ──", is_end=True)
 
@@ -136,7 +153,12 @@ class ServerProcess:
         try:
             self.process.wait(timeout=wait_timeout)
         except subprocess.TimeoutExpired:
+            # Klasifikasi: best-effort cleanup. Proses menolak/gagal mati
+            # walau sudah dikirim SIGKILL/taskkill -- kemungkinan besar
+            # sudah exit tepat di antara kill_process_tree() dan kill() ini
+            # (race benign). Debug-level untuk membantu diagnosis kalau
+            # ternyata proses benar-benar nyangkut (zombie/defunct).
             try:
                 self.process.kill()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("force_kill_failed", pid=self.process.pid, error=str(e))

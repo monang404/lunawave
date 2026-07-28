@@ -69,7 +69,7 @@ async def test_playback_flow(integration_app):
 
     assert started, "MPV did not start track within 20 seconds"
 
-    track_1_id = next(e.track.video_id for e in events if isinstance(e, TrackStartedEvent))
+    next(e.track.video_id for e in events if isinstance(e, TrackStartedEvent))
     events.clear()
 
     # 2. Pause
@@ -100,4 +100,4 @@ async def test_playback_flow(integration_app):
             break
 
     assert new_started, "MPV did not start second track within 20 seconds"
-    track_2_id = next(e.track.video_id for e in events if isinstance(e, TrackStartedEvent))
+    next(e.track.video_id for e in events if isinstance(e, TrackStartedEvent))

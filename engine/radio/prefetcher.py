@@ -37,7 +37,7 @@ from config import (
 from core.log_categories import LC_RADIO
 from core.log_context import bind_correlation
 from core.state import AppState
-from engine.radio.radio_config import ARTISTS_PER_BATCH, track_task
+from engine.radio.radio_config import ARTISTS_PER_BATCH, RADIO_SEARCH_SEM, track_task
 
 if TYPE_CHECKING:
     from engine.playback import PlaybackController
@@ -180,22 +180,23 @@ class RadioPrefetcher:
             return
 
         async def _resolve_one(track):
-            try:
-                await controller.track_loader.resolver.resolve(track)
-                logger.info(
-                    "radio_prefetch_resolved",
-                    category=LC_RADIO,
-                    video_id=track.video_id,
-                )
-            except Exception:
-                # L8.1 (G8): exception ini sudah dicatat sebagai
-                # stream_resolve_failed (ERROR, video_id/error_type/error)
-                # oleh adapters/ytdlp/resolver.py di titik asal -- tidak ada
-                # field baru yang ditambahkan di sini (video_id/error_type/
-                # error identik), jadi diamkan (§12.5 / L-D4). Prefetch
-                # bersifat best-effort: kegagalan di sini tidak menghentikan
-                # kandidat lain di asyncio.gather.
-                pass
+            async with RADIO_SEARCH_SEM:
+                try:
+                    await controller.track_loader.resolver.resolve(track)
+                    logger.info(
+                        "radio_prefetch_resolved",
+                        category=LC_RADIO,
+                        video_id=track.video_id,
+                    )
+                except Exception:
+                    # L8.1 (G8): exception ini sudah dicatat sebagai
+                    # stream_resolve_failed (ERROR, video_id/error_type/error)
+                    # oleh adapters/ytdlp/resolver.py di titik asal -- tidak ada
+                    # field baru yang ditambahkan di sini (video_id/error_type/
+                    # error identik), jadi diamkan (§12.5 / L-D4). Prefetch
+                    # bersifat best-effort: kegagalan di sini tidak menghentikan
+                    # kandidat lain di asyncio.gather.
+                    pass
 
         await asyncio.gather(*[_resolve_one(t) for t in candidates])
 

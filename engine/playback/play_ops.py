@@ -24,7 +24,6 @@ import structlog
 
 from core.events import LogMessageEvent, TrackStartedEvent
 from core.exceptions import BotCheckError, RateLimitedError, VideoUnavailableError
-from core.log_categories import LC_PLAYBACK
 from core.state import AudioOutput, PlayerStatus, TrackInfo
 from core.task_utils import safe_create_task
 

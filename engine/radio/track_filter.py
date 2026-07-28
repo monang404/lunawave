@@ -27,6 +27,7 @@ import structlog
 
 from core.log_categories import LC_RADIO
 from core.state import AppState, TrackInfo
+from engine.radio.radio_config import MAX_TRACK_DURATION
 from engine.radio.track_interleaver import normalize_title
 
 logger = structlog.get_logger(component="radio.track_filter")
@@ -96,6 +97,13 @@ class TrackFilter:
             # same song under a different video_id.
             normalized_title = normalize_title(track.title)
             if normalized_title and normalized_title in exclude_normalized_titles:
+                continue
+
+            # 1c. Filter out tracks longer than the radio cap (Bug #3 fix --
+            # MAX_TRACK_DURATION dideklarasikan tapi sebelumnya tidak pernah
+            # dipakai). duration <= 0 dianggap "belum diketahui", TIDAK
+            # dibuang oleh filter ini.
+            if track.duration and track.duration > MAX_TRACK_DURATION:
                 continue
 
             # 2. Filter out duplicates within the candidate batch itself
