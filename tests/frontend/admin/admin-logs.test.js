@@ -79,12 +79,12 @@ describe('Dashboard Stats - Taxonomy Bug Fix', () => {
             <ul id="catStatsList"></ul>
             <div id="matrixContainer"></div>
         `;
-        originalFetch = global.fetch;
-        global.fetch = vi.fn();
+        originalFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn();
     });
 
     afterEach(() => {
-        global.fetch = originalFetch;
+        globalThis.fetch = originalFetch;
         document.body.innerHTML = '';
         vi.resetModules();
     });
@@ -99,7 +99,7 @@ describe('Dashboard Stats - Taxonomy Bug Fix', () => {
             available_categories: ["auth", "system", "event"]
         };
 
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: async () => fakeResponse
         });
