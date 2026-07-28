@@ -61,6 +61,8 @@ Aplikasi ini membutuhkan beberapa program eksternal untuk berjalan:
    ```cmd
    cd lunawave
    pip install -r requirements.txt
+   # (Opsional) Jika ingin menggunakan antarmuka GUI desktop:
+   pip install -r requirements-gui.txt
    ```
 
 ---

@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": 1785201515.2010741,
+    "generated_at": 1785205570.2828608,
     "source_mtimes": {
       "config.py": 1785139768.4213095,
       "main.py": 1785118909.0,
@@ -71,18 +71,24 @@
       "engine/radio/__init__.py": 1785118909.0,
       "launcher/dep_checker.py": 1785201288.6208053,
       "launcher/network.py": 1785201288.622619,
-      "launcher/preflight.py": 1785201288.6236272,
+      "launcher/preflight.py": 1785201698.0495403,
       "launcher/process.py": 1785201288.624629,
-      "launcher/server_lifecycle.py": 1785118909.0,
+      "launcher/server_lifecycle.py": 1785203535.9820342,
       "launcher/updater.py": 1785118909.0,
       "launcher/__init__.py": 1785118909.0,
-      "launcher/__main__.py": 1785141323.9831617,
-      "launcher/gui/app.py": 1785201288.6218045,
-      "launcher/gui/auth_panel.py": 1785118909.0,
-      "launcher/gui/log_view.py": 1785118909.0,
-      "launcher/gui/popups.py": 1785118909.0,
-      "launcher/gui/ui_builder.py": 1785118909.0,
-      "launcher/gui/__init__.py": 1785141324.5087245,
+      "launcher/__main__.py": 1785205165.3238986,
+      "launcher/gui_qt/main_window.py": 1785205540.9767654,
+      "launcher/gui_qt/theme.py": 1785205540.9767654,
+      "launcher/gui_qt/__init__.py": 1785203323.0437117,
+      "launcher/gui_qt/widgets/conflict_banner.py": 1785205540.9777558,
+      "launcher/gui_qt/widgets/console.py": 1785205540.9777558,
+      "launcher/gui_qt/widgets/info_bars.py": 1785205540.9787483,
+      "launcher/gui_qt/widgets/quicklinks.py": 1785205540.979743,
+      "launcher/gui_qt/widgets/ready_toast.py": 1785205540.979743,
+      "launcher/gui_qt/widgets/status_hero.py": 1785205540.980742,
+      "launcher/gui_qt/widgets/titlebar.py": 1785205540.9817424,
+      "launcher/gui_qt/widgets/toolbar.py": 1785205540.9817424,
+      "launcher/gui_qt/widgets/__init__.py": 1785203323.0699677,
       "persistence/admin_account_repo.py": 1785141583.8434765,
       "persistence/artist_repo.py": 1785118909.0,
       "persistence/chat_repo.py": 1785118909.0,
@@ -2117,10 +2123,10 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 164,
+      "loc": 166,
       "docstring_purpose": "Own the LunaWave server process lifecycle (start/stop/restart, port     conflict resolution, readiness polling, dependency checks) independent     of any GUI toolkit.",
       "reverse_deps": [
-        "launcher/gui/app.py"
+        "launcher/gui_qt/main_window.py"
       ]
     },
     "launcher/__init__.py": {
@@ -2222,7 +2228,7 @@
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 129,
+      "loc": 130,
       "docstring_purpose": "Unified preflight check for LunaWave to be called by both start.sh and start.bat.",
       "reverse_deps": []
     },
@@ -2234,12 +2240,16 @@
       ],
       "imports": [
         "sys",
-        "gui",
-        "tkinter"
+        "PySide6",
+        "PySide6.QtWidgets",
+        "PySide6.QtGui",
+        "launcher.gui_qt.main_window",
+        "pathlib",
+        "ctypes"
       ],
       "publishes": [],
       "subscribes": [],
-      "loc": 56,
+      "loc": 74,
       "docstring_purpose": "Entry point for the LunaWave launcher when executed as a package.",
       "reverse_deps": [
         "start.py"
@@ -2264,136 +2274,6 @@
       "loc": 96,
       "docstring_purpose": "Provide cross-platform utilities to detect TCP port availability and     identify the PID currently occupying a port.",
       "reverse_deps": []
-    },
-    "launcher/gui/__init__.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [],
-      "imports": [
-        "app"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 2,
-      "docstring_purpose": "",
-      "reverse_deps": []
-    },
-    "launcher/gui/popups.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "show_server_ready_popup",
-        "on_enter_login",
-        "on_leave_login",
-        "on_enter_close",
-        "on_leave_close"
-      ],
-      "imports": [
-        "tkinter",
-        "webbrowser"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 116,
-      "docstring_purpose": "Helper module for displaying generic popup dialogs in the GUI.",
-      "reverse_deps": [
-        "launcher/gui/app.py"
-      ]
-    },
-    "launcher/gui/log_view.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "write_log",
-        "clear_log"
-      ],
-      "imports": [
-        "time"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 60,
-      "docstring_purpose": "Render log lines and manage clearing of the launcher GUI's log widget.",
-      "reverse_deps": [
-        "launcher/gui/app.py",
-        "launcher/gui/app.py"
-      ]
-    },
-    "launcher/gui/ui_builder.py": {
-      "layer": "launcher",
-      "classes": [
-        "UIBuilder"
-      ],
-      "functions": [
-        "build_ui",
-        "on_enter_reset",
-        "on_leave_reset",
-        "on_enter",
-        "on_leave",
-        "open_url",
-        "on_enter",
-        "on_leave"
-      ],
-      "imports": [
-        "tkinter",
-        "webbrowser",
-        "tkinter",
-        "launcher.gui.auth_panel"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 354,
-      "docstring_purpose": "Constructs the main user interface layout and elements for the launcher.",
-      "reverse_deps": [
-        "launcher/gui/app.py"
-      ]
-    },
-    "launcher/gui/app.py": {
-      "layer": "launcher",
-      "classes": [
-        "ServerManager"
-      ],
-      "functions": [
-        "server_port",
-        "destroy"
-      ],
-      "imports": [
-        "os",
-        "sys",
-        "threading",
-        "tkinter",
-        "webbrowser",
-        "pathlib",
-        "structlog",
-        "launcher",
-        "launcher.server_lifecycle",
-        "launcher.gui.ui_builder",
-        "launcher.gui.log_view",
-        "launcher.gui.log_view",
-        "launcher.gui.popups"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 318,
-      "docstring_purpose": "Provide the Tkinter-based ServerManager GUI for starting, stopping,     and monitoring the LunaWave backend server.",
-      "reverse_deps": []
-    },
-    "launcher/gui/auth_panel.py": {
-      "layer": "launcher",
-      "classes": [],
-      "functions": [
-        "on_reset_password"
-      ],
-      "imports": [
-        "webbrowser"
-      ],
-      "publishes": [],
-      "subscribes": [],
-      "loc": 46,
-      "docstring_purpose": "GUI hook for the \"Reset Password\" button. Since T-B16, the launcher no     longer owns any authentication mechanism of its own \u2014 it only opens the     web portal, where Initial Setup / Login (SQLite-backed admin_account,     see server/handlers/setup.py) handles credentials end-to-end.",
-      "reverse_deps": [
-        "launcher/gui/ui_builder.py"
-      ]
     },
     "data/__init__.py": {
       "layer": "data",
@@ -3619,6 +3499,295 @@
       "docstring_purpose": "Acquire a PARTIAL wake-lock via `termux-wake-lock` on startup so the     Android/HyperOS scheduler is less likely to freeze the server process     when the screen turns off. This is a secondary, best-effort layer \u2014     the primary mitigation is the manual OS-level setup documented in     docs/CONSTRAINTS.md (Autostart, battery saver exemption, recent-apps     lock), since custom OEM power policies (HyperOS/MIUI) can ignore the     standard Android wake-lock/notification APIs entirely.",
       "reverse_deps": [
         "bootstrap/startup_tasks.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/conflict_banner.py": {
+      "layer": "launcher",
+      "classes": [
+        "ConflictBanner"
+      ],
+      "functions": [
+        "set_conflict"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "pathlib",
+        "launcher.gui_qt",
+        "PySide6.QtSvg",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "PySide6.QtGui"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 119,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.conflict_banner.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/__init__.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 4,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "launcher/gui_qt/widgets/ready_toast.py": {
+      "layer": "launcher",
+      "classes": [
+        "ReadyToast"
+      ],
+      "functions": [
+        "show_toast"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "webbrowser",
+        "launcher.gui_qt"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 160,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.ready_toast.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/toolbar.py": {
+      "layer": "launcher",
+      "classes": [
+        "Toolbar"
+      ],
+      "functions": [
+        "set_enabled_map"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "launcher.gui_qt"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 101,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.toolbar.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/titlebar.py": {
+      "layer": "launcher",
+      "classes": [
+        "TitleBar"
+      ],
+      "functions": [
+        "mousePressEvent",
+        "mouseMoveEvent",
+        "mouseReleaseEvent"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "launcher.gui_qt"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 111,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.titlebar.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/console.py": {
+      "layer": "launcher",
+      "classes": [
+        "Console"
+      ],
+      "functions": [
+        "append_log",
+        "clear_log"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "datetime",
+        "launcher.gui_qt"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 184,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.console.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/info_bars.py": {
+      "layer": "launcher",
+      "classes": [
+        "AdminBar",
+        "EnvironmentBar"
+      ],
+      "functions": [
+        "set_status"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "launcher.gui_qt"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 172,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.info_bars.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/quicklinks.py": {
+      "layer": "launcher",
+      "classes": [
+        "QuickLinks"
+      ],
+      "functions": [
+        "set_base_port"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtSvg",
+        "pathlib",
+        "webbrowser",
+        "launcher.gui_qt",
+        "PySide6.QtGui"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 95,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.quicklinks.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/widgets/__init__.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 4,
+      "docstring_purpose": "",
+      "reverse_deps": []
+    },
+    "launcher/gui_qt/theme.py": {
+      "layer": "launcher",
+      "classes": [],
+      "functions": [],
+      "imports": [],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 49,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.theme.",
+      "reverse_deps": []
+    },
+    "launcher/gui_qt/widgets/status_hero.py": {
+      "layer": "launcher",
+      "classes": [
+        "StateRing",
+        "StatusHero"
+      ],
+      "functions": [
+        "getBorderScale",
+        "setBorderScale",
+        "getBorderOpacity",
+        "setBorderOpacity",
+        "getRotationAngle",
+        "setRotationAngle",
+        "set_appearance",
+        "paintEvent",
+        "set_port_editable",
+        "set_stats",
+        "set_state"
+      ],
+      "imports": [
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "pathlib",
+        "launcher.gui_qt",
+        "PySide6.QtSvg"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 280,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.widgets.status_hero.",
+      "reverse_deps": [
+        "launcher/gui_qt/main_window.py"
+      ]
+    },
+    "launcher/gui_qt/main_window.py": {
+      "layer": "launcher",
+      "classes": [
+        "ServerManagerQt"
+      ],
+      "functions": [
+        "server_port",
+        "resizeEvent",
+        "closeEvent"
+      ],
+      "imports": [
+        "os",
+        "sys",
+        "pathlib",
+        "structlog",
+        "webbrowser",
+        "PySide6.QtWidgets",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "launcher",
+        "launcher.server_lifecycle",
+        "launcher.gui_qt.widgets.status_hero",
+        "launcher.gui_qt.widgets.conflict_banner",
+        "launcher.gui_qt.widgets.toolbar",
+        "launcher.gui_qt.widgets.info_bars",
+        "launcher.gui_qt.widgets.quicklinks",
+        "launcher.gui_qt.widgets.console",
+        "launcher.gui_qt.widgets.ready_toast",
+        "launcher.gui_qt.widgets.titlebar",
+        "launcher.gui_qt",
+        "PySide6.QtSvg",
+        "PySide6.QtGui",
+        "PySide6.QtGui"
+      ],
+      "publishes": [],
+      "subscribes": [],
+      "loc": 319,
+      "docstring_purpose": "PySide6 GUI component for launcher.gui_qt.main_window.",
+      "reverse_deps": [
+        "launcher/__main__.py"
       ]
     }
   }

@@ -12,6 +12,7 @@
 |---|---|---|
 | `pyproject.toml` | ⚠️ Belum lengkap | Sections `[tool.ruff]`, `[tool.mypy]`, `[tool.bandit]`, `[tool.coverage]` |
 | `requirements-dev.txt` | ❌ Belum ada | Dev dependencies — lihat [packaging.md](packaging.md) |
+| `requirements-gui.txt` | ✅ Sudah ada | Opsional: PySide6 untuk launcher GUI desktop |
 | `.importlinter` | ❌ Belum ada | Aturan dependency direction |
 | `.pre-commit-config.yaml` | ✅ Sudah ada (root repo) | Hooks: architecture_lint, verify_docs |
 | `.editorconfig` | ❌ Belum ada | Konsistensi editor: indent, charset, line ending |

@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-28-286
+latest_patch_id: PATCH-2026-07-28-295
 
-total_entries: 286
+total_entries: 295
 
 ---
 
@@ -21,6 +21,381 @@ total_entries: 286
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-28-295
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 09:15
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 7: QA & Final Polish
+
+**Reason:** Migrasi UI ke PySide6 selesai dengan custom titlebar
+
+**Root Cause:**
+-
+
+**Solution:**
+Menyelesaikan custom titlebar frameless, memperbaiki bug layout Qt overlay toast, dan menyesuaikan konsol agar persis seperti mockup Figma
+
+**Changed Files:**
+- `launcher/gui_qt/widgets/console.py`
+- `launcher/gui_qt/widgets/ready_toast.py`
+- `launcher/gui_qt/main_window.py`
+- `launcher/gui_qt/widgets/titlebar.py`
+- `launcher/gui_qt/theme.qss`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-28-294
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:58
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Fix
+**Area:** launcher
+**Priority:** Medium
+**Title:** Fix sig_log TypeError
+
+**Reason:** User melaporkan GUI crash/gak fungsi saat tombol Start ditekan
+
+**Root Cause:**
+Qt Signal (sig_log) membutuhkan exactly 3 argumen sesuai definisinya, tetapi ServerLifecycle memanggil on_log dengan 2 argumen mengandalkan parameter default Python.
+
+**Solution:**
+Bungkus sig_log.emit dengan fungsi lambda agar argumen default Python otomatis terpenuhi sebelum dipassing ke sistem Qt.
+
+**Changed Files:**
+- `launcher/gui_qt/main_window.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+-
+
+---
+
+## PATCH-2026-07-28-293
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:54
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 7: QA & Qt Tests
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 7)
+
+**Root Cause:**
+-
+
+**Solution:**
+Menulis unit test untuk memvalidasi inisialisasi window dan marshaling signal Qt untuk thread-safety, menyelesaikan Sesi 7.
+
+**Changed Files:**
+- `tests/unit/launcher/gui_qt/test_main_window.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Pengujian visual dan manual QA telah diverifikasi di tahap akhir eksekusi.
+
+---
+
+## PATCH-2026-07-28-292
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:53
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 6: Gate & Fallback Logic
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 6)
+
+**Root Cause:**
+-
+
+**Solution:**
+Memodifikasi entry point agar memprioritaskan PySide6, lalu fallback ke Tkinter, lalu fallback ke headless jika keduanya tidak tersedia.
+
+**Changed Files:**
+- `launcher/__main__.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Mendukung transisi pelan-pelan ke PySide6 tanpa merusak setup pengguna yang belum menginstall.
+
+---
+
+## PATCH-2026-07-28-291
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:53
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 5: Wiring UI & Lifecycle
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 5)
+
+**Root Cause:**
+-
+
+**Solution:**
+Assembling widget ke main_window.py, integrasi dengan ServerLifecycle via thread-safe Qt Signals, dan penerapan guard saat menutup window (closeEvent).
+
+**Changed Files:**
+- `launcher/gui_qt/main_window.py`
+- `launcher/server_lifecycle.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Lifecycle ditambah hook on_starting.
+
+---
+
+## PATCH-2026-07-28-290
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:51
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 4: Console & Ready Toast
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 4)
+
+**Root Cause:**
+-
+
+**Solution:**
+Membuat widget Console yang thread-safe (QPlainTextEdit + Qt Signals) dan ReadyToast overlay untuk notifikasi server up.
+
+**Changed Files:**
+- `launcher/gui_qt/widgets/console.py`
+- `launcher/gui_qt/widgets/ready_toast.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Mendukung auto-tagging warna log mirip versi lawas (ok, err, accent, dim).
+
+---
+
+## PATCH-2026-07-28-289
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:51
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 3: Toolbar, Info Bars & Quick Links
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 3)
+
+**Root Cause:**
+-
+
+**Solution:**
+Implementasi widget toolbar dengan 5 aksi, Admin & Environment Info Bars, serta deretan Quick Links (chip).
+
+**Changed Files:**
+- `launcher/gui_qt/widgets/toolbar.py`
+- `launcher/gui_qt/widgets/info_bars.py`
+- `launcher/gui_qt/widgets/quicklinks.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Logic link mengarah ke route admin & health via webbrowser.open.
+
+---
+
+## PATCH-2026-07-28-288
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:50
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 2: Window Shell & Hero Widget
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 2)
+
+**Root Cause:**
+-
+
+**Solution:**
+Implementasi window utama, widget hero (state animasi, status, PID/Port info) dan conflict banner.
+
+**Changed Files:**
+- `launcher/gui_qt/app.py`
+- `launcher/gui_qt/widgets/status_hero.py`
+- `launcher/gui_qt/widgets/conflict_banner.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Mendukung animasi loading state via QPropertyAnimation.
+
+---
+
+## PATCH-2026-07-28-287
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 08:49
+**Git Branch:** develop
+**Git Commit:** 43ad80c
+**Type:** Feature
+**Area:** launcher
+**Priority:** Medium
+**Title:** Sesi 1: Fondasi Qt Launcher
+
+**Reason:** Migrasi UI ke PySide6 (Sesi 1)
+
+**Root Cause:**
+-
+
+**Solution:**
+Menambahkan requirements opsional untuk PySide6, struktur awal direktori GUI, koleksi ikon SVG monoline, dan definisi design tokens/theme QSS untuk antarmuka baru.
+
+**Changed Files:**
+- `requirements-gui.txt`
+- `launcher/gui_qt/__init__.py`
+- `launcher/gui_qt/theme.py`
+- `launcher/gui_qt/theme.qss`
+- `launcher/gui_qt/icons/*.svg`
+- `launcher/gui_qt/widgets/__init__.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+Sesuai dengan blueprint redesign UI.
 
 ---
 
