@@ -27,12 +27,8 @@ export function applyRoleUI() {
         // Android Chrome tidak auto-fire visualViewport resize saat element
         // berubah dari display:none ke display:flex, sehingga nav-bar bisa
         // terpotong sampai user scroll atau resize manual.
-        if (globalThis.visualViewport) {
-            const _app = document.getElementById("app");
-            if (_app) {
-                _app.style.height = globalThis.visualViewport.height + "px";
-            }
-        }
+        // Hack visualViewport dihilangkan karena justru menyebabkan nav-bar hilang saat URL bar muncul/hilang.
+        // CSS 100dvh sudah diperbaiki di app-shell.css untuk menangani ini secara native.
     }
     renderHeader();
 }
