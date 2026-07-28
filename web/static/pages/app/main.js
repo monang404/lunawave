@@ -79,13 +79,28 @@ import { wsConnect } from "../../shared/js/ws.js";
 })();
 
 
-// ── Service Worker Registration — Phase 6 ──
-// DISABLED selama development — biar nggak ke-cache stale.
-// Aktifkan lagi kalau sudah siap "production" (uncomment di bawah).
-// if ('serviceWorker' in navigator) {
-//     window.addEventListener('load', () => {
-//         navigator.serviceWorker.register('/static/sw.js')
-//             .then(reg => console.log('SW registered:', reg.scope))
-//             .catch(err => console.warn('SW registration failed:', err));
-//     });
-// }
+// ── Service Worker Registration ──
+// PATCH-UI-PERF-01: verified manually by the user via ?sw=1 (reload,
+// offline, and update-transition all checked OK) -- now always-on.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.warn('SW registration failed:', err));
+    });
+}
+
+// Manual escape hatch: run `window.__lunawaveKillSW()` in devtools console
+// if a registered SW/cache ever misbehaves. Deliberate (you call it), not
+// automatic on every load like the old killswitch.
+window.__lunawaveKillSW = async function () {
+    if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+    }
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    console.log('[lunawave] SW unregistered + caches cleared. Reload to confirm.');
+};

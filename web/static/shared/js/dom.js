@@ -103,6 +103,7 @@ export function initDOM() {
         ssHistoryBtn: $("ss-history-btn"),
         ssCacheSub: $("ss-cache-sub"),
         ssCacheClearBtn: $("ss-cache-clear-btn"),
+        ssSwResetBtn: $("ss-sw-reset-btn"),
         ssSleepSub: $("ss-sleep-sub"),
         ssSleepSelect: $("ss-sleep-select"),
         ssSpeedSub: $("ss-speed-sub"),

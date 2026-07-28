@@ -75,6 +75,7 @@ def create_app(
     from server.handlers.log_dashboard import get_logs_stats, get_logs_tail, serve_log_dashboard
     from server.handlers.setup import setup_required
     from server.handlers.websocket import ws_handler
+    from server.middleware.compression import make_static_handler
     from server.middleware.traffic import traffic_middleware
 
     app = web.Application(middlewares=[traffic_middleware])
@@ -120,7 +121,10 @@ def create_app(
     app.router.add_get("/admin/logs/", serve_log_dashboard)
     app.router.add_get("/api/logs/tail", get_logs_tail)
     app.router.add_get("/api/logs/stats", get_logs_stats)
-    app.router.add_static("/static", STATIC_DIR, name="static")
+    # PATCH-UI-PERF-01: replaces add_static() with a handler that gzips
+    # text assets (precompressed .gz cached on disk) and sets a
+    # Cache-Control header -- see server/middleware/compression.py.
+    app.router.add_get("/static/{path:.*}", make_static_handler(STATIC_DIR), name="static")
 
     return app
 
