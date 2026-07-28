@@ -36,6 +36,31 @@ export async function fetchStats() {
 
         const data = await res.json();
 
+        // Populate filterCategory dynamically
+        if (data.available_categories && filterCategory.options.length <= 1) {
+            const currentValue = filterCategory.value;
+            // Clear all except the first "Semua Kategori" option
+            while (filterCategory.options.length > 1) {
+                filterCategory.remove(1);
+            }
+            data.available_categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                // Title Case: capitalize first letter
+                opt.text = cat.charAt(0).toUpperCase() + cat.slice(1);
+                filterCategory.add(opt);
+            });
+            filterCategory.value = currentValue;
+
+            const legend = document.getElementById('legend');
+            if (legend) {
+                legend.innerHTML = '';
+                data.available_categories.forEach(c => {
+                    legend.innerHTML += `<span><span class="dot c-${c}"></span>${c}</span>`;
+                });
+            }
+        }
+
         // Render Global Metrics Grid (Categories)
         globalStatsGrid.innerHTML = '';
         if (data.log_stats && data.log_stats.categories) {

@@ -39,7 +39,9 @@ async def test_serve_log_dashboard_returns_file_response(mock_request):
 
             resp = await serve_log_dashboard(mock_request)
 
-            mock_file_response.assert_called_once_with(Path("/fake/static/pages/admin-logs/admin-logs.html"))
+            mock_file_response.assert_called_once_with(
+                Path("/fake/static/pages/admin-logs/admin-logs.html")
+            )
             assert resp.headers["Cache-Control"] == "no-cache"
 
 
@@ -71,6 +73,8 @@ async def test_get_logs_stats_returns_json(mock_request):
             mock_stats.assert_called_once_with(window_seconds=7200)
             import json
 
+            import core.log_categories
+
             body = json.loads(resp.body)
             assert body == {
                 "log_stats": {"LC_APP": {"INFO": 5}},
@@ -83,6 +87,7 @@ async def test_get_logs_stats_returns_json(mock_request):
                 # system_stats/active_users ditambahkan).
                 "system_stats": {},
                 "active_users": [],
+                "available_categories": list(core.log_categories.ALL_CATEGORIES),
             }
 
 
