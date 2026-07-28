@@ -12,13 +12,13 @@ const filterLevel = /** @type {HTMLSelectElement} */ (document.getElementById('f
 const filterCategory = /** @type {HTMLSelectElement} */ (document.getElementById('filterCategory'));
 const filterSearch = /** @type {HTMLInputElement} */ (document.getElementById('filterSearch'));
 export function switchTab(name, pushHash = true) {
-    document.querySelectorAll('.tab-btn, .bottom-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-btn, .bottom-tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
     if (pushHash) history.replaceState(null, '', '#' + name);
 }
 
 document.querySelectorAll('.tab-btn, .bottom-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
 });
 
 // Deep link initialization
