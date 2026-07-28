@@ -26,6 +26,12 @@ import socket
 import subprocess
 import sys
 
+import structlog
+
+# PATCH-2026-07-28 (temuan #9, P4-T1c): launcher/ adalah entry-point, tidak
+# ada risiko circular-import. Konvensi mengikuti launcher/preflight.py.
+logger = structlog.get_logger(component="launcher.network")
+
 
 def check_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -35,6 +41,9 @@ def check_port_in_use(port: int) -> bool:
 
 def get_pid_occupying_port(port: int) -> int | None:
     if sys.platform == "win32":
+        # Klasifikasi: best-effort cleanup. Ini murni untuk menampilkan PID
+        # yang menempati port di UI -- gagal parse netstat tidak boleh
+        # menggagalkan startup, cuma UI menampilkan "Unknown PID".
         try:
             output = subprocess.check_output(["netstat", "-aon"], shell=False, text=True)
             for line in output.splitlines():
@@ -49,8 +58,8 @@ def get_pid_occupying_port(port: int) -> int | None:
                             and pid != "0"
                         ):
                             return int(pid)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("port_owner_lookup_failed", platform="win32", tool="netstat", error=str(e))
     else:
         try:
             output = subprocess.check_output(
@@ -66,6 +75,10 @@ def get_pid_occupying_port(port: int) -> int | None:
                 if parts:
                     return int(parts[-1])
             except Exception:
+                # Klasifikasi: best-effort cleanup. Fallback terakhir (lsof
+                # -> fuser -> ss) semuanya gagal -- UI cukup menampilkan
+                # "Unknown PID", tapi debug log membantu tahu tool mana yang
+                # tidak tersedia di sistem ini.
                 try:
                     output = subprocess.check_output(
                         ["ss", "-lptn", f"sport = :{port}"], shell=False, text=True
@@ -75,6 +88,8 @@ def get_pid_occupying_port(port: int) -> int | None:
                     m = re.search(r"pid=(\d+)", output)
                     if m:
                         return int(m.group(1))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(
+                        "port_owner_lookup_failed", platform="unix", tool="ss", error=str(e)
+                    )
     return None

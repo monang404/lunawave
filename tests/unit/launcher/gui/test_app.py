@@ -92,3 +92,54 @@ def test_background_thread_after_destroy_does_not_crash(monkeypatch):
         threading.excepthook = old_hook
 
     assert errors == [], f"background thread(s) raised after window destroy: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# P4-T1c (temuan #9): except/pass di launcher/gui/app.py diklasifikasikan
+# "best-effort cleanup" dan diberi logging debug-level (icon load, destroy's
+# server-stop cleanup). _safe_after tetap sengaja silent (sudah dicover di
+# atas) -- tidak diulang di sini.
+# ---------------------------------------------------------------------------
+
+
+def test_window_icon_load_failure_is_fail_safe_and_logged(monkeypatch):
+    from launcher.gui import app as app_module
+
+    calls = []
+    monkeypatch.setattr(
+        app_module.logger, "debug", lambda event, **kw: calls.append((event, kw))
+    )
+    monkeypatch.setattr(
+        app_module.tk,
+        "PhotoImage",
+        lambda *a, **kw: (_ for _ in ()).throw(tk.TclError("bad icon")),
+    )
+
+    app = _make_app(monkeypatch)  # must not raise even though icon load fails
+    app.update()
+    app.destroy()
+
+    assert [event for event, _ in calls] == ["window_icon_load_failed"]
+
+
+def test_destroy_stop_failure_is_fail_safe_and_logged(monkeypatch):
+    from launcher.gui import app as app_module
+
+    calls = []
+    monkeypatch.setattr(
+        app_module.logger, "debug", lambda event, **kw: calls.append((event, kw))
+    )
+
+    app = _make_app(monkeypatch)
+    app.update()
+
+    monkeypatch.setattr(app, "_is_running", lambda: True)
+
+    def _boom():
+        raise RuntimeError("process already reaped")
+
+    app.lifecycle.server_process = type("_P", (), {"stop": staticmethod(_boom)})()
+
+    app.destroy()  # must not raise
+
+    assert [event for event, _ in calls] == ["shutdown_stop_failed"]

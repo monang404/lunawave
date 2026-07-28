@@ -33,7 +33,16 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 
+import structlog
+
 from launcher import network
+
+# PATCH-2026-07-28 (temuan #9, P4-T1c): launcher/ adalah entry-point, tidak
+# ada risiko circular-import. Konvensi mengikuti launcher/preflight.py --
+# GUI ini tidak punya sistem logging sendiri sebelumnya (beda dari
+# server_lifecycle.py yang report lewat callback on_log ke panel log GUI;
+# titik-titik di file ini murni kegagalan level Tk/OS, di luar jalur itu).
+logger = structlog.get_logger(component="launcher.gui.app")
 
 # ── Config ────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -105,6 +114,9 @@ class ServerManager(tk.Tk):
         y = (self.winfo_screenheight() - 680) // 2
         self.geometry(f"+{x}+{y}")
 
+        # Klasifikasi: best-effort cleanup. Gagal load icon window tidak
+        # boleh menggagalkan startup GUI -- window cuma tampil tanpa icon
+        # custom. Debug-level untuk membantu diagnosis platform tertentu.
         try:
             icon_path = BASE_DIR / "web" / "static" / "icons" / "icon-512.png"
             if icon_path.exists():
@@ -112,8 +124,8 @@ class ServerManager(tk.Tk):
                 self.iconphoto(True, img)
             else:
                 self.iconbitmap(default="")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("window_icon_load_failed", error=str(e))
 
     # ── UI Layout ──
     def _build_ui(self):
@@ -148,6 +160,10 @@ class ServerManager(tk.Tk):
         """
         if self._closing:
             return
+        # Klasifikasi: SENGAJA TETAP SILENT -- lihat docstring method ini
+        # di atas (PATCH-2026-07-16-002) untuk alasan lengkapnya. Exception
+        # type sudah dipersempit ke RuntimeError/TclError (bukan bare
+        # Exception), jadi tidak menelan kelas error lain yang tak terduga.
         try:
             self.after(delay, callback)
         except (RuntimeError, tk.TclError):
@@ -290,8 +306,12 @@ class ServerManager(tk.Tk):
     def destroy(self):
         self._closing = True
         if self._is_running():
+            # Klasifikasi: best-effort cleanup. Window sedang ditutup --
+            # kalau stop() gagal, tidak ada yang bisa dilakukan lagi selain
+            # lanjut ke super().destroy(). Debug-level untuk membantu
+            # diagnosis proses server yang nyangkut saat GUI ditutup.
             try:
                 self.lifecycle.server_process.stop()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("shutdown_stop_failed", error=str(e))
         super().destroy()

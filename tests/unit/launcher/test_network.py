@@ -38,3 +38,38 @@ def test_get_pid_occupying_port_linux():
             # Simulate lsof output
             mock_check_output.return_value = "5678\n"
             assert get_pid_occupying_port(8080) == 5678
+
+
+def test_get_pid_occupying_port_win32_failure_is_fail_safe_and_logged():
+    """P4-T1c (temuan #9): win32 netstat except/pass reclassified as
+    best-effort with debug-level logging."""
+    import launcher.network as network_module
+
+    debug_calls = []
+    with patch.object(
+        network_module.logger, "debug", lambda event, **kw: debug_calls.append((event, kw))
+    ):
+        with patch("launcher.network.sys.platform", "win32"):
+            with patch("launcher.network.subprocess.check_output") as mock_check_output:
+                mock_check_output.side_effect = OSError("netstat not found")
+                assert get_pid_occupying_port(8080) is None  # must not raise
+
+    assert [event for event, _ in debug_calls] == ["port_owner_lookup_failed"]
+
+
+def test_get_pid_occupying_port_unix_all_fallbacks_fail_is_fail_safe_and_logged():
+    """P4-T1c (temuan #9): final unix fallback (ss) except/pass reclassified
+    as best-effort with debug-level logging, once lsof AND fuser AND ss all
+    fail."""
+    import launcher.network as network_module
+
+    debug_calls = []
+    with patch.object(
+        network_module.logger, "debug", lambda event, **kw: debug_calls.append((event, kw))
+    ):
+        with patch("launcher.network.sys.platform", "linux"):
+            with patch("launcher.network.subprocess.check_output") as mock_check_output:
+                mock_check_output.side_effect = OSError("no port-lookup tool available")
+                assert get_pid_occupying_port(8080) is None  # must not raise
+
+    assert [event for event, _ in debug_calls] == ["port_owner_lookup_failed"]

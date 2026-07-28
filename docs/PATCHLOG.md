@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-27-283
+latest_patch_id: PATCH-2026-07-28-286
 
-total_entries: 283
+total_entries: 286
 
 ---
 
@@ -21,6 +21,147 @@ total_entries: 283
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-28-286
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 00:07
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** launcher
+**Priority:** Low
+**Title:** Triase except/pass di launcher/*.py (temuan #9, pilot 2/2 -- closes #9)
+
+**Reason:** launcher/*.py punya 13 titik try/except/pass di 5 file yang belum pernah ditriase apakah aman silent atau menyembunyikan error yang seharusnya diketahui saat debugging produksi/instalasi user.
+
+**Root Cause:**
+Pola except/pass ditulis defensif tanpa konvensi terpusat kapan silent itu aman vs kapan butuh logging minimal. launcher/ juga tidak konsisten: preflight.py sudah pakai structlog, 4 file lain (dep_checker, network, process, gui/app) tidak punya logging sama sekali.
+
+**Solution:**
+11/13 titik diklasifikasi 'best-effort cleanup', diberi logger.debug(...) via structlog -- launcher/ adalah entry-point (bukan infrastruktur logging), jadi tidak ada risiko circular-import; logger baru ditambah ke dep_checker.py, network.py, process.py, gui/app.py mengikuti konvensi component=... yang sudah dipakai preflight.py. 2/13 titik SENGAJA TETAP SILENT dengan alasan didokumentasikan sebagai komentar di kode (lihat Notes).
+
+**Changed Files:**
+- `launcher/dep_checker.py`
+- `launcher/network.py`
+- `launcher/process.py`
+- `launcher/preflight.py`
+- `launcher/gui/app.py`
+- `tests/unit/launcher/test_dep_checker.py`
+- `tests/unit/launcher/test_network.py`
+- `tests/unit/launcher/test_process.py`
+- `tests/unit/launcher/gui/test_app.py`
+
+**Changed Symbols:**
+- `DependencyChecker.mpv_version()`
+- `get_pid_occupying_port()`
+- `kill_process_tree()`
+- `kill_mpv()`
+- `ServerProcess._pipe_stdout()`
+- `ServerProcess.stop()`
+- `ServerManager._build_window()`
+- `ServerManager.destroy()`
+
+**Tests:** pytest tests/unit -q -k launcher (39 passed, 4 skipped tanpa X display; 6 passed via xvfb-run saat divalidasi manual); ruff check .
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** PATCH-2026-07-28-285
+
+**Status:** Merged
+
+**Notes:**
+Daftar 'sengaja tetap silent': (1) launcher/preflight.py::log_result -- except-nya membungkus logger.info() itu sendiri, menambah logger call di except berisiko gagal dengan cara sama/rekursi tanpa menambah info berguna; print_*() di run() sudah kasih feedback terlepas dari log ini. (2) launcher/gui/app.py::ServerManager._safe_after -- sudah didokumentasikan lengkap di docstring method (PATCH-2026-07-16-002), exception type sudah dipersempit ke (RuntimeError, tk.TclError) bukan bare Exception. 13 test baru ditambah, semua memicu except-block yang diubah via monkeypatch untuk verifikasi fail-safe + logger.debug terpanggil. Sandbox awalnya tidak punya tkinter/X display -- diinstall (python3-tk, xvfb) supaya 4 test GUI tervalidasi jalan (6 passed via xvfb-run), bukan cuma skip. Re-run automation/find_silent_excepts.py: launcher/ turun dari 13 -> 2 silent (2 titik yang memang sengaja didokumentasikan). BACKLOG (di luar scope pilot #9 file 09a/b/c): sisa lokasi except/pass di luar core/log_context.py dan launcher/*.py -- pakai automation/find_silent_excepts.py sbg starting point, klasifikasikan per-file dgn pola triase yang sama sebelum menambah logging.
+
+---
+
+## PATCH-2026-07-28-285
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 00:07
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Cleanup
+**Area:** core/log_context
+**Priority:** Low
+**Title:** Triase except/pass di core/log_context.py (temuan #9, pilot 1/2)
+
+**Reason:** core/log_context.py punya 6 titik try/except/pass yang belum pernah ditriase apakah aman silent atau menyembunyikan error yang seharusnya diketahui.
+
+**Root Cause:**
+Pola except/pass ditulis defensif tanpa konvensi terpusat kapan silent itu aman vs kapan butuh logging minimal.
+
+**Solution:**
+Semua 6 titik diklasifikasi 'best-effort cleanup' (gagal bind/unbind context var tidak boleh menggagalkan alur utama WS connect/command execution/flow lintas-task -- hanya kehilangan satu field korelasi di log). Ditambah module-level logger = structlog.get_logger(component='core.log_context') dan tiap except Exception: pass -> logger.debug(<event>_failed, category=LC_LIFECYCLE, error=str(e)). Diverifikasi TIDAK circular-import: logger hanya bergantung pada structlog (third-party, sudah diimpor) dan core.log_categories (modul vokabuler murni, zero behavior, tanpa import balik) -- TIDAK mengimpor core.log_config (tempat structlog.configure() jalan).
+
+**Changed Files:**
+- `core/log_context.py`
+- `tests/unit/core/test_log_context.py`
+
+**Changed Symbols:**
+- `bind_session()`
+- `unbind_session()`
+- `bind_request()`
+- `unbind_request()`
+- `bind_correlation()`
+- `unbind_correlation()`
+
+**Tests:** pytest tests/unit/core/test_log_context.py -q (12 passed); ruff check core/log_context.py
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+6 test baru ditambah di tests/unit/core/test_log_context.py yang memicu tiap except-block via monkeypatch (stub logger + bind_contextvars/unbind_contextvars dipaksa raise), verifikasi fail-safe (tidak raise) + event debug benar. Total 12/12 test pass. architecture_lint: 0 new_violations. Re-run automation/find_silent_excepts.py: core/ turun dari 10 -> 3 silent (sisa 3 di file lain, backlog).
+
+---
+
+## PATCH-2026-07-28-284
+
+**Tanggal:** 2026-07-28
+**Timestamp:** 00:07
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Feature
+**Area:** automation
+**Priority:** Low
+**Title:** Skrip inventory try/except/pass (automation/find_silent_excepts.py)
+
+**Reason:** ~99 pola try/except/pass tersebar di codebase menelan exception diam-diam (temuan audit #9). Sebelum triase manual per-file (P4-T1b, P4-T1c), perlu tooling untuk menghitung & melokalisasi titik-titik ini secara konsisten dan bisa diulang kapan saja.
+
+**Root Cause:**
+Tidak ada skrip audit otomatis sebelumnya untuk pola except/pass -- temuan #9 di audit dilakukan manual.
+
+**Solution:**
+Tambah automation/find_silent_excepts.py mengikuti konvensi CLI automation/doctor.py & automation/test_locator.py (reuse shared.skip_dirs.walk_py_files). Deteksi via AST (bukan regex): ExceptHandler yang body-nya persis satu Pass statement. Komentar penjelas dicek di baris pass itu sendiri ATAU baris tepat sebelum pass (mencakup komentar yang diselipkan di antara except: dan pass, pola paling umum di codebase ini).
+
+**Changed Files:**
+- `automation/find_silent_excepts.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** python automation/find_silent_excepts.py --json; ruff check automation/find_silent_excepts.py
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Baseline run pertama (read-only, sebelum P4-T1b/T1c): total 55 titik except/pass, 52 tanpa komentar (silent). Ringkasan per-direktori (silent): ./: 4, adapters/: 9, bootstrap/: 2, core/: 9, engine/: 1, launcher/: 13, plugins/: 2, server/: 12. Skrip skip automation/ dan tests/ (ikut SKIP_DIRS bawaan repo, konsisten dgn checker automation/ lain). Dipakai sebagai starting point P4-T1b (core/log_context.py) dan P4-T1c (launcher/*.py); sisa titik di luar 2 file itu tetap backlog sesi lanjutan.
 
 ---
 

@@ -54,6 +54,12 @@ def print_err(msg: str):
 
 
 def log_result(check: str, result: str):
+    # Klasifikasi: SENGAJA TETAP SILENT (bukan best-effort biasa). Blok ini
+    # membungkus logger.info(...) itu sendiri -- kalau logging gagal di
+    # sini, memanggil logger lagi di except berisiko gagal dengan cara yang
+    # sama (atau lebih buruk, rekursi/exception baru) tanpa menambah info
+    # yang berguna. print_* di run() sudah memberi feedback ke user via
+    # terminal terlepas dari sukses/gagalnya baris log ini.
     try:
         logger.info("preflight_check", category=LC_LIFECYCLE, check=check, result=result)
     except Exception:

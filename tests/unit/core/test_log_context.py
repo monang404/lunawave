@@ -114,3 +114,88 @@ def test_correlation_id_propagated_explicitly_to_child_task_is_shared():
     asyncio.run(_parent())
 
     assert child_seen["correlation_id"] == "corr-parent-1"
+
+
+# ---------------------------------------------------------------------------
+# P4-T1b (temuan #9): setiap except/pass di log_context.py diklasifikasikan
+# "best-effort cleanup" dan diberi logging debug-level. Test di bawah ini
+# memicu tiap except-block via monkeypatch untuk memastikan (a) fungsi tetap
+# fail-safe (tidak pernah melempar walau structlog.contextvars gagal), dan
+# (b) logger.debug dipanggil sekali dengan event yang sesuai -- perubahan
+# murni observability, bukan perubahan control-flow.
+# ---------------------------------------------------------------------------
+
+
+class _RecordingLogger:
+    """Stub logger minimal untuk merekam pemanggilan .debug() tanpa
+    bergantung pada konfigurasi structlog global."""
+
+    def __init__(self):
+        self.debug_calls: list[tuple[str, dict]] = []
+
+    def debug(self, event, **kwargs):
+        self.debug_calls.append((event, kwargs))
+
+
+def _boom(*_args, **_kwargs):
+    raise RuntimeError("contextvars boom")
+
+
+def test_bind_session_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "bind_contextvars", _boom)
+
+    log_context.bind_session("sess-x")  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["session_bind_failed"]
+
+
+def test_unbind_session_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "unbind_contextvars", _boom)
+
+    log_context.unbind_session()  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["session_unbind_failed"]
+
+
+def test_bind_request_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "bind_contextvars", _boom)
+
+    log_context.bind_request("req-x")  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["request_bind_failed"]
+
+
+def test_unbind_request_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "unbind_contextvars", _boom)
+
+    log_context.unbind_request()  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["request_unbind_failed"]
+
+
+def test_bind_correlation_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "bind_contextvars", _boom)
+
+    log_context.bind_correlation("corr-x")  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["correlation_bind_failed"]
+
+
+def test_unbind_correlation_failure_is_fail_safe_and_logged(monkeypatch):
+    fake_logger = _RecordingLogger()
+    monkeypatch.setattr(log_context, "logger", fake_logger)
+    monkeypatch.setattr(structlog.contextvars, "unbind_contextvars", _boom)
+
+    log_context.unbind_correlation()  # must not raise
+
+    assert [event for event, _ in fake_logger.debug_calls] == ["correlation_unbind_failed"]
