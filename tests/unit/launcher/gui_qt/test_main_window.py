@@ -1,4 +1,6 @@
 import pytest
+
+pytest.importorskip("PySide6")
 from PySide6.QtWidgets import QApplication
 
 from launcher.gui_qt.main_window import ServerManagerQt
