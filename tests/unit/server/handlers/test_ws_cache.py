@@ -57,6 +57,21 @@ async def test_clear_cache():
     manager.broadcast.assert_called_once()
 
 
+import tempfile
+
+
+def _can_symlink():
+    with tempfile.TemporaryDirectory() as d:
+        try:
+            os.symlink(d, os.path.join(d, "link"), target_is_directory=True)
+            return True
+        except OSError:
+            return False
+
+
+requires_symlink = pytest.mark.skipif(not _can_symlink(), reason="Requires symlink privileges")
+
+
 def _make_symlinked_tree(tmp_path):
     """Build: <tmp_path>/download_dir/real_sub/inside.mp3 (real file)
     and <tmp_path>/download_dir/linked_sub -> <tmp_path>/outside (symlink),
@@ -78,6 +93,7 @@ def _make_symlinked_tree(tmp_path):
     return download_dir, outside_dir
 
 
+@requires_symlink
 def test_get_cache_size_prunes_symlinked_dirs(tmp_path):
     download_dir, outside_dir = _make_symlinked_tree(tmp_path)
 
@@ -90,6 +106,7 @@ def test_get_cache_size_prunes_symlinked_dirs(tmp_path):
     assert (outside_dir / "outside.mp3").exists()
 
 
+@requires_symlink
 def test_clear_cache_does_not_delete_through_symlink(tmp_path):
     download_dir, outside_dir = _make_symlinked_tree(tmp_path)
 

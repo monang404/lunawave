@@ -167,6 +167,7 @@ class ServerManager(tk.Tk):
         try:
             self.after(delay, callback)
         except (RuntimeError, tk.TclError):
+            # RuntimeError/TclError sengaja dibiarkan (lihat docstring)
             pass
 
     # ── Dependency Checker callback (check runs in ServerLifecycle) ────

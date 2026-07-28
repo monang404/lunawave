@@ -80,8 +80,8 @@ def test_kill_process_tree_win32_failure_is_fail_safe_and_logged(monkeypatch):
 def test_kill_process_tree_unix_both_fallbacks_fail_is_fail_safe_and_logged(monkeypatch):
     calls = _capture_debug(monkeypatch)
     with patch("launcher.process.sys.platform", "linux"):
-        with patch("launcher.process.os.killpg", side_effect=ProcessLookupError()):
-            with patch("launcher.process.os.kill", side_effect=ProcessLookupError()):
+        with patch("launcher.process.os.killpg", side_effect=ProcessLookupError(), create=True):
+            with patch("launcher.process.os.kill", side_effect=ProcessLookupError(), create=True):
                 kill_process_tree(1234)  # must not raise
     assert [event for event, _ in calls] == ["kill_process_tree_failed"]
 

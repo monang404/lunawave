@@ -63,6 +63,7 @@ def log_result(check: str, result: str):
     try:
         logger.info("preflight_check", category=LC_LIFECYCLE, check=check, result=result)
     except Exception:
+        # Logging gagal dibiarkan (lihat klasifikasi di atas)
         pass
 
 

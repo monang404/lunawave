@@ -42,3 +42,18 @@ def test_run_some_failed(monkeypatch, capsys):
     assert "Ada modul yang belum terinstall" in captured.out
     assert "MPV not found" in captured.out
     assert "IN USE" in captured.out
+
+
+def test_log_result_failure_is_silent_safe(monkeypatch, capsys):
+    calls = []
+
+    def mock_info(*args, **kwargs):
+        calls.append("info")
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(preflight.logger, "info", mock_info)
+
+    # Must not raise
+    preflight.log_result("some_check", "ok")
+
+    assert calls == ["info"]
