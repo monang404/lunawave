@@ -20,9 +20,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, termux]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, termux]
 
 jobs:
   health-checks:
