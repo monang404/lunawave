@@ -59,9 +59,9 @@ function renderHomeLyrics() {
     if (!store.lyrics_lines || store.lyrics_lines.length === 0) {
         document.body.setAttribute("data-has-lyrics", "false");
         if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "none";
-        // Equalizer jadi fallback kalau tidak ada lirik dan lagu sedang playing
+        // Teks "Audio Focus" selalu muncul walau lagu sedang dipause (karena ini bukan visualizer gerak)
         if (dom.homeEqualizer) {
-            dom.homeEqualizer.style.display = (store.status === "PLAYING") ? "flex" : "none";
+            dom.homeEqualizer.style.display = "flex";
         }
         return;
     }
@@ -71,14 +71,16 @@ function renderHomeLyrics() {
     // Sembunyikan equalizer karena lirik sudah tersedia
     if (dom.homeEqualizer) dom.homeEqualizer.style.display = "none";
 
+    dom.lyricsPrev.className = "lyrics-line prev lyric-pop";
     dom.lyricsCurrent.className = "lyrics-line current lyric-pop";
+    dom.lyricsNext.className = "lyrics-line next lyric-pop";
 
     if (dom.lyricsCurrent._popTimeout) clearTimeout(dom.lyricsCurrent._popTimeout);
     dom.lyricsCurrent._popTimeout = setTimeout(() => {
-        if (dom.lyricsCurrent) {
-            dom.lyricsCurrent.className = "lyrics-line current";
-        }
-    }, 300);
+        if (dom.lyricsPrev) dom.lyricsPrev.className = "lyrics-line prev";
+        if (dom.lyricsCurrent) dom.lyricsCurrent.className = "lyrics-line current";
+        if (dom.lyricsNext) dom.lyricsNext.className = "lyrics-line next";
+    }, 700);
 
     const idx = store.lyrics_index || 0;
     const lines = store.lyrics_lines;
