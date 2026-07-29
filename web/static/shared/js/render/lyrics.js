@@ -2,6 +2,7 @@ import { on } from "../bus.js";
 import { dom } from "../dom.js";
 import { store } from "../store.js";
 import { escapeHtml } from "../utils/format.js";
+import { updateEqualizerState } from "./equalizer.js";
 
 export function renderLyrics() {
     renderSheetLyrics();
@@ -59,17 +60,16 @@ function renderHomeLyrics() {
     if (!store.lyrics_lines || store.lyrics_lines.length === 0) {
         document.body.setAttribute("data-has-lyrics", "false");
         if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "none";
-        // Teks "Audio Focus" selalu muncul walau lagu sedang dipause (karena ini bukan visualizer gerak)
-        if (dom.homeEqualizer) {
-            dom.homeEqualizer.style.display = "flex";
-        }
+        // PATCH-EQ-REDESIGN-01: visibilitas + freeze-state home-equalizer
+        // sekarang satu-satunya sumber kebenarannya ada di equalizer.js
+        // (lihat komentar di file itu untuk alasan race condition lama).
+        updateEqualizerState();
         return;
     }
 
     document.body.setAttribute("data-has-lyrics", "true");
     if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "flex";
-    // Sembunyikan equalizer karena lirik sudah tersedia
-    if (dom.homeEqualizer) dom.homeEqualizer.style.display = "none";
+    updateEqualizerState();
 
     dom.lyricsPrev.className = "lyrics-line prev lyric-pop";
     dom.lyricsCurrent.className = "lyrics-line current lyric-pop";

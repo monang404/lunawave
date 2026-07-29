@@ -120,13 +120,20 @@ describe("render/lyrics.js", () => {
       expect(document.body.getAttribute("data-has-lyrics")).toBe("false");
       expect(dom.lyricsTextContainer.style.display).toBe("none");
       expect(dom.homeEqualizer.style.display).toBe("flex");
+      expect(dom.homeEqualizer.classList.contains("eq-frozen")).toBe(false);
     });
 
-    it("hides the equalizer when paused with no lyrics", () => {
+    it("keeps the equalizer container visible but freezes its animation when paused with no lyrics", () => {
       store.lyrics_lines = [];
       store.status = "PAUSED";
       renderLyrics();
-      expect(dom.homeEqualizer.style.display).toBe("none");
+      // PATCH-EQ-REDESIGN-01: container tetap "flex" (teks "Audio Focus"
+      // tetap perlu terlihat walau lagu di-pause), tapi animasi bar di-freeze
+      // lewat class "eq-frozen" -- bukan disembunyikan total. Sebelumnya
+      // test ini mengharapkan display "none" (tidak pernah benar-benar lolos
+      // dengan kode lama sebelum konsolidasi ke equalizer.js).
+      expect(dom.homeEqualizer.style.display).toBe("flex");
+      expect(dom.homeEqualizer.classList.contains("eq-frozen")).toBe(true);
     });
 
     it("shows the lyrics container and hides the equalizer when lyrics exist", () => {
@@ -136,6 +143,7 @@ describe("render/lyrics.js", () => {
       expect(document.body.getAttribute("data-has-lyrics")).toBe("true");
       expect(dom.lyricsTextContainer.style.display).toBe("flex");
       expect(dom.homeEqualizer.style.display).toBe("none");
+      expect(dom.homeEqualizer.classList.contains("eq-frozen")).toBe(true);
     });
 
     it("fills prev/current/next with the right lines and pads the edges with &nbsp;", () => {
@@ -153,24 +161,28 @@ describe("render/lyrics.js", () => {
       expect(dom.lyricsNext.innerHTML).toBe("&nbsp;");
     });
 
-    it("adds a pop animation class and removes it after 300ms", () => {
+    it("adds a pop animation class and removes it after 700ms", () => {
       store.lyrics_lines = ["A"];
       renderLyrics();
       expect(dom.lyricsCurrent.className).toBe("lyrics-line current lyric-pop");
-      vi.advanceTimersByTime(300);
+      // 700ms matches the CSS lyricPopCurrent/Prev/Next animation duration
+      // in components/player-bar.css (0.7s) -- the previous 300ms
+      // expectation here didn't match the actual animation and was never
+      // passing before this fix.
+      vi.advanceTimersByTime(700);
       expect(dom.lyricsCurrent.className).toBe("lyrics-line current");
     });
 
     it("resets the pop timeout on rapid successive renders", () => {
       store.lyrics_lines = ["A", "B"];
       renderLyrics();
-      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(400);
       store.lyrics_index = 1;
       renderLyrics();
-      vi.advanceTimersByTime(200);
-      // First timeout was cleared; still within the pop window.
+      vi.advanceTimersByTime(400);
+      // First timeout was cleared; still within the 700ms pop window.
       expect(dom.lyricsCurrent.className).toBe("lyrics-line current lyric-pop");
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(300);
       expect(dom.lyricsCurrent.className).toBe("lyrics-line current");
     });
   });

@@ -73,6 +73,23 @@ async def test_set_mode_to_radio(setup_mode_ops):
 
 
 @pytest.mark.asyncio
+async def test_set_mode_to_radio_clears_manual_queue(setup_mode_ops):
+    """Regression: mengaktifkan radio saat mode QUEUE sedang punya antrean manual
+    harus bersihkan state.queue. Sebelumnya tidak di-clear, jadi frontend
+    (data-queue-empty) tetap 'false' dan Home masih menampilkan list antrean
+    lama walau lagu sudah main dari radio."""
+    ops, state, mpv, radio = setup_mode_ops
+    state.queue.append(TrackInfo(video_id="v1", title="Song 1", artist="Artist", duration=200))
+    state.queue.append(TrackInfo(video_id="v2", title="Song 2", artist="Artist", duration=180))
+    assert len(state.queue) == 2
+
+    should_activate = await ops.set_mode(PlaybackMode.RADIO)
+    assert should_activate is True
+    assert state.playback_mode == PlaybackMode.RADIO
+    assert len(state.queue) == 0
+
+
+@pytest.mark.asyncio
 async def test_set_mode_from_radio(setup_mode_ops):
     ops, state, mpv, radio = setup_mode_ops
     state.playback_mode = PlaybackMode.RADIO
