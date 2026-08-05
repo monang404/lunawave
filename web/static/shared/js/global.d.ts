@@ -32,6 +32,8 @@ interface Window {
      * (lihat main.js:48). */
     switchTab?: (tab: string) => void;
     ChatModule?: ChatModuleApi;
+    /** Kill switch untuk Service Worker (lihat main.js:96). */
+    __lunawaveKillSW?: () => Promise<void>;
 }
 
 /** Di-assign lewat `globalThis.setRadioHeroAnimState = ...` di

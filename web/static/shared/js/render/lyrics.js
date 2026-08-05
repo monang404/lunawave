@@ -2,6 +2,7 @@ import { on } from "../bus.js";
 import { dom } from "../dom.js";
 import { store } from "../store.js";
 import { escapeHtml } from "../utils/format.js";
+import { updateEqualizerState } from "./equalizer.js";
 
 export function renderLyrics() {
     renderSheetLyrics();
@@ -59,26 +60,27 @@ function renderHomeLyrics() {
     if (!store.lyrics_lines || store.lyrics_lines.length === 0) {
         document.body.setAttribute("data-has-lyrics", "false");
         if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "none";
-        // Equalizer jadi fallback kalau tidak ada lirik dan lagu sedang playing
-        if (dom.homeEqualizer) {
-            dom.homeEqualizer.style.display = (store.status === "PLAYING") ? "flex" : "none";
-        }
+        // PATCH-EQ-REDESIGN-01: visibilitas + freeze-state home-equalizer
+        // sekarang satu-satunya sumber kebenarannya ada di equalizer.js
+        // (lihat komentar di file itu untuk alasan race condition lama).
+        updateEqualizerState();
         return;
     }
 
     document.body.setAttribute("data-has-lyrics", "true");
     if (dom.lyricsTextContainer) dom.lyricsTextContainer.style.display = "flex";
-    // Sembunyikan equalizer karena lirik sudah tersedia
-    if (dom.homeEqualizer) dom.homeEqualizer.style.display = "none";
+    updateEqualizerState();
 
+    dom.lyricsPrev.className = "lyrics-line prev lyric-pop";
     dom.lyricsCurrent.className = "lyrics-line current lyric-pop";
+    dom.lyricsNext.className = "lyrics-line next lyric-pop";
 
     if (dom.lyricsCurrent._popTimeout) clearTimeout(dom.lyricsCurrent._popTimeout);
     dom.lyricsCurrent._popTimeout = setTimeout(() => {
-        if (dom.lyricsCurrent) {
-            dom.lyricsCurrent.className = "lyrics-line current";
-        }
-    }, 300);
+        if (dom.lyricsPrev) dom.lyricsPrev.className = "lyrics-line prev";
+        if (dom.lyricsCurrent) dom.lyricsCurrent.className = "lyrics-line current";
+        if (dom.lyricsNext) dom.lyricsNext.className = "lyrics-line next";
+    }, 700);
 
     const idx = store.lyrics_index || 0;
     const lines = store.lyrics_lines;

@@ -407,6 +407,77 @@ describe("audio/playback-sync.js", () => {
       syncBrowserAudio();
       expect(pauseSpy).toHaveBeenCalled();
     });
+
+    describe("_mediaSessionHandling guard during track switch (PATCH-CROSSFADE-BG-01)", () => {
+      // Regression: di background (Termux/Android), OS/Chrome bisa mem-pause
+      // elemen <audio> secara singkat saat src diganti atau saat audio baru
+      // masih buffering. Listener "pause" di audio-pool.js dulu cuma
+      // dilindungi 300ms di sekitar fade-out crossfade, jadi pause OS di luar
+      // window itu (misalnya pindah lagu tanpa crossfade, atau audio baru
+      // yang belum sempat play()) disalahartikan sebagai "user pause" dan
+      // ikut ngirim toggle_pause ke server -> lagu macet pause sampai app
+      // dibuka ulang & user pencet play manual.
+      it("sets the guard as soon as a track switch starts and clears it once the new audio confirms playback", async () => {
+        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
+        store.userRole = "client";
+        store.audio_output = "browser";
+        store.status = "PLAYING";
+        store.current_track = { video_id: "v1" };
+        vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
+        vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+        unlockBrowserAudio(false); // audioUnlocked=true, loads v1 via syncBrowserAudio -> guard should engage here
+
+        expect(globalThis._mediaSessionHandling).toBe(true);
+
+        const audio = getOrInitAudio();
+        audio.oncanplay();
+        // _resumeAndPlay()/.finally() resolve asynchronously; flush microtasks.
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(globalThis._mediaSessionHandling).toBe(false);
+      });
+
+      it("keeps the guard active (does not sync a spurious OS pause to PAUSED) while the new audio is still buffering", async () => {
+        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store, wsSend } = await setupModule();
+        store.userRole = "admin";
+        store.audio_output = "browser";
+        store.status = "PLAYING";
+        store.current_track = { video_id: "v1" };
+        vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
+        vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+        unlockBrowserAudio(false);
+        const audio = getOrInitAudio();
+
+        // Simulate the OS/Chrome briefly pausing the new element before
+        // oncanplay/play() has resolved (buffering in background).
+        audio.dispatchEvent(new Event("pause"));
+
+        expect(store.status).toBe("PLAYING");
+        expect(wsSend).not.toHaveBeenCalledWith("toggle_pause");
+      });
+
+      it("clears the guard even when play() is blocked (autoplay rejected) so future genuine pauses still sync normally", async () => {
+        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
+        store.userRole = "client";
+        store.audio_output = "browser";
+        store.status = "PLAYING";
+        store.current_track = { video_id: "v1" };
+        vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
+        vi.spyOn(HTMLMediaElement.prototype, "play").mockRejectedValue(new Error("NotAllowedError"));
+
+        unlockBrowserAudio(false);
+        const audio = getOrInitAudio();
+        await audio.oncanplay();
+        // let the rejected play() promise settle before asserting
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(globalThis._mediaSessionHandling).toBe(false);
+      });
+    });
   });
 
   describe("initAudio", () => {

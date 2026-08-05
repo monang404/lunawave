@@ -23,6 +23,10 @@ export let activeAudioIndex = 0;
 export let _fadeIntervals = [null, null];
 export let _lastLoadedVideoId = null;
 
+// PATCH-CROSSFADE-BG-01: guard timer id untuk _mediaSessionHandling, lihat
+// penjelasan lengkap di dalam syncBrowserAudio().
+let _switchGuardTimeout = null;
+
 export function resetLastLoadedVideoId() {
     _lastLoadedVideoId = null;
 }
@@ -55,6 +59,37 @@ export function syncBrowserAudio(forcePlay) {
         globalThis.audioBlocked = false;
         if (typeof _hideTapToPlayBanner === "function") _hideTapToPlayBanner();
 
+        // PATCH-CROSSFADE-BG-01: guard SELURUH proses pindah lagu, bukan cuma
+        // window 300ms lama di sekitar fade-out crossfade. Bug lama: di
+        // Termux/Android saat app di-background (layar mati / tab pindah),
+        // Chrome suka mem-pause elemen <audio> sesaat waktu src-nya diganti
+        // atau saat audio baru masih buffering. Listener "pause" di
+        // audio-pool.js membaca event pause yang tidak diduga itu sebagai
+        // "user pause" (headset/OS) lalu ikut ngirim toggle_pause ke server
+        // -> lagu beneran ke-pause di server, padahal cuma OS yang lagi rewel
+        // pas ganti track. Efeknya: pindah lagu (baik karena habis atau klik
+        // next/prev) bikin macet pause, user harus buka app & pencet play
+        // manual. Di Windows aman karena Chrome desktop tidak mem-pause audio
+        // backgrounded dengan cara yang sama.
+        // _mediaSessionHandling sekarang di-set true dari titik ini sampai
+        // audio baru CONFIRMED play (atau confirmed gagal/diblokir), dengan
+        // timeout pengaman 8s biar tidak nyangkut permanen kalau ada jalur
+        // lain yang lupa nge-clear-nya.
+        globalThis._mediaSessionHandling = true;
+        if (_switchGuardTimeout) clearTimeout(_switchGuardTimeout);
+        _switchGuardTimeout = setTimeout(() => {
+            globalThis._mediaSessionHandling = false;
+            _switchGuardTimeout = null;
+        }, 8000);
+
+        const _endSwitchGuard = () => {
+            if (_switchGuardTimeout) {
+                clearTimeout(_switchGuardTimeout);
+                _switchGuardTimeout = null;
+            }
+            globalThis._mediaSessionHandling = false;
+        };
+
         // Switch active audio element
         const prevAudio = audioPool[activeAudioIndex];
         activeAudioIndex = (activeAudioIndex + 1) % 2;
@@ -64,8 +99,6 @@ export function syncBrowserAudio(forcePlay) {
         if (store.crossfade_enabled && !prevAudio.paused && prevAudio.src && !prevAudio.src.startsWith("data:")) {
             console.log("[audio] crossfade out previous track");
             _fadeVolume(prevAudio, 0, CROSSFADE_DURATION, () => {
-                // Cegah OS Android/Chrome mem-pause Media Session secara native
-                globalThis._mediaSessionHandling = true;
                 prevAudio.pause();
                 prevAudio.removeAttribute("src");
                 prevAudio.load();
@@ -77,7 +110,6 @@ export function syncBrowserAudio(forcePlay) {
                         console.log("[audio] Workaround: Resuming active audio paused by OS during crossfade");
                         activeAudio.play().catch(()=>{});
                     }
-                    globalThis._mediaSessionHandling = false;
                 }, 300);
             });
         } else {
@@ -120,6 +152,7 @@ export function syncBrowserAudio(forcePlay) {
                 globalThis.audioBlocked = true;
                 _showTapToPlayBanner();
             }
+            _endSwitchGuard();
             return;
         }
 
@@ -136,15 +169,17 @@ export function syncBrowserAudio(forcePlay) {
                 console.log("[audio] canplay → play:", track.video_id);
                 if (store.crossfade_enabled && !isResume) {
                     audio.volume = 0;
-                    _resumeAndPlay(audio);
+                    _resumeAndPlay(audio).finally(_endSwitchGuard);
                     const targetVol = Math.max(0, Math.min(1, (store.volume || 80) / 100));
                     _fadeVolume(audio, targetVol, CROSSFADE_DURATION);
                 } else {
                     if (!globalThis.isDraggingVol) {
                         audio.volume = Math.max(0, Math.min(1, (store.volume || 80) / 100));
                     }
-                    _resumeAndPlay(audio);
+                    _resumeAndPlay(audio).finally(_endSwitchGuard);
                 }
+            } else {
+                _endSwitchGuard();
             }
         };
         audio.load();

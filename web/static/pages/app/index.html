@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="/static/shared/css/base/reset.css">
     <link rel="stylesheet" href="/static/shared/css/base/typography.css">
     <link rel="stylesheet" href="/static/shared/css/base/animations.css">
+    <link rel="stylesheet" href="/static/shared/css/base/utilities.css">
     <link rel="stylesheet" href="/static/shared/css/layout/app-shell.css">
     <link rel="stylesheet" href="/static/shared/css/layout/nav.css">
     <link rel="stylesheet" href="/static/shared/css/layout/grid.css">
@@ -54,7 +55,7 @@
             <p class="portal-subtitle">Silakan masuk untuk mengakses kontrol musik</p>
 
             <div class="portal-options">
-                <div class="portal-admin-wrapper" style="width: 100%;">
+                <div class="portal-admin-wrapper u-w-full">
                     <div id="portal-login-form" class="portal-login-form">
                         <div class="login-input-group">
                             <input type="text" id="admin-username" placeholder="Username" autocomplete="off">
@@ -67,8 +68,8 @@
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-top: 10px;">
-                    <a href="/" class="portal-btn client" style="text-decoration: none;">
+                <div class="u-text-center u-mt-10">
+                    <a href="/" class="portal-btn client u-no-decoration">
                         <div class="portal-icon"><i class="ti ti-headphones"></i></div>
                         <div class="portal-btn-content">
                             <span class="portal-btn-title">Mode Klien</span>
@@ -87,7 +88,7 @@
             <p class="portal-subtitle">Initial Setup — buat akun admin untuk mengakses kontrol musik</p>
 
             <div class="portal-options">
-                <div class="portal-admin-wrapper" style="width: 100%;">
+                <div class="portal-admin-wrapper u-w-full">
                     <div id="setup-form" class="portal-login-form">
                         <div class="login-input-group">
                             <input type="text" id="setup-username" placeholder="Username" autocomplete="off">
@@ -134,7 +135,7 @@
                 <!-- ══ Header: Good Evening / LunaWave ══ -->
                 <header class="home-header" id="home-header-inner">
                     <div></div>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="u-flex-center-8">
                     </div>
                 </header>
 
@@ -178,17 +179,22 @@
                             <div class="lyrics-line current" id="lyrics-current"></div>
                             <div class="lyrics-line next" id="lyrics-next"></div>
                         </div>
-                        <div class="home-equalizer" id="home-equalizer" style="display:none;">
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
+                        <div class="home-equalizer cinematic-text" id="home-equalizer" style="display:none;">
+                            <div class="eq-visualizer" id="eq-visualizer">
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                                <span class="eq-bar"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -197,7 +203,7 @@
                 <div class="pbar" id="player-bar">
                     <div class="pb-row1">
                         <div class="pb-title" id="pb-track-info" style="flex:1;"></div>
-                        <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="u-flex-center-8">
                             <span class="pb-badge queue" id="pb-mode-badge" style="margin:0;">≡ queue</span>
                         </div>
                     </div>
@@ -685,6 +691,17 @@
 
             <div class="ss-row">
                 <div class="ss-label">
+                    <i class="ti ti-refresh-alert" aria-hidden="true"></i>
+                    <div>
+                        <div class="ss-label-text">Reset Tampilan Offline</div>
+                        <div class="ss-label-sub">Kalau tampilan aneh/nyangkut, ini akan reset ke versi terbaru</div>
+                    </div>
+                </div>
+                <button id="ss-sw-reset-btn" class="ss-action-btn">Reset</button>
+            </div>
+
+            <div class="ss-row">
+                <div class="ss-label">
                     <i class="ti ti-clock" aria-hidden="true"></i>
                     <div>
                         <div class="ss-label-text">Sleep Timer</div>
@@ -852,49 +869,6 @@
 
     <!-- ═══ Log Toast ═══ -->
     <div id="log-toast"></div>
-
-    <script>
-    // PATCH-SW-KILLSWITCH-01: Service Worker registration sudah di-DISABLE di main.js,
-    // tapi SW lama yang sempat ter-register di sesi sebelumnya tetap aktif
-    // di browser dan terus melayani JS/CSS dari cache lamanya sendiri,
-    // lepas dari perubahan apapun di server/disk. Ini sebabnya patch.sh
-    // sudah jalan benar tapi browser "tidak berubah". Jalankan SEKALI di
-    // awal load, sebelum script lain: unregister semua SW yang nyangkut +
-    // hapus semua Cache Storage punya origin ini, lalu kalau memang ada
-    // yang dihapus, force reload sekali biar fetch ulang semua asset
-    // langsung dari network (bukan dari SW yang baru mati).
-    (function () {
-        "use strict";
-        if (!('serviceWorker' in navigator)) return;
-        var didCleanup = false;
-
-        var unregisterAll = navigator.serviceWorker.getRegistrations()
-            .then(function (regs) {
-                if (!regs.length) return;
-                didCleanup = true;
-                return Promise.all(regs.map(function (r) { return r.unregister(); }));
-            })
-            .catch(function (e) { console.warn('[sw-kill] unregister failed:', e); });
-
-        var clearCaches = ('caches' in window)
-            ? caches.keys().then(function (keys) {
-                if (!keys.length) return;
-                didCleanup = true;
-                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-            }).catch(function (e) { console.warn('[sw-kill] cache clear failed:', e); })
-            : Promise.resolve();
-
-        Promise.all([unregisterAll, clearCaches]).then(function () {
-            if (didCleanup && !sessionStorage.getItem('sw_killswitch_reloaded')) {
-                console.log('[sw-kill] stale service worker / cache dibersihkan, reload sekali...');
-                sessionStorage.setItem('sw_killswitch_reloaded', '1');
-                location.reload();
-            } else if (didCleanup) {
-                console.log('[sw-kill] dibersihkan (reload sudah pernah dilakukan sesi ini).');
-            }
-        });
-    })();
-    </script>
 
     <script type="module" src="/static/pages/app/main.js"></script>
 </body>

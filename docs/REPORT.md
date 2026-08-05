@@ -1,13 +1,13 @@
 ---
 title : LunaWave Project Report
-last_verified: 2026-07-27
+last_verified: 2026-07-29
 sprint: 3.3
 warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 ---
 
 # REPORT.md — LunaWave Analysis Report
 
-> **Tanggal Scan:** 2026-07-27
+> **Tanggal Scan:** 2026-07-29
 > **Sumber:** Source code (timpa.rar) + `PROJECT_STRUCTURE_AUDIT.md` + existing docs
 > **Sprint aktif saat scan:** Sprint 3.2 (selesai) + Minor UI Patch
 
@@ -19,22 +19,22 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 > Jalankan `python automation/generate_report.py` untuk memperbarui.
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-27 oleh `automation/generate_report.py`  
+> **Auto-generated:** 2026-07-29 oleh `automation/generate_report.py`
 > **Jangan edit blok ini secara manual.**
 
 
 | Metrik | Nilai |
 |--------|-------|
-| Total folder (ekskl. `__pycache__`, `.git`) | 76 |
-| Total file `.py` (source, ekskl. `__pycache__`) | 128 |
-| Total file `.js` (ekskl. `.min.js`) | 61 |
-| Total file `.css` (ekskl. `.min.css`) | 25 |
-| Total class (Python) | 106 |
-| Total function/method (Python) | 600 |
-| Total baris Python | 15,517 |
-| Total baris JS (web/) | 6,798 |
-| Total baris CSS (web/) | 4,506 |
-| Ukuran DB utama (`data/lunawave.db`) | 388 KB (+ WAL 1742 KB) |
+| Total folder (ekskl. `__pycache__`, `.git`) | 80 |
+| Total file `.py` (source, ekskl. `__pycache__`) | 135 |
+| Total file `.js` (ekskl. `.min.js`) | 62 |
+| Total file `.css` (ekskl. `.min.css`) | 26 |
+| Total class (Python) | 115 |
+| Total function/method (Python) | 615 |
+| Total baris Python | 16,565 |
+| Total baris JS (web/) | 7,075 |
+| Total baris CSS (web/) | 4,646 |
+| Ukuran DB utama (`data/lunawave.db`) | tidak ditemukan |
 | Ukuran DB library (`cache/library.db`) | tidak ditemukan |
 
 ### File Python Terbesar
@@ -43,9 +43,9 @@ warning: temuan di bawah mungkin sudah berubah, cek kolom STATUS per-item
 |------|-------|
 | `persistence/discover_repo.py` | 461 |
 | `engine/playback/controller.py` | 386 |
-| `launcher/gui/ui_builder.py` | 353 |
+| `launcher/gui_qt/main_window.py` | 323 |
 | `server/handlers/websocket.py` | 320 |
-| `launcher/gui/app.py` | 297 |
+| `server/handlers/audio_stream_handler.py` | 289 |
 <!-- END:GENERATED -->
 
 ---

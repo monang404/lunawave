@@ -3,6 +3,7 @@ import { dom } from "../dom.js";
 import { store } from "../store.js";
 import { formatTime, formatRelativeTime } from "../utils/format.js";
 import { cleanTrackTitle } from "../utils/cover-art.js";
+import { updateEqualizerState } from "./equalizer.js";
 
 export function renderNowPlaying() {
     const t = store.current_track;
@@ -53,10 +54,9 @@ export function renderNowPlaying() {
         }
     }
 
-    if (dom.homeEqualizer) {
-        const hasLyrics = store.lyrics_lines && store.lyrics_lines.length > 0;
-        dom.homeEqualizer.style.display = (!hasLyrics && store.status === "PLAYING") ? "flex" : "none";
-    }
+    // PATCH-EQ-REDESIGN-01: delegasikan ke equalizer.js (satu sumber
+    // kebenaran untuk display + freeze-state, lihat komentar di file itu).
+    updateEqualizerState();
 
     if (dom.vinylRecord) {
         if (store.status === "PLAYING") {

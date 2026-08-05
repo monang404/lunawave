@@ -81,7 +81,7 @@ describe("services/auth.js", () => {
       expect(dom.logoutBtn.style.display).toBe("flex");
     });
 
-    it("switches to admin mode, resizes #app via visualViewport if present", () => {
+    it("switches to admin mode (visualViewport height hack was intentionally removed -- see comment in auth.js; CSS 100dvh in app-shell.css handles it now)", () => {
       document.body.innerHTML = '<div id="app"></div>';
       globalThis.visualViewport = { height: 640 };
       store.userRole = "admin";
@@ -89,7 +89,11 @@ describe("services/auth.js", () => {
       expect(document.body.classList.contains("client-mode")).toBe(false);
       expect(switchTab).toHaveBeenCalledWith("home");
       expect(dom.logoutBtn.style.display).toBe("flex");
-      expect(document.getElementById("app").style.height).toBe("640px");
+      // #app's height must NOT be touched by JS anymore -- if this starts
+      // failing because style.height is set again, that's the Android
+      // Chrome nav-bar bug being reintroduced, not a test to "fix" by
+      // updating the expectation.
+      expect(document.getElementById("app").style.height).toBe("");
     });
   });
 

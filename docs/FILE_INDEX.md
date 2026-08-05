@@ -1,6 +1,6 @@
 ---
 title: LunaWave File Index
-last_verified: 2026-07-27
+last_verified: 2026-07-29
 generated: true
 note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py — JANGAN edit manual.
 ---
@@ -14,7 +14,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 > Format per file: File | Fungsi | Class | Function utama | Digunakan oleh | Menggunakan
 
 <!-- BEGIN:GENERATED -->
-> **Auto-generated:** 2026-07-27 oleh `automation/generate_file_index.py`
+> **Auto-generated:** 2026-07-29 oleh `automation/generate_file_index.py`
 > **Jangan edit blok ini secara manual** — perubahan akan ditimpa saat script dijalankan ulang.
 
 
@@ -87,7 +87,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Define all typed DomainEvent dataclasses for the LunaWave event bus.
 **Class:** `DomainEvent`, `TrackStartedEvent(DomainEvent)`, `TrackEndedEvent(DomainEvent)`, `TrackProgressEvent(DomainEvent)`, `TrackDurationEvent(DomainEvent)`, `QueueUpdatedEvent(DomainEvent)`, `LyricsUpdatedEvent(DomainEvent)`, `DownloadCompleteEvent(DomainEvent)`, `DownloadProgressEvent(DomainEvent)`, `LogMessageEvent(DomainEvent)`, `VolumeChangedEvent(DomainEvent)`, `TrackPauseChangedEvent(DomainEvent)`, `MpvReconnectedEvent(DomainEvent)`
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _13 lainnya_
+**Digunakan oleh:** `adapters/mpv/observer`, `core/event_bus`, `engine/download_manager`, `engine/playback/controller`, `engine/playback/failure_ops`, _14 lainnya_
 **Menggunakan:** `core/state`
 
 
@@ -117,7 +117,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Closed set of `category` constants for structured logging, per the §4 table in docs/rfc/logging_standard/LOGGING_STANDARD.md (15 rows; the audit/implementation-plan docs say "14 kategori standar" but the actual table has 15 -- this module follows the table, the normative spec, not the prose count). Category groups log lines by *domain of the event*, never by the Python module/file that emitted them (see §4 anti-pattern #7).
 **Class:** —
 **Function utama:** —
-**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _39 lainnya_
+**Digunakan oleh:** `adapters/mpv/connection`, `adapters/mpv/ipc`, `adapters/mpv/observer`, `adapters/ytdlp/resolver`, `bootstrap/maintenance`, _41 lainnya_
 **Menggunakan:** —
 
 
@@ -138,7 +138,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `bind_session()`, `unbind_session()`, `bind_request()`, `unbind_request()`, `bind_correlation()`, `unbind_correlation()`
 **Digunakan oleh:** `core/command_bus`, `engine/download_manager`, `engine/radio/engine`, `engine/radio/prefetcher`, `server/connection_manager`
-**Menggunakan:** —
+**Menggunakan:** `core/log_categories`
 
 
 ---
@@ -434,7 +434,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `QueueController`
 **Function utama:** —
 **Digunakan oleh:** `engine/playback/controller`
-**Menggunakan:** `core/state`, `core/task_utils`
+**Menggunakan:** `core/events`, `core/state`, `core/task_utils`
 
 
 ---
@@ -533,7 +533,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Common utilities and shared logic for the radio engine components.
 **Class:** —
 **Function utama:** `track_task()`
-**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/engine`, `engine/radio/prefetcher`
+**Digunakan oleh:** `engine/radio/artist_selector`, `engine/radio/engine`, `engine/radio/prefetcher`, `engine/radio/track_filter`
 **Menggunakan:** `core/task_utils`
 
 
@@ -544,7 +544,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** `TrackFilter`
 **Function utama:** `filter_tracks()`
 **Digunakan oleh:** `engine/radio/artist_selector`
-**Menggunakan:** `core/log_categories`, `core/state`, `engine/radio/track_interleaver`
+**Menggunakan:** `core/log_categories`, `core/state`, `engine/radio/radio_config`, `engine/radio/track_interleaver`
 
 
 ---
@@ -790,7 +790,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Class:** —
 **Function utama:** `serve_log_dashboard()`, `get_logs_tail()`, `get_logs_stats()`
 **Digunakan oleh:** —
-**Menggunakan:** `core/log_reader`, `core/observability`, `server/handlers/http`
+**Menggunakan:** `core/log_categories`, `core/log_reader`, `core/observability`, `server/handlers/http`
 
 
 ---
@@ -905,6 +905,16 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
+**File:** `server/middleware/compression.py`
+**Fungsi:** PATCH-UI-PERF-01: aiohttp's `add_static()` serves files as-is with no gzip/deflate and no explicit Cache-Control -- every CSS/JS request pays full uncompressed transfer cost and browsers fall back to heuristic caching. `make_static_handler()` replaces `add_static()` with a handler that:
+**Class:** —
+**Function utama:** `make_static_handler()`
+**Digunakan oleh:** —
+**Menggunakan:** —
+
+
+---
+
 **File:** `server/middleware/traffic.py`
 **Fungsi:** Centralized aiohttp middleware for HTTP traffic instrumentation (ADR-0010 decision OD-3): assign a short correlation id (req_id) per request, count traffic metrics, and log one summary line per request.
 **Class:** —
@@ -916,7 +926,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 ---
 
 **File:** `server/reset_admin_password.py`
-**Fungsi:** ⚠️ _Belum ada docstring modul terstruktur (Purpose/Subscribes to/Publishes)_
+**Fungsi:** CLI untuk reset password admin. Dijalankan via: python -m server.reset_admin_password
 **Class:** —
 **Function utama:** `do_reset()`, `main()`
 **Digunakan oleh:** —
@@ -1044,45 +1054,102 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ---
 
-**Fungsi:** Provide the Tkinter-based ServerManager GUI for starting, stopping, and monitoring the LunaWave backend server.
-**Class:** `ServerManager(Tk)`
-**Function utama:** `server_port()`, `destroy()`
+**File:** `launcher/gui_qt/main_window.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.main_window.
+**Class:** `ServerManagerQt(QMainWindow)`
+**Function utama:** `server_port()`, `resizeEvent()`, `closeEvent()`
 **Digunakan oleh:** —
-**Menggunakan:** `launcher`
+**Menggunakan:** `launcher`, `launcher/gui_qt`, `launcher/gui_qt/widgets/conflict_banner`, `launcher/gui_qt/widgets/console`, `launcher/gui_qt/widgets/info_bars`, `launcher/gui_qt/widgets/quicklinks`, _5 lainnya_
 
 
 ---
 
-**Fungsi:** GUI hook for the "Reset Password" button. Since T-B16, the launcher no longer owns any authentication mechanism of its own — it only opens the web portal, where Initial Setup / Login (SQLite-backed admin_account, see server/handlers/setup.py) handles credentials end-to-end.
+**File:** `launcher/gui_qt/theme.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.theme.
 **Class:** —
-**Function utama:** `on_reset_password()`
-**Menggunakan:** —
-
-
----
-
-**Fungsi:** Render log lines and manage clearing of the launcher GUI's log widget.
-**Class:** —
-**Function utama:** `write_log()`, `clear_log()`
+**Function utama:** —
 **Digunakan oleh:** —
 **Menggunakan:** —
 
 
 ---
 
-**Fungsi:** Helper module for displaying generic popup dialogs in the GUI.
-**Class:** —
-**Function utama:** `show_server_ready_popup()`
-**Digunakan oleh:** —
-**Menggunakan:** —
+**File:** `launcher/gui_qt/widgets/conflict_banner.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.conflict_banner.
+**Class:** `ConflictBanner(QWidget)`
+**Function utama:** `set_conflict()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
 
 
 ---
 
-**Fungsi:** Constructs the main user interface layout and elements for the launcher.
-**Class:** `UIBuilder`
-**Function utama:** `build_ui()`
-**Digunakan oleh:** —
+**File:** `launcher/gui_qt/widgets/console.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.console.
+**Class:** `Console(QWidget)`
+**Function utama:** `append_log()`, `clear_log()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/info_bars.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.info_bars.
+**Class:** `AdminBar(QWidget)`, `EnvironmentBar(QWidget)`
+**Function utama:** `set_status()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/quicklinks.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.quicklinks.
+**Class:** `QuickLinks(QWidget)`
+**Function utama:** `set_base_port()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/ready_toast.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.ready_toast.
+**Class:** `ReadyToast(QWidget)`
+**Function utama:** `show_toast()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/status_hero.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.status_hero.
+**Class:** `StateRing(QWidget)`, `StatusHero(QWidget)`
+**Function utama:** `getBorderScale()`, `setBorderScale()`, `getBorderOpacity()`, `setBorderOpacity()`, `getRotationAngle()`, `setRotationAngle()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/titlebar.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.titlebar.
+**Class:** `TitleBar(QWidget)`
+**Function utama:** `mousePressEvent()`, `mouseMoveEvent()`, `mouseReleaseEvent()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
+
+
+---
+
+**File:** `launcher/gui_qt/widgets/toolbar.py`
+**Fungsi:** PySide6 GUI component for launcher.gui_qt.widgets.toolbar.
+**Class:** `Toolbar(QWidget)`
+**Function utama:** `set_enabled_map()`
+**Digunakan oleh:** `launcher/gui_qt/main_window`
+**Menggunakan:** `launcher/gui_qt`
 
 
 ---
@@ -1121,7 +1188,7 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 **Fungsi:** Own the LunaWave server process lifecycle (start/stop/restart, port conflict resolution, readiness polling, dependency checks) independent of any GUI toolkit.
 **Class:** `ServerLifecycle`
 **Function utama:** `is_running()`, `run_dependency_check()`, `start()`, `wait_for_ready()`, `stop()`, `restart()`
-**Digunakan oleh:** —
+**Digunakan oleh:** `launcher/gui_qt/main_window`
 **Menggunakan:** `launcher`
 
 
@@ -1196,10 +1263,10 @@ note: Isi file ini di-generate otomatis oleh automation/generate_file_index.py �
 
 ## 📋 Checklist Dokumentasi Docstring
 
-**110/111** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
+**117/117** file `.py` sudah punya docstring modul terstruktur (`Purpose:` / `Subscribes to:` / `Publishes:`). Berikut yang belum:
 
 
-- [ ] `server/reset_admin_password.py`
+_(semua file sudah terdokumentasi 🎉)_
 
 <!-- END:GENERATED -->
 

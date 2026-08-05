@@ -151,6 +151,33 @@ export function initSettingsEvents() {
         });
     }
 
+    // PATCH-UI-PERF-01: tombol reset manual untuk Service Worker + Cache
+    // Storage browser (beda dari "Ukuran Cache" di atas, yang itu untuk
+    // cache MP3 di server). Ini yang dipakai kalau tampilan/aset kelihatan
+    // "nyangkut" di versi lama setelah SW aktif -- tidak perlu buka DevTools
+    // atau uninstall browser, cukup tap tombol ini lalu app reload sendiri.
+    if (dom.ssSwResetBtn) {
+        dom.ssSwResetBtn.addEventListener("click", async () => {
+            if (!confirm("Reset tampilan offline? App akan reload setelah ini.")) return;
+            dom.ssSwResetBtn.disabled = true;
+            dom.ssSwResetBtn.textContent = "...";
+            try {
+                if ("serviceWorker" in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map((r) => r.unregister()));
+                }
+                if ("caches" in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map((k) => caches.delete(k)));
+                }
+            } catch (e) {
+                console.warn("[settings] SW/cache reset gagal:", e);
+            } finally {
+                location.reload();
+            }
+        });
+    }
+
     if (dom.ssSleepSelect) {
         let _sleepCountdownInterval = null;
 

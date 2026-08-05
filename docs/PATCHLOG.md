@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-28-295
+latest_patch_id: PATCH-2026-07-29-298
 
-total_entries: 295
+total_entries: 298
 
 ---
 
@@ -21,6 +21,139 @@ total_entries: 295
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-07-29-298
+
+**Tanggal:** 2026-07-29
+**Timestamp:** 08:16
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** Medium
+**Title:** Redesain equalizer fallback Home + freeze animasi total saat idle/lirik ada/background
+
+**Reason:** User report: equalizer fallback terlalu robotik & besar, animasi masih aktif di belakang layar (boros memori/baterai)
+
+**Root Cause:**
+1) Visual: 20 bar identik cuma beda durasi/delay, semuanya pakai satu keyframe simetris (eq-dance) -- kelihatan robotik karena tiap bar bergerak dengan bentuk kurva yang sama persis. Container juga kegedean (90px x 320px). 2) Logic: render/lyrics.js dan render/now-playing.js sama-sama menyentuh dom.homeEqualizer.style.display dengan kondisi berbeda (lyrics.js: tampilkan setiap tidak ada lirik tanpa peduli status; now-playing.js: sembunyikan setiap status bukan PLAYING tanpa peduli lirik) -- race condition tergantung urutan panggilan di client.js. Tidak ada satupun yang mengecek document.hidden, jadi animasi CSS keyframe tetap dihitung ulang oleh browser walau tab/layar tersembunyi selama status masih PLAYING -- boros CPU/baterai terutama di Termux/Android dengan layar mati.
+
+**Solution:**
+CSS: kurangi ke 13 bar lebih ramping (container 56px x 200px), 3 profil keyframe asimetris berbeda (eq-dance-a/b/c) dipasang bergantian per-bar plus easing yang divariasi supaya gerakan tidak senada. Tambah class .eq-frozen yang set 'animation: none' (bukan cuma animation-play-state:paused) untuk freeze total. JS: buat modul baru render/equalizer.js sebagai satu-satunya sumber kebenaran (updateEqualizerState()) untuk display + eq-frozen; lyrics.js & now-playing.js sekarang delegasi ke situ alih-alih saling menimpa. Modul ini juga mendaftarkan listener visibilitychange dan membaca document.hidden langsung di tiap panggilan (bukan cache) supaya freeze ikut aktif tiap kali tab/layar disembunyikan sementara status masih PLAYING.
+
+**Changed Files:**
+- `web/static/shared/css/components/lyrics.css`
+- `web/static/pages/app/index.html`
+- `web/static/pages/client/client.html`
+- `web/static/shared/js/render/equalizer.js`
+- `web/static/shared/js/render/lyrics.js`
+- `web/static/shared/js/render/now-playing.js`
+- `tests/frontend/render/equalizer.test.js`
+- `tests/frontend/render/lyrics.test.js`
+
+**Changed Symbols:**
+- `updateEqualizerState()`
+- `renderHomeLyrics()`
+- `renderNowPlaying()`
+
+**Tests:** vitest tests/frontend/render/equalizer.test.js + lyrics.test.js + now-playing.test.js (semua lolos)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Sekalian perbaiki 2 test frontend yang sudah gagal sebelum patch ini (tidak terkait 3 laporan bug di atas): tests/frontend/render/lyrics.test.js mengharapkan durasi pop-animation lirik 300/400ms padahal CSS lyricPopCurrent/Prev/Next di player-bar.css memang 0.7s -- test diperbaiki ke 700ms sesuai animasi asli, bukan kode yang diubah. Juga test lama 'hides the equalizer when paused with no lyrics' sudah gagal sebelum patch ini (mengharapkan display none padahal kode lama selalu flex saat tidak ada lirik) -- diganti supaya sesuai desain yang benar: container tetap flex (teks 'Audio Focus' tetap perlu terlihat saat idle/paused), animasi yang di-freeze lewat eq-frozen.
+
+---
+
+## PATCH-2026-07-29-297
+
+**Tanggal:** 2026-07-29
+**Timestamp:** 08:16
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Frontend
+**Priority:** High
+**Title:** Pindah lagu di background (Termux/Android) suka macet pause, harus buka app & play manual
+
+**Reason:** User report: crossfade/next-prev di background bikin lagu pause, aman di Windows tapi bermasalah di Termux Android
+
+**Root Cause:**
+Listener native 'pause' di audio-pool.js menganggap pause tak terduga sebagai pause asli dari user/OS, lalu (untuk admin) mem-flip store.status ke PAUSED dan mengirim wsSend('toggle_pause') ke server -- benar-benar mem-pause server. Guard globalThis._mediaSessionHandling yang sudah ada di playback-sync.js hanya melindungi window 300ms di sekitar fade-out audio LAMA saat crossfade, tidak menutup: (1) pindah lagu tanpa crossfade (cabang else, tidak ada guard sama sekali), dan (2) audio BARU yang masih buffering/baru mulai play() di background -- justru pada window inilah Chrome Android sering mem-pause elemen <audio> secara singkat saat backgrounded/layar mati. Pause singkat itu lolos sebagai 'native pause' asli, ke-sync ke server jadi PAUSED beneran. Chrome desktop (Windows) tidak mem-pause audio backgrounded dengan cara yang sama sehingga tidak kena bug ini.
+
+**Solution:**
+Perluas _mediaSessionHandling supaya aktif dari SAAT proses ganti lagu dimulai (baik lewat crossfade maupun tidak) sampai audio baru CONFIRMED play (promise dari _resumeAndPlay() resolve) atau confirmed gagal/diblokir -- bukan cuma 300ms di sekitar fade-out lama. Ditambah safety timeout 8 detik supaya guard tidak nyangkut permanen kalau ada jalur yang lupa di-clear.
+
+**Changed Files:**
+- `web/static/shared/js/audio/playback-sync.js`
+- `tests/frontend/audio/playback-sync.test.js`
+
+**Changed Symbols:**
+- `syncBrowserAudio()`
+- `_endSwitchGuard`
+- `globalThis._mediaSessionHandling`
+
+**Tests:** vitest tests/frontend/audio/playback-sync.test.js (40 passed)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+3 test baru menutupi: guard aktif dari awal switch, pause OS di tengah buffering tidak ikut sync ke server, dan guard tetap ke-clear walau play() ditolak (autoplay blocked) supaya pause asli berikutnya tetap ke-sync normal.
+
+---
+
+## PATCH-2026-07-29-296
+
+**Tanggal:** 2026-07-29
+**Timestamp:** 08:15
+**Git Branch:** -
+**Git Commit:** -
+**Type:** Fix
+**Area:** Backend
+**Priority:** High
+**Title:** Radio aktif saat mode QUEUE tidak membersihkan antrean manual
+
+**Reason:** User report: home masih menampilkan list antrean lama setelah radio diaktifkan
+
+**Root Cause:**
+ModeOps.set_mode() saat mode == PlaybackMode.RADIO tidak pernah membersihkan state.queue (antrean manual). Arah sebaliknya sudah benar: klik lagu dari Discover saat radio aktif otomatis mematikan radio & pindah ke QUEUE (controller._on_cmd_play_track). Karena frontend (data-queue-empty di queue.js) menentukan apakah panel 'Antrean Putar' di Home tampil murni dari store.queue.length tanpa peduli playback_mode, antrean lama yang tidak dibersihkan bikin Home tetap menampilkan list queue lama walau lagu sudah main dari radio.
+
+**Solution:**
+Tambah self.state.queue.clear() di cabang 'if mode == PlaybackMode.RADIO' pada ModeOps.set_mode(), simetris dengan pembersihan yang sudah ada di arah RADIO->QUEUE. QueueUpdatedEvent yang sudah dipublish setelah blok ini otomatis mendorong queue=[] ke semua client, jadi data-queue-empty jadi true dan panel queue di Home ikut hilang.
+
+**Changed Files:**
+- `engine/playback/mode_ops.py`
+- `tests/unit/engine/playback/test_mode_ops.py`
+
+**Changed Symbols:**
+- `ModeOps.set_mode()`
+
+**Tests:** pytest tests/unit/engine/playback/test_mode_ops.py (9 passed)
+
+**Breaking Change:** No
+
+**Regression Risk:** Low
+
+**Related Patch:** -
+
+**Status:** Merged
+
+**Notes:**
+Regression test baru: test_set_mode_to_radio_clears_manual_queue mengisi state.queue dengan 2 track lalu memverifikasi set_mode(RADIO) mengosongkannya.
 
 ---
 

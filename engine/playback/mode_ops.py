@@ -68,6 +68,15 @@ class ModeOps:
 
                 if mode == PlaybackMode.RADIO:
                     self.state.status = PlayerStatus.LOADING
+                    # BUGFIX: mengaktifkan radio saat mode QUEUE punya isi harus
+                    # bersihkan antrean manual juga -- simetris dengan arah
+                    # sebaliknya (klik lagu dari Discover saat radio aktif sudah
+                    # otomatis matikan radio & pindah ke QUEUE, lihat
+                    # controller._on_cmd_play_track / queue_controller.on_queue_select).
+                    # Sebelumnya state.queue tidak pernah di-clear di sini, jadi
+                    # data-queue-empty di frontend tetap "false" dan Home masih
+                    # menampilkan list antrean lama padahal lagu sudah main dari radio.
+                    self.state.queue.clear()
                     should_activate_radio = True
 
                 logger.info(
