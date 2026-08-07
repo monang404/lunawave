@@ -182,7 +182,7 @@ class Console(QWidget):
         ts_text = f"[{ts}] "
 
         cursor = self.text_edit.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
 
         # Apply timestamp formatting
         fmt = QTextCharFormat()

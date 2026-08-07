@@ -125,8 +125,19 @@ class ModeOps:
         await self.bus.publish(QueueUpdatedEvent())
 
     async def set_speed(self, data: dict):
-        speed = data.get("speed", 1.0)
-        self.state.playback_speed = float(speed)
+        # BUG-FIX #11: Clamp di ws_schemas.SetSpeedPayload melindungi path dari
+        # WS handler, tapi set_speed() menerima raw dict -- bisa dipanggil dari
+        # path lain tanpa validasi. Tambah defensive clamp di sini (defense-in-depth)
+        # agar mpv tidak pernah menerima speed 0, negatif, atau ekstrem besar.
+        _MIN_SPEED = 0.25
+        _MAX_SPEED = 3.0
+        raw_speed = data.get("speed", 1.0)
+        try:
+            speed = float(raw_speed)
+        except (TypeError, ValueError):
+            speed = 1.0
+        speed = max(_MIN_SPEED, min(_MAX_SPEED, speed))
+        self.state.playback_speed = speed
         await self.mpv.set_property("speed", self.state.playback_speed)
         await self.bus.publish(LogMessageEvent(message=f"Kecepatan pemutaran diubah ke {speed}x"))
 

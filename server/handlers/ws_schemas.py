@@ -94,3 +94,24 @@ class SetSleepTimerPayload:
             raise WsValidationError("Waktu sleep timer tidak valid (maksimal 1440 menit).")
 
         return cls(minutes=mins)
+
+
+# BUG-FIX #10: `seek` adalah satu-satunya command playback yang tidak lewat
+# schema validation (raw float() langsung ke CMD_SEEK), berbeda dari
+# volume_set, lyrics_offset, dll. String non-numerik akan raise ValueError
+# yang lolos sampai generic handler, dan tidak ada clamp ke [0, +inf).
+@dataclass
+class SeekPayload:
+    position: float
+
+    @classmethod
+    def parse(cls, data: dict) -> Self:
+        try:
+            pos = float(data.get("position", 0))
+        except (TypeError, ValueError):
+            raise WsValidationError("Nilai posisi seek harus berupa angka.") from None
+
+        if pos < 0:
+            raise WsValidationError("Posisi seek tidak boleh negatif.") from None
+
+        return cls(position=pos)

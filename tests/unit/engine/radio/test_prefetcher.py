@@ -26,7 +26,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from core.state import AppState, TrackInfo
+from core.state import AppState, PlaybackMode, TrackInfo
 from engine.radio.prefetcher import RadioPrefetcher
 
 
@@ -82,6 +82,7 @@ async def test_clear_standby():
 @pytest.mark.asyncio
 async def test_do_prefetch_handles_resolve_error():
     state = AppState()
+    state.playback_mode = PlaybackMode.RADIO
     state.radio_queue.append(TrackInfo(video_id="1", title="T1", artist="A", duration=100))
     selector = MockArtistSelector()
     prefetcher = RadioPrefetcher(state, selector)
@@ -120,6 +121,7 @@ async def test_do_prefetch_limits_concurrency_to_semaphore_cap():
     berapa banyak resolve() yang jalan bersamaan, walau kandidatnya lebih
     banyak dari itu."""
     state = AppState()
+    state.playback_mode = PlaybackMode.RADIO
     for i in range(6):
         state.radio_queue.append(
             TrackInfo(video_id=str(i), title=f"T{i}", artist="A", duration=100)
@@ -152,6 +154,7 @@ async def test_do_prefetch_resolves_all_candidates_regardless_of_semaphore():
     """Regresi: semaphore membatasi paralelisme, bukan hasil akhir --
     semua kandidat tetap ter-resolve seperti sebelum fix."""
     state = AppState()
+    state.playback_mode = PlaybackMode.RADIO
     for i in range(5):
         state.radio_queue.append(
             TrackInfo(video_id=str(i), title=f"T{i}", artist="A", duration=100)

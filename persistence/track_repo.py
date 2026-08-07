@@ -137,10 +137,15 @@ class TrackRepository:
                WHERE play_count = 0
                  AND local_path IS NULL
                  AND (is_favorite = 0 OR is_favorite IS NULL)
+                 AND (unavailable = 0 OR unavailable IS NULL)
                  AND (
                      stream_url_ts IS NULL
                      OR stream_url_ts < ?
                  )""",
+            # BUG-FIX #2: Track yang ditandai mark_unavailable() tidak pernah
+            # mendapat stream_url_ts, sehingga tanpa guard ini mereka ikut
+            # terhapus di siklus eviction 6-jam berikutnya -- membuat fitur
+            # "caching track permanen mati" sia-sia setelah maksimal 6 jam.
             (thirty_days_ago,),
         )
         await self._conn.commit()

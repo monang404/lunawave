@@ -35,7 +35,7 @@ def _create_icon(icon_name: str, color_hex: str, size: int = 14) -> QLabel:
     icon_path = Path(__file__).parent.parent / "icons" / f"{icon_name}.svg"
     if icon_path.exists():
         pixmap = QPixmap(size, size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
         with open(icon_path, encoding="utf-8") as f:
             svg_data = f.read().replace("currentColor", color_hex)

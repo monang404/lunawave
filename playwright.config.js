@@ -2,7 +2,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
-  testDir: './tests/frontend/visual',
+  testDir: './tests/frontend',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {

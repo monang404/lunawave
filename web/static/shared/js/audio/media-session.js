@@ -62,6 +62,20 @@ export function updateMediaSession() {
         // Pasang action handler — gunakan nama action yang sesuai dengan backend Python
         try {
             navigator.mediaSession.setActionHandler('play', () => {
+                // BUG-FIX #18: store.status bisa sudah "PLAYING" (server memang main)
+                // sementara browser client diam (audioBlocked = true). Guard lama
+                // `if (store.status === "PLAYING") return` menyebabkan tombol Play di
+                // notifikasi OS / lockscreen tidak berguna untuk kasus ini -- satu-satunya
+                // jalan keluar adalah reload halaman. Cek audioBlocked DULU: dipicu dari
+                // Media Session action dihitung browser sebagai user gesture yang sah,
+                // jadi audio.play() di titik ini berpeluang lolos autoplay policy.
+                if (globalThis.audioBlocked) {
+                    const audio = getOrInitAudio();
+                    if (audio) {
+                        _resumeAndPlay(audio);
+                    }
+                    return;
+                }
                 if (store.status === "PLAYING") return; // Cegah double toggle jika sudah play
                 globalThis._mediaSessionHandling = true;
                 _optimisticToggle(true);

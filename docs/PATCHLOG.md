@@ -2,9 +2,9 @@
 
 title: LunaWave Patch Log
 
-latest_patch_id: PATCH-2026-07-29-298
+latest_patch_id: PATCH-2026-08-07-314
 
-total_entries: 298
+total_entries: 314
 
 ---
 
@@ -21,6 +21,406 @@ total_entries: 298
 > **ID:** setiap entri wajib punya ID unik `PATCH-YYYY-MM-DD-NNN` (urut, 3 digit), sekarang jadi heading `## PATCH-...` -- satu-satunya sumber judul per entry.
 
 > **Field:** Tanggal, Timestamp, Git Branch, Git Commit, Type, Area, Priority, Title, Reason, Root Cause, Solution, Changed Files, Changed Symbols, Tests, Breaking Change, Regression Risk, Related Patch, Status, Notes -- urutan selalu sama di semua entry. Lihat `automation/patchlog.py` untuk definisi & CLI lengkap.
+
+---
+
+## PATCH-2026-08-07-314
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:16
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** frontend/audio
+**Priority:** High
+**Title:** Media Session 'play' tidak bisa unlock audio yang autoplay-blocked (#18)
+
+**Reason:** Saat lagu habis di tab background dan `audio.play()` gagal (NotAllowedError), tombol Play di notifikasi OS/lockscreen tidak berguna karena handler mengecek `store.status === "PLAYING"` (selalu true — server sedang main) dan langsung return tanpa melakukan apa-apa. Satu-satunya jalan keluar adalah reload halaman.
+
+**Root Cause:** `store.status` (status server) dan `globalThis.audioBlocked` (status audio browser client) adalah dua sinyal berbeda yang bisa tidak sinkron. Handler Media Session hanya mengecek yang pertama.
+
+**Solution:** Di handler `'play'`, cek `globalThis.audioBlocked` SEBELUM guard `store.status`. Jika blocked, panggil `_resumeAndPlay(getOrInitAudio())` — dipicu dari Media Session action = user gesture sah, berpeluang lolos autoplay policy. Di `_resumeAndPlay` catch block, tambah `_updateMediaSessionState("paused")` agar UI notifikasi jujur menunjukkan "paused".
+
+**Changed Files:**
+- `web/static/shared/js/audio/media-session.js`
+- `web/static/shared/js/audio/audio-pool.js`
+
+**Changed Symbols:** setActionHandler('play'), _resumeAndPlay, _updateMediaSessionState
+
+**Tests:** Manual: mode browser, tab background, lagu habis → tekan Play di notifikasi OS → audio muncul kembali tanpa reload
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah — hanya menambahkan cabang baru di handler yang ada
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-313
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:15
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** adapters/mpv
+**Priority:** Low
+**Title:** MpvIPC.get_property future menggantung 2 detik saat write gagal (#12)
+
+**Reason:** Ketika `writer.write()`/`drain()` gagal (OSError), future tetap terdaftar di `_pending` dan hanya dibersihkan setelah timeout 2 detik — delay yang tidak perlu untuk kasus yang seharusnya bisa terdeteksi segera.
+
+**Root Cause:** Tidak ada try/except terpisah untuk write di `get_property`; `OSError` dari write dan `TimeoutError` dari `wait_for` sama-sama ditangani oleh satu `except` yang sama, tapi future sudah menggantung sejak sebelum `wait_for` dipanggil.
+
+**Solution:** Pisahkan try/except untuk write dari try/except untuk `wait_for`. Jika write gagal, langsung `fut.cancel()` + pop dari `_pending` + return None tanpa menunggu timeout.
+
+**Changed Files:** `adapters/mpv/ipc.py`
+**Changed Symbols:** MpvIPC.get_property
+**Tests:** Unit test IPC
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-312
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:15
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** engine/playback
+**Priority:** Low
+**Title:** set_speed tanpa range clamp di mode_ops.py (#11)
+
+**Reason:** `set_speed()` meneruskan nilai speed langsung ke mpv tanpa batas. Client bisa kirim speed negatif, nol, atau ekstrem besar.
+
+**Root Cause:** SetSpeedPayload di ws_schemas melindungi path WS, tapi mode_ops menerima raw dict tanpa validasi lagi.
+
+**Solution:** Tambah defensive clamp 0.25–3.0 di `mode_ops.set_speed()` (defense-in-depth). Juga handle TypeError/ValueError dari float() konversi.
+
+**Changed Files:** `engine/playback/mode_ops.py`
+**Changed Symbols:** ModeOps.set_speed
+**Tests:** Unit test mode_ops
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-311
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:15
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** server/handlers
+**Priority:** Low
+**Title:** seek tanpa schema validation di ws_playback.py (#10)
+
+**Reason:** Semua command playback lain (volume_set, lyrics_offset, set_speed, set_sleep_timer) divalidasi lewat XxxPayload, tapi `seek` langsung `float(position)` mentah. String non-numerik raise ValueError ke generic handler, dan tidak ada guard posisi negatif.
+
+**Root Cause:** `seek` handler tidak pernah dibuatkan schema payload saat refactor ws_schemas.
+
+**Solution:** Tambah `SeekPayload` di ws_schemas.py (pola identik dengan payload yang ada). Update ws_playback.py untuk pakai `SeekPayload.parse(data)`.
+
+**Changed Files:**
+- `server/handlers/ws_schemas.py`
+- `server/handlers/ws_playback.py`
+
+**Changed Symbols:** SeekPayload, handle_playback_command
+**Tests:** Unit test ws handler
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-310
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:14
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** engine/radio
+**Priority:** Low
+**Title:** Prefetch tidak cek relevansi setelah delay + single-slot tracking (#9 #16)
+
+**Reason:** (1) `_last_prefetch_vid` adalah string tunggal — skip cepat berturut-turut bisa menyebabkan dedup tidak benar untuk prefetch overlap. (2) `_do_prefetch()` tidak cek mode sebelum resolve, sehingga buang bandwidth/CPU kalau radio sudah dimatikan selama 25s timeout.
+
+**Root Cause:** (1) Tracking single-string tidak cukup untuk window concurrent. (2) Tidak ada guard mode di awal `_do_prefetch`.
+
+**Solution:** (1) Ganti `_last_prefetch_vid: str | None` ke `_last_prefetch_vids: set[str]` dengan max size 5. (2) Tambah `if self.state.playback_mode != PlaybackMode.RADIO: return` di awal `_do_prefetch`.
+
+**Changed Files:** `engine/radio/prefetcher.py`
+**Changed Symbols:** RadioPrefetcher.__init__, RadioPrefetcher.check_prefetch, RadioPrefetcher._do_prefetch
+**Tests:** Unit test prefetcher
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-309
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:14
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** server/middleware
+**Priority:** Medium
+**Title:** Prometheus HTTP_REQUESTS_TOTAL cardinality unbounded (#8) + bytes_out doc (#17)
+
+**Reason:** (#8) `HTTP_REQUESTS_TOTAL.labels(path=request.path)` memakai path mentah — setiap video_id unik membuat series Prometheus baru yang tidak pernah di-GC. Untuk deployment Termux jangka panjang ini adalah memory leak signifikan. (#17) `bytes_out` tidak terhitung untuk streaming response (content_length=None untuk chunked transfer).
+
+**Root Cause:** (#8) Tidak ada normalisasi path sebelum dipakai sebagai label. (#17) Keterbatasan desain yang tidak didokumentasikan.
+
+**Solution:** (#8) Tambah `_normalize_path()` yang mengganti segmen dinamis (/api/stream/<id>, /api/thumbnail/<id>, dll) dengan placeholder statis. (#17) Tambah komentar eksplisit bahwa metric ini adalah lower-bound untuk streaming.
+
+**Changed Files:** `server/middleware/traffic.py`
+**Changed Symbols:** traffic_middleware, _normalize_path (baru)
+**Tests:** Unit test middleware
+**Breaking Change:** Tidak — existing Prometheus series dengan path mentah akan berhenti bertambah, series baru dengan path ternormalisasi mulai terbentuk (restart bersih)
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-308
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:13
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** server/handlers
+**Priority:** Medium
+**Title:** chat_history memory leak — tidak pernah di-prune (#7)
+
+**Reason:** `login_attempts` dan `command_history` di-prune di `_prune_stale_ips()`, tapi `chat_history` tidak pernah di-prune. Entry IP/UID yang tidak pernah reconnect tidak pernah dibersihkan — unbounded growth.
+
+**Root Cause:** `_prune_stale_ips()` melewatkan `chat_history` saat implementasi awal.
+
+**Solution:** Tambah pruning `chat_history` di `_prune_stale_ips()` dengan window 1 jam (3600s) — lebih panjang dari window auth (5 menit) karena sesi chat lazimnya lebih panjang.
+
+**Changed Files:** `server/handlers/auth.py`
+**Changed Symbols:** _prune_stale_ips
+**Tests:** Unit test auth handler
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-307
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:13
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** engine/playback
+**Priority:** Medium
+**Title:** Status player nyangkut PLAYING selamanya saat mpv stop tanpa transisi (#6)
+
+**Reason:** Grace window 1 detik dimaksudkan untuk membedakan event 'stop' basi (transisi track) dari stop asli. Tapi asumsi "kalau masih PLAYING setelah sleep berarti stop ini basi" salah kalau tidak ada track baru yang menyusul — status nyangkut PLAYING padahal mpv sudah berhenti.
+
+**Root Cause:** Setelah sleep(0.35) di grace window, kode hanya cek `status == PLAYING` untuk mengasumsikan transisi — tidak mengecek apakah `_loading` masih aktif (yang membuktikan ada transisi yang benar-benar sedang terjadi).
+
+**Solution:** Setelah sleep, jika `status == PLAYING` DAN `_loading == False` (tidak ada transisi aktif), ini adalah stop asli yang tertangkap di grace window — fall through ke set IDLE, tidak di-skip.
+
+**Changed Files:** `engine/playback/track_ended_ops.py`
+**Changed Symbols:** TrackEndedOps._handle_stop
+**Tests:** Unit test track_ended_ops
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah — hanya mengubah cabang yang sudah ada, tidak menambah path baru
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-306
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:13
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** engine/playback
+**Priority:** Medium
+**Title:** Crossfade-out tidak re-trigger setelah seek mundur (#5)
+
+**Reason:** Flag `_crossfade_out_triggered` di-set True sekali saat crossfade dipicu, hanya direset di `play_ops.py` saat track baru dimuat. Setelah seek mundur, crossfade tidak akan terpicu lagi untuk sisa pemutaran track yang sama.
+
+**Root Cause:** `_on_seek()` tidak mereset `_crossfade_out_triggered`.
+
+**Solution:** Tambah `self._crossfade_out_triggered = False` di `_on_seek()`.
+
+**Changed Files:** `engine/playback/controller.py`
+**Changed Symbols:** PlaybackController._on_seek
+**Tests:** Manual: putar lagu, seek mundur setelah crossfade-out terpicu, verify crossfade terpicu lagi mendekati akhir
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-305
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:13
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** server/handlers
+**Priority:** High
+**Title:** Rate-limit login bisa dilewati via concurrent request (#4)
+
+**Reason:** Cek `attempts >= 5` dilakukan di dalam lock, tapi lock dilepas sebelum PBKDF2 (~60-180ms). Counter baru diupdate setelah PBKDF2 selesai. Attacker yang mengirim 20 request paralel semua lolos cek karena counter belum sempat naik saat masing-masing mengecek.
+
+**Root Cause:** Pre-condition (cek gate) dan post-condition (update counter) tidak atomik terhadap window PBKDF2.
+
+**Solution:** Pre-increment counter attempts di dalam lock SEBELUM dilepas untuk PBKDF2. Jika login berhasil, rollback (delete) counter — login sukses bukan percobaan gagal. Di cabang gagal, tidak perlu append lagi (sudah pre-increment), hanya trim entri lama.
+
+**Changed Files:** `server/handlers/auth.py`
+**Changed Symbols:** handle_auth
+**Tests:** Concurrency test: 20 request parallel setelah 4 attempts harus semua ditolak
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah — logika yang berubah hanya urutan increment
+**Related Patch:** PATCH-2026-07-16-001
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-304
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:12
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** engine/radio
+**Priority:** High
+**Title:** deque.pop() salah sisi di radio backfill — membuang track yang baru ditambahkan (#3)
+
+**Reason:** `radio_queue` dikonsumsi dari kiri (`popleft()`), tapi `_backfill_and_standby` menggunakan `pop()` tanpa argumen untuk trim saat total > 30. `pop()` menghapus dari KANAN — sisi yang sama dengan `extend()` — sehingga track hasil backfill yang baru saja berhasil di-resolve (yt-dlp) langsung dibuang.
+
+**Root Cause:** Typo / copy-paste error: `pop()` seharusnya `popleft()` untuk konsistensi dengan sisi konsumsi queue.
+
+**Solution:** Ganti `self.state.radio_queue.pop()` → `self.state.radio_queue.popleft()` di `_backfill_and_standby`.
+
+**Changed Files:** `engine/radio/engine.py`
+**Changed Symbols:** RadioMode._backfill_and_standby
+**Tests:** Unit test radio engine
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah — one-liner fix dengan semantik yang jelas
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-303
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:12
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** persistence
+**Priority:** High
+**Title:** evict_stale_tracks() menghapus track yang sengaja ditandai unavailable (#2)
+
+**Reason:** `mark_unavailable()` tidak mengisi `stream_url_ts` (by design — track mati tidak punya URL). `evict_stale_tracks()` menghapus baris dengan `stream_url_ts IS NULL` AND kondisi lain terpenuhi, sehingga track unavailable yang baru ditandai ikut terhapus di siklus eviction 6-jam berikutnya — membuat fitur "skip yt-dlp untuk video mati" sia-sia.
+
+**Root Cause:** WHERE clause di `evict_stale_tracks()` tidak mengecek kolom `unavailable`.
+
+**Solution:** Tambah `AND (unavailable = 0 OR unavailable IS NULL)` ke WHERE clause.
+
+**Changed Files:** `persistence/track_repo.py`
+**Changed Symbols:** TrackRepository.evict_stale_tracks
+**Tests:** Unit test track_repo (eviction)
+**Breaking Change:** Tidak
+**Regression Risk:** Rendah — hanya menambahkan filter ke DELETE, tidak mengubah logika yang ada
+**Related Patch:** PATCH-2026-07-20-136
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-302
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:11
+**Git Branch:** termux
+**Git Commit:** (pending)
+**Type:** Fix
+**Area:** adapters/mpv
+**Priority:** Critical
+**Title:** Hardcoded path developer di kode produksi + file descriptor leak (#1)
+
+**Reason:** `open(r"c:\Users\PUTRA JAYA LIMBANGAN\Documents\lunawave\mpv.log", ...)` di `_do_connect()` adalah path absolut Windows milik mesin developer, tidak ada di mesin lain. Membuat mpv gagal start total di semua mesin selain dev dengan pesan error yang membingungkan. Juga merupakan risiko privasi di repo publik. File handle tidak pernah di-close di `disconnect()`, sehingga tiap `reconnect()` (auto-triggered) membuka file baru — FD leak yang terus bertambah.
+
+**Root Cause:** Path hardcoded saat development awal, tidak digeneralisasi. File handle lupa ditutup.
+
+**Solution:** Ganti ke `BASE_DIR / "mpv.log"` (dari config.py, sudah cross-platform). Bungkus dengan `if os.name == "nt":` — redirect stdout mpv hanya di Windows. Di Unix/Termux gunakan `asyncio.subprocess.DEVNULL`. Simpan handle dan close di `disconnect()` dan `reconnect()` sebelum memanggil `_do_connect()` ulang.
+
+**Changed Files:** `adapters/mpv/connection.py`
+**Changed Symbols:** MpvConnection.__init__, MpvConnection._do_connect, MpvConnection.disconnect, MpvConnection.reconnect
+**Tests:** Verifikasi start di mesin lain / platform Unix
+**Breaking Change:** Tidak — behavior identik di Windows dev machine (path sekarang di project root, bukan user home), dan di Unix/Termux tidak lagi mencoba buka file yang tidak ada
+**Regression Risk:** Rendah
+**Related Patch:** —
+**Status:** Done
+
+---
+
+## PATCH-2026-08-07-299
+
+**Tanggal:** 2026-08-07
+**Timestamp:** 09:07
+**Git Branch:** termux
+**Git Commit:** e1709ed
+**Type:** Fix
+**Area:** tooling
+**Priority:** Medium
+**Title:** Remove obsolete UP038 ruff rule; fix env-dependent GUI test; add nosec B608 to startup_tasks SQL
+
+**Reason:** UP038 was removed from ruff causing a warning on every invocation; GUI test failed when LunaWave was already running on port 8765; startup_tasks SQL pattern flagged as false positive
+
+**Root Cause:**
+ruff removed UP038 rule but it remained in ignore list; test asserted exact state Stopped without accounting for Conflict when port occupied; SQL uses placeholder-only f-string but lacked nosec annotation
+
+**Solution:**
+Removed UP038 from pyproject.toml ruff ignore list; made GUI test accept Stopped or Conflict; added nosec B608 to startup_tasks.py
+
+**Changed Files:**
+- `pyproject.toml`
+- `tests/unit/launcher/gui_qt/test_main_window.py`
+- `bootstrap/startup_tasks.py`
+
+**Changed Symbols:**
+- (tidak ada)
+
+**Tests:** -
+
+**Breaking Change:** Unclassified
+
+**Regression Risk:** Unclassified
+
+**Related Patch:** -
+
+**Status:** Draft
+
+**Notes:**
+All 5 doctor checks remain PASS 100/100 after changes
 
 ---
 

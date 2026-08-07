@@ -418,7 +418,7 @@ describe("audio/playback-sync.js", () => {
       // ikut ngirim toggle_pause ke server -> lagu macet pause sampai app
       // dibuka ulang & user pencet play manual.
       it("sets the guard as soon as a track switch starts and clears it once the new audio confirms playback", async () => {
-        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
+        const { unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
         store.userRole = "client";
         store.audio_output = "browser";
         store.status = "PLAYING";
@@ -440,7 +440,7 @@ describe("audio/playback-sync.js", () => {
       });
 
       it("keeps the guard active (does not sync a spurious OS pause to PAUSED) while the new audio is still buffering", async () => {
-        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store, wsSend } = await setupModule();
+        const { unlockBrowserAudio, getOrInitAudio, store, wsSend } = await setupModule();
         store.userRole = "admin";
         store.audio_output = "browser";
         store.status = "PLAYING";
@@ -460,7 +460,7 @@ describe("audio/playback-sync.js", () => {
       });
 
       it("clears the guard even when play() is blocked (autoplay rejected) so future genuine pauses still sync normally", async () => {
-        const { syncBrowserAudio, unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
+        const { unlockBrowserAudio, getOrInitAudio, store } = await setupModule();
         store.userRole = "client";
         store.audio_output = "browser";
         store.status = "PLAYING";

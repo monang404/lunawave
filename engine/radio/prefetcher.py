@@ -36,7 +36,7 @@ from config import (
 )
 from core.log_categories import LC_RADIO
 from core.log_context import bind_correlation
-from core.state import AppState
+from core.state import AppState, PlaybackMode
 from engine.radio.radio_config import ARTISTS_PER_BATCH, RADIO_SEARCH_SEM, track_task
 
 if TYPE_CHECKING:
@@ -58,7 +58,11 @@ class RadioPrefetcher:
         self._standby_lock = asyncio.Lock()
         self._fetch_lock = asyncio.Lock()
         self._bg_tasks: set = set()
-        self._last_prefetch_vid: str | None = None
+        # BUG-FIX #9: Ganti single string ke bounded set supaya beberapa prefetch
+        # overlap (skip cepat berturut-turut) tetap ter-dedup dengan benar.
+        # max size 5 cukup untuk window normal; entri lama dipop kalau melebihi.
+        self._last_prefetch_vids: set[str] = set()
+        _PREFETCH_VID_SET_MAX = 5  # batas atas agar set tidak tumbuh tanpa batas
 
     def cancel_tasks(self):
         for task in list(self._bg_tasks):
@@ -153,8 +157,12 @@ class RadioPrefetcher:
         threshold = self._current_threshold(controller)
         if duration > 0 and (duration - position) <= threshold:
             current_vid = self.state.current_track.video_id if self.state.current_track else None
-            if current_vid and self._last_prefetch_vid != current_vid:
-                self._last_prefetch_vid = current_vid
+            # BUG-FIX #9: Cek set, bukan single string, agar dedup benar saat skip cepat.
+            if current_vid and current_vid not in self._last_prefetch_vids:
+                # Prune set kalau sudah melebihi batas supaya tidak tumbuh tanpa batas.
+                if len(self._last_prefetch_vids) >= 5:
+                    self._last_prefetch_vids.pop()
+                self._last_prefetch_vids.add(current_vid)
                 track_task(self._bg_tasks, self._prefetch_next(controller), name="radio_prefetch")
 
     async def _prefetch_next(self, controller: "PlaybackController") -> None:
@@ -170,6 +178,13 @@ class RadioPrefetcher:
             )
 
     async def _do_prefetch(self, controller: "PlaybackController") -> None:
+        # BUG-FIX #16: Prefetch butuh up to 25 detik (timeout). Selama itu
+        # user bisa saja ganti mode, stop radio, atau skip berkali-kali.
+        # Cek mode di awal agar tidak buang bandwidth/CPU resolve stream_url
+        # untuk track yang tidak akan pernah diputar (radio sudah dimatikan).
+        if self.state.playback_mode != PlaybackMode.RADIO:
+            return
+
         if not self.state.radio_queue:
             return
 

@@ -143,8 +143,9 @@ class ReadyToast(QWidget):
 
         # Ensure it's correctly positioned if parent resizes
         self.adjustSize()
-        if self.parentWidget():
-            parent_rect = self.parentWidget().rect()
+        parent = self.parentWidget()
+        if parent:
+            parent_rect = parent.rect()
             # Position at bottom right, with some margins
             x = parent_rect.width() - self.width() - 22
             y = parent_rect.height() - self.height() - 22
