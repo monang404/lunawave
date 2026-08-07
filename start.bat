@@ -34,7 +34,7 @@ if defined YTGUI_ADMIN_PASS set "LUNAWAVE_ADMIN_PASS=%YTGUI_ADMIN_PASS%"
 
 echo  [*] Initializing Environment Variables...
 
-python -m launcher.preflight --host "%LUNAWAVE_HOST%" --port "%LUNAWAVE_PORT%"
+py -m launcher.preflight --host "%LUNAWAVE_HOST%" --port "%LUNAWAVE_PORT%"
 if %ERRORLEVEL% neq 0 (
     echo.
     echo  [X] Preflight check failed. Server will not start.
@@ -80,7 +80,7 @@ echo    ================================================================
 echo.
 echo  [*] Starting Server...
 
-python main.py
+py main.py
 echo.
 if %ERRORLEVEL% neq 0 (
     echo  [X] Server terminated with error code: %ERRORLEVEL%
