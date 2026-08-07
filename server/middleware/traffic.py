@@ -64,6 +64,31 @@ def _is_quiet_path(path: str) -> bool:
     return path.startswith(_QUIET_PATH_PREFIXES)
 
 
+# BUG-FIX #8: HTTP_REQUESTS_TOTAL memakai `request.path` mentah sebagai label,
+# yang menyertakan segmen dinamis (/api/stream/<video_id> dst). Tiap video_id
+# unik = kombinasi label baru yang disimpan permanen di memory Prometheus client
+# (tidak pernah GC) -- di deployment Termux jangka panjang ini bisa jadi
+# memory leak signifikan ("unbounded cardinality"). Normalisasi path sebelum
+# dipakai sebagai label agar hanya ada O(1) series per endpoint.
+_DYNAMIC_PATH_PATTERNS = (
+    # Pasangan (prefix, placeholder) -- diurutkan dari yang paling spesifik
+    ("/api/stream/", "/api/stream/{video_id}"),
+    ("/api/thumbnail/", "/api/thumbnail/{video_id}"),
+    ("/api/lyrics/", "/api/lyrics/{video_id}"),
+    ("/api/download/", "/api/download/{video_id}"),
+    ("/api/sponsorblock/", "/api/sponsorblock/{video_id}"),
+)
+
+
+def _normalize_path(path: str) -> str:
+    """Normalisasi segmen dinamis path ke placeholder statis untuk label Prometheus.
+    Mencegah unbounded cardinality akibat video_id/ID unik lainnya di path."""
+    for prefix, placeholder in _DYNAMIC_PATH_PATTERNS:
+        if path.startswith(prefix):
+            return placeholder
+    return path
+
+
 def _short_req_id() -> str:
     """8 hex chars -- cukup untuk correlation dalam satu sesi log, tidak
     perlu unik global (bukan UUID lengkap)."""
@@ -110,12 +135,22 @@ async def traffic_middleware(request: web.Request, handler):
 
         try:
             HTTP_REQUESTS_TOTAL.labels(
-                method=request.method, path=request.path, status=str(status)
+                method=request.method,
+                # BUG-FIX #8: Normalisasi path sebelum dipakai sebagai label
+                # agar tidak ada satu series Prometheus per video_id unik.
+                path=_normalize_path(request.path),
+                status=str(status),
             ).inc()
         except Exception:
             pass
 
         try:
+            # BUG-FIX #17: bytes_out adalah LOWER-BOUND, bukan angka akurat.
+            # Untuk response chunked/streaming (mis. /api/stream/ audio range
+            # request), content_length kerap None -- sehingga traffic streaming
+            # audio yang paling besar justru tidak terhitung di metric ini.
+            # Diterima sebagai trade-off: menghitung bytes actual dari chunked
+            # writer membutuhkan instrumentasi di layer yang lebih rendah.
             bytes_out = getattr(resp, "content_length", None) if resp is not None else None
             if bytes_out:
                 HTTP_BYTES_TOTAL.labels(direction="out").inc(bytes_out)

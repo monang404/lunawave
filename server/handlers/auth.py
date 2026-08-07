@@ -54,6 +54,7 @@ def _prune_stale_ips(manager, now: float) -> None:
     """
     WINDOW_AUTH = 300  # 5 menit — sama dengan window login_attempts
     WINDOW_CMD = 60  # 1 menit — sama dengan window command_history
+    WINDOW_CHAT = 3600  # 1 jam — window untuk chat_history
 
     stale_auth = [
         ip
@@ -70,6 +71,17 @@ def _prune_stale_ips(manager, now: float) -> None:
     ]
     for ip in stale_cmd:
         del manager.command_history[ip]
+
+    # BUG-FIX #7: chat_history tidak pernah di-prune, berbeda dengan
+    # login_attempts/command_history. Entry IP yang sudah tidak aktif > 1 jam
+    # dibersihkan di sini agar tidak tumbuh tanpa batas.
+    stale_chat = [
+        uid
+        for uid, ts_list in manager.chat_history.items()
+        if not any(now - t < WINDOW_CHAT for t in ts_list)
+    ]
+    for uid in stale_chat:
+        del manager.chat_history[uid]
 
 
 async def handle_auth(ws, data, manager, client_ip, repos, now):
@@ -115,6 +127,14 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
             )
             return
 
+        # BUG-FIX #4: Pre-increment counter sebelum lock dilepas untuk PBKDF2.
+        # Tanpa ini, N request paralel bisa semua lolos gate saat counter masih 0
+        # karena PBKDF2 (~60-180ms) dijalankan setelah lock dilepas. Dengan
+        # pre-increment, setiap request paralel langsung "tercatat" sebagai percobaan
+        # sebelum memulai verifikasi. Jika login berhasil, counter di-rollback (delete).
+        attempts.append(now)
+        manager.login_attempts[client_ip] = attempts
+
     username = data.get("username", "")
     password = data.get("password", "")
 
@@ -146,6 +166,7 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
                 await sessions.create_session(new_token, int(now) + 10800)
                 logger.info("auth_session_created", category=LC_AUTH, client_ip=client_ip)
             manager.authenticated_connections.add(ws)
+            # BUG-FIX #4: Rollback pre-increment — login berhasil bukan percobaan gagal.
             if client_ip in manager.login_attempts:
                 del manager.login_attempts[client_ip]
             logger.info("auth_login_succeeded", category=LC_AUTH, client_ip=client_ip)
@@ -153,10 +174,10 @@ async def handle_auth(ws, data, manager, client_ip, repos, now):
                 json.dumps({"type": "auth_status", "data": {"success": True, "token": new_token}})
             )
         else:
-            attempts = manager.login_attempts.get(client_ip, [])
-            attempts = [t for t in attempts if now - t < 300]
-            attempts.append(now)
-            manager.login_attempts[client_ip] = attempts
+            # Pre-increment sudah dilakukan sebelum PBKDF2; tidak perlu append lagi.
+            # Hanya refresh list (trim entri lama) agar window 5 menit tetap konsisten.
+            existing = manager.login_attempts.get(client_ip, [])
+            manager.login_attempts[client_ip] = [t for t in existing if now - t < 300]
             logger.info(
                 "auth_login_rejected",
                 category=LC_AUTH,

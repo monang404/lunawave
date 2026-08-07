@@ -42,6 +42,7 @@ SKIP_DIRS: frozenset[str] = frozenset(
         "build",
         "automation",
         "tests",
+        ".agent",
     }
 )
 

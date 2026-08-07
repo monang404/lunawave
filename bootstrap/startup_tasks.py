@@ -175,7 +175,7 @@ async def _cache_eviction_loop():
                             chunk = video_ids_cleared[i : i + 100]
                             placeholders = ",".join(["?"] * len(chunk))
                             await ctx.repos.conn.execute(
-                                f"UPDATE tracks SET local_path = NULL WHERE video_id IN ({placeholders})",
+                                f"UPDATE tracks SET local_path = NULL WHERE video_id IN ({placeholders})",  # nosec B608
                                 chunk,
                             )
                         await ctx.repos.conn.commit()

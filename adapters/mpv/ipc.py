@@ -71,6 +71,23 @@ class MpvIPC:
         try:
             self._conn.writer.write(payload.encode())
             await self._conn.writer.drain()
+        except OSError as write_err:
+            # BUG-FIX #12: Kalau write gagal, future sudah terdaftar di _pending
+            # tapi tidak akan pernah di-resolve -- tanpa ini future menggantung
+            # sampai timeout 2 detik. Cancel dan pop langsung agar kegagalan
+            # write terdeteksi segera tanpa jeda 2 detik yang tidak perlu.
+            self._pending.pop(req_id, None)
+            if not fut.done():
+                fut.cancel()
+            logger.warning(
+                "mpv_get_property_write_failed",
+                category=LC_EXTERNAL,
+                prop=prop,
+                error_type=type(write_err).__name__,
+                error=str(write_err),
+            )
+            return None
+        try:
             return await asyncio.wait_for(fut, timeout=2.0)
         except (TimeoutError, OSError):
             self._pending.pop(req_id, None)

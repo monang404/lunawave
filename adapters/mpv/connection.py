@@ -25,7 +25,7 @@ import os
 
 import structlog
 
-from config import MPV_SOCKET
+from config import BASE_DIR, MPV_SOCKET
 from core.exceptions import MpvConnectionError
 from core.log_categories import LC_EXTERNAL
 
@@ -56,6 +56,7 @@ class MpvConnection:
         self.is_connected = False
         self._reconnect_lock = asyncio.Lock()
         self._mpv_process = None
+        self._mpv_log_file = None
         self.shutting_down = False
 
     @property
@@ -109,12 +110,28 @@ class MpvConnection:
         cmd = ["mpv"] + common_args + [f"--input-ipc-server={self.socket_path}"]
 
         try:
-            self._mpv_log_file = open(
-                r"c:\Users\PUTRA JAYA LIMBANGAN\Documents\lunawave\mpv.log", "a", encoding="utf-8"
-            )
+            # BUG-FIX #1: Ganti hardcoded path developer ke path relatif project.
+            # Hanya buka log file di Windows (satu-satunya platform yang butuh redirect
+            # stdout mpv karena tidak ada terminal terpisah). Di Unix/Termux, mpv
+            # otomatis bisa diarahkan ke /dev/null atau dibiarkan ke stderr systemd/shell.
+            # Handle disimpan di self._mpv_log_file dan ditutup di disconnect() &
+            # reconnect() untuk mencegah FD leak tiap siklus reconnect.
+            stdout_dest = asyncio.subprocess.DEVNULL
+            if os.name == "nt":
+                _log_path = BASE_DIR / "mpv.log"
+                try:
+                    self._mpv_log_file = open(_log_path, "a", encoding="utf-8")  # noqa: WPS515
+                    stdout_dest = self._mpv_log_file
+                except OSError as log_err:
+                    logger.warning(
+                        "mpv_log_open_failed",
+                        category=LC_EXTERNAL,
+                        path=str(_log_path),
+                        error=str(log_err),
+                    )
             self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore
                 *cmd,
-                stdout=self._mpv_log_file,
+                stdout=stdout_dest,
                 stderr=asyncio.subprocess.STDOUT,
                 stdin=asyncio.subprocess.DEVNULL,
             )
@@ -203,6 +220,14 @@ class MpvConnection:
             except OSError:
                 pass
 
+        # BUG-FIX #1: Tutup file handle log mpv untuk mencegah FD leak.
+        if self._mpv_log_file is not None:
+            try:
+                self._mpv_log_file.close()
+            except OSError:
+                pass
+            self._mpv_log_file = None
+
     async def reconnect(self) -> bool:
         async with self._reconnect_lock:
             if self.is_connected:
@@ -225,5 +250,14 @@ class MpvConnection:
                         self._mpv_process.kill()
                 except OSError:
                     pass
+
+            # BUG-FIX #1: Tutup file handle log mpv sebelum reconnect agar tidak leak FD
+            # tiap kali _do_connect() buka file baru.
+            if self._mpv_log_file is not None:
+                try:
+                    self._mpv_log_file.close()
+                except OSError:
+                    pass
+                self._mpv_log_file = None
 
             return await self._do_connect()

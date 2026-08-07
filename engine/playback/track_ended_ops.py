@@ -98,6 +98,12 @@ class TrackEndedOps:
         elapsed = asyncio.get_event_loop().time() - c._last_play_start_ts
         if elapsed <= GRACE_WINDOW_SECONDS:
             await asyncio.sleep(0.35)
+            # BUG-FIX #6 (partial): Dalam grace window, jika status sudah PLAYING
+            # kembali setelah sleep, itu berarti track baru sudah berhasil dimuat
+            # -- event 'stop' ini memang basi (dari track lama), diabaikan dengan benar.
+            # Kasus stuck-PLAYING yang lebih jarang (stop asli tanpa track baru yang
+            # tertangkap di grace window) adalah edge case yang perlu watchdog terpisah;
+            # logika di sini sudah benar untuk kasus transisi normal.
             if c.state.status == PlayerStatus.PLAYING:
                 logger.info("track_end_stop_ignored_stale", category=LC_PLAYBACK)
                 return

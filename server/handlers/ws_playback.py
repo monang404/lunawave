@@ -45,6 +45,7 @@ from core.command_bus import (
 from core.state import AudioOutput, PlaybackMode
 from server.handlers.ws_schemas import (
     LyricsOffsetPayload,
+    SeekPayload,
     SetSleepTimerPayload,
     SetSpeedPayload,
     VolumeSetPayload,
@@ -73,8 +74,11 @@ async def handle_playback_command(action: str, data: dict, command_bus):
         await command_bus.execute(CMD_STOP)
 
     elif action == "seek":
-        position = data.get("position", 0)
-        await command_bus.execute(CMD_SEEK, float(position))
+        # BUG-FIX #10: Validasi lewat SeekPayload (konsisten dengan command lain)
+        # agar string non-numerik tidak raise ValueError sampai generic handler,
+        # dan posisi negatif ditolak dengan pesan yang jelas ke client.
+        seek_payload = SeekPayload.parse(data)
+        await command_bus.execute(CMD_SEEK, seek_payload.position)
 
     elif action == "volume_up":
         await command_bus.execute(CMD_VOLUME_UP)
@@ -83,8 +87,8 @@ async def handle_playback_command(action: str, data: dict, command_bus):
         await command_bus.execute(CMD_VOLUME_DOWN)
 
     elif action == "volume_set":
-        payload = VolumeSetPayload.parse(data)
-        await command_bus.execute(CMD_VOLUME_SET, {"volume": payload.volume})
+        vol_payload = VolumeSetPayload.parse(data)
+        await command_bus.execute(CMD_VOLUME_SET, {"volume": vol_payload.volume})
 
     elif action == "set_mode":
         mode_str = data.get("mode", "queue").upper()
@@ -105,8 +109,8 @@ async def handle_playback_command(action: str, data: dict, command_bus):
         await command_bus.execute(CMD_RADIO_RANDOMIZE, {"seed_artist": seed_artist})
 
     elif action == "lyrics_offset":
-        payload = LyricsOffsetPayload.parse(data)
-        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": payload.offset})
+        lyrics_payload = LyricsOffsetPayload.parse(data)
+        await command_bus.execute(CMD_LYRICS_OFFSET, {"offset": lyrics_payload.offset})
 
     elif action == "set_crossfade":
         enabled = data.get("enabled", False)
@@ -115,14 +119,14 @@ async def handle_playback_command(action: str, data: dict, command_bus):
     elif action == "set_sleep_timer":
         from core.command_bus import CMD_SET_SLEEP_TIMER
 
-        payload = SetSleepTimerPayload.parse(data)
-        await command_bus.execute(CMD_SET_SLEEP_TIMER, {"minutes": payload.minutes})
+        sleep_payload = SetSleepTimerPayload.parse(data)
+        await command_bus.execute(CMD_SET_SLEEP_TIMER, {"minutes": sleep_payload.minutes})
 
     elif action == "set_speed":
         from core.command_bus import CMD_SET_SPEED
 
-        payload = SetSpeedPayload.parse(data)
-        await command_bus.execute(CMD_SET_SPEED, {"speed": payload.speed})
+        speed_payload = SetSpeedPayload.parse(data)
+        await command_bus.execute(CMD_SET_SPEED, {"speed": speed_payload.speed})
 
     elif action == "set_loop":
         from core.command_bus import CMD_SET_LOOP

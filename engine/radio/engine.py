@@ -223,8 +223,14 @@ class RadioMode:
         )
         if extra:
             self.state.radio_queue.extend(extra)
+            # BUG-FIX #3: radio_queue dikonsumsi dari kiri (popleft() di next()).
+            # `extend()` menambah ke kanan, jadi trim yang benar adalah dari
+            # KIRI (track paling lama / yang paling duluan akan diputar) --
+            # bukan dari kanan (yang baru saja ditambahkan dari backfill).
+            # `pop()` tanpa argumen menghapus dari kanan, membuang hasil
+            # backfill yang mahal (yt-dlp); ganti ke `popleft()`.
             while len(self.state.radio_queue) > 30:
-                self.state.radio_queue.pop()
+                self.state.radio_queue.popleft()
             await controller.bus.publish(QueueUpdatedEvent())
 
         # Setelah backfill selesai, langsung siapkan standby berikutnya

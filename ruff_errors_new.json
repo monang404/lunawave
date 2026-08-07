@@ -1,0 +1,12 @@
+﻿python : C:\Users\PUTRA JAYA LIMBANGAN\AppData\Lo
+cal\hermes\hermes-agent\venv\Scripts\python.exe:
+No module named ruff
+At line:1 char:1
++ python -m ruff check . --output-format=json
+2>&1 | Out-File -Encoding ...
++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\
+   Users\PUTRA ...dule named ruff:String) [], R
+  emoteException
+    + FullyQualifiedErrorId : NativeCommandError

@@ -157,6 +157,11 @@ export async function _resumeAndPlay(audio) {
     } catch (e) {
         console.warn("[audio] play() blocked:", e.name, e.message);
         globalThis.audioBlocked = true;
+        // BUG-FIX #18: Ketika audio di-block, Media Session masih menunjukkan
+        // "playing" (karena store.status = "PLAYING" dari server), tapi suara
+        // tidak keluar. Update ke "paused" agar UI notifikasi/lockscreen jujur
+        // dan tombol Play di notifikasi bisa digunakan untuk unlock audio.
+        _updateMediaSessionState("paused");
         _showTapToPlayBanner();
     }
 }

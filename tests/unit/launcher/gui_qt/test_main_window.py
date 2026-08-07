@@ -17,16 +17,17 @@ def qapp():
 def test_main_window_initialization(qapp):
     # Test that the main window initializes without crashing
     window = ServerManagerQt()
-    assert window.windowTitle() == "LunaWave — Server Manager"
+    assert window.windowTitle() == "LunaWave \u2014 Server Manager"
 
     # Check widgets exist
     assert window.hero is not None
     assert window.console is not None
     assert window.toolbar is not None
 
-    # Check default state
+    # Check default state: "Stopped" when port is free, "Conflict" when
+    # the default port (8765) is already in use (e.g. LunaWave is running).
     assert window.hero.input_port.text() != ""
-    assert window.hero.lbl_state.text() == "Stopped"
+    assert window.hero.lbl_state.text() in ("Stopped", "Conflict")
 
 
 def test_signal_marshaling(qapp, qtbot):

@@ -79,7 +79,7 @@ class QuickLinks(QWidget):
             pixmap = QPixmap(13, 13)
             from PySide6.QtGui import QColor, Qt
 
-            pixmap.fill(Qt.transparent)
+            pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             with open(icon_path, encoding="utf-8") as f:
                 svg_data = f.read().replace("currentColor", theme.TEXT_3)

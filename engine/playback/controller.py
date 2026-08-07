@@ -336,6 +336,11 @@ class PlaybackController:
         if self.state.status in (PlayerStatus.PLAYING, PlayerStatus.PAUSED):
             await self.mpv.seek(position)
             self.state.position = position
+            # BUG-FIX #5: Reset flag crossfade saat seek, karena flag ini di-set
+            # sekali (5 detik sebelum track habis) dan hanya direset saat track BARU
+            # dimuat (play_ops.py). Kalau user seek mundur setelah crossfade-out
+            # sempat terpicu, crossfade tidak akan terpicu lagi tanpa reset ini.
+            self._crossfade_out_triggered = False
 
     async def _on_set_mode(self, mode: PlaybackMode):
         await self._settings_controller.on_set_mode(mode)
