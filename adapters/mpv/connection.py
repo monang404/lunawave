@@ -74,10 +74,19 @@ class MpvConnection:
             return await self._do_connect()
 
     async def _do_connect(self) -> bool:
+        import yt_dlp.utils
+
+        ua = yt_dlp.utils.std_headers.get(
+            "User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        )
+
         common_args = [
             "--no-video",
             "--idle",
             "--ytdl=no",  # M-1: App always passes resolved CDN URLs, never youtube:// — ytdl_hook is dead code and a dangerous uncontrolled fallback.
+            f"--user-agent={ua}",
+            "--referrer=https://www.youtube.com/",
             "--audio-pitch-correction=yes",
             "--cache=yes",
             "--demuxer-readahead-secs=20",
@@ -85,6 +94,8 @@ class MpvConnection:
             "--cache-pause=yes",
             "--network-timeout=15",
             "--gapless-audio=weak",  # M-3: Reduce gap/click between tracks (safe, no downside).
+            "--ao=wasapi,openal,null",  # Fallback to dummy audio if no playback devices are available
+            "--audio-fallback-to-null=yes",  # Prevent crash when unplugging speaker mid-playback
         ]
 
         if os.name != "nt":
@@ -98,10 +109,13 @@ class MpvConnection:
         cmd = ["mpv"] + common_args + [f"--input-ipc-server={self.socket_path}"]
 
         try:
+            self._mpv_log_file = open(
+                r"c:\Users\PUTRA JAYA LIMBANGAN\Documents\lunawave\mpv.log", "a", encoding="utf-8"
+            )
             self._mpv_process = await asyncio.create_subprocess_exec(  # type: ignore
                 *cmd,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
+                stdout=self._mpv_log_file,
+                stderr=asyncio.subprocess.STDOUT,
                 stdin=asyncio.subprocess.DEVNULL,
             )
             if os.name != "nt":
